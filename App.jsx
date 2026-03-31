@@ -16,24 +16,12 @@ select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
 `;
 
-// ─── STORAGE HELPERS ─────────────────────────────────────────────────────────
-
 function storageGet(key) {
-  try {
-    const val = localStorage.getItem(key);
-    return val ? JSON.parse(val) : null;
-  } catch (e) {
-    return null;
-  }
+  try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : null; } catch (e) { return null; }
 }
-
 function storageSet(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {}
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
 }
-
-// ─── DATA ────────────────────────────────────────────────────────────────────
 
 const CLASSES = [
   {
@@ -69,7 +57,7 @@ const CLASSES = [
   {
     id:'corvos',name:'Corvos do Horizonte',icon:'🦅',color:'#E8A020',
     glow:'rgba(232,160,32,0.16)',role:'Atirador · Precisão Absoluta',
-    lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes gaviões. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,
+    lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes gaviões e principalmente a inteligência dos corvos. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,
     passive:{name:'Visão do Gavião',desc:'Nunca sofre penalidade por distância. Ataques à longa distância ganham +2 no dado de precisão automaticamente.'},
     normal:[
       {name:'Sniper Americano',cost:2,cooldown:'—',desc:'Garante acerto em alvos de 5–10 metros sempre. Custo: causa apenas 0,75× do dano normal.'},
@@ -103,7 +91,7 @@ const CLASSES = [
     passive:{name:'Percepção Elevada',desc:'Tem percepção acima do comum: pode revelar objetos escondidos no cenário e resolver enigmas com facilidade.'},
     normal:[
       {name:'Material de Pesquisa',cost:2,cooldown:'—',desc:'Sempre carregado. Permite juntar 2 a 3 itens do cenário e combiná-los em um novo item.'},
-      {name:'Seringa da Juventude',cost:2,cooldown:'3 rodadas',desc:'Aplica uma seringa que cura 1 de vida ao alvo e concede +2 Vigos Cósmicos a ele.'},
+      {name:'Seringa da Juventude',cost:2,cooldown:'3 rodadas',desc:'Aplica uma seringa que cura 1 de vida ao alvo e concede +2 Vigor Cósmico a ele.'},
       {name:'QI Distorcido',cost:2,cooldown:'1× por arma',desc:'Melhora qualquer arma concedendo mais alcance, dano ou precisão. 1 uso por arma por combate.'},
     ],
     specials:[
@@ -125,7 +113,7 @@ const PROLOGUE = [
   {type:'body',text:'Mas Jhon pensa novamente em reciclar o mundo. Pois viu que, ao passar dos anos, nenhum avanço significativo ocorreu. Fazendo-o questionar: devo começar tudo de novo?'},
   {type:'warning',text:'E além disso... uma catástrofe se aproxima.'},
   {type:'body',text:'Ninguém sabe o que. Só sabe que está chegando. Pois o Livro da Mandíbula — como o calendário maia — a previa. Dizendo que quatro estrelas ficariam brilhantes sobre os céus, tanto de dia quanto de noite, e se aproximariam a cada dia.'},
-  {type:'finale',text:'O objetivo dos personagens não é apenas sobreviver. É provar seu valor para continuarem existindo. É parar. É compreender. É decifrar a profecia antes que o Reinício seja decretado novamente — desta vez, para sempre.'},
+  {type:'finale',text:'O objetivo dos personagens não é apenas sobreviver. É provar seu valor para continuarem existindo. É parar. É compreender. É decifrar a profecia e deter a catastrofe antes que o Reinício seja decretado novamente — desta vez, para sempre.'},
 ];
 
 const MILESTONES = [
@@ -144,23 +132,45 @@ const MILESTONES = [
   {year:'AGORA',event:'Quatro estrelas aparecem nos céus de Cosmum. Elas se aproximam.',icon:'✦',prophecy:true},
 ];
 
-const ENTITIES_DEFAULT = [
-  {id:'homem-agua',name:'Homem Água',icon:'💧',revealed:true,lore:'',fisico:''},
-  {id:'cabecas-azuis',name:'Os Cabeças Azuis',icon:'🔵',revealed:true,lore:'',fisico:''},
-  {id:'homem-leite',name:'O Homem de Leite',icon:'◌',revealed:true,lore:'',fisico:''},
-  {id:'ventus',name:'Ventus o Rei dus Tempus',icon:'🌪️',revealed:true,lore:'',fisico:''},
-  {id:'sixseven',name:'O 67 (SixSeven)',icon:'⚡',revealed:true,lore:'',fisico:''},
-  {id:'unknown',name:'???',icon:'◈',revealed:false,lore:'',fisico:''},
+// ─── ENTITIES — lore e físico fixos para as duas primeiras, trancados para as demais ──
+
+const ENTITIES_DATA = [
+  {
+    id:'homem-agua', name:'Homem Água', icon:'💧', revealed:true,
+    lore:`Era um homem comum chamado David, que vivia por volta de 1544, com seu amigo Billy Laranjais. Um dia como qualquer outro, uma lágrima celestial caiu dos céus — era de JhonKenteiker. Ninguém sabe o motivo daquela lágrima ter caído, mas ao entrar em contato com o corpo de David, tornou-o extremamente poderoso, expelindo água de seu corpo e a controlando de forma quase que divina.\n\nAo ver isso, Billy teve uma ideia, movido pela ganância. Ele atraiu seu amigo até um local, onde o prendeu e ficou drenando toda sua água, dia após dia. Com isso, Billy criou uma fortuna e o parque temático para esconder seu pecado — conhecido como "Thermas dos Laranjais".\n\nApós isso, a cada 200 a 300 anos o Homem Água não morre, mas reencarna sua essência em outro hospedeiro. Quando isso acontece, todos os Cavaleiros dos Laranjais — descendentes diretos de Billy — são acionados para capturar a criança assim que nasce, e colocá-la na prisão que um dia foi de David, para drenar sua água até que o ciclo comece outra vez.`,
+    fisico:`Um ser formado completamente pela água mais pura já vista — transparente, límpida, quase luminosa. Seus olhos são os únicos traços aparentes: dois pontos visíveis dentro de uma forma humana inteiramente aquosa. Não possui cor, não possui sombra. Apenas água com vontade própria.`,
+  },
+  {
+    id:'cabecas-azuis', name:'Os Cabeças Azuis', icon:'🔵', revealed:true,
+    lore:`No ano de 830 d.C., uma entidade senciente de vontade própria e poder imensurável despertou. Embora fosse poderosa, ela se sentia incompleta em sua solidão. Foi então que seduziu o primeiro humano — um homem cujo nome original foi apagado da história, restando apenas o "Chamado" que ressoa em sua mente.\n\nA entidade convenceu este primeiro hospedeiro de que a individualidade era um fardo e que pertencer a um único ser pensante, abrindo mão da própria dignidade e vontade, seria o maior prazer de uma vida. Ao longo dos séculos, mais e mais humanos foram abduzidos e assimilados.\n\nHoje, eles não são mais indivíduos, mas componentes de uma Mente Coletiva. Funcionam como um "software" biológico: cada novo humano assimilado serve como processamento e memória, fazendo com que a entidade cresça em inteligência e alcance a cada segundo.`,
+    fisico:`Seres finos, quase esqueléticos, com uma cabeça desproporcional e grande. Não possuem boca nem nariz — apenas um único olho no centro do rosto, brilhando na cor de safira profunda. Sua presença, embora não seja aterrorizante, é completamente desconfortável. Como se algo essencial estivesse faltando onde deveria haver um rosto.`,
+  },
+  {
+    id:'homem-leite', name:'O Homem de Leite', icon:'◌', revealed:false,
+    lore:'', fisico:'',
+  },
+  {
+    id:'ventus', name:'Ventus o Rei dus Tempus', icon:'🌪️', revealed:false,
+    lore:'', fisico:'',
+  },
+  {
+    id:'sixseven', name:'O 67 (SixSeven)', icon:'⚡', revealed:false,
+    lore:'', fisico:'',
+  },
+  {
+    id:'unknown', name:'???', icon:'◈', revealed:false,
+    lore:'', fisico:'',
+  },
 ];
 
 const RULES_DATA = [
-  {icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigos Cósmicos (VC). A cada turno, o personagem recupera automaticamente +2 Vigos Cósmicos.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigos Cósmicos.`},
+  {icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, o personagem recupera automaticamente +2 Vigor Cósmicor.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigos Cósmicos.`},
   {icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},
   {icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados.\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: abrir porta, socorrer aliado, empurrar objeto.\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo, mas não realiza outra ação no mesmo turno.`},
   {icon:'✦',title:'Progressão & XP',body:`Títulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10 → Transcendente\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`},
 ];
 
-// ─── STARFIELD ───────────────────────────────────────────────────────────────
+// ─── STARFIELD ────────────────────────────────────────────────────────────────
 
 function StarField() {
   const ref = useRef(null);
@@ -190,7 +200,7 @@ function StarField() {
   return <canvas ref={ref} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;
 }
 
-// ─── PROLOGUE ────────────────────────────────────────────────────────────────
+// ─── PROLOGUE ─────────────────────────────────────────────────────────────────
 
 function PrologueSection() {
   return (
@@ -215,7 +225,7 @@ function PrologueSection() {
   );
 }
 
-// ─── CLASSES ─────────────────────────────────────────────────────────────────
+// ─── CLASSES ──────────────────────────────────────────────────────────────────
 
 function ClassCard({cls}) {
   const [open,setOpen] = useState(false);
@@ -298,7 +308,7 @@ function ClassesSection() {
   );
 }
 
-// ─── FICHAS ──────────────────────────────────────────────────────────────────
+// ─── FICHAS ───────────────────────────────────────────────────────────────────
 
 const ATTRS = [
   {key:'forca',label:'Força',color:'#E8193C'},
@@ -332,7 +342,14 @@ function Vigos({value,color,onChange}) {
   );
 }
 
-const newSheet = id => ({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,notas:''});
+const newSheet = id => ({
+  id, nome:'', classe:'fogo', nivel:1, xp:0,
+  hp:10, vigos:5,
+  forca:0, agilidade:0, durabilidade:0, inteligencia:0, percepcao:0,
+  especial1:false, especial2:false,
+  lore_personagem:'',
+  notas:'',
+});
 
 function SheetCard({sheet,onChange,onDelete}) {
   const cls = CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
@@ -342,6 +359,8 @@ function SheetCard({sheet,onChange,onDelete}) {
     <div style={{border:`1px solid ${cls.color}44`,borderRadius:14,overflow:'hidden',background:'rgba(8,10,22,0.9)',marginBottom:18,boxShadow:`0 4px 20px ${cls.glow}`}}>
       <div style={{height:3,background:`linear-gradient(90deg,${cls.color},transparent)`}}/>
       <div style={{padding:'16px 18px'}}>
+
+        {/* Nome + Classe */}
         <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}>
             <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label>
@@ -355,6 +374,8 @@ function SheetCard({sheet,onChange,onDelete}) {
           </div>
           <button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>
         </div>
+
+        {/* HP + XP + Vigos */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
@@ -379,11 +400,13 @@ function SheetCard({sheet,onChange,onDelete}) {
             <div style={{fontSize:10,color:'#7A6A5A',marginTop:6,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
           </div>
           <div style={{background:`${cls.color}09`,border:`1px solid ${cls.color}24`,borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:cls.color,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigos Cósmicos</div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:cls.color,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
             <Vigos value={sheet.vigos} color={cls.color} onChange={v=>f('vigos',v)}/>
             <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:5}}>+2 por turno</div>
           </div>
         </div>
+
+        {/* Atributos */}
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:7}}>
@@ -396,6 +419,8 @@ function SheetCard({sheet,onChange,onDelete}) {
             ))}
           </div>
         </div>
+
+        {/* Especiais */}
         <div style={{marginBottom:14,display:'flex',gap:9,flexWrap:'wrap'}}>
           {cls.specials.map((sp,i)=>{
             const key=i===0?'especial1':'especial2';
@@ -413,10 +438,25 @@ function SheetCard({sheet,onChange,onDelete}) {
             );
           })}
         </div>
-        <div>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas & Inventário</div>
-          <textarea value={sheet.notas} onChange={e=>f('notas',e.target.value)} placeholder="Itens, condições, segredos, anotações do Mestre..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+
+        {/* Lore do Personagem — NOVO */}
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Lore do Personagem</div>
+          <textarea
+            value={sheet.lore_personagem||''}
+            onChange={e=>f('lore_personagem',e.target.value)}
+            placeholder="Escreva aqui a história, origem, motivações e segredos do seu personagem..."
+            rows={4}
+            style={{width:'100%',resize:'vertical',lineHeight:1.8}}
+          />
         </div>
+
+        {/* Itens (antes: Notas & Inventário) */}
+        <div>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens</div>
+          <textarea value={sheet.notas} onChange={e=>f('notas',e.target.value)} placeholder="Liste os itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+        </div>
+
       </div>
     </div>
   );
@@ -462,7 +502,7 @@ function SheetsSection() {
   );
 }
 
-// ─── RULES ───────────────────────────────────────────────────────────────────
+// ─── RULES ────────────────────────────────────────────────────────────────────
 
 function RulesSection() {
   const [open,setOpen]=useState(0);
@@ -498,24 +538,23 @@ function RulesSection() {
   );
 }
 
-// ─── JAWBONE BOOK ────────────────────────────────────────────────────────────
+// ─── LIVRO DA MANDÍBULA ───────────────────────────────────────────────────────
 
 function LibroSection() {
   const [page,setPage]=useState(0);
-  const [entities,setEntities]=useState(null);
-  const [saved,setSaved]=useState(false);
-  useEffect(()=>{
-    const data = storageGet('disnastia-entities-v2');
-    setEntities(data || ENTITIES_DEFAULT.map(e=>({...e})));
-  },[]);
-  const saveEnts = upd => {
-    setEntities(upd);
-    storageSet('disnastia-entities-v2', upd);
-    setSaved(true);
-    setTimeout(()=>setSaved(false),1200);
+  const [unlocked,setUnlocked]=useState(()=> storageGet('disnastia-entities-unlocked') || {});
+
+  const toggleUnlock = (id) => {
+    const updated = {...unlocked, [id]: !unlocked[id]};
+    setUnlocked(updated);
+    storageSet('disnastia-entities-unlocked', updated);
   };
-  const updateEnt = (id,field,val) => saveEnts(entities.map(e=>e.id===id?{...e,[field]:val}:e));
+
   const starC=['#1EC8FF','#E8A020','#A855F7','#E8193C'];
+
+  // Entities 0 e 1 sempre reveladas; demais dependem do unlocked do Mestre
+  const isRevealed = (ent, i) => i < 2 ? true : (unlocked[ent.id] || false);
+
   return (
     <div style={{maxWidth:780,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
@@ -523,6 +562,7 @@ function LibroSection() {
         <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>Livro da Mandíbula</h2>
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'15px auto 0'}}/>
       </div>
+
       <div style={{display:'flex',gap:8,marginBottom:26,justifyContent:'center'}}>
         {['📜 Marcos & Profecia','◈ As Seis Entidades'].map((t,i)=>(
           <button key={i} onClick={()=>setPage(i)}
@@ -530,6 +570,7 @@ function LibroSection() {
           </button>
         ))}
       </div>
+
       {page===0&&(
         <div style={{animation:'fadeIn 0.4s ease'}}>
           <div style={{marginBottom:24,padding:'14px 18px',border:'1px solid rgba(168,85,247,0.18)',borderRadius:10,background:'rgba(168,85,247,0.05)',fontFamily:'Crimson Text,Georgia,serif',fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>
@@ -568,40 +609,63 @@ function LibroSection() {
           </div>
         </div>
       )}
+
       {page===1&&(
         <div style={{animation:'fadeIn 0.4s ease'}}>
-          {saved&&<div style={{textAlign:'center',fontSize:11,color:'#A855F7',fontFamily:'Cinzel,serif',marginBottom:12,letterSpacing:'0.2em'}}>✦ Salvo automaticamente</div>}
           <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>
             "Seis entidades foram vislumbradas nas páginas finais do Livro. Sua origem, forma e propósito permanecem parcialmente envoltos em sombra."
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:14}}>
-            {entities&&entities.map((ent,i)=>(
-              <div key={ent.id} style={{border:`1px solid ${ent.revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:ent.revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}>
-                <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}>
-                  <span style={{fontSize:20}}>{ent.icon}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontFamily:'Cinzel,serif',fontSize:14,color:ent.revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div>
-                    <div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{ent.revealed?'ENTIDADE REGISTRADA':'NÃO REVELADA'}</div>
+            {ENTITIES_DATA.map((ent,i)=>{
+              const revealed = isRevealed(ent, i);
+              return (
+                <div key={ent.id} style={{border:`1px solid ${revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}>
+                  {/* Header */}
+                  <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}>
+                    <span style={{fontSize:20}}>{ent.icon}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:'Cinzel,serif',fontSize:14,color:revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div>
+                      <div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{revealed?'ENTIDADE REGISTRADA':'TRANCADO — AGUARDANDO O MESTRE'}</div>
+                    </div>
+                    {/* Botão de revelar apenas para entidades 2 em diante */}
+                    {i >= 2 && (
+                      <button onClick={()=>toggleUnlock(ent.id)}
+                        style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(168,85,247,0.35)':'rgba(232,25,60,0.35)'}`,background:revealed?'rgba(168,85,247,0.07)':'rgba(232,25,60,0.07)',color:revealed?'#C8A8E8':'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>
+                        {revealed?'🔒 Trancar':'🔓 Revelar'}
+                      </button>
+                    )}
                   </div>
-                  {i===5&&(
-                    <button onClick={()=>updateEnt(ent.id,'revealed',!ent.revealed)}
-                      style={{padding:'5px 12px',borderRadius:5,border:'1px solid rgba(232,25,60,0.35)',background:'rgba(232,25,60,0.07)',color:'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>
-                      {ent.revealed?'🔒 Ocultar':'🔓 Revelar'}
-                    </button>
+
+                  {/* Conteúdo */}
+                  {revealed ? (
+                    <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}>
+                      {/* Lore — texto fixo, não editável */}
+                      <div>
+                        <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Lore / História</div>
+                        <div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>
+                          {ent.lore || <span style={{color:'#4A4050'}}>Lore ainda não registrado pelo Mestre.</span>}
+                        </div>
+                      </div>
+                      {/* Separador */}
+                      <div style={{height:1,background:'rgba(255,255,255,0.06)'}}/>
+                      {/* Físico — texto fixo, não editável */}
+                      <div>
+                        <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características Físicas</div>
+                        <div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic'}}>
+                          {ent.fisico || <span style={{color:'#4A4050'}}>Características físicas ainda não registradas.</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{padding:'22px 16px',textAlign:'center'}}>
+                      <div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🔒</div>
+                      <div style={{fontSize:13,color:'#4A4050',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Esta entidade ainda não foi revelada.</div>
+                      <div style={{fontSize:12,color:'#3A3040',marginTop:5}}>Aguarde o Mestre desbloquear esta página.</div>
+                    </div>
                   )}
                 </div>
-                <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:10}}>
-                  <div>
-                    <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Lore / História</label>
-                    <textarea value={ent.lore} onChange={e=>updateEnt(ent.id,'lore',e.target.value)} placeholder={ent.revealed?"Descreva a origem, motivações e papel desta entidade na profecia...":"Entidade ainda não revelada..."} rows={3} style={{width:'100%',resize:'vertical'}} disabled={!ent.revealed}/>
-                  </div>
-                  <div>
-                    <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Características Físicas</label>
-                    <textarea value={ent.fisico} onChange={e=>updateEnt(ent.id,'fisico',e.target.value)} placeholder={ent.revealed?"Aparência, forma, presença física, elementos visuais...":"???"} rows={2} style={{width:'100%',resize:'vertical'}} disabled={!ent.revealed}/>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -609,7 +673,7 @@ function LibroSection() {
   );
 }
 
-// ─── CHRONICLES ──────────────────────────────────────────────────────────────
+// ─── CRÔNICAS ─────────────────────────────────────────────────────────────────
 
 const newEntry = id => ({id,titulo:'',sessao:'',data:new Date().toLocaleDateString('pt-BR'),conteudo:''});
 
@@ -694,7 +758,7 @@ function CronicasSection() {
   );
 }
 
-// ─── APP ─────────────────────────────────────────────────────────────────────
+// ─── APP ──────────────────────────────────────────────────────────────────────
 
 const TABS = [
   {id:'prologo',label:'Prólogo',icon:'📜'},
