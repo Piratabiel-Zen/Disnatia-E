@@ -337,10 +337,10 @@ function LibroSection(){
             {!coordRevealed?(
               <div style={{textAlign:'center',marginTop:8}}>
                 <div style={{fontSize:12,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:10,letterSpacing:'0.15em'}}>
-                  ✦ Uma última página permanece selada por uma magia poderosa ✦
+                  ✦ A próxima página permanece selada por uma magia poderosa ✦
                 </div>
                 <button onClick={toggleCoord} style={{padding:'9px 24px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',transition:'all 0.2s'}}>
-                  🔮 Revelar o Trecho Final
+                  🔮 Quebrar Selo
                 </button>
               </div>
             ):(
