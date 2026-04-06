@@ -31,6 +31,14 @@ select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
 `;
 
+// Cor de sheet por classe — marfim é verde
+const SHEET_COLORS = {
+  fogo:'#1EC8FF', escarlate:'#E8193C', corvos:'#E8A020', magos:'#A855F7', marfim:'#4ADE80'
+};
+const SHEET_GLOWS = {
+  fogo:'rgba(30,200,255,0.16)', escarlate:'rgba(232,25,60,0.16)', corvos:'rgba(232,160,32,0.16)', magos:'rgba(168,85,247,0.16)', marfim:'rgba(74,222,128,0.16)'
+};
+
 const CLASSES = [
   {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas',desc:'Estocada veloz que atravessa o alvo, fazendo-o sangrar: −1 de vida por rodada por 3 rodadas consecutivas.'},{name:'Clemência Letal',cost:2,cooldown:'4 rodadas',desc:'+2 em quaisquer atributos por 2 rodadas. Ao expirar, −2 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Após 2 rodadas ativo, superaquece — fica 2 rodadas completamente incapaz de agir.',req:7}]},
   {id:'escarlate',alcance:'1m',name:'Cavaleiros Escarlate',icon:'🛡️',color:'#E8193C',glow:'rgba(232,25,60,0.16)',role:'Tanque · Protetor',lore:`A sua linhagem remonta a eras esquecidas, a povos que realizavam trabalhos braçais extremos nas profundezas da terra. Durante escavações, descobriram um minério enigmático: um rubi de cor escarlate incrivelmente denso. A exposição contínua e o suor derramado sobre o rubi criaram uma osmose biológica e mágica. O mineral fundiu-se com a genética destes trabalhadores, fazendo com que a sua própria pele se tornasse espessa, rígida e quase tão impenetrável quanto a rocha que outrora mineravam.`,passive:{name:'Pele de Rubi',desc:'Quando sem o escudo escarlate, a pele endurece. Ganha atributos bônus de defesa de acordo com a quantidade de inimigos ao redor.'},normal:[{name:'Reflexo Escarlate',cost:2,cooldown:'3 rodadas',desc:'Reflete 0,5× o dano recebido. Para cada inimigo ao redor, o maior valor refletido é duplicado.'},{name:'Lança Defensiva',cost:2,cooldown:'1 rodada',desc:'Arremessa o escudo no inimigo. Com resultado D18–20, pode atingir múltiplos inimigos. O escudo retorna à mão automaticamente.'},{name:'Investida Ágil',cost:2,cooldown:'2 rodadas',desc:'Troca resistência por velocidade: move-se 3 passos em 1 ação para proteger alguém ou fugir. −3 resistência por 2 rodadas.'}],specials:[{name:'Provocação Extrema',cost:3,cooldown:'4 rodadas',desc:'Todos os inimigos ao redor focam em você. Todo dano recebido é reduzido em 30% enquanto o efeito durar (4 rodadas).',req:3},{name:'Modo Berserker',cost:3,cooldown:'4 rodadas',desc:'Troca toda a resistência por dano, força e alcance massivos. Fica imparável — mas exausto, sem poder usar habilidades por 4 rodadas.',req:7}]},
@@ -61,7 +69,13 @@ const ARTEFATOS_DATA=[
   {id:'artefato-6',name:'Artefato VI',icon:'◆'},
 ];
 
-const RULES_DATA=[{icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, o personagem recupera automaticamente +2 Vigor Cósmico.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigor Cósmicos.`},{icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},{icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados (ataques especiais só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, e etc...\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`},{icon:'✦',title:'Progressão & XP',body:`Títulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10 → Transcendente\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`}];
+const RULES_DATA=[
+  {icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, o personagem recupera automaticamente +2 Vigor Cósmico.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigor Cósmicos.`},
+  {icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},
+  {icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados (ataques especiais só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, e etc...\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`},
+  {icon:'📊',title:'Bônus de Atributos',body:`Os atributos do personagem concedem bônus diretos às ações em combate. A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚡ Reflexos (Esquivas e reações):\n• A cada 2 pontos de Agilidade = +1 de ponto bônus.\n\n⚔️ Ataques (Dano e precisão ofensiva):\n• A cada 2 pontos de Força = +1 de ponto bônus.\n\n🛡️ Defesas (Resistência e absorção de dano):\n• A cada 2 pontos de Durabilidade = +1 de ponto bônus.\n\nExemplo: um personagem com 6 de Força recebe +3 de ponto bônus em seus ataques.`},
+  {icon:'✦',title:'Progressão & XP',body:`Títulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10 → Transcendente\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`},
+];
 
 // ─── STARFIELD ────────────────────────────────────────────────────────────────
 
@@ -77,55 +91,36 @@ function ClassCard({cls}){const[open,setOpen]=useState(false);return(<div onClic
 
 function ClassesSection(){return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Cinco Linhagens</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Classes</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Clique em cada classe para revelar lore e habilidades</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>{CLASSES.map(cls=><ClassCard key={cls.id} cls={cls}/>)}</div>);}
 
-// ─── FICHAS ───────────────────────────────────────────────────────────────────
+// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 
 const ATTRS=[{key:'forca',label:'Força',color:'#E8193C'},{key:'agilidade',label:'Agilidade',color:'#E8A020'},{key:'durabilidade',label:'Durabilidade',color:'#1EC8FF'},{key:'inteligencia',label:'Inteligência',color:'#A855F7'},{key:'percepcao',label:'Percepção',color:'#D4C5A9'}];
 
 function AttrDots({value,color,onChange}){return(<div style={{display:'flex',gap:4}}>{Array.from({length:10}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:15,height:15,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.12)'}`,background:i<value?color+'44':'transparent',cursor:'pointer',transition:'all 0.15s',padding:0,flexShrink:0}}/>))}</div>);}
 
-function Vigos({value,color,onChange}){return(<div style={{display:'flex',gap:7}}>{Array.from({length:5}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:23,height:23,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 6px ${color}55`:'none'}}>{i<value&&<span style={{display:'block',width:9,height:9,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>))}</div>);}
+function VigosDots({value,max,color,onChange}){return(<div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{Array.from({length:max}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 5px ${color}55`:'none'}}>{i<value&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>))}</div>);}
+
+function PhotoUpload({foto,color,onChange}){const inputRef=useRef(null);const handleFile=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>onChange(ev.target.result);reader.readAsDataURL(file);};return(<div onClick={()=>inputRef.current?.click()} style={{width:110,height:110,borderRadius:10,border:`1.5px dashed ${foto?color+'66':'rgba(255,255,255,0.15)'}`,background:foto?'transparent':'rgba(255,255,255,0.02)',cursor:'pointer',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',transition:'border-color 0.2s'}}>{foto?<img src={foto} alt="personagem" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<div style={{textAlign:'center',padding:8}}><div style={{fontSize:22,marginBottom:4,opacity:0.3}}>📷</div><div style={{fontSize:10,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.05em',lineHeight:1.4}}>Foto do<br/>Personagem</div></div>}<input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{display:'none'}}/></div>);}
+
+// ─── FICHAS DOS PERSONAGENS ───────────────────────────────────────────────────
 
 const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:''});
 
-function PhotoUpload({foto,color,onChange}){
-  const inputRef=useRef(null);
-  const handleFile=e=>{
-    const file=e.target.files[0];
-    if(!file)return;
-    const reader=new FileReader();
-    reader.onload=ev=>onChange(ev.target.result);
-    reader.readAsDataURL(file);
-  };
-  return(
-    <div onClick={()=>inputRef.current?.click()} style={{width:110,height:110,borderRadius:10,border:`1.5px dashed ${foto?color+'66':'rgba(255,255,255,0.15)'}`,background:foto?'transparent':'rgba(255,255,255,0.02)',cursor:'pointer',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',transition:'border-color 0.2s'}}>
-      {foto
-        ?<img src={foto} alt="personagem" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-        :<div style={{textAlign:'center',padding:8}}>
-          <div style={{fontSize:22,marginBottom:4,opacity:0.3}}>📷</div>
-          <div style={{fontSize:10,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.05em',lineHeight:1.4}}>Foto do<br/>Personagem</div>
-        </div>
-      }
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{display:'none'}}/>
-    </div>
-  );
-}
-
 function SheetCard({sheet,onChange,onDelete}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
+  // Marfim usa verde na ficha
+  const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
+  const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':'Transcendente';
   const f=(k,v)=>onChange({...sheet,[k]:v});
   return(
-    <div style={{border:`1px solid ${cls.color}44`,borderRadius:14,overflow:'hidden',background:'rgba(8,10,22,0.9)',marginBottom:18,boxShadow:`0 4px 20px ${cls.glow}`}}>
-      <div style={{height:3,background:`linear-gradient(90deg,${cls.color},transparent)`}}/>
+    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:14,overflow:'hidden',background:'rgba(8,10,22,0.9)',marginBottom:18,boxShadow:`0 4px 20px ${sheetGlow}`}}>
+      <div style={{height:3,background:`linear-gradient(90deg,${sheetColor},transparent)`}}/>
       <div style={{padding:'16px 18px'}}>
-        {/* Nome + Classe */}
         <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
           <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           <button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>
         </div>
-
-        {/* HP + XP + Vigos */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
@@ -147,64 +142,36 @@ function SheetCard({sheet,onChange,onDelete}){
             </div>
             <div style={{fontSize:10,color:'#7A6A5A',marginTop:6,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
           </div>
-          <div style={{background:`${cls.color}09`,border:`1px solid ${cls.color}24`,borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:cls.color,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
-            <Vigos value={sheet.vigos} color={cls.color} onChange={v=>f('vigos',v)}/>
+          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosDots value={sheet.vigos} max={5} color={sheetColor} onChange={v=>f('vigos',v)}/>
             <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:5}}>+2 por turno</div>
           </div>
         </div>
-
-        {/* Foto + Atributos lado a lado */}
         <div style={{marginBottom:15,display:'flex',gap:16,alignItems:'flex-start'}}>
-          <PhotoUpload foto={sheet.foto||''} color={cls.color} onChange={v=>f('foto',v)}/>
+          <PhotoUpload foto={sheet.foto||''} color={sheetColor} onChange={v=>f('foto',v)}/>
           <div style={{flex:1}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
             <div style={{display:'flex',flexDirection:'column',gap:7}}>
-              {ATTRS.map(a=>(
-                <div key={a.key} style={{display:'flex',alignItems:'center',gap:10}}>
-                  <span style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-                  <AttrDots value={sheet[a.key]} color={a.color} onChange={v=>f(a.key,v)}/>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:14,textAlign:'right'}}>{sheet[a.key]}</span>
-                </div>
-              ))}
+              {ATTRS.map(a=>(<div key={a.key} style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={sheet[a.key]} color={a.color} onChange={v=>f(a.key,v)}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:14,textAlign:'right'}}>{sheet[a.key]}</span></div>))}
             </div>
           </div>
         </div>
-
-        {/* Especiais + Alcance */}
         <div style={{marginBottom:14}}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
             <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
-              {cls.specials.map((sp,i)=>{
-                const key=i===0?'especial1':'especial2';
-                const unlocked=sheet[key];
-                const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;
-                return(
-                  <button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?cls.color+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${cls.color}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}>
-                    <span style={{fontSize:12}}>{unlocked?'✦':'○'}</span>
-                    <div style={{textAlign:'left'}}>
-                      <div style={{fontSize:11,color:unlocked?cls.color:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div>
-                      <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div>
-                    </div>
-                  </button>
-                );
-              })}
+              {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
             </div>
-            {/* Alcance */}
-            <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${cls.color}33`,background:`${cls.color}0A`,textAlign:'center'}}>
+            <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
               <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
-              <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:cls.color,fontWeight:700}}>{cls.alcance}</div>
+              <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:sheetColor,fontWeight:700}}>{cls.alcance}</div>
             </div>
           </div>
         </div>
-
-        {/* Lore */}
         <div style={{marginBottom:14}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Lore do Personagem</div>
           <textarea value={sheet.lore_personagem||''} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos do seu personagem..." rows={4} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
         </div>
-
-        {/* Itens */}
         <div>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens</div>
           <textarea value={sheet.notas} onChange={e=>f('notas',e.target.value)} placeholder="Liste os itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
@@ -215,25 +182,12 @@ function SheetCard({sheet,onChange,onDelete}){
 }
 
 function SheetsSection(){
-  const[sheets,setSheets]=useState([]);
-  const[loaded,setLoaded]=useState(false);
-  const saveTimeout=useRef({});
-  useEffect(()=>{
-    const unsub=onSnapshot(collection(db,'sheets'),snap=>{
-      const data=snap.docs.map(d=>({id:d.id,...d.data()}));
-      setSheets(data);setLoaded(true);
-    });
-    return()=>unsub();
-  },[]);
-  const saveSheet=(sheet)=>{
-    clearTimeout(saveTimeout.current[sheet.id]);
-    saveTimeout.current[sheet.id]=setTimeout(async()=>{
-      await setDoc(doc(db,'sheets',String(sheet.id)),sheet);
-    },800);
-  };
+  const[sheets,setSheets]=useState([]);const[loaded,setLoaded]=useState(false);const saveTimeout=useRef({});
+  useEffect(()=>{const unsub=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});return()=>unsub();},[]);
+  const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);},800);};
   const add=()=>{if(sheets.length>=5)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);};
   const upd=(id,data)=>{setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
-  const del=async(id)=>{await deleteDoc(doc(db,'sheets',String(id)));};
+  const del=async id=>{await deleteDoc(doc(db,'sheets',String(id)));};
   return(
     <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}>
       <div style={{textAlign:'center',marginBottom:32}}>
@@ -250,6 +204,104 @@ function SheetsSection(){
   );
 }
 
+// ─── FICHAS DOS INIMIGOS ──────────────────────────────────────────────────────
+
+const ENEMY_COLOR='#FF4444';
+const ENEMY_GLOW='rgba(255,68,68,0.18)';
+
+const newEnemy=id=>({id,nome:'',tipo:'',hp:10,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,foto:'',habilidades:'',notas:''});
+
+function EnemyCard({enemy,onChange,onDelete}){
+  const f=(k,v)=>onChange({...enemy,[k]:v});
+  return(
+    <div style={{border:`1px solid ${ENEMY_COLOR}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18,boxShadow:`0 4px 24px ${ENEMY_GLOW}`}}>
+      <div style={{height:3,background:`linear-gradient(90deg,${ENEMY_COLOR},transparent)`}}/>
+      <div style={{padding:'16px 18px'}}>
+        {/* Nome + Tipo */}
+        <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:130}}>
+            <label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label>
+            <input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/>
+          </div>
+          <div style={{flex:1,minWidth:110}}>
+            <label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label>
+            <input value={enemy.tipo} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/>
+          </div>
+          <button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>
+        </div>
+
+        {/* HP + Vigos + Alcance */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
+          <div style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
+            <div style={{display:'flex',alignItems:'center',gap:7}}>
+              <button onClick={()=>f('hp',Math.max(0,enemy.hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:30,textAlign:'center'}}>{enemy.hp}</span>
+              <button onClick={()=>f('hp',Math.min(99,enemy.hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+            </div>
+            <div style={{marginTop:7,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${Math.min(100,(enemy.hp/50)*100)}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
+          </div>
+          <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosDots value={enemy.vigos} max={10} color={ENEMY_COLOR} onChange={v=>f('vigos',v)}/>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:5}}>10 pontos totais</div>
+          </div>
+          <div style={{background:`${ENEMY_COLOR}07`,border:`1px solid ${ENEMY_COLOR}22`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Alcance</div>
+            <input value={enemy.alcance} onChange={e=>f('alcance',e.target.value)} placeholder="Ex: 2m, 10m..." style={{width:'100%'}}/>
+          </div>
+        </div>
+
+        {/* Foto + Atributos */}
+        <div style={{marginBottom:15,display:'flex',gap:16,alignItems:'flex-start'}}>
+          <PhotoUpload foto={enemy.foto||''} color={ENEMY_COLOR} onChange={v=>f('foto',v)}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+            <div style={{display:'flex',flexDirection:'column',gap:7}}>
+              {ATTRS.map(a=>(<div key={a.key} style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={enemy[a.key]} color={a.color} onChange={v=>f(a.key,v)}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:14,textAlign:'right'}}>{enemy[a.key]}</span></div>))}
+            </div>
+          </div>
+        </div>
+
+        {/* Habilidades */}
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Habilidades & Ataques</div>
+          <textarea value={enemy.habilidades||''} onChange={e=>f('habilidades',e.target.value)} placeholder="Descreva as habilidades, ataques especiais e comportamentos deste inimigo em combate..." rows={4} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
+        </div>
+
+        {/* Notas */}
+        <div>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div>
+          <textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados, comportamento narrativo..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EnemiesSection(){
+  const[enemies,setEnemies]=useState([]);const[loaded,setLoaded]=useState(false);const saveTimeout=useRef({});
+  useEffect(()=>{const unsub=onSnapshot(collection(db,'enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setEnemies(data);setLoaded(true);});return()=>unsub();},[]);
+  const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);},800);};
+  const add=()=>{if(enemies.length>=3)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
+  const upd=(id,data)=>{setEnemies(prev=>prev.map(e=>e.id===id?data:e));saveEnemy(data);};
+  const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));};
+  return(
+    <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}>
+      <div style={{textAlign:'center',marginBottom:32}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2>
+        <div style={{fontSize:11,color:'#4A2020',marginTop:7,fontFamily:'Cinzel,serif'}}>⚔️ Gerenciado pelo Mestre · Sincronizado em tempo real</div>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/>
+      </div>
+      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+      {loaded&&enemies.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>⚔️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div><div style={{fontSize:12,marginTop:5,color:'#4A2020'}}>Adicione os adversários que os heróis enfrentarão.</div></div>)}
+      {enemies.map(e=><EnemyCard key={e.id} enemy={e} onChange={d=>upd(e.id,d)} onDelete={()=>del(e.id)}/>)}
+      {loaded&&enemies.length<3&&(<button onClick={add} onMouseOver={e=>e.currentTarget.style.borderColor='rgba(232,68,68,0.4)'} onMouseOut={e=>e.currentTarget.style.borderColor='rgba(232,68,68,0.15)'} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em',transition:'border-color 0.2s'}}>+ Adicionar Inimigo ({enemies.length}/3)</button>)}
+    </div>
+  );
+}
+
 // ─── RULES ────────────────────────────────────────────────────────────────────
 
 function RulesSection(){const[open,setOpen]=useState(0);return(<div style={{maxWidth:720,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Leis do Cosmos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Manual de Regras</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>{RULES_DATA.map((r,i)=>(<div key={i} style={{marginBottom:9,border:'1px solid rgba(255,255,255,0.07)',borderRadius:11,overflow:'hidden',background:'rgba(8,10,22,0.8)'}}><button onClick={()=>setOpen(open===i?-1:i)} style={{width:'100%',padding:'14px 18px',display:'flex',alignItems:'center',gap:12,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}><span style={{fontSize:16}}>{r.icon}</span><span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>{r.title}</span><span style={{color:'rgba(255,255,255,0.2)',transform:open===i?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span></button>{open===i&&(<div style={{padding:'0 18px 16px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'fadeIn 0.3s ease'}}><div style={{height:10}}/>{r.body.split('\n').map((line,j)=>{if(!line.trim())return <div key={j} style={{height:6}}/>;const isBullet=line.startsWith('•');const isHead=!isBullet&&line.length<55&&!line.includes('→')&&line.endsWith(':');return <p key={j} style={{margin:'0 0 5px',fontSize:14,lineHeight:1.8,color:isHead?'#C8B8A0':isBullet?'#9A8A7A':'#8A7A6A',fontFamily:isHead?'Cinzel,serif':'inherit',fontWeight:isHead?600:400,paddingLeft:isBullet?12:0}}>{line}</p>;})}</div>)}</div>))}</div>);}
@@ -257,28 +309,18 @@ function RulesSection(){const[open,setOpen]=useState(0);return(<div style={{maxW
 // ─── LIVRO DA MANDÍBULA ───────────────────────────────────────────────────────
 
 function LibroSection(){
-  const[page,setPage]=useState(0);
-  const[unlocked,setUnlocked]=useState({});
-  const[artefatosUnlocked,setArtefatosUnlocked]=useState({});
-  const[coordRevealed,setCoordRevealed]=useState(false);
-
+  const[page,setPage]=useState(0);const[unlocked,setUnlocked]=useState({});const[artefatosUnlocked,setArtefatosUnlocked]=useState({});const[coordRevealed,setCoordRevealed]=useState(false);
   useEffect(()=>{
-    // Entidades
     const u1=onSnapshot(doc(db,'config','entities'),snap=>{if(snap.exists())setUnlocked(snap.data().unlocked||{});});
-    // Artefatos
     const u2=onSnapshot(doc(db,'config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlocked(snap.data().unlocked||{});});
-    // Coordenada
     const u3=onSnapshot(doc(db,'config','prophecy'),snap=>{if(snap.exists())setCoordRevealed(snap.data().coordRevealed||false);});
     return()=>{u1();u2();u3();};
   },[]);
-
-  const toggleUnlock=async(id)=>{const updated={...unlocked,[id]:!unlocked[id]};await setDoc(doc(db,'config','entities'),{unlocked:updated});};
-  const toggleArtefato=async(id)=>{const updated={...artefatosUnlocked,[id]:!artefatosUnlocked[id]};await setDoc(doc(db,'config','artefatos'),{unlocked:updated});};
+  const toggleUnlock=async id=>{const updated={...unlocked,[id]:!unlocked[id]};await setDoc(doc(db,'config','entities'),{unlocked:updated});};
+  const toggleArtefato=async id=>{const updated={...artefatosUnlocked,[id]:!artefatosUnlocked[id]};await setDoc(doc(db,'config','artefatos'),{unlocked:updated});};
   const toggleCoord=async()=>{await setDoc(doc(db,'config','prophecy'),{coordRevealed:!coordRevealed});};
-
   const starC=['#1EC8FF','#E8A020','#A855F7','#E8193C'];
   const isRevealed=(ent,i)=>i<2?true:(unlocked[ent.id]||false);
-
   return(
     <div style={{maxWidth:780,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
@@ -286,156 +328,53 @@ function LibroSection(){
         <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>Livro da Mandíbula</h2>
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'15px auto 0'}}/>
       </div>
-
-      {/* Abas */}
       <div style={{display:'flex',gap:6,marginBottom:26,justifyContent:'center',flexWrap:'wrap'}}>
         {['📜 Marcos & Profecia','◈ As Seis Entidades','◆ Os 6 Artefatos'].map((t,i)=>(
           <button key={i} onClick={()=>setPage(i)} style={{padding:'7px 16px',borderRadius:20,fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.07em',border:page===i?'1px solid rgba(168,85,247,0.5)':'1px solid rgba(255,255,255,0.08)',background:page===i?'rgba(168,85,247,0.12)':'transparent',color:page===i?'#C8A8E8':'#5A4A6A',cursor:'pointer',transition:'all 0.2s'}}>{t}</button>
         ))}
       </div>
-
-      {/* PAGE 0 — Marcos & Profecia */}
       {page===0&&(
         <div style={{animation:'fadeIn 0.4s ease'}}>
-          <div style={{marginBottom:24,padding:'14px 18px',border:'1px solid rgba(168,85,247,0.18)',borderRadius:10,background:'rgba(168,85,247,0.05)',fontFamily:'Crimson Text,Georgia,serif',fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>
-            "Escrito na era em que o primeiro Mago do Prólogo tocou a pena celestial — estas páginas registram os passos da humanidade e para onde eles a levam."
-          </div>
+          <div style={{marginBottom:24,padding:'14px 18px',border:'1px solid rgba(168,85,247,0.18)',borderRadius:10,background:'rgba(168,85,247,0.05)',fontFamily:'Crimson Text,Georgia,serif',fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>"Escrito na era em que o primeiro Mago do Prólogo tocou a pena celestial — estas páginas registram os passos da humanidade e para onde eles a levam."</div>
           <div style={{position:'relative',paddingLeft:26}}>
             <div style={{position:'absolute',left:7,top:0,bottom:0,width:1,background:'linear-gradient(180deg,rgba(168,85,247,0.4),rgba(232,25,60,0.6))'}}/>
-            {MILESTONES.map((m,i)=>(
-              <div key={i} style={{position:'relative',marginBottom:m.prophecy?0:15,paddingLeft:18}}>
-                <div style={{position:'absolute',left:-18,top:5,width:9,height:9,borderRadius:'50%',background:m.prophecy?'#E8193C':'rgba(168,85,247,0.5)',boxShadow:m.prophecy?'0 0 10px #E8193C':undefined,border:`1px solid ${m.prophecy?'#E8193C':'rgba(168,85,247,0.4)'}`}}/>
-                <div style={{display:'flex',alignItems:'flex-start',gap:10,padding:'9px 13px',borderRadius:8,background:m.prophecy?'rgba(232,25,60,0.07)':'rgba(255,255,255,0.018)',border:m.prophecy?'1px solid rgba(232,25,60,0.22)':'1px solid rgba(255,255,255,0.04)'}}>
-                  <span style={{fontSize:15,flexShrink:0}}>{m.icon}</span>
-                  <div>
-                    <div style={{fontSize:10,fontFamily:'Cinzel,serif',color:m.prophecy?'#E8193C':'#7B6D8A',letterSpacing:'0.2em',marginBottom:2}}>{m.year}</div>
-                    <div style={{fontSize:14,color:m.prophecy?'#F09090':'#9A8A7A',lineHeight:1.6,fontFamily:m.prophecy?'Cinzel,serif':'inherit',fontWeight:m.prophecy?600:400}}>{m.event}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {MILESTONES.map((m,i)=>(<div key={i} style={{position:'relative',marginBottom:m.prophecy?0:15,paddingLeft:18}}><div style={{position:'absolute',left:-18,top:5,width:9,height:9,borderRadius:'50%',background:m.prophecy?'#E8193C':'rgba(168,85,247,0.5)',boxShadow:m.prophecy?'0 0 10px #E8193C':undefined,border:`1px solid ${m.prophecy?'#E8193C':'rgba(168,85,247,0.4)'}`}}/><div style={{display:'flex',alignItems:'flex-start',gap:10,padding:'9px 13px',borderRadius:8,background:m.prophecy?'rgba(232,25,60,0.07)':'rgba(255,255,255,0.018)',border:m.prophecy?'1px solid rgba(232,25,60,0.22)':'1px solid rgba(255,255,255,0.04)'}}><span style={{fontSize:15,flexShrink:0}}>{m.icon}</span><div><div style={{fontSize:10,fontFamily:'Cinzel,serif',color:m.prophecy?'#E8193C':'#7B6D8A',letterSpacing:'0.2em',marginBottom:2}}>{m.year}</div><div style={{fontSize:14,color:m.prophecy?'#F09090':'#9A8A7A',lineHeight:1.6,fontFamily:m.prophecy?'Cinzel,serif':'inherit',fontWeight:m.prophecy?600:400}}>{m.event}</div></div></div></div>))}
           </div>
-
-          {/* Profecia */}
           <div style={{marginTop:26,padding:'22px',border:'1px solid rgba(232,25,60,0.28)',borderRadius:12,background:'rgba(232,25,60,0.05)'}}>
             <div style={{textAlign:'center',marginBottom:16}}>
               <div style={{fontSize:11,letterSpacing:'0.4em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>A Profecia</div>
-              <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:14}}>
-                {starC.map((c,i)=>(
-                  <div key={i} style={{textAlign:'center'}}>
-                    <div style={{width:13,height:13,borderRadius:'50%',background:c,boxShadow:`0 0 12px ${c}`,margin:'0 auto 4px',animation:'shimmer 2s ease-in-out infinite',animationDelay:`${i*0.4}s`}}/>
-                    <div style={{fontSize:9,color:c,fontFamily:'Cinzel,serif'}}>★</div>
-                  </div>
-                ))}
-              </div>
+              <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:14}}>{starC.map((c,i)=>(<div key={i} style={{textAlign:'center'}}><div style={{width:13,height:13,borderRadius:'50%',background:c,boxShadow:`0 0 12px ${c}`,margin:'0 auto 4px',animation:'shimmer 2s ease-in-out infinite',animationDelay:`${i*0.4}s`}}/><div style={{fontSize:9,color:c,fontFamily:'Cinzel,serif'}}>★</div></div>))}</div>
             </div>
-            <p style={{fontSize:14,color:'#B09090',lineHeight:1.85,margin:'0 0 20px',textAlign:'center',fontStyle:'italic'}}>
-              "Quatro estrelas surgirão nos céus de Cosmum — visíveis tanto de dia quanto de noite. A cada dia que passa, elas se aproximam. Quando chegarem ao máximo possível de proximidade... algo acontecerá. O que, o Livro não ousou descrever."
-            </p>
-
-            {/* Botão revelar coordenada */}
+            <p style={{fontSize:14,color:'#B09090',lineHeight:1.85,margin:'0 0 20px',textAlign:'center',fontStyle:'italic'}}>"Quatro estrelas surgirão nos céus de Cosmum — visíveis tanto de dia quanto de noite. A cada dia que passa, elas se aproximam. Quando chegarem ao máximo possível de proximidade... algo acontecerá. O que, o Livro não ousou descrever."</p>
             {!coordRevealed?(
               <div style={{textAlign:'center',marginTop:8}}>
-                <div style={{fontSize:12,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:10,letterSpacing:'0.15em'}}>
-                  ✦ A próxima página permanece selada por uma magia poderosa ✦
-                </div>
-                <button onClick={toggleCoord} style={{padding:'9px 24px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',transition:'all 0.2s'}}>
-                  🔮 Quebrar Selo
-                </button>
+                <div style={{fontSize:12,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:10,letterSpacing:'0.15em'}}>✦ A próxima página permanece selada por uma magia poderosa ✦</div>
+                <button onClick={toggleCoord} style={{padding:'9px 24px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',transition:'all 0.2s'}}>🔮 Quebrar Selo</button>
               </div>
             ):(
               <div style={{marginTop:8,padding:'18px',border:'1px solid rgba(168,85,247,0.3)',borderRadius:10,background:'rgba(168,85,247,0.06)',textAlign:'center',animation:'fadeIn 0.8s ease'}}>
                 <div style={{fontSize:10,letterSpacing:'0.35em',color:'#A855F7',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>As Coordenadas do Destino</div>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:18,color:'#C8A8E8',letterSpacing:'0.25em',animation:'revealCoord 1.2s ease',marginBottom:8}}>
-                  45° 30′ 53.6″ N, 25° 22′ 1.8″ E
-                </div>
-                <div style={{fontSize:12,color:'#7A6A8A',fontStyle:'italic',lineHeight:1.7}}>
-                  "O ponto onde as quatro estrelas convergem. Onde o véu entre o mortal e o absoluto é mais fino."
-                </div>
-                <button onClick={toggleCoord} style={{marginTop:14,padding:'5px 14px',borderRadius:6,border:'1px solid rgba(168,85,247,0.25)',background:'transparent',color:'#5A4A6A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>
-                  🔒 Selar novamente
-                </button>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:18,color:'#C8A8E8',letterSpacing:'0.25em',animation:'revealCoord 1.2s ease',marginBottom:8}}>45° 30′ 53.6″ N, 25° 22′ 1.8″ E</div>
+                <div style={{fontSize:12,color:'#7A6A8A',fontStyle:'italic',lineHeight:1.7}}>"O ponto onde as quatro estrelas convergem. Onde o véu entre o mortal e o absoluto é mais fino."</div>
+                <button onClick={toggleCoord} style={{marginTop:14,padding:'5px 14px',borderRadius:6,border:'1px solid rgba(168,85,247,0.25)',background:'transparent',color:'#5A4A6A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Selar novamente</button>
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* PAGE 1 — Entidades */}
       {page===1&&(
         <div style={{animation:'fadeIn 0.4s ease'}}>
-          <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>
-            "Seis entidades foram vislumbradas nas páginas finais do Livro. Sua origem, forma e propósito permanecem parcialmente envoltos em sombra."
-          </div>
+          <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis entidades foram vislumbradas nas páginas finais do Livro. Sua origem, forma e propósito permanecem parcialmente envoltos em sombra."</div>
           <div style={{display:'flex',flexDirection:'column',gap:14}}>
-            {ENTITIES_DATA.map((ent,i)=>{
-              const revealed=isRevealed(ent,i);
-              return(
-                <div key={ent.id} style={{border:`1px solid ${revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}>
-                  <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}>
-                    <span style={{fontSize:20}}>{ent.icon}</span>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:'Cinzel,serif',fontSize:14,color:revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div>
-                      <div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{revealed?'ENTIDADE REGISTRADA':'TRANCADO — AGUARDANDO O MESTRE'}</div>
-                    </div>
-                    {i>=2&&(<button onClick={()=>toggleUnlock(ent.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(168,85,247,0.35)':'rgba(232,25,60,0.35)'}`,background:revealed?'rgba(168,85,247,0.07)':'rgba(232,25,60,0.07)',color:revealed?'#C8A8E8':'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Trancar':'🔓 Revelar'}</button>)}
-                  </div>
-                  {revealed?(
-                    <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}>
-                      <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Lore / História</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{ent.lore||<span style={{color:'#4A4050'}}>Lore ainda não registrado.</span>}</div></div>
-                      <div style={{height:1,background:'rgba(255,255,255,0.06)'}}/>
-                      <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características Físicas</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic'}}>{ent.fisico||<span style={{color:'#4A4050'}}>Características físicas ainda não registradas.</span>}</div></div>
-                    </div>
-                  ):(
-                    <div style={{padding:'22px 16px',textAlign:'center'}}>
-                      <div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🔒</div>
-                      <div style={{fontSize:13,color:'#4A4050',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Esta entidade ainda não foi revelada.</div>
-                      <div style={{fontSize:12,color:'#3A3040',marginTop:5}}>Aguarde o Mestre desbloquear esta página.</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {ENTITIES_DATA.map((ent,i)=>{const revealed=isRevealed(ent,i);return(<div key={ent.id} style={{border:`1px solid ${revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:20}}>{ent.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:14,color:revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div><div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{revealed?'ENTIDADE REGISTRADA':'TRANCADO — AGUARDANDO O MESTRE'}</div></div>{i>=2&&(<button onClick={()=>toggleUnlock(ent.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(168,85,247,0.35)':'rgba(232,25,60,0.35)'}`,background:revealed?'rgba(168,85,247,0.07)':'rgba(232,25,60,0.07)',color:revealed?'#C8A8E8':'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Trancar':'🔓 Revelar'}</button>)}</div>{revealed?(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Lore / História</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{ent.lore||<span style={{color:'#4A4050'}}>Lore ainda não registrado.</span>}</div></div><div style={{height:1,background:'rgba(255,255,255,0.06)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características Físicas</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic'}}>{ent.fisico||<span style={{color:'#4A4050'}}>Características físicas ainda não registradas.</span>}</div></div></div>):(<div style={{padding:'22px 16px',textAlign:'center'}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🔒</div><div style={{fontSize:13,color:'#4A4050',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Esta entidade ainda não foi revelada.</div><div style={{fontSize:12,color:'#3A3040',marginTop:5}}>Aguarde o Mestre desbloquear esta página.</div></div>)}</div>);})}
           </div>
         </div>
       )}
-
-      {/* PAGE 2 — Artefatos */}
       {page===2&&(
         <div style={{animation:'fadeIn 0.4s ease'}}>
-          <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>
-            "Seis artefatos de poder imensurável foram registrados nas páginas mais antigas do Livro. Uma magia poderosa sela seu conhecimento — apenas o avanço da história os revelará."
-          </div>
+          <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis artefatos de poder imensurável foram registrados nas páginas mais antigas do Livro. Uma magia poderosa sela seu conhecimento — apenas o avanço da história os revelará."</div>
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            {ARTEFATOS_DATA.map((art,i)=>{
-              const revealed=artefatosUnlocked[art.id]||false;
-              return(
-                <div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}>
-                  <div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
-                    <span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div>
-                      <div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div>
-                    </div>
-                    <button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button>
-                  </div>
-                  {!revealed&&(
-                    <div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}>
-                      <div style={{fontSize:22,marginBottom:6,opacity:0.2}}>◆</div>
-                      <div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div>
-                      <div style={{fontSize:11,color:'#2A2030',marginTop:4}}>Seu poder será revelado conforme a história avança.</div>
-                    </div>
-                  )}
-                  {revealed&&(
-                    <div style={{padding:'14px 16px',borderTop:'1px solid rgba(232,160,32,0.1)'}}>
-                      <div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7}}>
-                        Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {ARTEFATOS_DATA.map((art,i)=>{const revealed=artefatosUnlocked[art.id]||false;return(<div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div><div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div></div><button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button></div>{!revealed&&(<div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}><div style={{fontSize:22,marginBottom:6,opacity:0.2}}>◆</div><div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div><div style={{fontSize:11,color:'#2A2030',marginTop:4}}>Seu poder será revelado conforme a história avança.</div></div>)}{revealed&&(<div style={{padding:'14px 16px',borderTop:'1px solid rgba(232,160,32,0.1)'}}><div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7}}>Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.</div></div>)}</div>);})}
           </div>
         </div>
       )}
@@ -448,22 +387,12 @@ function LibroSection(){
 const newEntry=id=>({id,titulo:'',sessao:'',data:new Date().toLocaleDateString('pt-BR'),conteudo:''});
 
 function CronicasSection(){
-  const[entries,setEntries]=useState([]);
-  const[loaded,setLoaded]=useState(false);
-  const[open,setOpen]=useState(null);
-  const saveTimeout=useRef({});
-  useEffect(()=>{
-    const unsub=onSnapshot(collection(db,'cronicas'),snap=>{
-      const data=snap.docs.map(d=>({id:d.id,...d.data()}));
-      data.sort((a,b)=>b.id-a.id);
-      setEntries(data);setLoaded(true);
-    });
-    return()=>unsub();
-  },[]);
-  const saveEntry=(entry)=>{clearTimeout(saveTimeout.current[entry.id]);saveTimeout.current[entry.id]=setTimeout(async()=>{await setDoc(doc(db,'cronicas',String(entry.id)),entry);},600);};
+  const[entries,setEntries]=useState([]);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(null);const saveTimeout=useRef({});
+  useEffect(()=>{const unsub=onSnapshot(collection(db,'cronicas'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setEntries(data);setLoaded(true);});return()=>unsub();},[]);
+  const saveEntry=entry=>{clearTimeout(saveTimeout.current[entry.id]);saveTimeout.current[entry.id]=setTimeout(async()=>{await setDoc(doc(db,'cronicas',String(entry.id)),entry);},600);};
   const add=()=>{const e=newEntry(Date.now());setDoc(doc(db,'cronicas',String(e.id)),e);setOpen(e.id);};
   const upd=(id,data)=>{setEntries(prev=>prev.map(e=>e.id===id?data:e));saveEntry(data);};
-  const del=async(id)=>{await deleteDoc(doc(db,'cronicas',String(id)));if(open===id)setOpen(null);};
+  const del=async id=>{await deleteDoc(doc(db,'cronicas',String(id)));if(open===id)setOpen(null);};
   return(
     <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
@@ -473,50 +402,26 @@ function CronicasSection(){
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/>
       </div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-      {loaded&&(
-        <>
-          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
-            <button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button>
-          </div>
-          {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>Os acontecimentos de Cosmum aguardam ser narrados.</div></div>)}
-          {entries.map(entry=>(
-            <div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
-              <div onClick={()=>setOpen(open===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
-                <span style={{fontSize:15}}>📜</span>
-                <div style={{flex:1}}>
-                  <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div>
-                  <div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10}}>{entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>{entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}</div>
-                </div>
-                <div style={{display:'flex',gap:7}}>
-                  <button onClick={e=>{e.stopPropagation();del(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>
-                  <span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
-                </div>
-              </div>
-              {open===entry.id&&(
-                <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'fadeIn 0.3s ease'}}>
-                  <div style={{height:11}}/>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
-                    <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
-                    <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
-                  </div>
-                  <div>
-                    <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label>
-                    <textarea value={entry.conteudo} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} placeholder={"Narre aqui os acontecimentos desta sessão...\n\nDescreva ações dos personagens, NPCs, inimigos, revelações importantes, decisões que moldaram Cosmum e todos os momentos épicos que merecem ser eternizados."} rows={13} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
-                  </div>
-                  <div style={{marginTop:7,fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{entry.conteudo.length} caracteres · salvo automaticamente</div>
-                </div>
-              )}
-            </div>
-          ))}
-        </>
-      )}
+      {loaded&&(<>
+        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button></div>
+        {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>Os acontecimentos de Cosmum aguardam ser narrados.</div></div>)}
+        {entries.map(entry=>(<div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}><div onClick={()=>setOpen(open===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}><span style={{fontSize:15}}>📜</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div><div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10}}>{entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>{entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}</div></div><div style={{display:'flex',gap:7}}><button onClick={e=>{e.stopPropagation();del(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button><span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span></div></div>{open===entry.id&&(<div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'fadeIn 0.3s ease'}}><div style={{height:11}}/><div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}><div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div><div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div></div><div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} placeholder={"Narre aqui os acontecimentos desta sessão...\n\nDescreva ações dos personagens, NPCs, inimigos, revelações importantes, decisões que moldaram Cosmum e todos os momentos épicos que merecem ser eternizados."} rows={13} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div><div style={{marginTop:7,fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{entry.conteudo.length} caracteres · salvo automaticamente</div></div>)}</div>))}
+      </>)}
     </div>
   );
 }
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 
-const TABS=[{id:'prologo',label:'Prólogo',icon:'📜'},{id:'classes',label:'Classes',icon:'⚔️'},{id:'fichas',label:'Fichas',icon:'📋'},{id:'regras',label:'Regras',icon:'📖'},{id:'livro',label:'Livro da Mandíbula',icon:'✦'},{id:'cronicas',label:'Crônicas',icon:'🗒️'}];
+const TABS=[
+  {id:'prologo',label:'Prólogo',icon:'📜'},
+  {id:'classes',label:'Classes',icon:'⚔️'},
+  {id:'fichas',label:'Fichas',icon:'📋'},
+  {id:'inimigos',label:'Ficha dos Inimigos',icon:'💀'},
+  {id:'regras',label:'Regras',icon:'📖'},
+  {id:'livro',label:'Livro da Mandíbula',icon:'✦'},
+  {id:'cronicas',label:'Crônicas',icon:'🗒️'},
+];
 
 export default function App(){
   const[tab,setTab]=useState('prologo');
@@ -536,6 +441,7 @@ export default function App(){
         {tab==='prologo'&&<PrologueSection/>}
         {tab==='classes'&&<ClassesSection/>}
         {tab==='fichas'&&<SheetsSection/>}
+        {tab==='inimigos'&&<EnemiesSection/>}
         {tab==='regras'&&<RulesSection/>}
         {tab==='livro'&&<LibroSection/>}
         {tab==='cronicas'&&<CronicasSection/>}
