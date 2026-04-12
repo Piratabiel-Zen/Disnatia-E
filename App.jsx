@@ -61,12 +61,12 @@ const ENTITIES_DATA=[
 ];
 
 const ARTEFATOS_DATA=[
-  {id:'artefato-1',name:'Artefato I',icon:'◆'},
-  {id:'artefato-2',name:'Artefato II',icon:'◆'},
-  {id:'artefato-3',name:'Artefato III',icon:'◆'},
-  {id:'artefato-4',name:'Artefato IV',icon:'◆'},
-  {id:'artefato-5',name:'Artefato V',icon:'◆'},
-  {id:'artefato-6',name:'Artefato VI',icon:'◆'},
+  {id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💧',desc:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha...\n\n(O Livro não descreve o restante. As páginas seguintes estão manchadas por uma substância aquosa que apagou as palavras originais.)\n\nOrigem: Corpo do Homem Água\nLocalização: Desconhecida`},
+  {id:'artefato-2',name:'Sandaliers Six',icon:'⚡',desc:`Quem possui esse artefato pode estar onde bem entender — espaço e tempo não o param. Permite ao portador se movimentar de forma livre em qualquer momento, realizando um teleporte instantâneo para qualquer local conhecido ou visível.\n\nLocalização: Desconhecida\nOrigem: Desconhecida`},
+  {id:'artefato-3',name:'Artefato III',icon:'◆',desc:''},
+  {id:'artefato-4',name:'Artefato IV',icon:'◆',desc:''},
+  {id:'artefato-5',name:'Artefato V',icon:'◆',desc:''},
+  {id:'artefato-6',name:'Artefato VI',icon:'◆',desc:''},
 ];
 
 const RULES_DATA=[
@@ -74,7 +74,9 @@ const RULES_DATA=[
   {icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 / 1D8 / 1D12 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},
   {icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados (ataques especiais só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, e etc...\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`},
   {icon:'📊',title:'Bônus de Atributos',body:`Os atributos do personagem concedem bônus diretos às ações em combate. A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚡| 🏹 Agilidade (Esquivas e Ataques a Distancia):\n• A cada 2 pontos de Agilidade = +1 de ponto bônus de acerto.\n\n⚔️ Força (Dano e Ataques):\n• A cada 2 pontos de Força = +1 de ponto bônus.\n\n🛡️ Durabilidade (Resistência e Defesas):\n• A cada 2 pontos de Durabilidade = +1 de ponto bônus.\n\n🧠 Inteligência (Potencialização de Ataques Mágicos e Cientificos):\n• A cada 2 pontos de Inteligência = +1 ponto bônus.\n\n🏹 Percepção (Ataques Surpresa, Detecção de Comuflagem):\n• A cada 2 pontos de Percepção = 1+ de ponto bônus.`},
-  {icon:'✦',title:'Progressão & XP',body:`Títulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10 → Transcendente\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`},
+  {icon:'🔄',title:'Teste de Reflexo',body:`Quando um personagem possui pelo menos 1 Vigor Cósmico disponível, ele pode realizar um Teste de Reflexo ao ser alvo de um ataque.\n\n🛡️ Custo: 1 VC\n🎲 Role 1D20 — se o resultado for 16 ou mais, o personagem esquiva completamente do ataque.\n\n⚠️ Limitação: O Teste de Reflexo só pode ser utilizado 2 vezes por combate por personagem.\n\nEste teste representa a capacidade instintiva do personagem de reagir a perigos imediatos, exigindo foco cósmico e reflexos apurados.`},
+  {icon:'💎',title:'Crítico de Itens',body:`Quando um item (arma, artefato, equipamento) acerta um golpe crítico (resultado 20 no D20), o dano não é rolado normalmente.\n\n✦ Regra: O item causa automaticamente o dano máximo garantido do seu dado de dano.\n\nExemplos:\n• Item com 1D6 de dano → Crítico = 6 de dano garantido\n• Item com 1D8 + 2 de dano → Crítico = 8 + 2 = 10 de dano garantido\n• Item com 2D6 de dano → Crítico = 12 de dano garantido\n\nEssa regra se aplica exclusivamente a itens e equipamentos. Habilidades de classe seguem suas próprias regras de crítico.`},
+  {icon:'✦',title:'Progressão & XP',body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nHabilidades Novas:\nA cada 4 níveis (Nível 4, 8, 12, 16, 20, 24, 28), o personagem desbloqueia uma habilidade nova, que pode ser definida em conjunto com o Mestre.\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`},
 ];
 
 // ─── STARFIELD ────────────────────────────────────────────────────────────────
@@ -103,14 +105,14 @@ function PhotoUpload({foto,color,onChange}){const inputRef=useRef(null);const ha
 
 // ─── FICHAS DOS PERSONAGENS ───────────────────────────────────────────────────
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:''});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:''});
 
 function SheetCard({sheet,onChange,onDelete}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   // Marfim usa verde na ficha
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
   const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
-  const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':'Transcendente';
+  const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
   return(
     <div style={{border:`1px solid ${sheetColor}44`,borderRadius:14,overflow:'hidden',background:'rgba(8,10,22,0.9)',marginBottom:18,boxShadow:`0 4px 20px ${sheetGlow}`}}>
@@ -123,19 +125,33 @@ function SheetCard({sheet,onChange,onDelete}){
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vida Base</div>
             <div style={{display:'flex',alignItems:'center',gap:7}}>
               <button onClick={()=>f('hp',Math.max(0,sheet.hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
               <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:30,textAlign:'center'}}>{sheet.hp}</span>
-              <button onClick={()=>f('hp',Math.min(25,sheet.hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+              <button onClick={()=>f('hp',sheet.hp+1)} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
             </div>
-            <div style={{marginTop:7,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${(sheet.hp/25)*100}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
-            <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:3}}>máx 25</div>
+            <div style={{marginTop:7,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${Math.min(100,(sheet.hp/Math.max(1,sheet.hp+(sheet.hp_bonus||0)))*100)}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:3}}>sem limite</div>
+            <div style={{marginTop:10,borderTop:'1px solid rgba(74,222,128,0.15)',paddingTop:10}}>
+              <div style={{fontSize:10,letterSpacing:'0.3em',color:'#4ADE80',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vida Bônus</div>
+              <div style={{display:'flex',alignItems:'center',gap:7}}>
+                <button onClick={()=>f('hp_bonus',Math.max(0,(sheet.hp_bonus||0)-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:30,textAlign:'center'}}>{sheet.hp_bonus||0}</span>
+                <button onClick={()=>f('hp_bonus',(sheet.hp_bonus||0)+1)} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+              </div>
+              <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${Math.min(100,((sheet.hp_bonus||0)/Math.max(1,sheet.hp))*100)}%`,background:'#4ADE80',borderRadius:2,transition:'width 0.3s'}}/></div>
+              <div style={{fontSize:10,color:'rgba(74,222,128,0.35)',marginTop:3}}>curas · itens · buffs</div>
+            </div>
+            <div style={{marginTop:10,padding:'6px 10px',borderRadius:6,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.05)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:10,color:'#7A6A5A',fontFamily:'Cinzel,serif',letterSpacing:'0.1em'}}>TOTAL</span>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:16,fontWeight:700,color:'#E8D8C0'}}>{sheet.hp + (sheet.hp_bonus||0)}</span>
+            </div>
           </div>
           <div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Nível · XP</div>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <input type="number" min={1} max={10} value={sheet.nivel} onChange={e=>f('nivel',Math.min(10,Math.max(1,+e.target.value)))} style={{width:44,textAlign:'center'}}/>
+              <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>f('nivel',Math.min(30,Math.max(1,+e.target.value)))} style={{width:44,textAlign:'center'}}/>
               <span style={{color:'rgba(255,255,255,0.14)',fontSize:11}}>Nv</span>
               <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:65,textAlign:'center'}}/>
               <span style={{fontSize:11,color:'rgba(255,255,255,0.18)'}}>XP</span>
@@ -466,9 +482,9 @@ function EnemyCard({enemy,onChange,onDelete}){
             <div style={{display:'flex',alignItems:'center',gap:7}}>
               <button onClick={()=>f('hp',Math.max(0,enemy.hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
               <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:30,textAlign:'center'}}>{enemy.hp}</span>
-              <button onClick={()=>f('hp',Math.min(99,enemy.hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+              <button onClick={()=>f('hp',Math.min(400,enemy.hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
             </div>
-            <div style={{marginTop:7,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${Math.min(100,(enemy.hp/50)*100)}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
+            <div style={{marginTop:7,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${Math.min(100,(enemy.hp/400)*100)}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
           </div>
           <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
@@ -671,7 +687,7 @@ function LibroSection(){
         <div style={{animation:'fadeIn 0.4s ease'}}>
           <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis artefatos de poder imensurável foram registrados nas páginas mais antigas do Livro. Uma magia poderosa sela seu conhecimento — apenas o avanço da história os revelará."</div>
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            {ARTEFATOS_DATA.map((art,i)=>{const revealed=artefatosUnlocked[art.id]||false;return(<div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div><div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div></div><button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button></div>{!revealed&&(<div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}><div style={{fontSize:22,marginBottom:6,opacity:0.2}}>◆</div><div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div><div style={{fontSize:11,color:'#2A2030',marginTop:4}}>Seu poder será revelado conforme a história avança.</div></div>)}{revealed&&(<div style={{padding:'14px 16px',borderTop:'1px solid rgba(232,160,32,0.1)'}}><div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7}}>Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.</div></div>)}</div>);})}
+            {ARTEFATOS_DATA.map((art,i)=>{const revealed=artefatosUnlocked[art.id]||false;return(<div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div><div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div></div><button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button></div>{!revealed&&(<div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}><div style={{fontSize:22,marginBottom:6,opacity:0.2}}>◆</div><div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div><div style={{fontSize:11,color:'#2A2030',marginTop:4}}>Seu poder será revelado conforme a história avança.</div></div>)}{revealed&&(<div style={{padding:'14px 16px',borderTop:'1px solid rgba(232,160,32,0.1)'}}><div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7,whiteSpace:'pre-line'}}>{art.desc||'Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.'}</div></div>)}</div>);})}
           </div>
         </div>
       )}
