@@ -167,13 +167,13 @@ function SheetFull({sheet,onChange,masterMode}){
       {/* ── FOTO GRANDE — idêntica no mobile e desktop ── */}
       <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden',minHeight:sheet.foto?0:130}}>
         {sheet.foto
-          ?<img src={sheet.foto} alt="personagem" style={{width:'100%',maxHeight:480,objectFit:'cover',objectPosition:'center top',display:'block'}}/>
+          ?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>
           :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px 20px',gap:10}}>
             <div style={{fontSize:40,opacity:0.15}}>📷</div>
             <div style={{fontSize:12,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>Toque para adicionar a foto do personagem</div>
           </div>
         }
-        {sheet.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 45%,rgba(4,6,15,0.92))',pointerEvents:'none'}}/>}
+        {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
         {sheet.foto&&(
           <div style={{position:'absolute',bottom:16,left:20,right:20}}>
             <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div>
