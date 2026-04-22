@@ -10,20 +10,16 @@ const firebaseConfig = {
   messagingSenderId: "855332392669",
   appId: "1:855332392669:web:9fc06c8f633bb8cce89534",
 };
-
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
-// ─── COMPRESSOR DE IMAGEM (resolve problema de memória/Firestore) ─────────────
-// Reduz a imagem para max 900px e qualidade 72% antes de salvar
 function compressImage(dataUrl, maxW=900, maxH=900, quality=0.72){
   return new Promise(resolve=>{
-    const img = new Image();
+    const img=new Image();
     img.onload=()=>{
-      let w=img.width, h=img.height;
+      let w=img.width,h=img.height;
       if(w>maxW||h>maxH){const r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
+      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
       resolve(canvas.toDataURL('image/jpeg',quality));
     };
@@ -32,7 +28,7 @@ function compressImage(dataUrl, maxW=900, maxH=900, quality=0.72){
   });
 }
 
-const GLOBAL_CSS = `
+const GLOBAL_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
 *{box-sizing:border-box;}
@@ -62,6 +58,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   nav button{flex-shrink:0;white-space:nowrap;}
   .sheet-tabs-nav{overflow-x:auto;flex-wrap:nowrap!important;}
   .sheet-tabs-nav button{flex-shrink:0;}
+  .equip-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
@@ -72,6 +69,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
 
 const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80'};
 const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)'};
+const MASTER_PIN='dinastia';
 
 const CLASSES=[
   {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas',desc:'Estocada veloz que atravessa o alvo, fazendo-o sangrar: −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'Clemência Letal',cost:2,cooldown:'4 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Ao expirar, −3 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Após 2 rodadas ativo, superaquece — fica 2 rodadas completamente incapaz de agir.',req:7}]},
@@ -87,9 +85,6 @@ const ENTITIES_DATA=[{id:'homem-agua',name:'Homem Água',icon:'💧',revealed:tr
 const ARTEFATOS_DATA=[{id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💎',lore:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha.... (o livro não descreve)`,fisico:`Localização: Desconhecida\nOrigem: Corpo do Homem Água`},{id:'artefato-2',name:'Sandaliers Six',icon:'👟',lore:`Quem possui esse artefato pode estar onde bem entender, espaço e tempo não o param, podendo se movimentar de forma livre em qualquer momento, um teleporte instantâneo.`,fisico:`Localização: Desconhecida\nOrigem: Desconhecida`},{id:'artefato-3',name:'Artefato III',icon:'◆',lore:'',fisico:''},{id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},{id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},{id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}];
 const RULES_DATA=[{icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, o personagem recupera automaticamente +2 Vigor Cósmico.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigor Cósmicos.`},{icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 / 1D8 / 1D12 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},{icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados (ataques especiais só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, e etc...\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`},{icon:'📊',title:'Bônus de Atributos',body:`Os atributos do personagem concedem bônus diretos às ações em combate. A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚔️ Força (Dano e Ataques):\n• A cada 2 pontos de Força = +1 de ponto bônus.\n\n🛡️ Durabilidade (Resistência e Defesas):\n• A cada 2 pontos de Durabilidade = +1 de ponto bônus.\n\n⚡| 🏹 Agilidade (Esquivas e Ataques a Distancia):\n• A cada 2 pontos de Agilidade = +1 de ponto bônus de acerto.\n\n🧠 Inteligência (Potencialização de Ataques Mágicos e Cientificos):\n• A cada 2 pontos de Inteligência = +1 ponto bônus.\n\n🏹 Percepção (Ataques Surpresa, Detecção de Comuflagem):\n• A cada 2 pontos de Percepção = 1+ de ponto bônus.`},{icon:'🔄',title:'Teste de Reflexo',body:`Quando um personagem possui pelo menos 1 Vigor Cósmico disponível, ele pode realizar um Teste de Reflexo ao ser alvo de um ataque.\n\n🛡️ Custo: 1 VC\n🎲 Role 1D20 — se o resultado for 16 ou mais, o personagem esquiva completamente do ataque.\n\n⚠️ Limitação: O Teste de Reflexo só pode ser utilizado 1 vez por combate por personagem.\n\nEste teste representa a capacidade instintiva do personagem de reagir a perigos imediatos, exigindo foco cósmico e reflexos apurados.`},{icon:'💎',title:'Crítico de Itens',body:`Quando um item (arma, artefato, equipamento) acerta um golpe crítico (resultado 20 no D20), o dano não é rolado normalmente.\n\n✦ Regra: O item causa automaticamente o dano máximo garantido do seu dado de dano.\n\nExemplos:\n• Item com 1D6 de dano → Crítico = 6 de dano garantido\n• Item com 1D8 + 2 de dano → Crítico = 8 + 2 = 10 de dano garantido\n• Item com 2D6 de dano → Crítico = 12 de dano garantido\n\nEssa regra se aplica exclusivamente a itens e equipamentos. Habilidades de classe seguem suas próprias regras de crítico.`},{icon:'✦',title:'Progressão & XP',body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nHabilidades Novas:\nAo alcançar certos niveis (Nível 4, 10, 15, 20, 25 e 30), o personagem desbloqueia uma habilidade nova, que pode ser definida em conjunto com o Mestre.\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`}];
 
-// ─── MASTER MODE PASSWORD ─────────────────────────────────────────────────────
-const MASTER_PIN = 'dinastia';
-
 // ─── STARFIELD ────────────────────────────────────────────────────────────────
 function StarField(){const ref=useRef(null);useEffect(()=>{const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext('2d');let raf;const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};resize();window.addEventListener('resize',resize);const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.2,phase:Math.random()*Math.PI*2,spd:Math.random()*0.025+0.008}));const ps=[{x:0.10,y:0.04,c:'#1EC8FF'},{x:0.87,y:0.05,c:'#E8A020'},{x:0.48,y:0.025,c:'#A855F7'},{x:0.70,y:0.06,c:'#E8193C'}];let t=0;const draw=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);t+=0.007;stars.forEach(s=>{const a=0.2+0.5*Math.sin(t*s.spd*50+s.phase);ctx.beginPath();ctx.arc(s.x*canvas.width,s.y*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fill();});ps.forEach((s,i)=>{const a=0.55+0.45*Math.sin(t*1.1+i*0.8),px=s.x*canvas.width,py=s.y*canvas.height;ctx.save();ctx.shadowColor=s.c;ctx.shadowBlur=14*a;ctx.globalAlpha=a;ctx.beginPath();ctx.arc(px,py,2.8,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill();ctx.restore();ctx.save();ctx.globalAlpha=a*0.4;ctx.strokeStyle=s.c;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(px-8,py);ctx.lineTo(px+8,py);ctx.stroke();ctx.beginPath();ctx.moveTo(px,py-8);ctx.lineTo(px,py+8);ctx.stroke();ctx.restore();});raf=requestAnimationFrame(draw);};draw();return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);};},[]);return <canvas ref={ref} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;}
 
@@ -102,70 +97,239 @@ function ClassesSection(){return(<div style={{maxWidth:760,margin:'0 auto',paddi
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 const ATTRS=[{key:'forca',label:'Força',color:'#E8193C'},{key:'agilidade',label:'Agilidade',color:'#E8A020'},{key:'durabilidade',label:'Durabilidade',color:'#1EC8FF'},{key:'inteligencia',label:'Inteligência',color:'#A855F7'},{key:'percepcao',label:'Percepção',color:'#D4C5A9'}];
-
 function AttrDots({value,color,onChange}){return(<div className="attr-dots" style={{display:'flex',gap:4}}>{Array.from({length:10}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:15,height:15,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.12)'}`,background:i<value?color+'44':'transparent',cursor:'pointer',transition:'all 0.15s',padding:0,flexShrink:0}}/>))}</div>);}
+function VigosDots({value,max,color,onChange}){return(<div className="vigos-dots" style={{display:'flex',gap:6,flexWrap:'wrap'}}>{Array.from({length:max}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 5px ${color}55`:'none'}}>{i<value&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>))}</div>);}
 
-// Vigor com slots trancados — max=5 normal, +1 no nível 8, +1 no nível 18
 function VigosWithLocked({value,nivel,color,onChange}){
-  const unlocked1 = nivel>=8;
-  const unlocked2 = nivel>=18;
-  const maxNormal = 5;
-  // Dots normais
-  const normalDots = Array.from({length:maxNormal}).map((_,i)=>(
+  const unlocked1=nivel>=8,unlocked2=nivel>=18;
+  const normal=Array.from({length:5}).map((_,i)=>(
     <button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)}
       style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 5px ${color}55`:'none'}}>
       {i<value&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}
     </button>
   ));
-  // Slot trancado 1 (nível 8)
-  const slot6 = unlocked1
-    ? <button onClick={()=>onChange(value===6?5:6)}
-        style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${value>=6?color:'rgba(255,255,255,0.13)'}`,background:value>=6?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:value>=6?`0 0 5px ${color}55`:'none'}}>
-        {value>=6&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}
+  const slot=(idx,lockLvl)=>unlocked1&&idx===6||unlocked2&&idx===7
+    ?<button onClick={()=>onChange(value===idx?idx-1:idx)}
+        style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${value>=idx?color:'rgba(255,255,255,0.13)'}`,background:value>=idx?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:value>=idx?`0 0 5px ${color}55`:'none'}}>
+        {value>=idx&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}
       </button>
-    : <div title="Desbloqueado no Nível 8" style={{width:22,height:22,borderRadius:'50%',border:'1.5px solid rgba(255,200,0,0.28)',background:'rgba(255,200,0,0.04)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'rgba(255,200,0,0.45)',cursor:'default'}}>🔒</div>;
-  // Slot trancado 2 (nível 18)
-  const slot7 = unlocked2
-    ? <button onClick={()=>onChange(value===7?6:7)}
-        style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${value>=7?color:'rgba(255,255,255,0.13)'}`,background:value>=7?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:value>=7?`0 0 5px ${color}55`:'none'}}>
-        {value>=7&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}
-      </button>
-    : <div title="Desbloqueado no Nível 18" style={{width:22,height:22,borderRadius:'50%',border:'1.5px solid rgba(255,200,0,0.28)',background:'rgba(255,200,0,0.04)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'rgba(255,200,0,0.45)',cursor:'default'}}>🔒</div>;
+    :<div title={`Desbloqueado no Nível ${lockLvl}`} style={{width:22,height:22,borderRadius:'50%',border:'1.5px solid rgba(255,200,0,0.28)',background:'rgba(255,200,0,0.04)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'rgba(255,200,0,0.45)',cursor:'default'}}>🔒</div>;
   return(
     <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
-      {normalDots}
+      {normal}
       <div style={{width:1,height:16,background:'rgba(255,255,255,0.1)',margin:'0 2px'}}/>
-      {slot6}{slot7}
+      {slot(6,8)}{slot(7,18)}
     </div>
   );
 }
 
-function ImageUploadBtn({onImage,label='+ Imagem'}){
-  const ref=useRef(null);
-  const handleFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result);onImage(compressed);};reader.readAsDataURL(file);e.target.value='';};
-  return(<><button onClick={()=>ref.current?.click()} style={{padding:'6px 14px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em'}}>{label}</button><input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{display:'none'}}/></>);
+// ─── EQUIPAMENTO PANEL ────────────────────────────────────────────────────────
+const EQUIP_DEFAULTS={
+  equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},
+  equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},
+  equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},
+};
+
+function EquipSlot({slotKey, label, icon, color, data, onChange}){
+  const d={...EQUIP_DEFAULTS[slotKey],...(data||{})};
+  return(
+    <div style={{background:`${color}08`,border:`1px solid ${color}25`,borderRadius:10,padding:'11px 13px',display:'flex',flexDirection:'column',gap:8}}>
+      <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:2}}>
+        <span style={{fontSize:18}}>{icon}</span>
+        <div>
+          <div style={{fontSize:10,letterSpacing:'0.25em',color:color,fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>{label}</div>
+          <div style={{fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif'}}>{d.tipo}</div>
+        </div>
+      </div>
+      <div>
+        <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Item</div>
+        <input value={d.nome} onChange={e=>onChange({...d,nome:e.target.value})} placeholder={`Ex: Espada Longa`} style={{width:'100%',fontSize:13}}/>
+      </div>
+      <div>
+        <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Dano / Proteção</div>
+        <input value={d.dano} onChange={e=>onChange({...d,dano:e.target.value})} placeholder={`Ex: 1D6+2`} style={{width:'100%',fontSize:13}}/>
+      </div>
+      <div>
+        <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Tipo</div>
+        <input value={d.tipo} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder="Espada, Escudo..." style={{width:'100%',fontSize:13}}/>
+      </div>
+    </div>
+  );
+}
+
+function EquipamentoPanel({sheet, onChange, sheetColor}){
+  const f=(slot,val)=>onChange({...sheet,[slot]:val});
+  return(
+    <div style={{marginBottom:16}}>
+      <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:8}}>
+        <span style={{color:sheetColor}}>⚔</span> Equipamentos
+      </div>
+      {/* Silhueta + slots */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center'}}>
+        {/* Mão esquerda */}
+        <EquipSlot slotKey="equip_mao_esq" label="Mão Esquerda" icon="⚔️" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)}/>
+        {/* Silhueta central */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'0 4px'}}>
+          <svg width="52" height="100" viewBox="0 0 52 100" style={{opacity:0.22}}>
+            {/* Cabeça */}
+            <circle cx="26" cy="12" r="9" fill="none" stroke={sheetColor} strokeWidth="1.5"/>
+            {/* Corpo */}
+            <line x1="26" y1="21" x2="26" y2="58" stroke={sheetColor} strokeWidth="1.5"/>
+            {/* Braços */}
+            <line x1="8" y1="32" x2="26" y2="26" stroke={sheetColor} strokeWidth="1.5"/>
+            <line x1="44" y1="32" x2="26" y2="26" stroke={sheetColor} strokeWidth="1.5"/>
+            {/* Pernas */}
+            <line x1="26" y1="58" x2="16" y2="88" stroke={sheetColor} strokeWidth="1.5"/>
+            <line x1="26" y1="58" x2="36" y2="88" stroke={sheetColor} strokeWidth="1.5"/>
+            {/* Escudo e espada hints */}
+            <circle cx="8" cy="32" r="4" fill="none" stroke={sheetColor} strokeWidth="1" strokeDasharray="2 1"/>
+            <line x1="41" y1="28" x2="47" y2="36" stroke={sheetColor} strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <div style={{fontSize:8,color:sheetColor+'66',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>ESQ · DIR</div>
+        </div>
+        {/* Mão direita */}
+        <EquipSlot slotKey="equip_mao_dir" label="Mão Direita" icon="🛡️" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)}/>
+      </div>
+      {/* Corpo — largura total */}
+      <div style={{marginTop:10}}>
+        <EquipSlot slotKey="equip_corpo" label="Corpo" icon="🥋" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)}/>
+      </div>
+    </div>
+  );
+}
+
+// ─── HABILIDADES PANEL (ficha do personagem) ──────────────────────────────────
+const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',descricao:'',tipo:'nova',req:1});
+
+function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities}){
+  const [open,setOpen]=useState(false);
+  const [showForm,setShowForm]=useState(false);
+  const [form,setForm]=useState(newCustomAbility());
+  const nivel=sheet.nivel||1;
+  const classCustom=(customAbilities[cls.id]||[]);
+
+  const handleSave=()=>{
+    if(!form.nome.trim())return;
+    const updated={...customAbilities,[cls.id]:[...(customAbilities[cls.id]||[]),{...form,id:Date.now()}]};
+    onSaveCustomAbilities(updated);
+    setForm(newCustomAbility());
+    setShowForm(false);
+  };
+  const handleDelete=(abilityId)=>{
+    const updated={...customAbilities,[cls.id]:(customAbilities[cls.id]||[]).filter(a=>a.id!==abilityId)};
+    onSaveCustomAbilities(updated);
+  };
+
+  const color=cls.color;
+  const abilityRow=(a,isSpecial,isCustom,locked)=>(
+    <div key={a.id||a.name} style={{background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',opacity:locked?0.45:1}}>
+      <div style={{flex:1}}>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
+          {(isSpecial||isCustom)&&<span style={{fontSize:10,color}}>✦</span>}
+          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{a.name||a.nome}</span>
+          {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {a.req}+</span>}
+          {isCustom&&<span style={{fontSize:9,color:`${color}88`,fontFamily:'Cinzel,serif',letterSpacing:'0.1em'}}>NOVA</span>}
+        </div>
+        <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc||a.descricao}</div>
+      </div>
+      <div style={{flexShrink:0,textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3}}>
+        <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{a.cost||a.custo} VC</div>
+        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {a.cooldown}</div>
+        {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {a.req}+</div>}
+        {isCustom&&masterMode&&(
+          <button onClick={()=>handleDelete(a.id)} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.25)',color:'#E8193C',borderRadius:4,cursor:'pointer',padding:'1px 6px',fontSize:10}}>✕</button>
+        )}
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{marginBottom:14,border:`1px solid ${open?color+'33':'rgba(255,255,255,0.07)'}`,borderRadius:10,overflow:'hidden',transition:'border-color 0.2s'}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',padding:'12px 16px',display:'flex',alignItems:'center',gap:10,background:open?`${color}08`:'rgba(255,255,255,0.02)',border:'none',cursor:'pointer',textAlign:'left'}}>
+        <span style={{fontSize:15,color}}>{cls.icon}</span>
+        <span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>Habilidades da Classe — {cls.name}</span>
+        <span style={{fontSize:10,color:`${color}66`,fontFamily:'Cinzel,serif'}}>{classCustom.length>0?`+${classCustom.length} nova${classCustom.length>1?'s':''}`:''}</span>
+        <span style={{color:`${color}88`,fontSize:11,transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span>
+      </button>
+      {open&&(
+        <div style={{padding:'0 14px 14px',animation:'fadeIn 0.3s ease'}}>
+          <div style={{height:8}}/>
+          {/* Passiva */}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Passiva</div>
+            <div style={{background:`${color}0D`,border:`1px solid ${color}28`,borderRadius:8,padding:'9px 12px'}}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:12,color,fontWeight:600,marginBottom:3}}>{cls.passive.name}</div>
+              <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{cls.passive.desc}</div>
+            </div>
+          </div>
+          {/* Normais */}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map(a=>abilityRow(a,false,false,false))}</div>
+          </div>
+          {/* Especiais */}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Especiais — 3 VC cada</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map(a=>abilityRow(a,true,false,nivel<a.req))}</div>
+          </div>
+          {/* Habilidades personalizadas do Mestre */}
+          {classCustom.length>0&&(
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:9,letterSpacing:'0.3em',color:`${color}88`,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Habilidades Desbloqueadas pelo Mestre</div>
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>{classCustom.map(a=>abilityRow(a,false,true,a.req&&nivel<a.req))}</div>
+            </div>
+          )}
+          {/* Formulário do Mestre */}
+          {masterMode&&!showForm&&(
+            <button onClick={()=>setShowForm(true)} style={{width:'100%',padding:'8px',borderRadius:7,border:`1px dashed ${color}44`,background:`${color}07`,color:`${color}CC`,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.08em'}}>✦ Adicionar Habilidade Nova</button>
+          )}
+          {masterMode&&showForm&&(
+            <div style={{border:`1px solid ${color}33`,borderRadius:10,padding:'13px',background:`${color}06`,animation:'fadeIn 0.3s ease'}}>
+              <div style={{fontSize:10,letterSpacing:'0.3em',color,fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>✦ Nova Habilidade para {cls.name}</div>
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Nome da Habilidade</label>
+                  <input value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Golpe Cósmico" style={{width:'100%'}}/></div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+                  <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Custo VC</label>
+                    <input type="number" min={1} value={form.custo} onChange={e=>setForm(f=>({...f,custo:+e.target.value}))} style={{width:'100%'}}/></div>
+                  <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Cooldown</label>
+                    <input value={form.cooldown} onChange={e=>setForm(f=>({...f,cooldown:e.target.value}))} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div>
+                  <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Nível mín.</label>
+                    <input type="number" min={1} max={30} value={form.req} onChange={e=>setForm(f=>({...f,req:+e.target.value}))} style={{width:'100%'}}/></div>
+                </div>
+                <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Descrição</label>
+                  <textarea value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Descreva o efeito, duração, condições especiais..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div>
+                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                  <button onClick={()=>setShowForm(false)} style={{padding:'6px 14px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11}}>Cancelar</button>
+                  <button onClick={handleSave} style={{padding:'6px 18px',borderRadius:6,border:`1px solid ${color}55`,background:`${color}18`,color,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,fontWeight:600}}>✓ Salvar Habilidade</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── FICHAS DOS PERSONAGENS ───────────────────────────────────────────────────
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:''});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'}});
 
-function SheetFull({sheet,onChange,masterMode}){
+function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilities}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
   const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
-  const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
+  const hp=sheet.hp||0;const hpBonus=sheet.hp_bonus||0;
   const photoInputRef=useRef(null);
   const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
-  // Bônus por atributo
   const attrBonus=val=>Math.floor(val/2);
   return(
     <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`,animation:'fadeIn 0.4s ease'}}>
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
-
-      {/* ── FOTO GRANDE — idêntica no mobile e desktop ── */}
-      <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden',minHeight:sheet.foto?0:130}}>
+      {/* Foto */}
+      <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',minHeight:sheet.foto?0:130}}>
         {sheet.foto
           ?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>
           :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px 20px',gap:10}}>
@@ -174,24 +338,19 @@ function SheetFull({sheet,onChange,masterMode}){
           </div>
         }
         {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
-        {sheet.foto&&(
-          <div style={{position:'absolute',bottom:16,left:20,right:20}}>
-            <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div>
-            <div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel} · {label(sheet.nivel)}</div>
-          </div>
-        )}
+        {sheet.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}>
+          <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel} · {label(sheet.nivel)}</div>
+        </div>}
         <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
       </div>
-
       <div style={{padding:'18px'}}>
         {/* Nome + Classe */}
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
           <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
-          {/* Botão excluir — só aparece no Modo Mestre */}
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
-
         {/* Stats */}
         <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
@@ -231,29 +390,23 @@ function SheetFull({sheet,onChange,masterMode}){
             {sheet.nivel>=18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +2 VC desbloqueados (Nv 8 e 18)</div>}
           </div>
         </div>
-
-        {/* ── Atributos com bônus ── */}
+        {/* Atributos com bônus */}
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {ATTRS.map(a=>{
-              const bonus=attrBonus(sheet[a.key]||0);
-              return(
-                <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-                  <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>f(a.key,v)}/>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
-                  {/* Bônus do atributo */}
-                  <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>
-                    {bonus>0?`+${bonus}`:'—'}
-                  </span>
-                </div>
-              );
-            })}
+            {ATTRS.map(a=>{const bonus=attrBonus(sheet[a.key]||0);return(
+              <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
+                <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
+                <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>f(a.key,v)}/>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
+                <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>
+                  {bonus>0?`+${bonus}`:'—'}
+                </span>
+              </div>
+            );})}
           </div>
           <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
         </div>
-
         {/* Especiais + Alcance */}
         <div style={{marginBottom:14}}>
           <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
@@ -267,13 +420,23 @@ function SheetFull({sheet,onChange,masterMode}){
           </div>
         </div>
 
+        {/* ─── HABILIDADES DA CLASSE ─── */}
+        <div style={{marginBottom:14}}>
+          <HabilidadesPanel cls={cls} sheet={sheet} customAbilities={customAbilities} masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities}/>
+        </div>
+
+        {/* ─── EQUIPAMENTOS ─── */}
+        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
+        <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
+
+        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
         <div style={{marginBottom:14}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Lore do Personagem</div>
           <textarea value={sheet.lore_personagem||''} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos do seu personagem..." rows={4} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
         </div>
         <div>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens</div>
-          <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste os itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens & Inventário</div>
+          <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
         </div>
       </div>
     </div>
@@ -281,11 +444,18 @@ function SheetFull({sheet,onChange,masterMode}){
 }
 
 function SheetsSection({masterMode}){
-  const[sheets,setSheets]=useState([]);const[loaded,setLoaded]=useState(false);const[activeId,setActiveId]=useState(null);const saveTimeout=useRef({});
-  useEffect(()=>{const unsub=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});return()=>unsub();},[]);
+  const[sheets,setSheets]=useState([]);const[loaded,setLoaded]=useState(false);const[activeId,setActiveId]=useState(null);
+  const[customAbilities,setCustomAbilities]=useState({});
+  const saveTimeout=useRef({});
+  useEffect(()=>{
+    const u1=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});
+    const u2=onSnapshot(doc(db,'config','customAbilities'),snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});});
+    return()=>{u1();u2();};
+  },[]);
   const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
   const add=()=>{if(sheets.length>=5)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));};
   const upd=(id,data)=>{if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
+  const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
   const activeSheet=sheets.find(s=>String(s.id)===activeId);
   return(
     <div style={{maxWidth:820,margin:'0 auto',padding:'24px 14px 80px',animation:'fadeIn 0.6s ease'}}>
@@ -302,26 +472,22 @@ function SheetsSection({masterMode}){
             const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
             const sc=SHEET_COLORS[s.classe]||cls.color;
             const isActive=String(s.id)===activeId;
-            return(
-              <button key={s.id} onClick={()=>setActiveId(isActive?null:String(s.id))}
-                style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap'}}>
-                {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{cls.icon}</div>}
-                <div style={{textAlign:'left'}}>
-                  <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
-                  <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}</div>
-                </div>
-              </button>
-            );
+            return(<button key={s.id} onClick={()=>setActiveId(isActive?null:String(s.id))}
+              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap'}}>
+              {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{cls.icon}</div>}
+              <div style={{textAlign:'left'}}>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
+                <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}</div>
+              </div>
+            </button>);
           })}
-          {sheets.length<5&&(
-            <button onClick={add} onMouseOver={e=>e.currentTarget.style.borderColor='rgba(168,85,247,0.4)'} onMouseOut={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'}
-              style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>
-              + Novo Personagem
-            </button>
-          )}
+          {sheets.length<5&&(<button onClick={add} onMouseOver={e=>e.currentTarget.style.borderColor='rgba(168,85,247,0.4)'} onMouseOut={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'}
+            style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>
+            + Novo Personagem
+          </button>)}
         </div>
         {activeSheet
-          ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode}/>
+          ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={saveCustom}/>
           :<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}>
             <div style={{fontSize:32,marginBottom:10,opacity:0.2}}>📋</div>
             <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Selecione um personagem acima para ver sua ficha.</div>
@@ -337,8 +503,6 @@ const ENEMY_COLOR='#FF4444';const ENEMY_GLOW='rgba(255,68,68,0.18)';
 const newEnemySkill=()=>({id:Date.now()+Math.random(),nome:'',descricao:'',dano:'',cost:0,tempo:'',tipo:'normal'});
 const newEnemy=id=>({id,nome:'',tipo:'',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,foto:'',habilidades:[newEnemySkill()],notas:''});
 
-function VigosDots({value,max,color,onChange}){return(<div className="vigos-dots" style={{display:'flex',gap:6,flexWrap:'wrap'}}>{Array.from({length:max}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 5px ${color}55`:'none'}}>{i<value&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>))}</div>);}
-
 function EnemySkillEditor({skill,color,onChange,onDelete}){const update=(key,value)=>onChange({...skill,[key]:value});return(<div style={{background:'rgba(255,255,255,0.02)',border:`1px solid ${color}22`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}><div style={{display:'flex',gap:10,alignItems:'flex-end',flexWrap:'wrap'}}><div style={{flex:1,minWidth:160}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome da habilidade</label><input value={skill.nome} onChange={e=>update('nome',e.target.value)} placeholder="Ex: Golpe Sombrio" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Dano</label><input value={skill.dano} onChange={e=>update('dano',e.target.value)} placeholder="Ex: 1D8+2" style={{width:'100%'}}/></div><div style={{width:90}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Custo VC</label><input type="number" min={0} value={skill.cost} onChange={e=>update('cost',Number(e.target.value))} style={{width:'100%'}}/></div><div style={{width:120}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tempo</label><input value={skill.tempo} onChange={e=>update('tempo',e.target.value)} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo</label><select value={skill.tipo} onChange={e=>update('tipo',e.target.value)} style={{width:'100%'}}><option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option></select></div><button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 10px',fontSize:12,height:34}}>✕</button></div><div><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição</label><textarea value={skill.descricao} onChange={e=>update('descricao',e.target.value)} placeholder="Descreva o efeito, alcance, condição ou comportamento desta habilidade..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:8}}><span style={{fontSize:10,color:color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em'}}>{skill.tipo?.toUpperCase()||'HABILIDADE'}</span><div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>⚔ {skill.dano||'sem dano'}</span><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>{skill.cost} VC</span><span style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {skill.tempo||'—'}</span></div></div></div>);}
 
 function EnemyCard({enemy,onChange,onDelete,masterMode}){
@@ -353,13 +517,7 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
     <div style={{border:`1px solid ${ENEMY_COLOR}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18,boxShadow:`0 4px 24px ${ENEMY_GLOW}`}}>
       <div style={{height:3,background:`linear-gradient(90deg,${ENEMY_COLOR},transparent)`}}/>
       <div onClick={()=>photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
-        {enemy.foto
-          ?<img src={enemy.foto} alt="inimigo" style={{width:'100%',maxHeight:300,objectFit:'cover',objectPosition:'center top',display:'block'}}/>
-          :<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'20px',opacity:0.35}}>
-            <span style={{fontSize:22}}>📷</span>
-            <span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>Toque para adicionar imagem do inimigo</span>
-          </div>
-        }
+        {enemy.foto?<img src={enemy.foto} alt="inimigo" style={{width:'100%',maxHeight:300,objectFit:'cover',objectPosition:'center top',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'20px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>Toque para adicionar imagem do inimigo</span></div>}
         {enemy.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.85))',pointerEvents:'none'}}/>}
         {enemy.foto&&enemy.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:16,fontWeight:700,color:ENEMY_COLOR,textShadow:'0 0 14px rgba(255,68,68,0.5)'}}>{enemy.nome}</div>}
         <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
@@ -400,7 +558,6 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
             <input value={enemy.alcance||''} onChange={e=>f('alcance',e.target.value)} placeholder="Ex: 2m, 10m..." style={{width:'100%'}}/>
           </div>
         </div>
-        {/* Atributos com bônus — inimigos */}
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:7}}>
@@ -417,10 +574,7 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
             {(enemy.habilidades||[]).map((skill,index)=>(<EnemySkillEditor key={skill.id||index} skill={skill} color={ENEMY_COLOR} onChange={updatedSkill=>{const updated=[...(enemy.habilidades||[])];updated[index]=updatedSkill;f('habilidades',updated);}} onDelete={()=>{const updated=(enemy.habilidades||[]).filter((_,i)=>i!==index);f('habilidades',updated);}}/>))}
           </div>
         </div>
-        <div>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div>
-          <textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados, comportamento narrativo..." rows={3} style={{width:'100%',resize:'vertical'}}/>
-        </div>
+        <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div><textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados, comportamento narrativo..." rows={3} style={{width:'100%',resize:'vertical'}}/></div>
       </div>
     </div>
   );
@@ -429,7 +583,7 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
 function EnemiesSection({masterMode}){
   const[enemies,setEnemies]=useState([]);const[loaded,setLoaded]=useState(false);const saveTimeout=useRef({});
   useEffect(()=>{const unsub=onSnapshot(collection(db,'enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setEnemies(data);setLoaded(true);});return()=>unsub();},[]);
-  const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{try{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);}catch(e){console.error('Erro ao salvar inimigo:',e);}},900);};
+  const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{try{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);}catch(e){console.error(e);}},900);};
   const add=()=>{if(enemies.length>=3)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
   const upd=(id,data)=>{setEnemies(prev=>prev.map(e=>e.id===id?data:e));saveEnemy(data);};
   const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));};
@@ -455,65 +609,31 @@ function LibroSection(){
   </div>);
 }
 
-// ─── CRÔNICAS (com imagens, salvamento robusto) ───────────────────────────────
+// ─── CRÔNICAS ─────────────────────────────────────────────────────────────────
 const newEntry=id=>({id,titulo:'',sessao:'',data:new Date().toLocaleDateString('pt-BR'),conteudo:'',imagens:[]});
 
 function CronicasSection({masterMode}){
   const[entries,setEntries]=useState([]);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(null);const saveTimeout=useRef({});
   useEffect(()=>{const unsub=onSnapshot(collection(db,'cronicas'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setEntries(data);setLoaded(true);});return()=>unsub();},[]);
-  const saveEntry=entry=>{
-    clearTimeout(saveTimeout.current[entry.id]);
-    saveTimeout.current[entry.id]=setTimeout(async()=>{
-      try{
-        // Guarda sem as imagens primeiro para garantir que o texto é salvo
-        const {imagens,...semImagens}=entry;
-        await setDoc(doc(db,'cronicas',String(entry.id)),semImagens);
-        // Depois salva com imagens (pode falhar se muito grande)
-        if(imagens&&imagens.length>0){
-          await setDoc(doc(db,'cronicas',String(entry.id)),entry);
-        }
-      }catch(e){console.error('Erro ao salvar crônica:',e);alert('Aviso: A crônica pode estar grande demais. Tente usar menos imagens ou imagens menores.');}
-    },800);
-  };
+  const saveEntry=entry=>{clearTimeout(saveTimeout.current[entry.id]);saveTimeout.current[entry.id]=setTimeout(async()=>{try{const{imagens,...sem}=entry;await setDoc(doc(db,'cronicas',String(entry.id)),sem);if(imagens&&imagens.length>0)await setDoc(doc(db,'cronicas',String(entry.id)),entry);}catch(e){alert('Aviso: Crônica muito grande. Tente usar menos imagens.');}},800);};
   const add=()=>{const e=newEntry(Date.now());setDoc(doc(db,'cronicas',String(e.id)),e);setOpen(e.id);};
   const upd=(id,data)=>{setEntries(prev=>prev.map(e=>e.id===id?data:e));saveEntry(data);};
   const del=async id=>{await deleteDoc(doc(db,'cronicas',String(id)));if(open===id)setOpen(null);};
-  const addImage=async(entry,file)=>{
-    const reader=new FileReader();
-    reader.onload=async ev=>{
-      const compressed=await compressImage(ev.target.result,1000,1000,0.68);
-      const imagens=[...(entry.imagens||[]),compressed];
-      if(imagens.length>6){alert('Máximo de 6 imagens por crônica para evitar problemas de armazenamento.');return;}
-      upd(entry.id,{...entry,imagens});
-    };
-    reader.readAsDataURL(file);
-  };
+  const addImage=async(entry,file)=>{const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,1000,1000,0.68);const imagens=[...(entry.imagens||[]),compressed];if(imagens.length>6){alert('Máximo de 6 imagens por crônica.');return;}upd(entry.id,{...entry,imagens});};reader.readAsDataURL(file);};
   const removeImage=(entry,idx)=>{const imagens=(entry.imagens||[]).filter((_,i)=>i!==idx);upd(entry.id,{...entry,imagens});};
   const imgInputRefs=useRef({});
   return(
     <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px',animation:'fadeIn 0.6s ease'}}>
-      <div style={{textAlign:'center',marginBottom:28}}>
-        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Registro dos Acontecimentos</div>
-        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Crônicas da Campanha</h2>
-        <div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os eventos, batalhas, revelações e narrativas de cada sessão</div>
-        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/>
-      </div>
+      <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Registro dos Acontecimentos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Crônicas da Campanha</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os eventos, batalhas, revelações e narrativas de cada sessão</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
       {loaded&&(<>
         <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button></div>
-        {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>Os acontecimentos de Cosmum aguardam ser narrados.</div></div>)}
+        {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div></div>)}
         {entries.map(entry=>(
           <div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
             <div onClick={()=>setOpen(open===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
               <span style={{fontSize:15}}>📜</span>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div>
-                <div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>
-                  {entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>
-                  {entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}
-                  {(entry.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {entry.imagens.length}</span>}
-                </div>
-              </div>
+              <div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div><div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>{entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>{entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}{(entry.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {entry.imagens.length}</span>}</div></div>
               <div style={{display:'flex',gap:7}}>
                 {masterMode&&<button onClick={e=>{e.stopPropagation();del(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
@@ -526,11 +646,7 @@ function CronicasSection({masterMode}){
                   <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
                   <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
                 </div>
-                <div style={{marginBottom:11}}>
-                  <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label>
-                  <textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} placeholder={"Narre aqui os acontecimentos desta sessão...\n\nDescreva ações dos personagens, NPCs, inimigos, revelações importantes, decisões que moldaram Cosmum e todos os momentos épicos que merecem ser eternizados."} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
-                </div>
-                {/* Imagens */}
+                <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} placeholder={"Narre aqui os acontecimentos desta sessão..."} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
                 <div style={{marginBottom:10}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
                     <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens da Sessão</label>
@@ -540,17 +656,7 @@ function CronicasSection({masterMode}){
                       <input ref={el=>imgInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
                     </div>
                   </div>
-                  {(entry.imagens||[]).length>0
-                    ?<div style={{display:'flex',flexDirection:'column',gap:10}}>
-                      {entry.imagens.map((img,idx)=>(
-                        <div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}>
-                          <img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',maxHeight:420,objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/>
-                          <button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button>
-                        </div>
-                      ))}
-                    </div>
-                    :<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem adicionada. (máx 6)</div>
-                  }
+                  {(entry.imagens||[]).length>0?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',maxHeight:420,objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>:<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem adicionada. (máx 6)</div>}
                 </div>
                 <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
               </div>
@@ -568,7 +674,7 @@ const newCenario=id=>({id,nome:'',descricao:'',mapa:'',data:new Date().toLocaleD
 function CenariosSection({masterMode}){
   const[cenarios,setCenarios]=useState([]);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(null);const saveTimeout=useRef({});
   useEffect(()=>{const unsub=onSnapshot(collection(db,'cenarios'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setCenarios(data);setLoaded(true);});return()=>unsub();},[]);
-  const save=c=>{clearTimeout(saveTimeout.current[c.id]);saveTimeout.current[c.id]=setTimeout(async()=>{try{await setDoc(doc(db,'cenarios',String(c.id)),c);}catch(e){console.error('Erro ao salvar cenário:',e);}},800);};
+  const save=c=>{clearTimeout(saveTimeout.current[c.id]);saveTimeout.current[c.id]=setTimeout(async()=>{try{await setDoc(doc(db,'cenarios',String(c.id)),c);}catch(e){console.error(e);}},800);};
   const add=()=>{const c=newCenario(Date.now());setDoc(doc(db,'cenarios',String(c.id)),c);setOpen(c.id);};
   const upd=(id,data)=>{setCenarios(prev=>prev.map(c=>c.id===id?data:c));save(data);};
   const del=async id=>{await deleteDoc(doc(db,'cenarios',String(id)));if(open===id)setOpen(null);};
@@ -576,51 +682,25 @@ function CenariosSection({masterMode}){
   const mapRefs=useRef({});
   return(
     <div style={{maxWidth:800,margin:'0 auto',padding:'40px 16px 80px',animation:'fadeIn 0.6s ease'}}>
-      <div style={{textAlign:'center',marginBottom:28}}>
-        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>Os Lugares de Cosmum</div>
-        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Cenários Explorados</h2>
-        <div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os mapas e locais por onde os personagens passaram</div>
-        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.5),transparent)',margin:'16px auto 0'}}/>
-      </div>
+      <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>Os Lugares de Cosmum</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Cenários Explorados</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os mapas e locais por onde os personagens passaram</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.5),transparent)',margin:'16px auto 0'}}/></div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
       {loaded&&(<>
-        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
-          <button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Novo Cenário</button>
-        </div>
+        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Novo Cenário</button></div>
         {cenarios.length===0&&(<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}><div style={{fontSize:32,marginBottom:10,opacity:0.3}}>🗺️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhum cenário registrado.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>Adicione os locais e mapas que os heróis exploraram.</div></div>)}
         {cenarios.map(c=>(
           <div key={c.id} style={{border:'1px solid rgba(168,85,247,0.14)',borderRadius:14,marginBottom:14,overflow:'hidden',background:'rgba(8,10,22,0.9)'}}>
             <div onClick={()=>setOpen(open===c.id?null:c.id)} style={{padding:'14px 18px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
               {c.mapa?<img src={c.mapa} alt="" style={{width:54,height:40,borderRadius:7,objectFit:'cover',flexShrink:0,border:'1px solid rgba(168,85,247,0.25)'}}/>:<div style={{width:54,height:40,borderRadius:7,background:'rgba(168,85,247,0.06)',border:'1px dashed rgba(168,85,247,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🗺️</div>}
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:13,fontWeight:700,color:'#C8A8E8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.nome||'(Sem nome)'}</div>
-                <div style={{fontSize:11,color:'#5A5070',marginTop:2,fontFamily:'Cinzel,serif'}}>{c.data}</div>
-              </div>
-              <div style={{display:'flex',gap:7}}>
-                {masterMode&&<button onClick={e=>{e.stopPropagation();del(c.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
-                <span style={{color:'rgba(168,85,247,0.4)',fontSize:11,transform:open===c.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
-              </div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,fontWeight:700,color:'#C8A8E8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.nome||'(Sem nome)'}</div><div style={{fontSize:11,color:'#5A5070',marginTop:2,fontFamily:'Cinzel,serif'}}>{c.data}</div></div>
+              <div style={{display:'flex',gap:7}}>{masterMode&&<button onClick={e=>{e.stopPropagation();del(c.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}<span style={{color:'rgba(168,85,247,0.4)',fontSize:11,transform:open===c.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span></div>
             </div>
             {open===c.id&&(
               <div style={{borderTop:'1px solid rgba(168,85,247,0.1)',animation:'fadeIn 0.3s ease'}}>
-                {c.mapa&&(
-                  <div style={{position:'relative',cursor:'pointer'}} onClick={()=>mapRefs.current[c.id]?.click()}>
-                    <img src={c.mapa} alt="mapa" style={{width:'100%',display:'block',maxHeight:500,objectFit:'contain',background:'rgba(0,0,0,0.4)'}}/>
-                    <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:'1px solid rgba(168,85,247,0.3)',color:'#C8A8E8',fontFamily:'Cinzel,serif',fontSize:10,cursor:'pointer',letterSpacing:'0.08em'}}>🗺 Trocar mapa</div>
-                  </div>
-                )}
+                {c.mapa&&(<div style={{position:'relative',cursor:'pointer'}} onClick={()=>mapRefs.current[c.id]?.click()}><img src={c.mapa} alt="mapa" style={{width:'100%',display:'block',maxHeight:500,objectFit:'contain',background:'rgba(0,0,0,0.4)'}}/><div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:'1px solid rgba(168,85,247,0.3)',color:'#C8A8E8',fontFamily:'Cinzel,serif',fontSize:10,cursor:'pointer',letterSpacing:'0.08em'}}>🗺 Trocar mapa</div></div>)}
                 <input ref={el=>mapRefs.current[c.id]=el} type="file" accept="image/*" onChange={e=>handleMap(c,e)} style={{display:'none'}}/>
                 <div style={{padding:'16px 18px',display:'flex',flexDirection:'column',gap:13}}>
-                  {!c.mapa&&(
-                    <div>
-                      <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:8,textTransform:'uppercase'}}>Mapa do Cenário</label>
-                      <div onClick={()=>mapRefs.current[c.id]?.click()} style={{padding:'30px',borderRadius:10,border:'1px dashed rgba(168,85,247,0.25)',background:'rgba(168,85,247,0.03)',textAlign:'center',cursor:'pointer'}}>
-                        <div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🗺️</div>
-                        <div style={{fontSize:12,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Toque para adicionar o mapa do cenário</div>
-                      </div>
-                    </div>
-                  )}
-                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Cenário</label><input value={c.nome||''} onChange={e=>upd(c.id,{...c,nome:e.target.value})} placeholder="Ex: A Taverna dos Três Mundos, Torre do Esquecimento..." style={{width:'100%'}}/></div>
+                  {!c.mapa&&(<div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:8,textTransform:'uppercase'}}>Mapa do Cenário</label><div onClick={()=>mapRefs.current[c.id]?.click()} style={{padding:'30px',borderRadius:10,border:'1px dashed rgba(168,85,247,0.25)',background:'rgba(168,85,247,0.03)',textAlign:'center',cursor:'pointer'}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🗺️</div><div style={{fontSize:12,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Toque para adicionar o mapa do cenário</div></div></div>)}
+                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Cenário</label><input value={c.nome||''} onChange={e=>upd(c.id,{...c,nome:e.target.value})} placeholder="Ex: A Taverna dos Três Mundos..." style={{width:'100%'}}/></div>
                   <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição & Notas</label><textarea value={c.descricao||''} onChange={e=>upd(c.id,{...c,descricao:e.target.value})} placeholder={"Descreva este local — sua atmosfera, o que os personagens encontraram aqui, segredos revelados, eventos marcantes..."} rows={5} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
                   <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>salvo automaticamente</div>
                 </div>
@@ -634,54 +714,17 @@ function CenariosSection({masterMode}){
 }
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
-const TABS=[
-  {id:'prologo',label:'Prólogo',icon:'📜'},
-  {id:'classes',label:'Classes',icon:'⚔️'},
-  {id:'fichas',label:'Fichas',icon:'📋'},
-  {id:'inimigos',label:'Ficha dos Inimigos',icon:'💀'},
-  {id:'regras',label:'Regras',icon:'📖'},
-  {id:'livro',label:'Livro da Mandíbula',icon:'✦'},
-  {id:'cronicas',label:'Crônicas',icon:'🗒️'},
-  {id:'cenarios',label:'Cenários',icon:'🗺️'},
-];
+const TABS=[{id:'prologo',label:'Prólogo',icon:'📜'},{id:'classes',label:'Classes',icon:'⚔️'},{id:'fichas',label:'Fichas',icon:'📋'},{id:'inimigos',label:'Ficha dos Inimigos',icon:'💀'},{id:'regras',label:'Regras',icon:'📖'},{id:'livro',label:'Livro da Mandíbula',icon:'✦'},{id:'cronicas',label:'Crônicas',icon:'🗒️'},{id:'cenarios',label:'Cenários',icon:'🗺️'}];
 
 function MasterToggle({masterMode,setMasterMode}){
-  const[showInput,setShowInput]=useState(false);
-  const[pin,setPin]=useState('');
-  const[shake,setShake]=useState(false);
-  const tryUnlock=()=>{
-    if(pin.toLowerCase()===MASTER_PIN){setMasterMode(true);setShowInput(false);setPin('');}
-    else{setShake(true);setTimeout(()=>setShake(false),500);setPin('');}
-  };
-  if(masterMode) return(
-    <button onClick={()=>setMasterMode(false)} title="Desativar Modo Mestre"
-      style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>
-      🔴 MESTRE
-    </button>
-  );
-  return(
-    <div style={{display:'flex',alignItems:'center',gap:6}}>
-      {showInput&&(
-        <div style={{display:'flex',gap:5}}>
-          <input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus
-            style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/>
-          <button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button>
-          <button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button>
-        </div>
-      )}
-      {!showInput&&(
-        <button onClick={()=>setShowInput(true)} title="Modo Mestre"
-          style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>
-          🔒 Mestre
-        </button>
-      )}
-    </div>
-  );
+  const[showInput,setShowInput]=useState(false);const[pin,setPin]=useState('');const[shake,setShake]=useState(false);
+  const tryUnlock=()=>{if(pin.toLowerCase()===MASTER_PIN){setMasterMode(true);setShowInput(false);setPin('');}else{setShake(true);setTimeout(()=>setShake(false),500);setPin('');}};
+  if(masterMode)return(<button onClick={()=>setMasterMode(false)} title="Desativar Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>🔴 MESTRE</button>);
+  return(<div style={{display:'flex',alignItems:'center',gap:6}}>{showInput&&(<div style={{display:'flex',gap:5}}><input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/><button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button><button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button></div>)}{!showInput&&(<button onClick={()=>setShowInput(true)} title="Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Mestre</button>)}</div>);
 }
 
 export default function App(){
-  const[tab,setTab]=useState('prologo');
-  const[masterMode,setMasterMode]=useState(false);
+  const[tab,setTab]=useState('prologo');const[masterMode,setMasterMode]=useState(false);
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:'#04060F',color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative'}}>
