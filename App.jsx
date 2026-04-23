@@ -124,36 +124,95 @@ function VigosWithLocked({value,nivel,color,onChange}){
 }
 
 // ─── EQUIPAMENTO PANEL ────────────────────────────────────────────────────────
-const EQUIP_DEFAULTS={
-  equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},
-  equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},
-  equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},
-};
+// Dynamic icon resolver based on Tipo text
+function resolveEquipIcon(tipo=''){
+  const t=tipo.toLowerCase();
+  if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina'))return'⚔️';
+  if(t.includes('arco')||t.includes('flecha')||t.includes('besta'))return'🏹';
+  if(t.includes('cajado')||t.includes('varinha')||t.includes('báculo'))return'🪄';
+  if(t.includes('escudo')||t.includes('broquel'))return'🛡️';
+  if(t.includes('adaga')||t.includes('faca')||t.includes('punhal'))return'🗡️';
+  if(t.includes('martelo')||t.includes('maça')||t.includes('clava'))return'🔨';
+  if(t.includes('lança')||t.includes('alabarda')||t.includes('pique'))return'🪃';
+  if(t.includes('arma pesada')||t.includes('mandoble'))return'⚔️';
+  if(t.includes('arma'))return'⚔️';
+  if(t.includes('armadura')||t.includes('cota')||t.includes('elmo'))return'🦺';
+  if(t.includes('manto')||t.includes('capa')||t.includes('roupa')||t.includes('túnica')||t.includes('veste'))return'🎽';
+  if(t.includes('bolsa')||t.includes('mochila')||t.includes('alforge'))return'🎒';
+  if(t.includes('anel')||t.includes('amuleto')||t.includes('talismã'))return'💍';
+  return'📦';
+}
 
-function EquipSlot({slotKey, label, icon, color, data, onChange}){
-  const d={...EQUIP_DEFAULTS[slotKey],...(data||{})};
+function CompactEquipSlot({label, color, data, onChange, placeholder}){
+  const d={nome:'',dano:'',tipo:placeholder,...(data||{})};
+  const dynIcon=resolveEquipIcon(d.tipo||placeholder);
   return(
-    <div style={{background:`${color}08`,border:`1px solid ${color}25`,borderRadius:10,padding:'11px 13px',display:'flex',flexDirection:'column',gap:8}}>
-      <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:2}}>
-        <span style={{fontSize:18}}>{icon}</span>
-        <div>
-          <div style={{fontSize:10,letterSpacing:'0.25em',color:color,fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>{label}</div>
-          <div style={{fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif'}}>{d.tipo}</div>
-        </div>
+    <div style={{background:`${color}07`,border:`1px solid ${color}20`,borderRadius:9,padding:'9px 11px',display:'flex',flexDirection:'column',gap:6}}>
+      {/* Label */}
+      <div style={{fontSize:8,letterSpacing:'0.3em',color:`${color}99`,fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:1}}>{label}</div>
+      {/* Item name row with dynamic icon */}
+      <div style={{display:'flex',alignItems:'center',gap:7}}>
+        <span style={{fontSize:17,flexShrink:0,lineHeight:1}}>{dynIcon}</span>
+        <input
+          value={d.nome}
+          onChange={e=>onChange({...d,nome:e.target.value})}
+          placeholder="Nome do item..."
+          style={{flex:1,fontSize:13,padding:'4px 7px'}}
+        />
       </div>
-      <div>
-        <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Item</div>
-        <input value={d.nome} onChange={e=>onChange({...d,nome:e.target.value})} placeholder={`Ex: Espada Longa`} style={{width:'100%',fontSize:13}}/>
-      </div>
-      <div>
-        <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Dano / Proteção</div>
-        <input value={d.dano} onChange={e=>onChange({...d,dano:e.target.value})} placeholder={`Ex: 1D6+2`} style={{width:'100%',fontSize:13}}/>
-      </div>
-      <div>
-        <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Tipo</div>
-        <input value={d.tipo} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder="Espada, Escudo..." style={{width:'100%',fontSize:13}}/>
+      {/* Dano + Tipo on one compact line */}
+      <div style={{display:'flex',gap:6}}>
+        <input
+          value={d.dano}
+          onChange={e=>onChange({...d,dano:e.target.value})}
+          placeholder="Dano / Ex: 1D6"
+          style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(255,200,80,0.85)'}}
+        />
+        <input
+          value={d.tipo}
+          onChange={e=>onChange({...d,tipo:e.target.value})}
+          placeholder={placeholder}
+          style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(200,184,160,0.6)'}}
+        />
       </div>
     </div>
+  );
+}
+
+// Minimalist character silhouette SVG (paper-doll style)
+function CharSilhouette({color}){
+  return(
+    <svg width="60" height="120" viewBox="0 0 60 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.3,flexShrink:0}}>
+      {/* Head */}
+      <ellipse cx="30" cy="11" rx="8" ry="9" stroke={color} strokeWidth="1.2"/>
+      {/* Neck */}
+      <line x1="30" y1="20" x2="30" y2="26" stroke={color} strokeWidth="1.2"/>
+      {/* Shoulders */}
+      <path d="M10 34 Q18 27 30 26 Q42 27 50 34" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Torso */}
+      <path d="M16 34 L14 62 Q14 65 18 65 L42 65 Q46 65 46 62 L44 34" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Belt */}
+      <line x1="15" y1="58" x2="45" y2="58" stroke={color} strokeWidth="1.5" strokeDasharray="3 2"/>
+      {/* Left arm */}
+      <path d="M16 34 L9 50 Q8 55 11 56 L13 57" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Left hand */}
+      <circle cx="12" cy="59" r="3" stroke={color} strokeWidth="1"/>
+      {/* Right arm */}
+      <path d="M44 34 L51 50 Q52 55 49 56 L47 57" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Right hand */}
+      <circle cx="48" cy="59" r="3" stroke={color} strokeWidth="1"/>
+      {/* Left leg */}
+      <path d="M22 65 L19 90 L18 105" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Left boot */}
+      <path d="M18 105 Q16 108 14 108 Q12 108 12 106 L13 104 L20 103" stroke={color} strokeWidth="1" fill="none"/>
+      {/* Right leg */}
+      <path d="M38 65 L41 90 L42 105" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Right boot */}
+      <path d="M42 105 Q44 108 46 108 Q48 108 48 106 L47 104 L40 103" stroke={color} strokeWidth="1" fill="none"/>
+      {/* Glow dots on hands */}
+      <circle cx="12" cy="59" r="1.5" fill={color} opacity="0.5"/>
+      <circle cx="48" cy="59" r="1.5" fill={color} opacity="0.5"/>
+    </svg>
   );
 }
 
@@ -164,46 +223,29 @@ function EquipamentoPanel({sheet, onChange, sheetColor}){
       <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:8}}>
         <span style={{color:sheetColor}}>⚔</span> Equipamentos
       </div>
-      {/* Silhueta + slots */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center'}}>
-        {/* Mão esquerda */}
-        <EquipSlot slotKey="equip_mao_esq" label="Mão Esquerda" icon="⚔️" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)}/>
-        {/* Silhueta central */}
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'0 4px'}}>
-          <svg width="52" height="100" viewBox="0 0 52 100" style={{opacity:0.22}}>
-            {/* Cabeça */}
-            <circle cx="26" cy="12" r="9" fill="none" stroke={sheetColor} strokeWidth="1.5"/>
-            {/* Corpo */}
-            <line x1="26" y1="21" x2="26" y2="58" stroke={sheetColor} strokeWidth="1.5"/>
-            {/* Braços */}
-            <line x1="8" y1="32" x2="26" y2="26" stroke={sheetColor} strokeWidth="1.5"/>
-            <line x1="44" y1="32" x2="26" y2="26" stroke={sheetColor} strokeWidth="1.5"/>
-            {/* Pernas */}
-            <line x1="26" y1="58" x2="16" y2="88" stroke={sheetColor} strokeWidth="1.5"/>
-            <line x1="26" y1="58" x2="36" y2="88" stroke={sheetColor} strokeWidth="1.5"/>
-            {/* Escudo e espada hints */}
-            <circle cx="8" cy="32" r="4" fill="none" stroke={sheetColor} strokeWidth="1" strokeDasharray="2 1"/>
-            <line x1="41" y1="28" x2="47" y2="36" stroke={sheetColor} strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          <div style={{fontSize:8,color:sheetColor+'66',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>ESQ · DIR</div>
+
+      {/* Paper-doll: hands flank the silhouette */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 64px 1fr',gap:10,alignItems:'center',marginBottom:10}}>
+        <CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma"/>
+        {/* Central silhouette */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+          <CharSilhouette color={sheetColor}/>
+          <div style={{fontSize:7,color:sheetColor+'55',fontFamily:'Cinzel,serif',letterSpacing:'0.12em',textAlign:'center',textTransform:'uppercase'}}>ESQ · DIR</div>
         </div>
-        {/* Mão direita */}
-        <EquipSlot slotKey="equip_mao_dir" label="Mão Direita" icon="🛡️" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)}/>
+        <CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma"/>
       </div>
-      {/* Corpo — largura total */}
-      <div style={{marginTop:10}}>
-        <EquipSlot slotKey="equip_corpo" label="Corpo" icon="🥋" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)}/>
-      </div>
+
+      {/* Body slot — full width below */}
+      <CompactEquipSlot label="Corpo" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)} placeholder="Armadura / Roupa"/>
     </div>
   );
 }
 
 // ─── HABILIDADES PANEL (ficha do personagem) ──────────────────────────────────
-const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',descricao:'',tipo:'nova',req:1});
+const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1});
 
 function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities}){
   const [open,setOpen]=useState(false);
-  const [showForm,setShowForm]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
   const nivel=sheet.nivel||1;
   const classCustom=(customAbilities[cls.id]||[]);
@@ -213,7 +255,6 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
     const updated={...customAbilities,[cls.id]:[...(customAbilities[cls.id]||[]),{...form,id:Date.now()}]};
     onSaveCustomAbilities(updated);
     setForm(newCustomAbility());
-    setShowForm(false);
   };
   const handleDelete=(abilityId)=>{
     const updated={...customAbilities,[cls.id]:(customAbilities[cls.id]||[]).filter(a=>a.id!==abilityId)};
@@ -221,14 +262,19 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   };
 
   const color=cls.color;
+
+  const tipoLabel={normal:'Normal',especial:'Especial',passiva:'Passiva'};
+  const tipoBadgeColor={normal:'rgba(255,255,255,0.5)',especial:color,passiva:'rgba(168,85,247,0.8)'};
+
   const abilityRow=(a,isSpecial,isCustom,locked)=>(
     <div key={a.id||a.name} style={{background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',opacity:locked?0.45:1}}>
       <div style={{flex:1}}>
-        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
           {(isSpecial||isCustom)&&<span style={{fontSize:10,color}}>✦</span>}
           <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{a.name||a.nome}</span>
           {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {a.req}+</span>}
-          {isCustom&&<span style={{fontSize:9,color:`${color}88`,fontFamily:'Cinzel,serif',letterSpacing:'0.1em'}}>NOVA</span>}
+          {isCustom&&a.tipoHab&&<span style={{fontSize:8,color:tipoBadgeColor[a.tipoHab]||color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em',background:`${color}14`,borderRadius:3,padding:'1px 5px',border:`1px solid ${color}33`}}>{(tipoLabel[a.tipoHab]||'Nova').toUpperCase()}</span>}
+          {isCustom&&a.dano&&<span style={{fontSize:9,color:'rgba(255,200,80,0.7)',fontFamily:'Cinzel,serif'}}>⚔ {a.dano}</span>}
         </div>
         <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc||a.descricao}</div>
       </div>
@@ -243,17 +289,22 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
     </div>
   );
 
+  const TipoBtn=({val,label:l})=>(
+    <button onClick={()=>setForm(f=>({...f,tipoHab:val}))} style={{flex:1,padding:'5px 4px',borderRadius:5,border:`1px solid ${form.tipoHab===val?color+'66':'rgba(255,255,255,0.1)'}`,background:form.tipoHab===val?`${color}18`:'rgba(255,255,255,0.02)',color:form.tipoHab===val?color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.06em',transition:'all 0.15s'}}>{l}</button>
+  );
+
   return(
     <div style={{marginBottom:14,border:`1px solid ${open?color+'33':'rgba(255,255,255,0.07)'}`,borderRadius:10,overflow:'hidden',transition:'border-color 0.2s'}}>
       <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',padding:'12px 16px',display:'flex',alignItems:'center',gap:10,background:open?`${color}08`:'rgba(255,255,255,0.02)',border:'none',cursor:'pointer',textAlign:'left'}}>
         <span style={{fontSize:15,color}}>{cls.icon}</span>
-        <span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>Habilidades da Classe — {cls.name}</span>
+        <span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>Habilidades — {cls.name}</span>
         <span style={{fontSize:10,color:`${color}66`,fontFamily:'Cinzel,serif'}}>{classCustom.length>0?`+${classCustom.length} nova${classCustom.length>1?'s':''}`:''}</span>
         <span style={{color:`${color}88`,fontSize:11,transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span>
       </button>
       {open&&(
         <div style={{padding:'0 14px 14px',animation:'fadeIn 0.3s ease'}}>
           <div style={{height:8}}/>
+
           {/* Passiva */}
           <div style={{marginBottom:10}}>
             <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Passiva</div>
@@ -262,47 +313,83 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
               <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{cls.passive.desc}</div>
             </div>
           </div>
+
           {/* Normais */}
           <div style={{marginBottom:10}}>
             <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div>
             <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map(a=>abilityRow(a,false,false,false))}</div>
           </div>
+
           {/* Especiais */}
           <div style={{marginBottom:10}}>
             <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Especiais — 3 VC cada</div>
             <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map(a=>abilityRow(a,true,false,nivel<a.req))}</div>
           </div>
-          {/* Habilidades personalizadas do Mestre */}
+
+          {/* Custom abilities */}
           {classCustom.length>0&&(
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:9,letterSpacing:'0.3em',color:`${color}88`,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Habilidades Desbloqueadas pelo Mestre</div>
+              <div style={{fontSize:9,letterSpacing:'0.3em',color:`${color}88`,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Desbloqueadas pelo Mestre</div>
               <div style={{display:'flex',flexDirection:'column',gap:6}}>{classCustom.map(a=>abilityRow(a,false,true,a.req&&nivel<a.req))}</div>
             </div>
           )}
-          {/* Formulário do Mestre */}
-          {masterMode&&!showForm&&(
-            <button onClick={()=>setShowForm(true)} style={{width:'100%',padding:'8px',borderRadius:7,border:`1px dashed ${color}44`,background:`${color}07`,color:`${color}CC`,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.08em'}}>✦ Adicionar Habilidade Nova</button>
-          )}
-          {masterMode&&showForm&&(
-            <div style={{border:`1px solid ${color}33`,borderRadius:10,padding:'13px',background:`${color}06`,animation:'fadeIn 0.3s ease'}}>
-              <div style={{fontSize:10,letterSpacing:'0.3em',color,fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>✦ Nova Habilidade para {cls.name}</div>
-              <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Nome da Habilidade</label>
-                  <input value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Golpe Cósmico" style={{width:'100%'}}/></div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-                  <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Custo VC</label>
-                    <input type="number" min={1} value={form.custo} onChange={e=>setForm(f=>({...f,custo:+e.target.value}))} style={{width:'100%'}}/></div>
-                  <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Cooldown</label>
-                    <input value={form.cooldown} onChange={e=>setForm(f=>({...f,cooldown:e.target.value}))} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div>
-                  <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Nível mín.</label>
-                    <input type="number" min={1} max={30} value={form.req} onChange={e=>setForm(f=>({...f,req:+e.target.value}))} style={{width:'100%'}}/></div>
+
+          {/* ── MASTER CREATION PANEL — always shown when masterMode ── */}
+          {masterMode&&(
+            <div style={{border:`1px solid ${color}30`,borderRadius:10,padding:'14px',background:`${color}05`,marginTop:4}}>
+              <div style={{fontSize:9,letterSpacing:'0.35em',color:`${color}AA`,fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>✦ Adicionar Habilidade Nova · {cls.name}</div>
+              <div style={{display:'flex',flexDirection:'column',gap:9}}>
+
+                {/* Nome */}
+                <div>
+                  <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Nome da Habilidade</label>
+                  <input value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Golpe Cósmico" style={{width:'100%'}}/>
                 </div>
-                <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.2em'}}>Descrição</label>
-                  <textarea value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Descreva o efeito, duração, condições especiais..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div>
-                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
-                  <button onClick={()=>setShowForm(false)} style={{padding:'6px 14px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11}}>Cancelar</button>
-                  <button onClick={handleSave} style={{padding:'6px 18px',borderRadius:6,border:`1px solid ${color}55`,background:`${color}18`,color,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,fontWeight:600}}>✓ Salvar Habilidade</button>
+
+                {/* Tipo de Habilidade — radio-style buttons */}
+                <div>
+                  <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.22em'}}>Tipo de Habilidade</label>
+                  <div style={{display:'flex',gap:6}}>
+                    <TipoBtn val="normal" label="Normal"/>
+                    <TipoBtn val="especial" label="Especial"/>
+                    <TipoBtn val="passiva" label="Passiva"/>
+                  </div>
                 </div>
+
+                {/* Dano / Efeito + Custo VC */}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  <div>
+                    <label style={{fontSize:9,color:'rgba(255,200,80,0.5)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Dano / Efeito</label>
+                    <input value={form.dano} onChange={e=>setForm(f=>({...f,dano:e.target.value}))} placeholder="Ex: 1D8, 3D4, +2 vida" style={{width:'100%'}}/>
+                  </div>
+                  <div>
+                    <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Custo VC</label>
+                    <input type="number" min={0} value={form.custo} onChange={e=>setForm(f=>({...f,custo:+e.target.value}))} style={{width:'100%'}}/>
+                  </div>
+                </div>
+
+                {/* Cooldown + Nível mínimo */}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  <div>
+                    <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Cooldown / Rodadas</label>
+                    <input value={form.cooldown} onChange={e=>setForm(f=>({...f,cooldown:e.target.value}))} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/>
+                  </div>
+                  <div>
+                    <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Nível Mínimo</label>
+                    <input type="number" min={1} max={30} value={form.req} onChange={e=>setForm(f=>({...f,req:+e.target.value}))} style={{width:'100%'}}/>
+                  </div>
+                </div>
+
+                {/* Descrição */}
+                <div>
+                  <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Descrição</label>
+                  <textarea value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Descreva o efeito, duração, condições especiais, área de alcance..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/>
+                </div>
+
+                {/* Save button */}
+                <button onClick={handleSave} disabled={!form.nome.trim()} style={{padding:'8px',borderRadius:7,border:`1px solid ${color}55`,background:form.nome.trim()?`${color}20`:'rgba(255,255,255,0.03)',color:form.nome.trim()?color:'#5A5070',cursor:form.nome.trim()?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',fontWeight:600,transition:'all 0.2s'}}>
+                  ✦ Salvar Habilidade em {cls.name}
+                </button>
               </div>
             </div>
           )}
