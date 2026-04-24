@@ -161,6 +161,7 @@ function resolveEquipIcon(tipo=''){
   if(t.includes('mochila')||t.includes('alforge'))return'🎒';
   if(t.includes('bolsa')||t.includes('saco'))return'👜';
   if(t.includes('capa'))return'🦇';
+  if(t.includes('Prótese'))return'🦾';
 
   // 🧪 CONSUMÍVEIS
   if(t.includes('poção de cura')||t.includes('pocao de cura'))return'🧪';
