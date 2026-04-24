@@ -127,19 +127,46 @@ function VigosWithLocked({value,nivel,color,onChange}){
 // Dynamic icon resolver based on Tipo text
 function resolveEquipIcon(tipo=''){
   const t=tipo.toLowerCase();
-  if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina'))return'⚔️';
+  // Ranged / firearms
+  if(t.includes('pistola')||t.includes('revólver')||t.includes('revolver'))return'🔫';
+  if(t.includes('rifle')||t.includes('fuzil')||t.includes('sniper')||t.includes('carabina'))return'🔫';
+  if(t.includes('arma de fogo')||t.includes('firearm')||t.includes('shotgun')||t.includes('espingarda'))return'🔫';
   if(t.includes('arco')||t.includes('flecha')||t.includes('besta'))return'🏹';
-  if(t.includes('cajado')||t.includes('varinha')||t.includes('báculo'))return'🪄';
-  if(t.includes('escudo')||t.includes('broquel'))return'🛡️';
-  if(t.includes('adaga')||t.includes('faca')||t.includes('punhal'))return'🗡️';
-  if(t.includes('martelo')||t.includes('maça')||t.includes('clava'))return'🔨';
-  if(t.includes('lança')||t.includes('alabarda')||t.includes('pique'))return'🪃';
-  if(t.includes('arma pesada')||t.includes('mandoble'))return'⚔️';
+  // Explosives / bombs
+  if(t.includes('bomba')||t.includes('granada')||t.includes('explosivo'))return'💣';
+  // Potions / bottles
+  if(t.includes('poção')||t.includes('pocao')||t.includes('elixir')||t.includes('garrafa')||t.includes('frasco'))return'🧪';
+  // Magic
+  if(t.includes('cajado')||t.includes('báculo')||t.includes('baculo'))return'🪄';
+  if(t.includes('varinha'))return'🪄';
+  if(t.includes('livro')||t.includes('grimório')||t.includes('grimorio')||t.includes('tomo'))return'📖';
+  if(t.includes('orbe')||t.includes('cristal')||t.includes('esfera'))return'🔮';
+  // Blades
+  if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina')||t.includes('lamina'))return'⚔️';
+  if(t.includes('adaga')||t.includes('faca')||t.includes('punhal')||t.includes('navalha'))return'🗡️';
+  // Shields
+  if(t.includes('escudo')||t.includes('broquel')||t.includes('égide')||t.includes('egide'))return'🛡️';
+  // Blunt / heavy
+  if(t.includes('martelo')||t.includes('maça')||t.includes('maca')||t.includes('clava')||t.includes('porrete'))return'🔨';
+  if(t.includes('machado'))return'🪓';
+  if(t.includes('lança')||t.includes('lanca')||t.includes('alabarda')||t.includes('pique'))return'⛏️';
+  if(t.includes('foice')||t.includes('foice'))return'⚔️';
+  // Generic weapon
   if(t.includes('arma'))return'⚔️';
-  if(t.includes('armadura')||t.includes('cota')||t.includes('elmo'))return'🦺';
-  if(t.includes('manto')||t.includes('capa')||t.includes('roupa')||t.includes('túnica')||t.includes('veste'))return'🎽';
-  if(t.includes('bolsa')||t.includes('mochila')||t.includes('alforge'))return'🎒';
-  if(t.includes('anel')||t.includes('amuleto')||t.includes('talismã'))return'💍';
+  // Armor / body
+  if(t.includes('armadura')||t.includes('couraça')||t.includes('coiraca')||t.includes('cota')||t.includes('elmo')||t.includes('capacete'))return'🦺';
+  if(t.includes('manto')||t.includes('capa')||t.includes('roupa')||t.includes('túnica')||t.includes('tunica')||t.includes('veste')||t.includes('casaco'))return'🎽';
+  if(t.includes('luva')||t.includes('braçadeira')||t.includes('bracadeira'))return'🥊';
+  if(t.includes('bota')||t.includes('sandália')||t.includes('sandalia')||t.includes('sapato'))return'👟';
+  // Bags / accessories
+  if(t.includes('bolsa')||t.includes('mochila')||t.includes('alforge')||t.includes('saco'))return'🎒';
+  if(t.includes('anel')||t.includes('amuleto')||t.includes('talismã')||t.includes('talismã'))return'💍';
+  if(t.includes('colar')||t.includes('pingente'))return'📿';
+  if(t.includes('chave'))return'🗝️';
+  if(t.includes('tocha')||t.includes('lanterna'))return'🔦';
+  if(t.includes('ferrament')||t.includes('alicate')||t.includes('chave de fenda'))return'🔧';
+  if(t.includes('seringa'))return'💉';
+  if(t.includes('escudo'))return'🛡️';
   return'📦';
 }
 
@@ -179,63 +206,121 @@ function CompactEquipSlot({label, color, data, onChange, placeholder}){
   );
 }
 
-// Minimalist character silhouette SVG (paper-doll style)
-function CharSilhouette({color}){
+// Class-specific silhouette SVGs
+function CharSilhouette({color, classeId}){
+  // Common body parts
+  const head=<ellipse cx="30" cy="11" rx="7" ry="8" stroke={color} strokeWidth="1.2" fill="none"/>;
+  const neck=<line x1="30" y1="19" x2="30" y2="25" stroke={color} strokeWidth="1.2"/>;
+  const torso=<path d="M17 33 L15 60 Q15 63 19 63 L41 63 Q45 63 45 60 L43 33" stroke={color} strokeWidth="1.2" fill="none"/>;
+  const belt=<line x1="16" y1="57" x2="44" y2="57" stroke={color} strokeWidth="1.3" strokeDasharray="3 2"/>;
+  const legs=<><path d="M22 63 L19 88 L18 102" stroke={color} strokeWidth="1.2" fill="none"/><path d="M38 63 L41 88 L42 102" stroke={color} strokeWidth="1.2" fill="none"/></>;
+  const boots=<><path d="M18 102 Q16 106 13 106 Q11 106 12 104 L14 102 L20 101" stroke={color} strokeWidth="1" fill="none"/><path d="M42 102 Q44 106 47 106 Q49 106 48 104 L46 102 L40 101" stroke={color} strokeWidth="1" fill="none"/></>;
+
+  let arms, weapons, shoulders;
+  switch(classeId){
+    case 'escarlate': // Shield left, sword right, heavy shoulders
+      shoulders=<path d="M10 32 Q18 26 30 25 Q42 26 50 32" stroke={color} strokeWidth="1.6" fill="none"/>;
+      arms=<><path d="M17 33 L9 50 L11 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 50 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
+      weapons=<>
+        {/* Shield left hand */}
+        <rect x="3" y="49" width="10" height="13" rx="2" stroke={color} strokeWidth="1.2" fill="none"/>
+        <line x1="8" y1="49" x2="8" y2="62" stroke={color} strokeWidth="0.7"/>
+        {/* Sword right hand */}
+        <line x1="50" y1="43" x2="56" y2="67" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="47" y1="53" x2="59" y2="57" stroke={color} strokeWidth="1.2"/>
+      </>;
+      break;
+    case 'corvos': // Bow right hand, quiver hint, light cloak
+      shoulders=<path d="M12 31 Q18 26 30 25 Q42 26 48 31" stroke={color} strokeWidth="1.2" fill="none"/>;
+      arms=<><path d="M17 33 L10 52 L12 56" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 46 L50 56" stroke={color} strokeWidth="1.2" fill="none"/></>;
+      weapons=<>
+        {/* Bow */}
+        <path d="M51 39 Q58 48 51 57" stroke={color} strokeWidth="1.5" fill="none"/>
+        <line x1="51" y1="39" x2="51" y2="57" stroke={color} strokeWidth="0.8" strokeDasharray="2 1"/>
+        {/* Arrow nocked */}
+        <line x1="20" y1="46" x2="51" y2="48" stroke={color} strokeWidth="0.9"/>
+        <polygon points="18,46 22,44 22,48" fill={color} opacity="0.7"/>
+        {/* Quiver */}
+        <rect x="3" y="48" width="5" height="14" rx="2" stroke={color} strokeWidth="1" fill="none"/>
+      </>;
+      break;
+    case 'magos': // Staff, robe flare
+      shoulders=<path d="M13 32 Q18 26 30 25 Q42 26 47 32" stroke={color} strokeWidth="1.2" fill="none"/>;
+      arms=<><path d="M17 33 L10 52 L13 56" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L50 46 L48 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
+      // Robe flare
+      torso&&null;
+      weapons=<>
+        {/* Robe wider */}
+        <path d="M17 33 L12 63 Q14 66 19 65 L41 65 Q46 66 48 63 L43 33" stroke={color} strokeWidth="1.2" fill="none" opacity="0.5"/>
+        {/* Staff */}
+        <line x1="10" y1="28" x2="13" y2="72" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+        <circle cx="10" cy="27" r="4" stroke={color} strokeWidth="1" fill="none"/>
+        <circle cx="10" cy="27" r="1.5" fill={color} opacity="0.7"/>
+        {/* Orb glow hint right hand */}
+        <circle cx="49" cy="55" r="4" stroke={color} strokeWidth="1" fill="none" opacity="0.6"/>
+      </>;
+      break;
+    case 'marfim': // Tool/gadget right, syringe left
+      shoulders=<path d="M13 32 Q18 26 30 25 Q42 26 47 32" stroke={color} strokeWidth="1.2" fill="none"/>;
+      arms=<><path d="M17 33 L10 50 L13 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 48 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
+      weapons=<>
+        {/* Syringe left */}
+        <rect x="6" y="50" width="9" height="5" rx="1.5" stroke={color} strokeWidth="1" fill="none"/>
+        <line x1="15" y1="52" x2="19" y2="52" stroke={color} strokeWidth="1.2"/>
+        <line x1="9" y1="50" x2="9" y2="47" stroke={color} strokeWidth="0.9"/>
+        {/* Wrench / gadget right */}
+        <path d="M49 49 L55 43" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+        <circle cx="56" cy="42" r="3" stroke={color} strokeWidth="1" fill="none"/>
+        <line x1="50" y1="56" x2="54" y2="52" stroke={color} strokeWidth="1.3"/>
+      </>;
+      break;
+    default: // fogo — dual daggers, light build
+      shoulders=<path d="M14 32 Q18 26 30 25 Q42 26 46 32" stroke={color} strokeWidth="1.2" fill="none"/>;
+      arms=<><path d="M17 33 L9 49 L11 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 49 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
+      weapons=<>
+        {/* Left dagger */}
+        <line x1="8" y1="44" x2="8" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/>
+        <line x1="5" y1="51" x2="11" y2="51" stroke={color} strokeWidth="1.2"/>
+        {/* Right dagger */}
+        <line x1="52" y1="44" x2="52" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/>
+        <line x1="49" y1="51" x2="55" y2="51" stroke={color} strokeWidth="1.2"/>
+      </>;
+  }
   return(
-    <svg width="60" height="120" viewBox="0 0 60 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.3,flexShrink:0}}>
-      {/* Head */}
-      <ellipse cx="30" cy="11" rx="8" ry="9" stroke={color} strokeWidth="1.2"/>
-      {/* Neck */}
-      <line x1="30" y1="20" x2="30" y2="26" stroke={color} strokeWidth="1.2"/>
-      {/* Shoulders */}
-      <path d="M10 34 Q18 27 30 26 Q42 27 50 34" stroke={color} strokeWidth="1.2" fill="none"/>
-      {/* Torso */}
-      <path d="M16 34 L14 62 Q14 65 18 65 L42 65 Q46 65 46 62 L44 34" stroke={color} strokeWidth="1.2" fill="none"/>
-      {/* Belt */}
-      <line x1="15" y1="58" x2="45" y2="58" stroke={color} strokeWidth="1.5" strokeDasharray="3 2"/>
-      {/* Left arm */}
-      <path d="M16 34 L9 50 Q8 55 11 56 L13 57" stroke={color} strokeWidth="1.2" fill="none"/>
-      {/* Left hand */}
-      <circle cx="12" cy="59" r="3" stroke={color} strokeWidth="1"/>
-      {/* Right arm */}
-      <path d="M44 34 L51 50 Q52 55 49 56 L47 57" stroke={color} strokeWidth="1.2" fill="none"/>
-      {/* Right hand */}
-      <circle cx="48" cy="59" r="3" stroke={color} strokeWidth="1"/>
-      {/* Left leg */}
-      <path d="M22 65 L19 90 L18 105" stroke={color} strokeWidth="1.2" fill="none"/>
-      {/* Left boot */}
-      <path d="M18 105 Q16 108 14 108 Q12 108 12 106 L13 104 L20 103" stroke={color} strokeWidth="1" fill="none"/>
-      {/* Right leg */}
-      <path d="M38 65 L41 90 L42 105" stroke={color} strokeWidth="1.2" fill="none"/>
-      {/* Right boot */}
-      <path d="M42 105 Q44 108 46 108 Q48 108 48 106 L47 104 L40 103" stroke={color} strokeWidth="1" fill="none"/>
-      {/* Glow dots on hands */}
-      <circle cx="12" cy="59" r="1.5" fill={color} opacity="0.5"/>
-      <circle cx="48" cy="59" r="1.5" fill={color} opacity="0.5"/>
+    <svg width="66" height="116" viewBox="0 0 66 116" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.32,flexShrink:0}}>
+      {head}{neck}{shoulders||<path d="M12 32 Q18 26 30 25 Q42 26 48 32" stroke={color} strokeWidth="1.2" fill="none"/>}
+      {torso}{belt}{arms}{weapons}{legs}{boots}
     </svg>
   );
 }
 
 function EquipamentoPanel({sheet, onChange, sheetColor}){
   const f=(slot,val)=>onChange({...sheet,[slot]:val});
+  const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   return(
     <div style={{marginBottom:16}}>
       <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:8}}>
         <span style={{color:sheetColor}}>⚔</span> Equipamentos
       </div>
 
-      {/* Paper-doll: hands flank the silhouette */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 64px 1fr',gap:10,alignItems:'center',marginBottom:10}}>
-        <CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma"/>
-        {/* Central silhouette */}
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-          <CharSilhouette color={sheetColor}/>
-          <div style={{fontSize:7,color:sheetColor+'55',fontFamily:'Cinzel,serif',letterSpacing:'0.12em',textAlign:'center',textTransform:'uppercase'}}>ESQ · DIR</div>
+      {/* Paper-doll row: slots on sides, silhouette center — stacks on mobile */}
+      <div style={{display:'flex',gap:10,alignItems:'flex-start',justifyContent:'center',flexWrap:'wrap',marginBottom:10}}>
+        {/* Mão esquerda */}
+        <div style={{flex:'1 1 130px',minWidth:120,maxWidth:200}}>
+          <CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma"/>
         </div>
-        <CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma"/>
+        {/* Central silhouette — hidden on very small screens via shrink */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,flexShrink:0}}>
+          <CharSilhouette color={sheetColor} classeId={sheet.classe}/>
+          <div style={{fontSize:7,color:sheetColor+'55',fontFamily:'Cinzel,serif',letterSpacing:'0.1em',textAlign:'center',textTransform:'uppercase'}}>ESQ · DIR</div>
+        </div>
+        {/* Mão direita */}
+        <div style={{flex:'1 1 130px',minWidth:120,maxWidth:200}}>
+          <CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma"/>
+        </div>
       </div>
 
-      {/* Body slot — full width below */}
+      {/* Corpo — full width */}
       <CompactEquipSlot label="Corpo" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)} placeholder="Armadura / Roupa"/>
     </div>
   );
