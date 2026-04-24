@@ -874,7 +874,7 @@ function EnemiesSection({masterMode}){
 // ─── BESTIARIO ─────────────────────────────────────────────────────────────────
 const newBestiary = id => ({ id, nome: '', foto: '', descricao: '', nivelAmeaca: 'Médio' });
 
-function BestiarioCard({ item, onChange, onDelete }) {
+function BestiarioCard({ item, onChange, onDelete, masterMode }) {
   const f = (k,v) => onChange({...item, [k]:v});
   const photoRef = useRef(null);
   const handlePhoto = async e => {
@@ -900,35 +900,49 @@ function BestiarioCard({ item, onChange, onDelete }) {
   return (
     <div style={{border:`1px solid ${corBase}44`, borderRadius:14, overflow:'hidden', background:'rgba(12,6,6,0.95)', marginBottom:18, boxShadow:`0 4px 20px ${corBase}22`}}>
       <div style={{height:3, background:`linear-gradient(90deg, ${corBase}, transparent)`}}/>
-      <div onClick={() => photoRef.current?.click()} style={{position:'relative', width:'100%', cursor:'pointer', background:'rgba(0,0,0,0.4)', overflow:'hidden'}}>
-        {item.foto ? <img src={item.foto} alt="monstro" style={{width:'100%', maxHeight:350, objectFit:'cover', objectPosition:'center', display:'block'}}/> : <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'30px', opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'Cinzel,serif'}}>Toque para adicionar a foto do monstro</span></div>}
+      <div onClick={() => masterMode && photoRef.current?.click()} style={{position:'relative', width:'100%', cursor:masterMode ? 'pointer' : 'default', background:'rgba(0,0,0,0.4)', overflow:'hidden'}}>
+        {item.foto ? <img src={item.foto} alt="monstro" style={{width:'100%', maxHeight:350, objectFit:'cover', objectPosition:'center', display:'block'}}/> : <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'30px', opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'Cinzel,serif'}}>{masterMode ? 'Toque para adicionar a foto do monstro' : 'Nenhuma imagem catalogada'}</span></div>}
         {item.foto && <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 55%, rgba(12,6,6,0.9))', pointerEvents:'none'}}/>}
         {item.foto && item.nome && <div style={{position:'absolute', bottom:10, left:16, fontFamily:'Cinzel,serif', fontSize:18, fontWeight:700, color:corBase, textShadow:`0 0 14px ${corBase}88`}}>{item.nome}</div>}
-        <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
+        {masterMode && <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>}
       </div>
       
       <div style={{padding:'16px 18px'}}>
         <div style={{display:'flex', gap:10, alignItems:'flex-end', marginBottom:16, flexWrap:'wrap'}}>
           <div style={{flex:1, minWidth:130}}>
             <label style={{fontSize:10, letterSpacing:'0.3em', color:corBase, fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Nome da Criatura</label>
-            <input value={item.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>
+            {masterMode ? (
+              <input value={item.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>
+            ) : (
+              <div style={{fontSize:15, color:'#E8D8C0', padding:'4px 0', fontFamily:'Cinzel,serif', fontWeight:600}}>{item.nome || 'Desconhecida'}</div>
+            )}
           </div>
           <div style={{width:140}}>
             <label style={{fontSize:10, letterSpacing:'0.3em', color:corBase, fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Ameaça</label>
-            <select value={item.nivelAmeaca} onChange={e => f('nivelAmeaca', e.target.value)} style={{width:'100%', color:corBase, fontWeight:'bold'}}>
-              <option value="Baixo">Baixo</option>
-              <option value="Médio">Médio</option>
-              <option value="Alto">Alto</option>
-              <option value="Supremo">Supremo</option>
-              <option value="Catastrófico">Catastrófico</option>
-            </select>
+            {masterMode ? (
+              <select value={item.nivelAmeaca} onChange={e => f('nivelAmeaca', e.target.value)} style={{width:'100%', color:corBase, fontWeight:'bold'}}>
+                <option value="Baixo">Baixo</option>
+                <option value="Médio">Médio</option>
+                <option value="Alto">Alto</option>
+                <option value="Supremo">Supremo</option>
+                <option value="Catastrófico">Catastrófico</option>
+              </select>
+            ) : (
+              <div style={{fontSize:14, color:corBase, padding:'4px 0', fontWeight:'bold', fontFamily:'Cinzel,serif'}}>{item.nivelAmeaca}</div>
+            )}
           </div>
-          <button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)', border:'1px solid rgba(232,25,60,0.3)', color:'#E8193C', borderRadius:6, cursor:'pointer', padding:'6px 11px', fontSize:12}}>✕ Excluir</button>
+          {masterMode && <button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)', border:'1px solid rgba(232,25,60,0.3)', color:'#E8193C', borderRadius:6, cursor:'pointer', padding:'6px 11px', fontSize:12}}>✕ Excluir</button>}
         </div>
         
         <div>
           <label style={{fontSize:10, letterSpacing:'0.3em', color:'#5A5070', fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Descrição & Comportamento</label>
-          <textarea value={item.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Descreva os hábitos, a aparência bizarra, e táticas de combate da criatura..." rows={5} style={{width:'100%', resize:'vertical', lineHeight:1.7}}/>
+          {masterMode ? (
+            <textarea value={item.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Descreva os hábitos, a aparência bizarra, e táticas de combate da criatura..." rows={5} style={{width:'100%', resize:'vertical', lineHeight:1.7}}/>
+          ) : (
+            <div style={{fontSize:14, color:'#9A8A7A', lineHeight:1.85, whiteSpace:'pre-wrap', fontStyle:'italic', background:'rgba(255,255,255,0.02)', padding:'12px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)'}}>
+              {item.descricao || 'Nenhum registro sobre o comportamento desta criatura foi feito até o momento.'}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -936,8 +950,6 @@ function BestiarioCard({ item, onChange, onDelete }) {
 }
 
 function BestiarioSection({ masterMode }) {
-  if (!masterMode) return <RestrictedAccess title="Bestiário Selado" text="As páginas deste compêndio estão trancadas por uma magia sombria. Apenas os olhos do Mestre podem contemplar as abominações contidas aqui." />;
-
   const [bestiario, setBestiario] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef({});
@@ -986,7 +998,7 @@ function BestiarioSection({ masterMode }) {
 
       {!loaded && <div style={{textAlign:'center', color:'#5A5070', fontFamily:'Cinzel,serif', fontSize:13, padding:40}}>Abrindo o tomo...</div>}
       
-      {loaded && (
+      {loaded && masterMode && (
         <div style={{display:'flex', justifyContent:'flex-end', marginBottom:18}}>
           <button onClick={add} style={{padding:'8px 20px', borderRadius:8, border:'1px solid rgba(232,160,32,0.4)', background:'rgba(232,160,32,0.1)', color:'#E8D8C0', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:12, letterSpacing:'0.08em'}}>+ Catalogar Criatura</button>
         </div>
@@ -996,12 +1008,14 @@ function BestiarioSection({ masterMode }) {
         <div style={{textAlign:'center', padding:38, border:'1px dashed rgba(232,160,32,0.2)', borderRadius:12}}>
           <div style={{fontSize:30, marginBottom:10}}>🐉</div>
           <div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#8A7A6A'}}>Nenhuma criatura catalogada.</div>
-          <div style={{fontSize:12, marginTop:5, color:'#5A4A4A'}}>O mundo ainda parece seguro. Registre o primeiro monstro.</div>
+          <div style={{fontSize:12, marginTop:5, color:'#5A4A4A'}}>
+            {masterMode ? 'O mundo ainda parece seguro. Registre o primeiro monstro.' : 'As páginas estão em branco. Nenhum monstro foi avistado ainda.'}
+          </div>
         </div>
       )}
 
       {bestiario.map(item => (
-        <BestiarioCard key={item.id} item={item} onChange={d => upd(item.id, d)} onDelete={() => del(item.id)} />
+        <BestiarioCard key={item.id} item={item} onChange={d => upd(item.id, d)} onDelete={() => del(item.id)} masterMode={masterMode} />
       ))}
     </div>
   );
