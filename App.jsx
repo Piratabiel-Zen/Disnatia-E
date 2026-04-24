@@ -953,7 +953,123 @@ function BestiarioSection({ masterMode }) {
   const [bestiario, setBestiario] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef({});
+  
+  // Novos estados para os filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterAmeaca, setFilterAmeaca] = useState('Todas');
 
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
+      const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      // Ordenar por criação (id)
+      data.sort((a,b) => b.id - a.id);
+      setBestiario(data);
+      setLoaded(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const saveItem = item => {
+    clearTimeout(saveTimeout.current[item.id]);
+    saveTimeout.current[item.id] = setTimeout(async () => {
+      try { await setDoc(doc(db, 'bestiario', String(item.id)), item); } 
+      catch(e) { console.error(e); }
+    }, 800);
+  };
+
+  const add = () => {
+    const item = newBestiary(Date.now());
+    setDoc(doc(db, 'bestiario', String(item.id)), item);
+  };
+  
+  const upd = (id, data) => {
+    setBestiario(prev => prev.map(b => b.id === id ? data : b));
+    saveItem(data);
+  };
+
+  const del = async id => {
+    await deleteDoc(doc(db, 'bestiario', String(id)));
+  };
+
+  // Lógica de filtragem
+  const filteredBestiario = bestiario.filter(item => {
+    const matchesSearch = (item.nome || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesAmeaca = filterAmeaca === 'Todas' || item.nivelAmeaca === filterAmeaca;
+    return matchesSearch && matchesAmeaca;
+  });
+
+  return (
+    <div style={{maxWidth:760, margin:'0 auto', padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center', marginBottom:32}}>
+        <div style={{fontSize:11, letterSpacing:'0.4em', color:'#E8A020', fontFamily:'Cinzel,serif', marginBottom:13, textTransform:'uppercase'}}>O Compêndio das Aberrações</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif', fontSize:23, color:'#E8D8C0', fontWeight:700, margin:0}}>Bestiário</h2>
+        <div style={{fontSize:11, color:'#6A5A5A', marginTop:7, fontFamily:'Cinzel,serif'}}>📖 Conhecimento Profano · Sincronizado em tempo real</div>
+        <div style={{width:60, height:1, background:'linear-gradient(90deg, transparent, rgba(232,160,32,0.6), transparent)', margin:'14px auto 0'}}/>
+      </div>
+
+      {!loaded && <div style={{textAlign:'center', color:'#5A5070', fontFamily:'Cinzel,serif', fontSize:13, padding:40}}>Abrindo o tomo...</div>}
+      
+      {loaded && masterMode && (
+        <div style={{display:'flex', justifyContent:'flex-end', marginBottom:18}}>
+          <button onClick={add} style={{padding:'8px 20px', borderRadius:8, border:'1px solid rgba(232,160,32,0.4)', background:'rgba(232,160,32,0.1)', color:'#E8D8C0', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:12, letterSpacing:'0.08em'}}>+ Catalogar Criatura</button>
+        </div>
+      )}
+
+      {/* Barra de Filtros */}
+      {loaded && bestiario.length > 0 && (
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(232,160,32,0.15)' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label style={{fontSize:9, letterSpacing:'0.2em', color:'rgba(232,160,32,0.7)', fontFamily:'Cinzel,serif', display:'block', marginBottom:6, textTransform:'uppercase'}}>Pesquisar</label>
+            <input 
+              type="text" 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              placeholder="Nome da criatura..." 
+              style={{ width: '100%', background: 'rgba(0,0,0,0.4)' }}
+            />
+          </div>
+          <div style={{ width: 160, flexShrink: 0 }}>
+            <label style={{fontSize:9, letterSpacing:'0.2em', color:'rgba(232,160,32,0.7)', fontFamily:'Cinzel,serif', display:'block', marginBottom:6, textTransform:'uppercase'}}>Categoria</label>
+            <select 
+              value={filterAmeaca} 
+              onChange={e => setFilterAmeaca(e.target.value)} 
+              style={{ width: '100%', background: 'rgba(0,0,0,0.4)' }}
+            >
+              <option value="Todas">Todas as Ameaças</option>
+              <option value="Baixo">Baixo</option>
+              <option value="Médio">Médio</option>
+              <option value="Alto">Alto</option>
+              <option value="Supremo">Supremo</option>
+              <option value="Catastrófico">Catastrófico</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {loaded && bestiario.length === 0 && (
+        <div style={{textAlign:'center', padding:38, border:'1px dashed rgba(232,160,32,0.2)', borderRadius:12}}>
+          <div style={{fontSize:30, marginBottom:10}}>🐉</div>
+          <div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#8A7A6A'}}>Nenhuma criatura catalogada.</div>
+          <div style={{fontSize:12, marginTop:5, color:'#5A4A4A'}}>
+            {masterMode ? 'O mundo ainda parece seguro. Registre o primeiro monstro.' : 'As páginas estão em branco. Nenhum monstro foi avistado ainda.'}
+          </div>
+        </div>
+      )}
+
+      {/* Mensagem quando o filtro não encontra resultados */}
+      {loaded && bestiario.length > 0 && filteredBestiario.length === 0 && (
+        <div style={{textAlign:'center', padding:30, color:'#7A6A5A', fontFamily:'Cinzel,serif', fontSize:13}}>
+          Nenhuma criatura encontrada com estes filtros.
+        </div>
+      )}
+
+      {/* Renderiza a lista filtrada em vez da lista completa */}
+      {filteredBestiario.map(item => (
+        <BestiarioCard key={item.id} item={item} onChange={d => upd(item.id, d)} onDelete={() => del(item.id)} masterMode={masterMode} />
+      ))}
+    </div>
+  );
+}
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
       const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
