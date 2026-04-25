@@ -961,8 +961,7 @@ function BestiarioSection({ masterMode }) {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
       const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      // Ordenar por criação (id)
-      data.sort((a,b) => b.id - a.id);
+      // A ordenação primária foi movida para o momento da renderização
       setBestiario(data);
       setLoaded(true);
     });
@@ -991,11 +990,29 @@ function BestiarioSection({ masterMode }) {
     await deleteDoc(doc(db, 'bestiario', String(id)));
   };
 
-  // Lógica de filtragem
+  // --- NOVA LÓGICA DE ORDENAÇÃO DE AMEAÇAS ---
+  const pesosAmeaca = {
+    "Baixo": 1,
+    "Médio": 2,
+    "Alto": 3,
+    "Supremo": 4,
+    "Catastrófico": 5
+  };
+
   const filteredBestiario = bestiario.filter(item => {
     const matchesSearch = (item.nome || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesAmeaca = filterAmeaca === 'Todas' || item.nivelAmeaca === filterAmeaca;
     return matchesSearch && matchesAmeaca;
+  }).sort((a, b) => {
+    const pesoA = pesosAmeaca[a.nivelAmeaca] || 0;
+    const pesoB = pesosAmeaca[b.nivelAmeaca] || 0;
+    
+    // 1º Criteiro: Ameaça crescente (Baixo -> Catastrófico)
+    if (pesoA !== pesoB) {
+      return pesoA - pesoB;
+    }
+    // 2º Critério: Desempate pela data de criação (mais novos primeiro)
+    return b.id - a.id;
   });
 
   return (
@@ -1063,7 +1080,7 @@ function BestiarioSection({ masterMode }) {
         </div>
       )}
 
-      {/* Renderiza a lista filtrada em vez da lista completa */}
+      {/* Renderiza a lista filtrada e ORDENADA PELA AMEAÇA em vez da lista completa */}
       {filteredBestiario.map(item => (
         <BestiarioCard key={item.id} item={item} onChange={d => upd(item.id, d)} onDelete={() => del(item.id)} masterMode={masterMode} />
       ))}
