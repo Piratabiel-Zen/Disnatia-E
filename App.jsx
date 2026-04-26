@@ -626,19 +626,21 @@ function EquipamentoPanel({sheet, onChange, sheetColor}){
 function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities}){
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
-  const nivel=Number(sheet.nivel)||1;
+  const nivel = Number(sheet?.nivel) || 1;
   
-  const customArr = customAbilities[cls?.id];
+  // BLINDAGEM EXTREMA AQUI: Garante que habilidades antigas não quebrem o site
+  const safeCustomAbilities = customAbilities || {};
+  const customArr = safeCustomAbilities[cls?.id];
   const classCustom = Array.isArray(customArr) ? customArr.filter(Boolean) : [];
 
   const handleSave=()=>{
     if(!form.nome.trim())return;
-    const updated={...customAbilities,[cls.id]:[...classCustom,{...form,id:Date.now()}]};
+    const updated={...safeCustomAbilities,[cls.id]:[...classCustom,{...form,id:Date.now()}]};
     onSaveCustomAbilities(updated);
     setForm(newCustomAbility());
   };
   const handleDelete=(abilityId)=>{
-    const updated={...customAbilities,[cls.id]:classCustom.filter(a=>a.id!==abilityId)};
+    const updated={...safeCustomAbilities,[cls.id]:classCustom.filter(a=>a.id!==abilityId)};
     onSaveCustomAbilities(updated);
   };
 
@@ -647,7 +649,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const tipoBadgeColor={normal:'rgba(255,255,255,0.5)',especial:color,passiva:'rgba(168,85,247,0.8)'};
 
   const abilityRow=(a,isSpecial,isCustom,locked)=>{
-    if (!a) return null; // Trava contra array corrompido
+    if (!a) return null; // Trava extra
     const danoValue=String(a.dano||a.roll||''); 
     return(
     <div key={a.id||a.name} style={{background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',opacity:locked?0.45:1}}>
@@ -946,19 +948,39 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
 }
 
 function SheetsSection({masterMode}){
-  const[sheets,setSheets]=useState([]);const[loaded,setLoaded]=useState(false);const[activeId,setActiveId]=useState(null);
+  const[sheets,setSheets]=useState([]);
+  const[loaded,setLoaded]=useState(false);
+  const[activeId,setActiveId]=useState(null);
   const[customAbilities,setCustomAbilities]=useState({});
+  const[fbError, setFbError] = useState(""); // Captura erros do Firebase
   const saveTimeout=useRef({});
+
   useEffect(()=>{
-    const u1=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});
-    const u2=onSnapshot(doc(db,'config','customAbilities'),snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});});
+    const u1=onSnapshot(collection(db,'sheets'),
+      snap=>{
+        const data=snap.docs.map(d=>({id:d.id,...d.data()}));
+        setSheets(data);
+        setLoaded(true);
+      },
+      error => {
+        console.error("Erro Firebase Fichas:", error);
+        setFbError("Acesso Negado: As regras de segurança do seu Firebase expiraram. Atualize o console do Firebase (allow read, write: if true;)");
+        setLoaded(true);
+      }
+    );
+    const u2=onSnapshot(doc(db,'config','customAbilities'),
+      snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});},
+      error => console.error("Erro Firebase Habilidades:", error)
+    );
     return()=>{u1();u2();};
   },[]);
+
   const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
   const add=()=>{if(sheets.length>=5)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));};
   const upd=(id,data)=>{if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
   const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
   const activeSheet=sheets.find(s=>String(s.id)===activeId);
+
   return(
     <div style={{maxWidth:820,margin:'0 auto',padding:'24px 14px 80px'}}>
       <div style={{textAlign:'center',marginBottom:20}}>
@@ -967,8 +989,19 @@ function SheetsSection({masterMode}){
         <div style={{fontSize:11,color:'#4A4050',marginTop:6,fontFamily:'Cinzel,serif'}}>✦ Selecione uma ficha · Sincronizado em tempo real</div>
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(30,200,255,0.6),transparent)',margin:'12px auto 0'}}/>
       </div>
-      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-      {loaded&&(<>
+
+      {/* AVISO DO FIREBASE EXIBIDO NA TELA */}
+      {fbError && (
+        <div style={{padding: '16px 20px', background: 'rgba(232,25,60,0.1)', border: '1px solid #E8193C', borderRadius: 10, marginBottom: 20, textAlign: 'center'}}>
+          <div style={{fontSize: 20, marginBottom: 6}}>⚠️</div>
+          <div style={{fontFamily: 'Cinzel,serif', fontSize: 13, color: '#E8193C', fontWeight: 600, marginBottom: 4}}>{fbError}</div>
+          <div style={{fontSize: 12, color: 'rgba(255,255,255,0.6)'}}>Siga a instrução do Claude: Vá em console.firebase.google.com &gt; Firestore Database &gt; Regras e atualize para continuar jogando.</div>
+        </div>
+      )}
+
+      {!loaded && !fbError && <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+      
+      {loaded && !fbError && (<>
         <div className="sheet-tabs-nav" style={{display:'flex',gap:6,marginBottom:20,overflowX:'auto',paddingBottom:2}}>
           {sheets.map(s=>{
             const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
@@ -978,8 +1011,8 @@ function SheetsSection({masterMode}){
               style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap'}}>
               {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{cls.icon}</div>}
               <div style={{textAlign:'left'}}>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
-                <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}</div>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{String(s.nome||'Sem nome')}</div>
+                <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {Number(s.nivel)||1}</div>
               </div>
             </button>);
           })}
