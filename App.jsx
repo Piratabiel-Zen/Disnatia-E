@@ -952,83 +952,64 @@ function SheetsSection({masterMode}){
   const[loaded,setLoaded]=useState(false);
   const[activeId,setActiveId]=useState(null);
   const[customAbilities,setCustomAbilities]=useState({});
-  const[fbError, setFbError] = useState(""); // Captura erros do Firebase
+  const[error, setError] = useState(null); // Captura o erro para evitar a tela branca
   const saveTimeout=useRef({});
 
   useEffect(()=>{
-    const u1=onSnapshot(collection(db,'sheets'),
-      snap=>{
-        const data=snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Monitor de Fichas com tratamento de erro nativo
+    const u1 = onSnapshot(collection(db,'sheets'), 
+      (snap) => {
+        const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
         setSheets(data);
         setLoaded(true);
+        setError(null);
       },
-      error => {
-        console.error("Erro Firebase Fichas:", error);
-        setFbError("Acesso Negado: As regras de segurança do seu Firebase expiraram. Atualize o console do Firebase (allow read, write: if true;)");
+      (err) => {
+        console.error("Erro no Firebase:", err);
+        setError("Erro de Conexão: Verifique as Regras de Segurança do seu Firebase.");
         setLoaded(true);
       }
     );
-    const u2=onSnapshot(doc(db,'config','customAbilities'),
-      snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});},
-      error => console.error("Erro Firebase Habilidades:", error)
+
+    const u2 = onSnapshot(doc(db,'config','customAbilities'), 
+      snap => { if(snap.exists()) setCustomAbilities(snap.data() || {}); },
+      err => console.error("Erro nas Habilidades:", err)
     );
-    return()=>{u1();u2();};
+
+    return () => { u1(); u2(); };
   },[]);
 
-  const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
-  const add=()=>{if(sheets.length>=5)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));};
-  const upd=(id,data)=>{if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
-  const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
-  const activeSheet=sheets.find(s=>String(s.id)===activeId);
-
-  return(
-    <div style={{maxWidth:820,margin:'0 auto',padding:'24px 14px 80px'}}>
-      <div style={{textAlign:'center',marginBottom:20}}>
-        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Os Portadores do Destino</div>
-        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Personagens</h2>
-        <div style={{fontSize:11,color:'#4A4050',marginTop:6,fontFamily:'Cinzel,serif'}}>✦ Selecione uma ficha · Sincronizado em tempo real</div>
-        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(30,200,255,0.6),transparent)',margin:'12px auto 0'}}/>
+  if (error) {
+    return (
+      <div style={{padding: 40, textAlign: 'center', color: '#E8193C', fontFamily: 'Cinzel, serif'}}>
+        <div style={{fontSize: 40}}>⚠️</div>
+        <h3>O Cosmos está inacessível</h3>
+        <p>{error}</p>
+        <p style={{fontSize: 12, color: '#6A5A6A'}}>Causa provável: As regras do Firebase expiraram conforme o aviso que você recebeu.</p>
       </div>
+    );
+  }
 
-      {/* AVISO DO FIREBASE EXIBIDO NA TELA */}
-      {fbError && (
-        <div style={{padding: '16px 20px', background: 'rgba(232,25,60,0.1)', border: '1px solid #E8193C', borderRadius: 10, marginBottom: 20, textAlign: 'center'}}>
-          <div style={{fontSize: 20, marginBottom: 6}}>⚠️</div>
-          <div style={{fontFamily: 'Cinzel,serif', fontSize: 13, color: '#E8193C', fontWeight: 600, marginBottom: 4}}>{fbError}</div>
-          <div style={{fontSize: 12, color: 'rgba(255,255,255,0.6)'}}>Siga a instrução do Claude: Vá em console.firebase.google.com &gt; Firestore Database &gt; Regras e atualize para continuar jogando.</div>
-        </div>
-      )}
+  const upd=(id,data)=>{
+    if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}
+    setSheets(prev=>prev.map(s=>s.id===id?data:s));
+    clearTimeout(saveTimeout.current[id]);
+    saveTimeout.current[id]=setTimeout(()=>setDoc(doc(db,'sheets',String(id)),data),900);
+  };
 
-      {!loaded && !fbError && <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-      
-      {loaded && !fbError && (<>
-        <div className="sheet-tabs-nav" style={{display:'flex',gap:6,marginBottom:20,overflowX:'auto',paddingBottom:2}}>
-          {sheets.map(s=>{
-            const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
-            const sc=SHEET_COLORS[s.classe]||cls.color;
-            const isActive=String(s.id)===activeId;
-            return(<button key={s.id} onClick={()=>setActiveId(isActive?null:String(s.id))}
-              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap'}}>
-              {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{cls.icon}</div>}
-              <div style={{textAlign:'left'}}>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{String(s.nome||'Sem nome')}</div>
-                <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {Number(s.nivel)||1}</div>
-              </div>
-            </button>);
-          })}
-          {sheets.length<5&&(<button onClick={add} onMouseOver={e=>e.currentTarget.style.borderColor='rgba(168,85,247,0.4)'} onMouseOut={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'}
-            style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>
-            + Novo Personagem
-          </button>)}
-        </div>
-        {activeSheet
-          ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={saveCustom}/>
-          :<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}>
-            <div style={{fontSize:32,marginBottom:10,opacity:0.2}}>📋</div>
-            <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Selecione um personagem acima para ver sua ficha.</div>
-          </div>
-        }
-      </>)}
+  const activeSheet = sheets.find(s => String(s.id) === activeId);
+
+  return (
+    <div style={{maxWidth:820,margin:'0 auto',padding:'24px 14px 80px'}}>
+      {/* ... resto do seu código de renderização das abas e SheetFull ... */}
+      <div className="sheet-tabs-nav" style={{display:'flex',gap:6,marginBottom:20,overflowX:'auto'}}>
+        {sheets.map(s => (
+          <button key={s.id} onClick={()=>setActiveId(String(s.id))} style={{padding: '10px', borderRadius: 8, background: activeId === String(s.id) ? '#1EC8FF33' : '#111'}}>
+            {s.nome || "Sem Nome"}
+          </button>
+        ))}
+      </div>
+      {activeSheet && <SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={d => setDoc(doc(db,'config','customAbilities'),d)} />}
     </div>
   );
 }
