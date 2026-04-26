@@ -952,11 +952,10 @@ function SheetsSection({masterMode}){
   const[loaded,setLoaded]=useState(false);
   const[activeId,setActiveId]=useState(null);
   const[customAbilities,setCustomAbilities]=useState({});
-  const[error, setError] = useState(null); // Captura o erro para evitar a tela branca
+  const[error, setError] = useState(null);
   const saveTimeout=useRef({});
 
   useEffect(()=>{
-    // Monitor de Fichas com tratamento de erro nativo
     const u1 = onSnapshot(collection(db,'sheets'), 
       (snap) => {
         const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -979,37 +978,95 @@ function SheetsSection({masterMode}){
     return () => { u1(); u2(); };
   },[]);
 
+  const saveSheet=sheet=>{
+    clearTimeout(saveTimeout.current[sheet.id]);
+    saveTimeout.current[sheet.id]=setTimeout(async()=>{
+      try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}
+      catch(e){console.error('Erro ao salvar ficha:',e);}
+    },900);
+  };
+
+  const add=()=>{
+    if(sheets.length>=5)return;
+    const s=newSheet(Date.now());
+    setDoc(doc(db,'sheets',String(s.id)),s);
+    setActiveId(String(s.id));
+  };
+
+  const upd=(id,data)=>{
+    if(data===null){
+      deleteDoc(doc(db,'sheets',String(id)));
+      setActiveId(null);
+      return;
+    }
+    setSheets(prev=>prev.map(s=>s.id===id?data:s));
+    saveSheet(data);
+  };
+
+  const saveCustom=async(data)=>{
+    try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}
+    catch(e){console.error('Erro ao salvar habilidades:',e);}
+  };
+
+  const activeSheet = sheets.find(s => String(s.id) === activeId);
+
   if (error) {
     return (
       <div style={{padding: 40, textAlign: 'center', color: '#E8193C', fontFamily: 'Cinzel, serif'}}>
         <div style={{fontSize: 40}}>⚠️</div>
         <h3>O Cosmos está inacessível</h3>
         <p>{error}</p>
-        <p style={{fontSize: 12, color: '#6A5A6A'}}>Causa provável: As regras do Firebase expiraram conforme o aviso que você recebeu.</p>
+        <p style={{fontSize: 12, color: '#6A5A6A'}}>Causa provável: Regras do Firebase expiradas.</p>
       </div>
     );
   }
 
-  const upd=(id,data)=>{
-    if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}
-    setSheets(prev=>prev.map(s=>s.id===id?data:s));
-    clearTimeout(saveTimeout.current[id]);
-    saveTimeout.current[id]=setTimeout(()=>setDoc(doc(db,'sheets',String(id)),data),900);
-  };
-
-  const activeSheet = sheets.find(s => String(s.id) === activeId);
-
-  return (
+  return(
     <div style={{maxWidth:820,margin:'0 auto',padding:'24px 14px 80px'}}>
-      {/* ... resto do seu código de renderização das abas e SheetFull ... */}
-      <div className="sheet-tabs-nav" style={{display:'flex',gap:6,marginBottom:20,overflowX:'auto'}}>
-        {sheets.map(s => (
-          <button key={s.id} onClick={()=>setActiveId(String(s.id))} style={{padding: '10px', borderRadius: 8, background: activeId === String(s.id) ? '#1EC8FF33' : '#111'}}>
-            {s.nome || "Sem Nome"}
-          </button>
-        ))}
+      <div style={{textAlign:'center',marginBottom:20}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Os Portadores do Destino</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Personagens</h2>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(30,200,255,0.6),transparent)',margin:'12px auto 0'}}/>
       </div>
-      {activeSheet && <SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={d => setDoc(doc(db,'config','customAbilities'),d)} />}
+
+      {!loaded ? <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div> : (
+        <>
+          <div className="sheet-tabs-nav" style={{display:'flex',gap:6,marginBottom:20,overflowX:'auto',paddingBottom:2}}>
+            {sheets.map(s=>{
+              const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
+              const sc=SHEET_COLORS[s.classe]||cls.color;
+              const isActive=String(s.id)===activeId;
+              return(
+                <button key={s.id} onClick={()=>setActiveId(isActive?null:String(s.id))}
+                  style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap'}}>
+                  <div style={{textAlign:'left'}}>
+                    <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
+                    <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}</div>
+                  </div>
+                </button>
+              );
+            })}
+            {masterMode && sheets.length < 5 && (
+              <button onClick={add} style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,flexShrink:0}}>+ Nova Ficha</button>
+            )}
+          </div>
+
+          {activeSheet ? (
+            <SheetFull 
+              sheet={activeSheet} 
+              onChange={d=>upd(activeSheet.id,d)} 
+              masterMode={masterMode} 
+              customAbilities={customAbilities} 
+              onSaveCustomAbilities={saveCustom} 
+            />
+          ) : (
+            <div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}>
+              <div style={{fontSize:32,marginBottom:10,opacity:0.2}}>📋</div>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Selecione um personagem acima para ver sua ficha.</div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
