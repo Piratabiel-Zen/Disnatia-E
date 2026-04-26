@@ -36,7 +36,6 @@ html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(155,89,182,0.4);border-radius:3px;}
 
-/* Novas transições e animações */
 @keyframes pageTurn {
   0% { opacity: 0; transform: translateY(12px) scale(0.99); filter: blur(3px); }
   100% { opacity: 1; transform: none; filter: blur(0); }
@@ -51,6 +50,9 @@ html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
 @keyframes shimmer{0%,100%{opacity:0.4}50%{opacity:1}}
 @keyframes revealCoord{from{opacity:0;letter-spacing:0.6em}to{opacity:1;letter-spacing:0.25em}}
 @keyframes pulse{0%,100%{opacity:0.6}50%{opacity:1}}
+@keyframes attrPulse{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,0.7);transform:scale(1);}50%{box-shadow:0 0 0 5px rgba(168,85,247,0);transform:scale(1.18);}}
+@keyframes bannerGlow{0%,100%{box-shadow:0 0 16px rgba(168,85,247,0.4),0 0 32px rgba(168,85,247,0.15);}50%{box-shadow:0 0 24px rgba(168,85,247,0.7),0 0 48px rgba(168,85,247,0.3);}}
+@keyframes pinDrop{0%{transform:translateY(-10px) scale(0.5);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
 
 input,textarea,select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.11);color:#C8B8A0;border-radius:6px;font-family:'Crimson Text',Georgia,serif;font-size:15px;padding:6px 10px;outline:none;transition:border-color 0.2s;}
 input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
@@ -72,8 +74,6 @@ button{font-family:'Crimson Text',Georgia,serif;}
   nav button{flex-shrink:0;white-space:nowrap;}
   .sheet-tabs-nav{overflow-x:auto;flex-wrap:nowrap!important;}
   .sheet-tabs-nav button{flex-shrink:0;}
-  
-  /* Ajustes responsivos na tabela de equipamento */
   .equip-grid{grid-template-columns:1fr!important; gap: 16px!important;}
   .equip-slot-inputs { flex-direction: column !important; gap: 6px !important; }
   .equip-slot-inputs input { width: 100% !important; flex: none !important; }
@@ -88,6 +88,18 @@ button{font-family:'Crimson Text',Georgia,serif;}
 const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80'};
 const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)'};
 const MASTER_PIN='dinastia';
+
+// ─── STATUS DEFINITIONS ───────────────────────────────────────────────────────
+const STATUS_LIST = [
+  { id: 'envenenado',   label: 'Envenenado',   icon: '☠️',  color: '#4ADE80' },
+  { id: 'sangrando',   label: 'Sangrando',    icon: '🩸',  color: '#E8193C' },
+  { id: 'atordoado',   label: 'Atordoado',    icon: '💫',  color: '#E8A020' },
+  { id: 'queimando',   label: 'Queimando',    icon: '🔥',  color: '#FF6B35' },
+  { id: 'congelado',   label: 'Congelado',    icon: '❄️',  color: '#1EC8FF' },
+  { id: 'amaldicado',  label: 'Amaldiçoado',  icon: '💀',  color: '#A855F7' },
+  { id: 'invisivel',   label: 'Invisível',    icon: '👁️',  color: '#C8B8A0' },
+  { id: 'protegido',   label: 'Protegido',    icon: '🛡️',  color: '#4ADE80' },
+];
 
 const CLASSES=[
   {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas', dano: '1D6 + Agilidade' ,desc:'Embui um objeto com chamas de plasma e efetua uma estocada veloz que atravessa o alvo, fazendo-o sangrar (caso não tenha um objeto, usa suas proprias mãos): −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'Over Hit',cost:2,cooldown:'4 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Ao expirar, −3 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20, causando 3x o dano).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Após 2 rodadas ativo, superaquece — fica 2 rodadas completamente incapaz de agir.',req:7}]},
@@ -114,6 +126,381 @@ function RestrictedAccess({ title, text }) {
       <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:24,color:'#E8193C',fontWeight:700,margin:0,textShadow:'0 0 20px rgba(232,25,60,0.4)'}}>{title}</h2>
       <div style={{fontSize:14,color:'#9A8A7A',marginTop:12,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>{text}</div>
       <div style={{fontSize:12,color:'#5A4A5A',marginTop:8}}>Ative o Modo Mestre no topo da tela usando a senha para acessar.</div>
+    </div>
+  );
+}
+
+// ─── 🎵 AMBIENT SOUND PLAYER ─────────────────────────────────────────────────
+function AmbientSoundPlayer({ masterMode }) {
+  const [open, setOpen] = useState(false);
+  const [ytUrl, setYtUrl] = useState('');
+  const [savedUrl, setSavedUrl] = useState('');
+  const [playerVisible, setPlayerVisible] = useState(false);
+
+  // Sync YouTube URL via Firebase
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setSavedUrl(data.url || '');
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const extractVideoId = (url) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+    return match ? match[1] : null;
+  };
+
+  const handleSaveUrl = async () => {
+    const videoId = extractVideoId(ytUrl);
+    if (!videoId) return;
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`;
+    await setDoc(doc(db, 'config', 'ambient'), { url: embedUrl, raw: ytUrl });
+    setSavedUrl(embedUrl);
+    setYtUrl('');
+  };
+
+  const videoId = savedUrl ? extractVideoId(savedUrl) || savedUrl.match(/embed\/([^?]+)/)?.[1] : null;
+
+  return (
+    <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 100 }}>
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          title="Som Ambiente"
+          style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: savedUrl ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
+            border: `1px solid ${savedUrl ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.15)'}`,
+            color: savedUrl ? '#4ADE80' : '#7A6A8A',
+            fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', backdropFilter: 'blur(5px)',
+            boxShadow: savedUrl ? '0 0 16px rgba(74,222,128,0.25)' : 'none',
+            transition: 'all 0.3s',
+            animation: savedUrl ? 'pulse 2.5s ease-in-out infinite' : 'none',
+          }}
+        >🎵</button>
+      )}
+
+      {open && (
+        <div style={{
+          background: 'rgba(10,12,28,0.97)', border: '1px solid rgba(74,222,128,0.3)',
+          borderRadius: 16, padding: 16, width: 300,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#4ADE80', letterSpacing: '0.1em' }}>🎵 Som Ambiente</div>
+            <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
+          </div>
+
+          {/* Player só para jogadores — se há URL salva */}
+          {savedUrl && !playerVisible && (
+            <button
+              onClick={() => setPlayerVisible(true)}
+              style={{
+                width: '100%', padding: '10px', borderRadius: 8, marginBottom: 12,
+                border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
+                color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif',
+                fontSize: 13, letterSpacing: '0.08em', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: 8,
+              }}
+            >▶ Ouvir Áudio</button>
+          )}
+
+          {savedUrl && playerVisible && (
+            <div style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+              <iframe
+                width="100%" height="80"
+                src={savedUrl}
+                title="Ambient Sound"
+                allow="autoplay; encrypted-media"
+                style={{ border: 'none', display: 'block' }}
+              />
+              <button
+                onClick={() => setPlayerVisible(false)}
+                style={{
+                  marginTop: 6, width: '100%', padding: '5px', borderRadius: 6,
+                  border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)',
+                  color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                }}
+              >⏹ Parar</button>
+            </div>
+          )}
+
+          {/* Somente Mestre pode inserir URL */}
+          {masterMode && (
+            <div style={{ borderTop: savedUrl ? '1px solid rgba(255,255,255,0.07)' : 'none', paddingTop: savedUrl ? 12 : 0 }}>
+              <label style={{ fontSize: 10, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.6)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Link do YouTube</label>
+              <input
+                value={ytUrl}
+                onChange={e => setYtUrl(e.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+                style={{ width: '100%', fontSize: 12, marginBottom: 8 }}
+              />
+              <button
+                onClick={handleSaveUrl}
+                disabled={!ytUrl.trim()}
+                style={{
+                  width: '100%', padding: '8px', borderRadius: 7,
+                  border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
+                  color: '#4ADE80', cursor: ytUrl.trim() ? 'pointer' : 'not-allowed',
+                  fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em',
+                  opacity: ytUrl.trim() ? 1 : 0.4,
+                }}
+              >✦ Definir Som Ambiente</button>
+              {savedUrl && (
+                <button
+                  onClick={async () => { await setDoc(doc(db, 'config', 'ambient'), { url: '', raw: '' }); setSavedUrl(''); setPlayerVisible(false); }}
+                  style={{
+                    width: '100%', padding: '6px', borderRadius: 7, marginTop: 6,
+                    border: '1px solid rgba(232,25,60,0.25)', background: 'transparent',
+                    color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                  }}
+                >✕ Remover áudio</button>
+              )}
+            </div>
+          )}
+
+          {!masterMode && !savedUrl && (
+            <div style={{ textAlign: 'center', padding: '12px 0', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 12 }}>
+              Aguardando o Mestre definir um som ambiente...
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 🗺️ MAPA MUNDI SECTION ───────────────────────────────────────────────────
+function MapaMundiSection({ masterMode }) {
+  const [mapImg, setMapImg] = useState('');
+  const [pins, setPins] = useState([]);
+  const [selectedPin, setSelectedPin] = useState(null);
+  const [editingPin, setEditingPin] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const mapRef = useRef(null);
+  const fileRef = useRef(null);
+  const saveTimeout = useRef(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'mapamundi'), snap => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setMapImg(d.img || '');
+        setPins(d.pins || []);
+      }
+      setLoaded(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const saveAll = async (newImg, newPins) => {
+    clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(async () => {
+      try { await setDoc(doc(db, 'config', 'mapamundi'), { img: newImg, pins: newPins }); }
+      catch (e) { console.error(e); }
+    }, 800);
+  };
+
+  const handleMapUpload = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const compressed = await compressImage(ev.target.result, 1400, 1400, 0.78);
+      setMapImg(compressed);
+      saveAll(compressed, pins);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleMapClick = e => {
+    if (!masterMode || !mapRef.current) return;
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const newPin = { id: Date.now(), x, y, titulo: 'Novo Local', descricao: '' };
+    const newPins = [...pins, newPin];
+    setPins(newPins);
+    setEditingPin(newPin.id);
+    setSelectedPin(newPin.id);
+    saveAll(mapImg, newPins);
+  };
+
+  const updatePin = (id, data) => {
+    const newPins = pins.map(p => p.id === id ? { ...p, ...data } : p);
+    setPins(newPins);
+    saveAll(mapImg, newPins);
+  };
+
+  const deletePin = id => {
+    const newPins = pins.filter(p => p.id !== id);
+    setPins(newPins);
+    if (selectedPin === id) setSelectedPin(null);
+    if (editingPin === id) setEditingPin(null);
+    saveAll(mapImg, newPins);
+  };
+
+  const selPin = pins.find(p => p.id === selectedPin);
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px 80px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Mundo de Cosmum</div>
+        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa Múndi</h2>
+        <div style={{ fontSize: 12, color: '#4A4050', marginTop: 9, fontFamily: 'Cinzel,serif' }}>
+          {masterMode ? '🗺 Clique no mapa para criar marcadores · Sincronizado em tempo real' : '🗺 Explore os marcadores clicando neles'}
+        </div>
+        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)', margin: '16px auto 0' }} />
+      </div>
+
+      {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o mapa...</div>}
+
+      {loaded && !mapImg && (
+        <div style={{ textAlign: 'center', padding: 60, border: '1px dashed rgba(232,160,32,0.25)', borderRadius: 14 }}>
+          <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🗺️</div>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>
+            {masterMode ? 'Envie o mapa do mundo para começar.' : 'O Mestre ainda não enviou o mapa do mundo.'}
+          </div>
+          {masterMode && (
+            <button onClick={() => fileRef.current?.click()} style={{
+              padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,160,32,0.4)',
+              background: 'rgba(232,160,32,0.1)', color: '#E8A020', cursor: 'pointer',
+              fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em',
+            }}>📁 Enviar Mapa</button>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
+        </div>
+      )}
+
+      {loaded && mapImg && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Master toolbar */}
+          {masterMode && (
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button onClick={() => fileRef.current?.click()} style={{
+                padding: '7px 16px', borderRadius: 7, border: '1px solid rgba(232,160,32,0.35)',
+                background: 'rgba(232,160,32,0.08)', color: '#E8A020', cursor: 'pointer',
+                fontFamily: 'Cinzel,serif', fontSize: 11, letterSpacing: '0.06em',
+              }}>🗺 Trocar Mapa</button>
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
+              <div style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif', display: 'flex', alignItems: 'center', paddingRight: 4 }}>
+                {pins.length} marcador{pins.length !== 1 ? 'es' : ''} · clique no mapa para adicionar
+              </div>
+            </div>
+          )}
+
+          {/* Map container */}
+          <div
+            ref={mapRef}
+            onClick={handleMapClick}
+            style={{
+              position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden',
+              border: '1px solid rgba(232,160,32,0.25)', cursor: masterMode ? 'crosshair' : 'default',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+            }}
+          >
+            <img src={mapImg} alt="mapa mundi" style={{ width: '100%', display: 'block', maxHeight: 600, objectFit: 'contain', background: '#04060F' }} />
+
+            {/* Pins */}
+            {pins.map(pin => (
+              <div
+                key={pin.id}
+                onClick={e => { e.stopPropagation(); setSelectedPin(selectedPin === pin.id ? null : pin.id); if (masterMode) setEditingPin(pin.id); }}
+                style={{
+                  position: 'absolute', left: `${pin.x}%`, top: `${pin.y}%`,
+                  transform: 'translate(-50%, -100%)',
+                  cursor: 'pointer', zIndex: 5,
+                  animation: 'pinDrop 0.4s cubic-bezier(0.2,0.8,0.2,1)',
+                }}
+              >
+                <div style={{
+                  background: selectedPin === pin.id ? '#E8A020' : 'rgba(232,160,32,0.85)',
+                  border: `2px solid ${selectedPin === pin.id ? '#fff' : 'rgba(232,160,32,0.6)'}`,
+                  borderRadius: '50% 50% 50% 0', width: 22, height: 22,
+                  transform: 'rotate(-45deg)',
+                  boxShadow: `0 2px 8px rgba(0,0,0,0.6)`,
+                  transition: 'all 0.2s',
+                }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Pin detail / edit panel */}
+          {selectedPin && selPin && (
+            <div style={{
+              border: '1px solid rgba(232,160,32,0.3)', borderRadius: 12,
+              background: 'rgba(10,12,28,0.95)', padding: 18,
+              animation: 'pageTurn 0.3s ease',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, justifyContent: 'space-between' }}>
+                <div style={{ flex: 1 }}>
+                  {masterMode ? (
+                    <>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ fontSize: 10, letterSpacing: '0.3em', color: 'rgba(232,160,32,0.7)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Nome do Local</label>
+                        <input
+                          value={selPin.titulo}
+                          onChange={e => updatePin(selPin.id, { titulo: e.target.value })}
+                          style={{ width: '100%', fontFamily: 'Cinzel,serif', fontSize: 14 }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 10, letterSpacing: '0.3em', color: 'rgba(232,160,32,0.7)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Descrição</label>
+                        <textarea
+                          value={selPin.descricao}
+                          onChange={e => updatePin(selPin.id, { descricao: e.target.value })}
+                          placeholder="Descreva este local..."
+                          rows={3}
+                          style={{ width: '100%', resize: 'vertical', lineHeight: 1.7 }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontFamily: 'Cinzel,serif', fontSize: 16, color: '#E8A020', fontWeight: 700, marginBottom: 8 }}>{selPin.titulo}</div>
+                      <div style={{ fontSize: 14, color: '#9A8A7A', lineHeight: 1.8, fontStyle: 'italic', whiteSpace: 'pre-line' }}>
+                        {selPin.descricao || <span style={{ color: '#4A4050' }}>Este local ainda não possui descrição.</span>}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <button onClick={() => setSelectedPin(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
+                  {masterMode && (
+                    <button onClick={() => deletePin(selPin.id)} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.3)', color: '#E8193C', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>🗑</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pins list */}
+          {pins.length > 0 && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Locais Marcados</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {pins.map(pin => (
+                  <button key={pin.id} onClick={() => setSelectedPin(selectedPin === pin.id ? null : pin.id)}
+                    style={{
+                      padding: '5px 12px', borderRadius: 20,
+                      border: `1px solid ${selectedPin === pin.id ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)'}`,
+                      background: selectedPin === pin.id ? 'rgba(232,160,32,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: selectedPin === pin.id ? '#E8A020' : '#7A6A5A',
+                      cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                      transition: 'all 0.2s',
+                    }}
+                  >📍 {pin.titulo}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -147,22 +534,18 @@ function DiceWidget() {
             <div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#C8A8E8', letterSpacing:'0.1em'}}>Rolagem Cósmica</div>
             <button onClick={()=>setOpen(false)} style={{background:'transparent', border:'none', color:'#5A5070', cursor:'pointer', fontSize:14}}>✕</button>
           </div>
-
           <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:6, marginBottom:12}}>
             {[4,6,8,10,12,20].map(d => (
               <button key={d} onClick={()=>{setDice(d);setResult(null);}} style={{padding:'6px 0', borderRadius:6, border:`1px solid ${dice===d?'rgba(168,85,247,0.6)':'rgba(255,255,255,0.1)'}`, background:dice===d?'rgba(168,85,247,0.2)':'rgba(255,255,255,0.03)', color:dice===d?'#fff':'#9A8A7A', fontFamily:'Cinzel,serif', fontSize:12, cursor:'pointer', transition:'all 0.2s'}}>D{d}</button>
             ))}
           </div>
-
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16}}>
             <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Bônus</label>
             <input type="number" value={bonus} onChange={e=>setBonus(Number(e.target.value))} style={{flex:1, textAlign:'center', padding:'4px', fontSize:14}} />
           </div>
-
           <button onClick={roll} disabled={rolling} style={{width:'100%', padding:'10px', borderRadius:8, border:'1px solid rgba(168,85,247,0.5)', background:'rgba(168,85,247,0.15)', color:'#fff', fontFamily:'Cinzel,serif', fontSize:14, fontWeight:600, cursor:rolling?'not-allowed':'pointer', transition:'all 0.2s', display:'flex', justifyContent:'center', alignItems:'center', gap:8}}>
             <span style={{animation: rolling ? 'diceRollAnim 0.5s infinite' : 'none'}}>🎲</span> {rolling ? 'Rolando...' : 'Rolar D' + dice}
           </button>
-
           {result && (
             <div style={{marginTop:16, paddingTop:16, borderTop:'1px dashed rgba(255,255,255,0.1)', textAlign:'center'}}>
               <div style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif', marginBottom:4}}>Resultado (D{dice} + {bonus})</div>
@@ -187,33 +570,46 @@ function ClassesSection(){return(<div style={{maxWidth:760,margin:'0 auto',paddi
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 const ATTRS=[{key:'forca',label:'Força',color:'#E8193C'},{key:'agilidade',label:'Agilidade',color:'#E8A020'},{key:'durabilidade',label:'Durabilidade',color:'#1EC8FF'},{key:'inteligencia',label:'Inteligência',color:'#A855F7'},{key:'percepcao',label:'Percepção',color:'#D4C5A9'}];
-function AttrDots({value, color, maxToSpend, isMaster, onIncrease, onDecrease}) {
-  return(
-    <div className="attr-dots" style={{display:'flex',gap:4}}>
-      {Array.from({length:10}).map((_,i) => {
-        const isFilled = i < value;
-        const isNext = i === value && maxToSpend > 0;
-        
+
+// ─── ✨ ATTR DOTS WITH MAGIC POINTS ──────────────────────────────────────────
+function AttrDots({ value, color, onChange, masterMode, attrPoints = 0, onSpendPoint }) {
+  return (
+    <div className="attr-dots" style={{ display: 'flex', gap: 4 }}>
+      {Array.from({ length: 10 }).map((_, i) => {
+        const filled = i < value;
+        // Next unfilled dot pulses if player has points to spend and is NOT master
+        const isPulsingNext = !masterMode && attrPoints > 0 && i === value && value < 10;
         return (
-          <button key={i} 
+          <button
+            key={i}
             onClick={() => {
-              if (isMaster) { isFilled ? onDecrease(i) : onIncrease(i+1); }
-              else if (isNext) { onIncrease(value + 1); }
+              if (masterMode) {
+                // Master can freely adjust
+                onChange(i < value ? (i === value - 1 ? 0 : i + 1) : i + 1);
+              } else {
+                // Player: can only spend a point to go UP (next dot)
+                if (isPulsingNext && onSpendPoint) {
+                  onSpendPoint(i + 1);
+                }
+                // Players cannot reduce attributes
+              }
             }}
+            title={isPulsingNext ? `Gastar 1 Ponto de Atributo (+1)` : filled && masterMode ? 'Reduzir' : ''}
             style={{
-              width:15, height:15, borderRadius:'50%', padding:0, flexShrink:0,
-              border:`1.5px solid ${isFilled ? color : 'rgba(255,255,255,0.12)'}`,
-              background: isFilled ? color+'44' : 'transparent',
-              cursor: (isMaster || isNext) ? 'pointer' : 'default',
-              boxShadow: isNext ? `0 0 10px ${color}` : 'none',
-              animation: isNext ? 'pulse 1.5s infinite' : 'none',
-              transition:'all 0.15s'
-            }}/>
+              width: 15, height: 15, borderRadius: '50%',
+              border: `1.5px solid ${filled ? color : isPulsingNext ? color : 'rgba(255,255,255,0.12)'}`,
+              background: filled ? color + '44' : isPulsingNext ? color + '22' : 'transparent',
+              cursor: (masterMode || isPulsingNext) ? 'pointer' : 'default',
+              transition: 'all 0.15s', padding: 0, flexShrink: 0,
+              animation: isPulsingNext ? 'attrPulse 1.2s ease-in-out infinite' : 'none',
+            }}
+          />
         );
       })}
     </div>
   );
 }
+
 function VigosDots({value,max,color,onChange}){return(<div className="vigos-dots" style={{display:'flex',gap:6,flexWrap:'wrap'}}>{Array.from({length:max}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 5px ${color}55`:'none'}}>{i<value&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>))}</div>);}
 
 function VigosWithLocked({value,nivel,color,onChange}){
@@ -239,128 +635,62 @@ function VigosWithLocked({value,nivel,color,onChange}){
   );
 }
 
+// ─── 🩸 STATUS PANEL ─────────────────────────────────────────────────────────
+function StatusPanel({ sheet, onChange }) {
+  const activeStatus = sheet.status || {};
+  const toggle = (id) => {
+    const updated = { ...activeStatus, [id]: !activeStatus[id] };
+    onChange({ ...sheet, status: updated });
+  };
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 9, textTransform: 'uppercase' }}>
+        <span style={{ color: '#E8193C' }}>🩸</span> Status Ativos
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+        {STATUS_LIST.map(s => {
+          const active = !!activeStatus[s.id];
+          return (
+            <button
+              key={s.id}
+              onClick={() => toggle(s.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 10px', borderRadius: 20,
+                border: `1px solid ${active ? s.color + '66' : 'rgba(255,255,255,0.08)'}`,
+                background: active ? s.color + '18' : 'rgba(255,255,255,0.02)',
+                color: active ? s.color : '#5A5070',
+                cursor: 'pointer', transition: 'all 0.2s',
+                fontFamily: 'Cinzel,serif', fontSize: 11,
+                boxShadow: active ? `0 0 8px ${s.color}33` : 'none',
+              }}
+            >
+              <span style={{ fontSize: 12 }}>{s.icon}</span>
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── EQUIPAMENTO PANEL ────────────────────────────────────────────────────────
 function resolveEquipIcon(tipo=''){
   const t=tipo.toLowerCase();
   if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina')||t.includes('lamina'))return'⚔️';
   if(t.includes('adaga')||t.includes('faca')||t.includes('punhal')||t.includes('navalha'))return'🗡️';
   if(t.includes('machado'))return'🪓';
-  if(t.includes('martelo de guerra')||t.includes('martelo')||t.includes('maça')||t.includes('maca')||t.includes('clava')||t.includes('porrete')||t.includes('cacete'))return'🔨';
-  if(t.includes('lança')||t.includes('lanca')||t.includes('alabarda')||t.includes('pique'))return'🪄';
+  if(t.includes('martelo')||t.includes('maça')||t.includes('maca'))return'🔨';
+  if(t.includes('lança')||t.includes('lanca')||t.includes('alabarda'))return'🪄';
   if(t.includes('arco')||t.includes('besta'))return'🏹';
-  if(t.includes('flecha'))return'➶';
-  if(t.includes('chicote'))return'🪢';
-  if(t.includes('foice'))return'🌙';
-  if(t.includes('cajado')||t.includes('báculo')||t.includes('baculo'))return'🪄';
-  if(t.includes('varinha'))return'✨';
-  if(t.includes('pistola')||t.includes('revólver')||t.includes('revolver'))return'🔫';
-  if(t.includes('rifle')||t.includes('fuzil')||t.includes('sniper')||t.includes('carabina')||t.includes('shotgun')||t.includes('espingarda'))return'🔫';
-  if(t.includes('granada')||t.includes('bomba')||t.includes('explosivo'))return'💣';
-  if(t.includes('corrente'))return'⛓️';
-  if(t.includes('capacete')||t.includes('elmo'))return'⛑️';
-  if(t.includes('armadura leve')||t.includes('colete'))return'🦺';
-  if(t.includes('armadura pesada')||t.includes('couraça')||t.includes('coiraca')||t.includes('armadura')||t.includes('cota'))return'🛡️';
-  if(t.includes('escudo')||t.includes('broquel')||t.includes('égide')||t.includes('egide'))return'🛡️';
-  if(t.includes('manto'))return'🧥';
-  if(t.includes('luva')||t.includes('braçadeira')||t.includes('bracadeira'))return'🧤';
-  if(t.includes('bota'))return'👢';
-  if(t.includes('máscara ritual')||t.includes('mascara ritual'))return'🎭';
-  if(t.includes('máscara')||t.includes('mascara'))return'🎭';
+  if(t.includes('pistola')||t.includes('rifle')||t.includes('fuzil')||t.includes('sniper'))return'🔫';
+  if(t.includes('escudo'))return'🛡️';
+  if(t.includes('armadura'))return'🛡️';
+  if(t.includes('capacete'))return'⛑️';
+  if(t.includes('poção')||t.includes('pocao'))return'🧪';
   if(t.includes('anel'))return'💍';
-  if(t.includes('amuleto')||t.includes('colar')||t.includes('pingente')||t.includes('talismã')||t.includes('talisma'))return'📿';
-  if(t.includes('cinto'))return'🪢';
-  if(t.includes('mochila')||t.includes('alforge'))return'🎒';
-  if(t.includes('bolsa')||t.includes('saco'))return'👜';
-  if(t.includes('capa'))return'🦇';
-  if(t.includes('prótese')||t.includes('protese'))return'🦾';
-  if(t.includes('poção de cura')||t.includes('pocao de cura'))return'🧪';
-  if(t.includes('poção de mana')||t.includes('pocao de mana'))return'🔵';
-  if(t.includes('veneno'))return'☠️';
-  if(t.includes('antídoto')||t.includes('antidoto'))return'💚';
-  if(t.includes('pão')||t.includes('pao'))return'🍞';
-  if(t.includes('comida')||t.includes('ração')||t.includes('racao'))return'🍖';
-  if(t.includes('água')||t.includes('agua'))return'💧';
-  if(t.includes('vinho'))return'🍷';
-  if(t.includes('cerveja'))return'🍺';
-  if(t.includes('erva'))return'🌿';
-  if(t.includes('cogumelo'))return'🍄';
-  if(t.includes('cristal mágico')||t.includes('cristal magico'))return'🔮';
-  if(t.includes('bomba de fumaça')||t.includes('bomba de fumaca'))return'💨';
-  if(t.includes('poção')||t.includes('pocao')||t.includes('elixir')||t.includes('frasco estranho')||t.includes('ampola'))return'🧪';
-  if(t.includes('livro proibido'))return'📕';
-  if(t.includes('livro mágico')||t.includes('livro magico'))return'📖';
-  if(t.includes('grimório')||t.includes('grimorio'))return'📚';
-  if(t.includes('pergaminho'))return'📜';
-  if(t.includes('runa'))return'🔯';
-  if(t.includes('orb'))return'🔮';
-  if(t.includes('pedra encantada')||t.includes('gema mágica'))return'💎';
-  if(t.includes('relíquia')||t.includes('reliquia')||t.includes('artefato'))return'🏺';
-  if(t.includes('chave mágica')||t.includes('chave magica'))return'🗝️';
-  if(t.includes('lanterna mágica')||t.includes('lanterna magica'))return'🏮';
-  if(t.includes('coração demoníaco')||t.includes('coracao demoniaco'))return'❤️‍🔥';
-  if(t.includes('fragmento de alma'))return'👻';
-  if(t.includes('corda'))return'🪢';
-  if(t.includes('tocha'))return'🔥';
-  if(t.includes('lanterna'))return'🏮';
-  if(t.includes('pá')||t.includes('picareta'))return'⛏️';
-  if(t.includes('binóculo')||t.includes('binoculo'))return'🔭';
-  if(t.includes('bússola')||t.includes('bussola'))return'🧭';
-  if(t.includes('mapa'))return'🗺️';
-  if(t.includes('chave'))return'🔑';
-  if(t.includes('algema'))return'⛓️';
-  if(t.includes('ferramenta')||t.includes('alicate')||t.includes('chave de fenda'))return'🧰';
-  if(t.includes('canivete'))return'🔪';
-  if(t.includes('frasco'))return'🧴';
-  if(t.includes('ampulheta'))return'⏳';
-  if(t.includes('moeda'))return'🪙';
-  if(t.includes('ouro')||t.includes('barra de ouro'))return'🥇';
-  if(t.includes('rubi'))return'♦️';
-  if(t.includes('esmeralda'))return'💚';
-  if(t.includes('safira'))return'💙';
-  if(t.includes('gema')||t.includes('diamante'))return'💎';
-  if(t.includes('tesouro'))return'🏴‍☠️';
-  if(t.includes('baú')||t.includes('bau'))return'📦';
-  if(t.includes('joia')||t.includes('jóia')||t.includes('coroa'))return'👑';
-  if(t.includes('crânio')||t.includes('cranio')||t.includes('caveira'))return'💀';
-  if(t.includes('osso'))return'🦴';
-  if(t.includes('olho'))return'👁️';
-  if(t.includes('mão decepada')||t.includes('mao decepada'))return'✋';
-  if(t.includes('sangue'))return'🩸';
-  if(t.includes('vela'))return'🕯️';
-  if(t.includes('boneca amaldiçoada')||t.includes('boneca amaldicoada'))return'🪆';
-  if(t.includes('coração')||t.includes('coracao'))return'❤️';
-  if(t.includes('rosa'))return'🌹';
-  if(t.includes('flor'))return'🌸';
-  if(t.includes('folha'))return'🍃';
-  if(t.includes('madeira')||t.includes('tora'))return'🪵';
-  if(t.includes('pedra'))return'🪨';
-  if(t.includes('cristal'))return'💎';
-  if(t.includes('pena'))return'🪶';
-  if(t.includes('ovo'))return'🥚';
-  if(t.includes('concha'))return'🐚';
-  if(t.includes('raiz'))return'🌱';
-  if(t.includes('chip'))return'💾';
-  if(t.includes('drone'))return'🚁';
-  if(t.includes('bateria'))return'🔋';
-  if(t.includes('laser'))return'🔦';
-  if(t.includes('óculos')||t.includes('oculos'))return'🥽';
-  if(t.includes('seringa'))return'💉';
-  if(t.includes('máscara de gás')||t.includes('mascara de gas'))return'😷';
-  if(t.includes('braço mecânico')||t.includes('braco mecanico'))return'🦾';
-  if(t.includes('núcleo de energia')||t.includes('nucleo de energia'))return'⚛️';
-  if(t.includes('disco de dados'))return'💿';
-  if(t.includes('terminal')||t.includes('computador'))return'💻';
-  if(t.includes('dispositivo'))return'📱';
-  if(t.includes('diário')||t.includes('diario'))return'📓';
-  if(t.includes('carta'))return'💌';
-  if(t.includes('relógio')||t.includes('relogio'))return'⌚';
-  if(t.includes('instrumento')||t.includes('violino')||t.includes('alaúde')||t.includes('alaude'))return'🎻';
-  if(t.includes('flauta'))return'🎶';
-  if(t.includes('sino'))return'🔔';
-  if(t.includes('boneco'))return'🧸';
-  if(t.includes('caixa misteriosa')||t.includes('presente'))return'🎁';
-  if(t.includes('arma'))return'⚔️';
-  if(t.includes('roupa')||t.includes('túnica')||t.includes('tunica')||t.includes('veste')||t.includes('casaco'))return'🎽';
+  if(t.includes('manto')||t.includes('capa'))return'🧥';
   return'📦';
 }
 
@@ -389,141 +719,59 @@ function CharSilhouette({color, classeId}){
   const belt=<line x1="16" y1="57" x2="44" y2="57" stroke={color} strokeWidth="1.3" strokeDasharray="3 2"/>;
   const legs=<><path d="M22 63 L19 88 L18 102" stroke={color} strokeWidth="1.2" fill="none"/><path d="M38 63 L41 88 L42 102" stroke={color} strokeWidth="1.2" fill="none"/></>;
   const boots=<><path d="M18 102 Q16 106 13 106 Q11 106 12 104 L14 102 L20 101" stroke={color} strokeWidth="1" fill="none"/><path d="M42 102 Q44 106 47 106 Q49 106 48 104 L46 102 L40 101" stroke={color} strokeWidth="1" fill="none"/></>;
-
-  let arms, weapons, shoulders;
-  switch(classeId){
-    case 'escarlate': 
-      shoulders=<path d="M10 32 Q18 26 30 25 Q42 26 50 32" stroke={color} strokeWidth="1.6" fill="none"/>;
-      arms=<><path d="M17 33 L9 50 L11 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 50 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
-      weapons=<>
-        <rect x="3" y="49" width="10" height="13" rx="2" stroke={color} strokeWidth="1.2" fill="none"/>
-        <line x1="8" y1="49" x2="8" y2="62" stroke={color} strokeWidth="0.7"/>
-        <line x1="50" y1="43" x2="56" y2="67" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="47" y1="53" x2="59" y2="57" stroke={color} strokeWidth="1.2"/>
-      </>;
-      break;
-    case 'corvos': 
-      shoulders=<path d="M12 31 Q18 26 30 25 Q42 26 48 31" stroke={color} strokeWidth="1.2" fill="none"/>;
-      arms=<><path d="M17 33 L10 52 L12 56" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 46 L50 56" stroke={color} strokeWidth="1.2" fill="none"/></>;
-      weapons=<>
-        <path d="M51 39 Q58 48 51 57" stroke={color} strokeWidth="1.5" fill="none"/>
-        <line x1="51" y1="39" x2="51" y2="57" stroke={color} strokeWidth="0.8" strokeDasharray="2 1"/>
-        <line x1="20" y1="46" x2="51" y2="48" stroke={color} strokeWidth="0.9"/>
-        <polygon points="18,46 22,44 22,48" fill={color} opacity="0.7"/>
-        <rect x="3" y="48" width="5" height="14" rx="2" stroke={color} strokeWidth="1" fill="none"/>
-      </>;
-      break;
-    case 'magos': 
-      shoulders=<path d="M13 32 Q18 26 30 25 Q42 26 47 32" stroke={color} strokeWidth="1.2" fill="none"/>;
-      arms=<><path d="M17 33 L10 52 L13 56" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L50 46 L48 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
-      weapons=<>
-        <path d="M17 33 L12 63 Q14 66 19 65 L41 65 Q46 66 48 63 L43 33" stroke={color} strokeWidth="1.2" fill="none" opacity="0.5"/>
-        <line x1="10" y1="28" x2="13" y2="72" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-        <circle cx="10" cy="27" r="4" stroke={color} strokeWidth="1" fill="none"/>
-        <circle cx="10" cy="27" r="1.5" fill={color} opacity="0.7"/>
-        <circle cx="49" cy="55" r="4" stroke={color} strokeWidth="1" fill="none" opacity="0.6"/>
-      </>;
-      break;
-    case 'marfim': 
-      shoulders=<path d="M13 32 Q18 26 30 25 Q42 26 47 32" stroke={color} strokeWidth="1.2" fill="none"/>;
-      arms=<><path d="M17 33 L10 50 L13 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 48 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
-      weapons=<>
-        <rect x="6" y="50" width="9" height="5" rx="1.5" stroke={color} strokeWidth="1" fill="none"/>
-        <line x1="15" y1="52" x2="19" y2="52" stroke={color} strokeWidth="1.2"/>
-        <line x1="9" y1="50" x2="9" y2="47" stroke={color} strokeWidth="0.9"/>
-        <path d="M49 49 L55 43" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-        <circle cx="56" cy="42" r="3" stroke={color} strokeWidth="1" fill="none"/>
-        <line x1="50" y1="56" x2="54" y2="52" stroke={color} strokeWidth="1.3"/>
-      </>;
-      break;
-    default: 
-      shoulders=<path d="M14 32 Q18 26 30 25 Q42 26 46 32" stroke={color} strokeWidth="1.2" fill="none"/>;
-      arms=<><path d="M17 33 L9 49 L11 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 49 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
-      weapons=<>
-        <line x1="8" y1="44" x2="8" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/>
-        <line x1="5" y1="51" x2="11" y2="51" stroke={color} strokeWidth="1.2"/>
-        <line x1="52" y1="44" x2="52" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/>
-        <line x1="49" y1="51" x2="55" y2="51" stroke={color} strokeWidth="1.2"/>
-      </>;
-  }
+  const shoulders=<path d="M14 32 Q18 26 30 25 Q42 26 46 32" stroke={color} strokeWidth="1.2" fill="none"/>;
+  const arms=<><path d="M17 33 L9 49 L11 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 49 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
+  const weapons=<><line x1="8" y1="44" x2="8" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/><line x1="5" y1="51" x2="11" y2="51" stroke={color} strokeWidth="1.2"/><line x1="52" y1="44" x2="52" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/><line x1="49" y1="51" x2="55" y2="51" stroke={color} strokeWidth="1.2"/></>;
   return(
     <svg width="66" height="116" viewBox="0 0 66 116" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.32,flexShrink:0}}>
-      {head}{neck}{shoulders||<path d="M12 32 Q18 26 30 25 Q42 26 48 32" stroke={color} strokeWidth="1.2" fill="none"/>}
-      {torso}{belt}{arms}{weapons}{legs}{boots}
+      {head}{neck}{shoulders}{torso}{belt}{arms}{weapons}{legs}{boots}
     </svg>
   );
 }
 
 function EquipamentoPanel({sheet, onChange, sheetColor}){
   const f=(slot,val)=>onChange({...sheet,[slot]:val});
-  const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   return(
-<div style={{marginBottom:15}}>
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Atributos</div>
-            
-            {/* Controle do Mestre para dar pontos */}
-            {masterMode && (
-              <div style={{display: 'flex', gap: 6, alignItems: 'center'}}>
-                <span style={{fontSize: 9, color: '#A855F7', fontFamily: 'Cinzel,serif'}}>DAR PONTOS:</span>
-                <button onClick={() => f('pontos_atributo', Math.max(0, (sheet.pontos_atributo||0)-1))} style={{background: 'transparent', border: '1px solid rgba(168, 85, 247, 0.4)', color: '#C8A8E8', borderRadius: 4, cursor: 'pointer', padding: '0 6px'}}>−</button>
-                <span style={{fontSize: 12, color: '#C8A8E8', fontFamily: 'Cinzel,serif'}}>{sheet.pontos_atributo || 0}</span>
-                <button onClick={() => f('pontos_atributo', (sheet.pontos_atributo||0)+1)} style={{background: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)', color: '#fff', borderRadius: 4, cursor: 'pointer', padding: '0 6px'}}>+</button>
-              </div>
-            )}
-          </div>
-
-          {/* Banner de Aviso pro Jogador */}
-          {(sheet.pontos_atributo > 0) && (
-            <div style={{ background: 'rgba(255, 200, 80, 0.1)', border: '1px solid rgba(255, 200, 80, 0.3)', borderRadius: 8, padding: '8px', marginBottom: 12, textAlign: 'center', color: '#FFC850', fontFamily: 'Cinzel, serif', fontSize: 11, animation: 'pulse 2s infinite' }}>
-              ✨ Você tem {sheet.pontos_atributo} Ponto{sheet.pontos_atributo > 1 ? 's' : ''} Mágico{sheet.pontos_atributo > 1 ? 's' : ''} disponível! Clique na bolinha pulsante para upar.
-            </div>
-          )}
-
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {ATTRS.map(a=>{
-              const val = sheet[a.key] || 0;
-              const bonus = attrBonus(val);
-              return(
-              <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
-                <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-                <AttrDots 
-                  value={val} 
-                  color={a.color} 
-                  maxToSpend={sheet.pontos_atributo || 0}
-                  isMaster={masterMode}
-                  onIncrease={(newVal) => { f(a.key, newVal); if(!masterMode) f('pontos_atributo', sheet.pontos_atributo - 1); }}
-                  onDecrease={(newVal) => f(a.key, newVal)}
-                />
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{val}</span>
-                <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>
-                  {bonus>0?`+${bonus}`:'—'}
-                </span>
-              </div>
-            );})}
-          </div>
-          <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
+    <div style={{marginBottom:16}}>
+      <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:8}}>
+        <span style={{color:sheetColor}}>⚔</span> Equipamentos
+      </div>
+      <div className="equip-grid" style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',gap:12,alignItems:'start',justifyContent:'center',marginBottom:10}}>
+        <div style={{minWidth:0}}>
+          <CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma"/>
         </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,justifySelf:'center'}}>
+          <CharSilhouette color={sheetColor} classeId={sheet.classe}/>
+          <div style={{fontSize:7,color:sheetColor+'55',fontFamily:'Cinzel,serif',letterSpacing:'0.1em',textAlign:'center',textTransform:'uppercase'}}>ESQ · DIR</div>
+        </div>
+        <div style={{minWidth:0}}>
+          <CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma"/>
+        </div>
+      </div>
+      <CompactEquipSlot label="Corpo" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)} placeholder="Armadura / Roupa"/>
+    </div>
   );
 }
 
-// ─── HABILIDADES PANEL (ficha do personagem) ──────────────────────────────────
+// ─── HABILIDADES PANEL ────────────────────────────────────────────────────────
 const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1});
 
 function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities}){
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
-  const nivel=sheet.nivel||1;
-  const classCustom=(customAbilities[cls.id]||[]);
+  const nivel = Number(sheet?.nivel) || 1;
+  const safeCustomAbilities = customAbilities || {};
+  const customArr = safeCustomAbilities[cls?.id];
+  const classCustom = Array.isArray(customArr) ? customArr.filter(Boolean) : [];
 
   const handleSave=()=>{
     if(!form.nome.trim())return;
-    const updated={...customAbilities,[cls.id]:[...(customAbilities[cls.id]||[]),{...form,id:Date.now()}]};
+    const updated={...safeCustomAbilities,[cls.id]:[...classCustom,{...form,id:Date.now()}]};
     onSaveCustomAbilities(updated);
     setForm(newCustomAbility());
   };
   const handleDelete=(abilityId)=>{
-    const updated={...customAbilities,[cls.id]:(customAbilities[cls.id]||[]).filter(a=>a.id!==abilityId)};
+    const updated={...safeCustomAbilities,[cls.id]:classCustom.filter(a=>a.id!==abilityId)};
     onSaveCustomAbilities(updated);
   };
 
@@ -531,24 +779,25 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const tipoLabel={normal:'Normal',especial:'Especial',passiva:'Passiva'};
   const tipoBadgeColor={normal:'rgba(255,255,255,0.5)',especial:color,passiva:'rgba(168,85,247,0.8)'};
 
-    const abilityRow=(a,isSpecial,isCustom,locked)=>{
-    const danoValue=a.dano||a.roll||''; 
+  const abilityRow=(a,isSpecial,isCustom,locked)=>{
+    if(!a) return null;
+    const danoValue=String(a.dano||a.roll||'');
     return(
     <div key={a.id||a.name} style={{background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',opacity:locked?0.45:1}}>
       <div style={{flex:1}}>
         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
           {(isSpecial||isCustom)&&<span style={{fontSize:10,color}}>✦</span>}
-          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{a.name||a.nome}</span>
-          {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {a.req}+</span>}
+          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{String(a.name||a.nome||'')}</span>
+          {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {Number(a.req)||1}+</span>}
           {isCustom&&a.tipoHab&&<span style={{fontSize:8,color:tipoBadgeColor[a.tipoHab]||color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em',background:`${color}14`,borderRadius:3,padding:'1px 5px',border:`1px solid ${color}33`}}>{(tipoLabel[a.tipoHab]||'Nova').toUpperCase()}</span>}
           {danoValue&&<span style={{fontSize:10,color:'rgba(255,200,80,0.85)',fontFamily:'Cinzel,serif',letterSpacing:'0.05em',background:'rgba(255,200,80,0.08)',border:'1px solid rgba(255,200,80,0.22)',borderRadius:4,padding:'1px 6px'}}>⚔ {danoValue}</span>}
         </div>
-        <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc||a.descricao}</div>
+        <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{String(a.desc||a.descricao||'')}</div>
       </div>
       <div style={{flexShrink:0,textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3}}>
-        <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{a.cost||a.custo} VC</div>
-        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {a.cooldown}</div>
-        {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {a.req}+</div>}
+        <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{Number(a.cost||a.custo||0)} VC</div>
+        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {String(a.cooldown||'—')}</div>
+        {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {Number(a.req)||1}+</div>}
         {isCustom&&masterMode&&(
           <button onClick={()=>handleDelete(a.id)} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.25)',color:'#E8193C',borderRadius:4,cursor:'pointer',padding:'1px 6px',fontSize:10}}>✕</button>
         )}
@@ -602,11 +851,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
                 </div>
                 <div>
                   <label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.22em'}}>Tipo de Habilidade</label>
-                  <div style={{display:'flex',gap:6}}>
-                    <TipoBtn val="normal" label="Normal"/>
-                    <TipoBtn val="especial" label="Especial"/>
-                    <TipoBtn val="passiva" label="Passiva"/>
-                  </div>
+                  <div style={{display:'flex',gap:6}}><TipoBtn val="normal" label="Normal"/><TipoBtn val="especial" label="Especial"/><TipoBtn val="passiva" label="Passiva"/></div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div>
@@ -645,22 +890,43 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
 }
 
 // ─── FICHAS DOS PERSONAGENS ───────────────────────────────────────────────────
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'}});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{}});
 
-function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilities}){
+function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
   const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
-  const hp=sheet.hp||0;const hpBonus=sheet.hp_bonus||0;
+  const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
+  const attrPoints = sheet.attrPoints || 0;
   const photoInputRef=useRef(null);
   const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
   const attrBonus=val=>Math.floor(val/2);
-  const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',statusAtivos:[],pontos_atributo:0,equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'}});
+
+  // ✨ Master sets level → award attr points
+  const handleNivelChange = (newNivel) => {
+    const old = sheet.nivel || 1;
+    const clamped = Math.min(30, Math.max(1, newNivel));
+    if (masterMode && clamped > old) {
+      const gained = clamped - old;
+      onChange({ ...sheet, nivel: clamped, attrPoints: (sheet.attrPoints || 0) + gained });
+    } else {
+      f('nivel', clamped);
+    }
+  };
+
+  // Player spends attr point
+  const handleSpendPoint = (attrKey, newVal) => {
+    if (attrPoints <= 0) return;
+    onChange({ ...sheet, [attrKey]: newVal, attrPoints: attrPoints - 1 });
+  };
+
   return(
     <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`}}>
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
+
+      {/* Photo */}
       <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',minHeight:sheet.foto?0:130}}>
         {sheet.foto
           ?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>
@@ -676,13 +942,45 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
         </div>}
         <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
       </div>
+
       <div style={{padding:'18px'}}>
+        {/* ✨ Attr Points Banner */}
+        {attrPoints > 0 && (
+          <div style={{
+            marginBottom: 16, padding: '14px 18px',
+            border: '1px solid rgba(168,85,247,0.5)',
+            borderRadius: 12, background: 'rgba(168,85,247,0.08)',
+            animation: 'bannerGlow 2s ease-in-out infinite',
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <span style={{ fontSize: 22 }}>✨</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8A8E8', fontWeight: 700, marginBottom: 2 }}>
+                {attrPoints} Ponto{attrPoints > 1 ? 's' : ''} de Atributo disponíve{attrPoints > 1 ? 'is' : 'l'}!
+              </div>
+              <div style={{ fontSize: 12, color: '#7A6A9A' }}>
+                Clique na próxima bolinha de um atributo para gastar um ponto.
+              </div>
+            </div>
+            {masterMode && (
+              <button onClick={() => f('attrPoints', Math.max(0, attrPoints - 1))}
+                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10 }}>
+                −1
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Name / Class */}
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
           <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
+
+        {/* Stats grid */}
         <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
+          {/* HP */}
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
             <div style={{display:'flex',alignItems:'center',gap:7}}>
@@ -702,33 +1000,34 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
               <div style={{fontSize:9,color:'rgba(74,222,128,0.4)',marginTop:3,fontFamily:'Cinzel,serif'}}>curas · itens · status</div>
             </div>
           </div>
-<div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'12px 14px'}}>
+
+          {/* 🔒 Nível / XP — texto puro para jogadores */}
+          <div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Nível · XP</div>
             {masterMode ? (
               <div style={{display:'flex',alignItems:'center',gap:6}}>
-                <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>f('nivel',Math.min(30,Math.max(1,+e.target.value)))} style={{width:44,textAlign:'center'}}/>
+                <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>handleNivelChange(+e.target.value)} style={{width:44,textAlign:'center'}}/>
                 <span style={{color:'rgba(255,255,255,0.14)',fontSize:11}}>Nv</span>
                 <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:65,textAlign:'center'}}/>
                 <span style={{fontSize:11,color:'rgba(255,255,255,0.18)'}}>XP</span>
               </div>
             ) : (
-              <div style={{display:'flex',alignItems:'baseline',gap:8}}>
-                 <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8A020'}}>{sheet.nivel}</span>
-                 <span style={{color:'rgba(255,255,255,0.14)',fontSize:11}}>Nv</span>
-                 <span style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#E8D8C0',marginLeft:10}}>{sheet.xp}</span>
-                 <span style={{fontSize:11,color:'rgba(255,255,255,0.18)'}}>XP</span>
+              <div>
+                <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:4}}>
+                  <span style={{fontFamily:'Cinzel,serif',fontSize:26,fontWeight:700,color:'#E8A020'}}>{sheet.nivel || 1}</span>
+                  <span style={{fontSize:12,color:'rgba(232,160,32,0.5)',fontFamily:'Cinzel,serif'}}>Nível</span>
+                  <span style={{fontFamily:'Cinzel,serif',fontSize:18,fontWeight:600,color:'rgba(232,160,32,0.7)',marginLeft:8}}>{sheet.xp || 0}</span>
+                  <span style={{fontSize:11,color:'rgba(232,160,32,0.4)',fontFamily:'Cinzel,serif'}}>XP</span>
+                </div>
               </div>
             )}
-            <div style={{fontSize:10,color:'#7A6A5A',marginTop:6,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
+            <div style={{fontSize:10,color:'#7A6A5A',marginTop:4,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
+            {masterMode && attrPoints > 0 && (
+              <div style={{marginTop:8,fontSize:11,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts de atributo pendentes</div>
+            )}
           </div>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>f('nivel',Math.min(30,Math.max(1,+e.target.value)))} style={{width:44,textAlign:'center'}}/>
-              <span style={{color:'rgba(255,255,255,0.14)',fontSize:11}}>Nv</span>
-              <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:65,textAlign:'center'}}/>
-              <span style={{fontSize:11,color:'rgba(255,255,255,0.18)'}}>XP</span>
-            </div>
-            <div style={{fontSize:10,color:'#7A6A5A',marginTop:6,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
-          </div>
+
+          {/* Vigor */}
           <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
             <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
@@ -737,42 +1036,39 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
             {sheet.nivel>=18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +2 VC desbloqueados (Nv 8 e 18)</div>}
           </div>
         </div>
+
+        {/* 🩸 STATUS PANEL — abaixo das barras */}
+        <StatusPanel sheet={sheet} onChange={onChange} />
+
+        {/* Atributos */}
         <div style={{marginBottom:15}}>
-          {/* --- NOVO: PAINEL DE STATUS --- */}
-        <div style={{marginBottom:15, padding: '10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10}}>
-          <div style={{fontSize:9,letterSpacing:'0.2em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Status da Batalha</div>
-          <div style={{display:'flex', gap: 6, flexWrap: 'wrap'}}>
-            {[ { id: 'sangrando', icon: '🩸', label: 'Sangrando', color: '#E8193C' }, { id: 'envenenado', icon: '🤢', label: 'Envenenado', color: '#4ADE80' }, { id: 'atordoado', icon: '💫', label: 'Atordoado', color: '#E8A020' }, { id: 'invisivel', icon: '👻', label: 'Invisível', color: '#1EC8FF' } ].map(st => {
-              const ativo = (sheet.statusAtivos || []).includes(st.id);
-              return (
-                <button key={st.id} 
-                  onClick={() => {
-                    const atual = sheet.statusAtivos || [];
-                    f('statusAtivos', ativo ? atual.filter(x => x !== st.id) : [...atual, st.id]);
-                  }}
-                  style={{ background: ativo ? `${st.color}22` : 'rgba(255,255,255,0.02)', border: `1px solid ${ativo ? st.color : 'rgba(255,255,255,0.05)'}`, color: ativo ? st.color : '#7A6A5A', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Cinzel, serif', transition: 'all 0.2s' }}>
-                  {st.icon} {st.label}
-                </button>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {ATTRS.map(a=>{
+              const bonus=attrBonus(sheet[a.key]||0);
+              return(
+                <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
+                  <AttrDots
+                    value={sheet[a.key]||0}
+                    color={a.color}
+                    onChange={v=>{ if(masterMode) f(a.key,v); }}
+                    masterMode={masterMode}
+                    attrPoints={attrPoints}
+                    onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)}
+                  />
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
+                  <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>
+                    {bonus>0?`+${bonus}`:'—'}
+                  </span>
+                </div>
               );
             })}
           </div>
-        </div>
-        {/* ------------------------------ */}
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {ATTRS.map(a=>{const bonus=attrBonus(sheet[a.key]||0);return(
-              <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
-                <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-                <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>f(a.key,v)}/>
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
-                <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>
-                  {bonus>0?`+${bonus}`:'—'}
-                </span>
-              </div>
-            );})}
-          </div>
           <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
         </div>
+
+        {/* Especiais / Alcance */}
         <div style={{marginBottom:14}}>
           <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
             <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
@@ -835,16 +1131,18 @@ function SheetsSection({masterMode}){
             const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
             const sc=SHEET_COLORS[s.classe]||cls.color;
             const isActive=String(s.id)===activeId;
+            const hasPts = (s.attrPoints||0) > 0;
             return(<button key={s.id} onClick={()=>setActiveId(isActive?null:String(s.id))}
-              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap'}}>
+              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap',position:'relative'}}>
               {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{cls.icon}</div>}
               <div style={{textAlign:'left'}}>
                 <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
                 <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}</div>
               </div>
+              {hasPts && <span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
             </button>);
           })}
-          {sheets.length<5&&(<button onClick={add} onMouseOver={e=>e.currentTarget.style.borderColor='rgba(168,85,247,0.4)'} onMouseOut={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'}
+          {sheets.length<5&&(<button onClick={add}
             style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>
             + Novo Personagem
           </button>)}
@@ -924,7 +1222,7 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:7}}>
-            {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
+            {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)} masterMode={true}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
           </div>
         </div>
         <div style={{marginBottom:14}}>
@@ -945,15 +1243,13 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
 
 function EnemiesSection({masterMode}){
   if(!masterMode) return <RestrictedAccess title="Acesso Restrito ao Mestre" text="As fichas dos inimigos estão ocultas nas sombras. Apenas o mestre possui este conhecimento." />;
-
   const[enemies,setEnemies]=useState([]);const[loaded,setLoaded]=useState(false);const saveTimeout=useRef({});
   useEffect(()=>{const unsub=onSnapshot(collection(db,'enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setEnemies(data);setLoaded(true);});return()=>unsub();},[]);
   const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{try{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);}catch(e){console.error(e);}},900);};
   const add=()=>{if(enemies.length>=3)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
   const upd=(id,data)=>{setEnemies(prev=>prev.map(e=>e.id===id?data:e));saveEnemy(data);};
   const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));};
-  
-  return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2><div style={{fontSize:11,color:'#4A2020',marginTop:7,fontFamily:'Cinzel,serif'}}>⚔️ Gerenciado pelo Mestre · Sincronizado em tempo real</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/></div>{!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}{loaded&&enemies.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>⚔️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div><div style={{fontSize:12,marginTop:5,color:'#4A2020'}}>Adicione os adversários que os heróis enfrentarão.</div></div>)}{enemies.map(e=><EnemyCard key={e.id} enemy={e} onChange={d=>upd(e.id,d)} onDelete={()=>del(e.id)} masterMode={masterMode}/>)}{loaded&&enemies.length<3&&masterMode&&(<button onClick={add} onMouseOver={e=>e.currentTarget.style.borderColor='rgba(232,68,68,0.4)'} onMouseOut={e=>e.currentTarget.style.borderColor='rgba(232,68,68,0.15)'} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em',transition:'border-color 0.2s'}}>+ Adicionar Inimigo ({enemies.length}/3)</button>)}</div>);
+  return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2><div style={{fontSize:11,color:'#4A2020',marginTop:7,fontFamily:'Cinzel,serif'}}>⚔️ Gerenciado pelo Mestre · Sincronizado em tempo real</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/></div>{!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}{loaded&&enemies.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>⚔️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div><div style={{fontSize:12,marginTop:5,color:'#4A2020'}}>Adicione os adversários que os heróis enfrentarão.</div></div>)}{enemies.map(e=><EnemyCard key={e.id} enemy={e} onChange={d=>upd(e.id,d)} onDelete={()=>del(e.id)} masterMode={masterMode}/>)}{loaded&&enemies.length<3&&masterMode&&(<button onClick={add} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em',transition:'border-color 0.2s'}}>+ Adicionar Inimigo ({enemies.length}/3)</button>)}</div>);
 }
 
 // ─── BESTIARIO ─────────────────────────────────────────────────────────────────
@@ -966,22 +1262,11 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = async ev => {
-      const c = await compressImage(ev.target.result, 800, 800, 0.72);
-      f('foto', c);
-    };
+    reader.onload = async ev => { const c = await compressImage(ev.target.result, 800, 800, 0.72); f('foto', c); };
     reader.readAsDataURL(file);
   };
-
-  const ameacaCores = {
-    "Baixo": "#4ADE80",
-    "Médio": "#E8A020",
-    "Alto": "#E8193C",
-    "Supremo": "#A855F7",
-    "Catastrófico": "#1EC8FF"
-  };
+  const ameacaCores = {"Baixo":"#4ADE80","Médio":"#E8A020","Alto":"#E8193C","Supremo":"#A855F7","Catastrófico":"#1EC8FF"};
   const corBase = ameacaCores[item.nivelAmeaca] || "#E8A020";
-
   return (
     <div style={{border:`1px solid ${corBase}44`, borderRadius:14, overflow:'hidden', background:'rgba(12,6,6,0.95)', marginBottom:18, boxShadow:`0 4px 20px ${corBase}22`}}>
       <div style={{height:3, background:`linear-gradient(90deg, ${corBase}, transparent)`}}/>
@@ -991,43 +1276,21 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
         {item.foto && item.nome && <div style={{position:'absolute', bottom:10, left:16, fontFamily:'Cinzel,serif', fontSize:18, fontWeight:700, color:corBase, textShadow:`0 0 14px ${corBase}88`}}>{item.nome}</div>}
         {masterMode && <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>}
       </div>
-      
       <div style={{padding:'16px 18px'}}>
         <div style={{display:'flex', gap:10, alignItems:'flex-end', marginBottom:16, flexWrap:'wrap'}}>
           <div style={{flex:1, minWidth:130}}>
             <label style={{fontSize:10, letterSpacing:'0.3em', color:corBase, fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Nome da Criatura</label>
-            {masterMode ? (
-              <input value={item.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>
-            ) : (
-              <div style={{fontSize:15, color:'#E8D8C0', padding:'4px 0', fontFamily:'Cinzel,serif', fontWeight:600}}>{item.nome || 'Desconhecida'}</div>
-            )}
+            {masterMode ? <input value={item.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/> : <div style={{fontSize:15, color:'#E8D8C0', padding:'4px 0', fontFamily:'Cinzel,serif', fontWeight:600}}>{item.nome || 'Desconhecida'}</div>}
           </div>
           <div style={{width:140}}>
             <label style={{fontSize:10, letterSpacing:'0.3em', color:corBase, fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Ameaça</label>
-            {masterMode ? (
-              <select value={item.nivelAmeaca} onChange={e => f('nivelAmeaca', e.target.value)} style={{width:'100%', color:corBase, fontWeight:'bold'}}>
-                <option value="Baixo">Baixo</option>
-                <option value="Médio">Médio</option>
-                <option value="Alto">Alto</option>
-                <option value="Supremo">Supremo</option>
-                <option value="Catastrófico">Catastrófico</option>
-              </select>
-            ) : (
-              <div style={{fontSize:14, color:corBase, padding:'4px 0', fontWeight:'bold', fontFamily:'Cinzel,serif'}}>{item.nivelAmeaca}</div>
-            )}
+            {masterMode ? <select value={item.nivelAmeaca} onChange={e => f('nivelAmeaca', e.target.value)} style={{width:'100%', color:corBase, fontWeight:'bold'}}><option value="Baixo">Baixo</option><option value="Médio">Médio</option><option value="Alto">Alto</option><option value="Supremo">Supremo</option><option value="Catastrófico">Catastrófico</option></select> : <div style={{fontSize:14, color:corBase, padding:'4px 0', fontWeight:'bold', fontFamily:'Cinzel,serif'}}>{item.nivelAmeaca}</div>}
           </div>
           {masterMode && <button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)', border:'1px solid rgba(232,25,60,0.3)', color:'#E8193C', borderRadius:6, cursor:'pointer', padding:'6px 11px', fontSize:12}}>✕ Excluir</button>}
         </div>
-        
         <div>
           <label style={{fontSize:10, letterSpacing:'0.3em', color:'#5A5070', fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Descrição & Comportamento</label>
-          {masterMode ? (
-            <textarea value={item.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Descreva os hábitos, a aparência bizarra, e táticas de combate da criatura..." rows={5} style={{width:'100%', resize:'vertical', lineHeight:1.7}}/>
-          ) : (
-            <div style={{fontSize:14, color:'#9A8A7A', lineHeight:1.85, whiteSpace:'pre-wrap', fontStyle:'italic', background:'rgba(255,255,255,0.02)', padding:'12px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)'}}>
-              {item.descricao || 'Nenhum registro sobre o comportamento desta criatura foi feito até o momento.'}
-            </div>
-          )}
+          {masterMode ? <textarea value={item.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Descreva os hábitos, a aparência bizarra, e táticas de combate da criatura..." rows={5} style={{width:'100%', resize:'vertical', lineHeight:1.7}}/> : <div style={{fontSize:14, color:'#9A8A7A', lineHeight:1.85, whiteSpace:'pre-wrap', fontStyle:'italic', background:'rgba(255,255,255,0.02)', padding:'12px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)'}}>{item.descricao || 'Nenhum registro sobre o comportamento desta criatura foi feito até o momento.'}</div>}
         </div>
       </div>
     </div>
@@ -1038,15 +1301,12 @@ function BestiarioSection({ masterMode }) {
   const [bestiario, setBestiario] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef({});
-  
-  // Novos estados para os filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAmeaca, setFilterAmeaca] = useState('Todas');
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
       const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      // A ordenação primária foi movida para o momento da renderização
       setBestiario(data);
       setLoaded(true);
     });
@@ -1056,34 +1316,15 @@ function BestiarioSection({ masterMode }) {
   const saveItem = item => {
     clearTimeout(saveTimeout.current[item.id]);
     saveTimeout.current[item.id] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'bestiario', String(item.id)), item); } 
-      catch(e) { console.error(e); }
+      try { await setDoc(doc(db, 'bestiario', String(item.id)), item); } catch(e) { console.error(e); }
     }, 800);
   };
 
-  const add = () => {
-    const item = newBestiary(Date.now());
-    setDoc(doc(db, 'bestiario', String(item.id)), item);
-  };
-  
-  const upd = (id, data) => {
-    setBestiario(prev => prev.map(b => b.id === id ? data : b));
-    saveItem(data);
-  };
+  const add = () => { const item = newBestiary(Date.now()); setDoc(doc(db, 'bestiario', String(item.id)), item); };
+  const upd = (id, data) => { setBestiario(prev => prev.map(b => b.id === id ? data : b)); saveItem(data); };
+  const del = async id => { await deleteDoc(doc(db, 'bestiario', String(id))); };
 
-  const del = async id => {
-    await deleteDoc(doc(db, 'bestiario', String(id)));
-  };
-
-  // --- NOVA LÓGICA DE ORDENAÇÃO DE AMEAÇAS ---
-  const pesosAmeaca = {
-    "Baixo": 1,
-    "Médio": 2,
-    "Alto": 3,
-    "Supremo": 4,
-    "Catastrófico": 5
-  };
-
+  const pesosAmeaca = {"Baixo":1,"Médio":2,"Alto":3,"Supremo":4,"Catastrófico":5};
   const filteredBestiario = bestiario.filter(item => {
     const matchesSearch = (item.nome || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesAmeaca = filterAmeaca === 'Todas' || item.nivelAmeaca === filterAmeaca;
@@ -1091,12 +1332,7 @@ function BestiarioSection({ masterMode }) {
   }).sort((a, b) => {
     const pesoA = pesosAmeaca[a.nivelAmeaca] || 0;
     const pesoB = pesosAmeaca[b.nivelAmeaca] || 0;
-    
-    // 1º Criteiro: Ameaça crescente (Baixo -> Catastrófico)
-    if (pesoA !== pesoB) {
-      return pesoA - pesoB;
-    }
-    // 2º Critério: Desempate pela data de criação (mais novos primeiro)
+    if (pesoA !== pesoB) return pesoA - pesoB;
     return b.id - a.id;
   });
 
@@ -1108,67 +1344,28 @@ function BestiarioSection({ masterMode }) {
         <div style={{fontSize:11, color:'#6A5A5A', marginTop:7, fontFamily:'Cinzel,serif'}}>📖 Conhecimento Profano · Sincronizado em tempo real</div>
         <div style={{width:60, height:1, background:'linear-gradient(90deg, transparent, rgba(232,160,32,0.6), transparent)', margin:'14px auto 0'}}/>
       </div>
-
       {!loaded && <div style={{textAlign:'center', color:'#5A5070', fontFamily:'Cinzel,serif', fontSize:13, padding:40}}>Abrindo o tomo...</div>}
-      
-      {loaded && masterMode && (
-        <div style={{display:'flex', justifyContent:'flex-end', marginBottom:18}}>
-          <button onClick={add} style={{padding:'8px 20px', borderRadius:8, border:'1px solid rgba(232,160,32,0.4)', background:'rgba(232,160,32,0.1)', color:'#E8D8C0', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:12, letterSpacing:'0.08em'}}>+ Catalogar Criatura</button>
-        </div>
-      )}
-
-      {/* Barra de Filtros */}
+      {loaded && masterMode && <div style={{display:'flex', justifyContent:'flex-end', marginBottom:18}}><button onClick={add} style={{padding:'8px 20px', borderRadius:8, border:'1px solid rgba(232,160,32,0.4)', background:'rgba(232,160,32,0.1)', color:'#E8D8C0', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:12, letterSpacing:'0.08em'}}>+ Catalogar Criatura</button></div>}
       {loaded && bestiario.length > 0 && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(232,160,32,0.15)' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{fontSize:9, letterSpacing:'0.2em', color:'rgba(232,160,32,0.7)', fontFamily:'Cinzel,serif', display:'block', marginBottom:6, textTransform:'uppercase'}}>Pesquisar</label>
-            <input 
-              type="text" 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
-              placeholder="Nome da criatura..." 
-              style={{ width: '100%', background: 'rgba(0,0,0,0.4)' }}
-            />
+            <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Nome da criatura..." style={{ width: '100%', background: 'rgba(0,0,0,0.4)' }}/>
           </div>
           <div style={{ width: 160, flexShrink: 0 }}>
             <label style={{fontSize:9, letterSpacing:'0.2em', color:'rgba(232,160,32,0.7)', fontFamily:'Cinzel,serif', display:'block', marginBottom:6, textTransform:'uppercase'}}>Categoria</label>
-            <select 
-              value={filterAmeaca} 
-              onChange={e => setFilterAmeaca(e.target.value)} 
-              style={{ width: '100%', background: 'rgba(0,0,0,0.4)' }}
-            >
+            <select value={filterAmeaca} onChange={e => setFilterAmeaca(e.target.value)} style={{ width: '100%', background: 'rgba(0,0,0,0.4)' }}>
               <option value="Todas">Todas as Ameaças</option>
-              <option value="Baixo">Baixo</option>
-              <option value="Médio">Médio</option>
-              <option value="Alto">Alto</option>
-              <option value="Supremo">Supremo</option>
+              <option value="Baixo">Baixo</option><option value="Médio">Médio</option>
+              <option value="Alto">Alto</option><option value="Supremo">Supremo</option>
               <option value="Catastrófico">Catastrófico</option>
             </select>
           </div>
         </div>
       )}
-
-      {loaded && bestiario.length === 0 && (
-        <div style={{textAlign:'center', padding:38, border:'1px dashed rgba(232,160,32,0.2)', borderRadius:12}}>
-          <div style={{fontSize:30, marginBottom:10}}>🐉</div>
-          <div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#8A7A6A'}}>Nenhuma criatura catalogada.</div>
-          <div style={{fontSize:12, marginTop:5, color:'#5A4A4A'}}>
-            {masterMode ? 'O mundo ainda parece seguro. Registre o primeiro monstro.' : 'As páginas estão em branco. Nenhum monstro foi avistado ainda.'}
-          </div>
-        </div>
-      )}
-
-      {/* Mensagem quando o filtro não encontra resultados */}
-      {loaded && bestiario.length > 0 && filteredBestiario.length === 0 && (
-        <div style={{textAlign:'center', padding:30, color:'#7A6A5A', fontFamily:'Cinzel,serif', fontSize:13}}>
-          Nenhuma criatura encontrada com estes filtros.
-        </div>
-      )}
-
-      {/* Renderiza a lista filtrada e ORDENADA PELA AMEAÇA em vez da lista completa */}
-      {filteredBestiario.map(item => (
-        <BestiarioCard key={item.id} item={item} onChange={d => upd(item.id, d)} onDelete={() => del(item.id)} masterMode={masterMode} />
-      ))}
+      {loaded && bestiario.length === 0 && <div style={{textAlign:'center', padding:38, border:'1px dashed rgba(232,160,32,0.2)', borderRadius:12}}><div style={{fontSize:30, marginBottom:10}}>🐉</div><div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#8A7A6A'}}>Nenhuma criatura catalogada.</div></div>}
+      {loaded && bestiario.length > 0 && filteredBestiario.length === 0 && <div style={{textAlign:'center', padding:30, color:'#7A6A5A', fontFamily:'Cinzel,serif', fontSize:13}}>Nenhuma criatura encontrada com estes filtros.</div>}
+      {filteredBestiario.map(item => <BestiarioCard key={item.id} item={item} onChange={d => upd(item.id, d)} onDelete={() => del(item.id)} masterMode={masterMode} />)}
     </div>
   );
 }
@@ -1193,23 +1390,9 @@ function MasterPagesBook({masterMode}){
       <div style={{marginBottom:20,padding:'14px 18px',border:'1px solid rgba(168,85,247,0.18)',borderRadius:10,background:'rgba(168,85,247,0.05)',fontFamily:'Crimson Text,Georgia,serif',fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>
         "Páginas escritas pelos escribas do Mestre — registros do que o grupo descobriu, ganhou ou testemunhou ao longo de sua jornada."
       </div>
-
-      {masterMode&&(
-        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:16}}>
-          <button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Página</button>
-        </div>
-      )}
-
+      {masterMode&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:16}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Página</button></div>}
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:30}}>Conectando ao cosmos...</div>}
-
-      {loaded&&pages.length===0&&(
-        <div style={{textAlign:'center',padding:38,border:'1px dashed rgba(168,85,247,0.18)',borderRadius:12}}>
-          <div style={{fontSize:30,marginBottom:10}}>📖</div>
-          <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma página adicionada ainda.</div>
-          <div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>{masterMode?'Clique em "+ Nova Página" para começar.':'Aguarde o Mestre registrar novas descobertas.'}</div>
-        </div>
-      )}
-
+      {loaded&&pages.length===0&&<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(168,85,247,0.18)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📖</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma página adicionada ainda.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>{masterMode?'Clique em "+ Nova Página" para começar.':'Aguarde o Mestre registrar novas descobertas.'}</div></div>}
       {pages.map(page=>(
         <div key={page.id} style={{border:'1px solid rgba(168,85,247,0.15)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
           <div onClick={()=>setOpen(open===page.id?null:page.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
@@ -1223,30 +1406,18 @@ function MasterPagesBook({masterMode}){
               <span style={{color:'rgba(168,85,247,0.4)',fontSize:11,transform:open===page.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
             </div>
           </div>
-
           {open===page.id&&(
             <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(168,85,247,0.1)',animation:'pageTurn 0.3s ease'}}>
               <div style={{height:11}}/>
               {masterMode?(<>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 140px',gap:10,marginBottom:11}}>
-                  <div>
-                    <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título da Página</label>
-                    <input value={page.titulo||''} onChange={e=>upd(page.id,{...page,titulo:e.target.value})} placeholder="Ex: O Pacto com o Homem Água..." style={{width:'100%'}}/>
-                  </div>
-                  <div>
-                    <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Data Aquisição</label>
-                    <input value={page.dataAquisicao||''} onChange={e=>upd(page.id,{...page,dataAquisicao:e.target.value})} placeholder="DD/MM/AAAA" style={{width:'100%'}}/>
-                  </div>
+                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={page.titulo||''} onChange={e=>upd(page.id,{...page,titulo:e.target.value})} placeholder="Ex: O Pacto com o Homem Água..." style={{width:'100%'}}/></div>
+                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Data</label><input value={page.dataAquisicao||''} onChange={e=>upd(page.id,{...page,dataAquisicao:e.target.value})} style={{width:'100%'}}/></div>
                 </div>
-                <div>
-                  <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descritivo</label>
-                  <textarea value={page.descricao||''} onChange={e=>upd(page.id,{...page,descricao:e.target.value})} placeholder={"Registre aqui o que o grupo adquiriu, descobriu ou testemunhou nesta jornada..."} rows={6} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
-                </div>
+                <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descritivo</label><textarea value={page.descricao||''} onChange={e=>upd(page.id,{...page,descricao:e.target.value})} rows={6} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
                 <div style={{marginTop:7,fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>salvo automaticamente</div>
               </>):(
-                <div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>
-                  {page.descricao||<span style={{color:'#4A4050'}}>Esta página ainda não foi escrita.</span>}
-                </div>
+                <div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{page.descricao||<span style={{color:'#4A4050'}}>Esta página ainda não foi escrita.</span>}</div>
               )}
             </div>
           )}
@@ -1267,8 +1438,8 @@ function LibroSection({masterMode}){
   const isRevealed=(ent,i)=>i<2?true:(unlocked[ent.id]||false);
   return(<div style={{maxWidth:780,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Artefato da Profecia</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>Livro da Mandíbula</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'15px auto 0'}}/></div><div style={{display:'flex',gap:6,marginBottom:26,justifyContent:'center',flexWrap:'wrap'}}>{['📜 Marcos & Profecia','◈ As Seis Entidades','◆ Os 6 Artefatos','📖 Páginas do Mestre'].map((t,i)=>(<button key={i} onClick={()=>setPage(i)} style={{padding:'7px 16px',borderRadius:20,fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.07em',border:page===i?'1px solid rgba(168,85,247,0.5)':'1px solid rgba(255,255,255,0.08)',background:page===i?'rgba(168,85,247,0.12)':'transparent',color:page===i?'#C8A8E8':'#5A4A6A',cursor:'pointer',transition:'all 0.2s'}}>{t}</button>))}</div>
   {page===0&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:24,padding:'14px 18px',border:'1px solid rgba(168,85,247,0.18)',borderRadius:10,background:'rgba(168,85,247,0.05)',fontFamily:'Crimson Text,Georgia,serif',fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>"Escrito na era em que o primeiro Mago do Prólogo tocou a pena celestial — estas páginas registram os passos da humanidade e para onde eles a levam."</div><div style={{position:'relative',paddingLeft:26}}><div style={{position:'absolute',left:7,top:0,bottom:0,width:1,background:'linear-gradient(180deg,rgba(168,85,247,0.4),rgba(232,25,60,0.6))'}}/>{MILESTONES.map((m,i)=>(<div key={i} style={{position:'relative',marginBottom:m.prophecy?0:15,paddingLeft:18}}><div style={{position:'absolute',left:-18,top:5,width:9,height:9,borderRadius:'50%',background:m.prophecy?'#E8193C':'rgba(168,85,247,0.5)',boxShadow:m.prophecy?'0 0 10px #E8193C':undefined,border:`1px solid ${m.prophecy?'#E8193C':'rgba(168,85,247,0.4)'}`}}/><div style={{display:'flex',alignItems:'flex-start',gap:10,padding:'9px 13px',borderRadius:8,background:m.prophecy?'rgba(232,25,60,0.07)':'rgba(255,255,255,0.018)',border:m.prophecy?'1px solid rgba(232,25,60,0.22)':'1px solid rgba(255,255,255,0.04)'}}><span style={{fontSize:15,flexShrink:0}}>{m.icon}</span><div><div style={{fontSize:10,fontFamily:'Cinzel,serif',color:m.prophecy?'#E8193C':'#7B6D8A',letterSpacing:'0.2em',marginBottom:2}}>{m.year}</div><div style={{fontSize:14,color:m.prophecy?'#F09090':'#9A8A7A',lineHeight:1.6,fontFamily:m.prophecy?'Cinzel,serif':'inherit',fontWeight:m.prophecy?600:400}}>{m.event}</div></div></div></div>))}</div><div style={{marginTop:26,padding:'22px',border:'1px solid rgba(232,25,60,0.28)',borderRadius:12,background:'rgba(232,25,60,0.05)'}}><div style={{textAlign:'center',marginBottom:16}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>A Profecia</div><div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:14}}>{starC.map((c,i)=>(<div key={i} style={{textAlign:'center'}}><div style={{width:13,height:13,borderRadius:'50%',background:c,boxShadow:`0 0 12px ${c}`,margin:'0 auto 4px',animation:'shimmer 2s ease-in-out infinite',animationDelay:`${i*0.4}s`}}/><div style={{fontSize:9,color:c,fontFamily:'Cinzel,serif'}}>★</div></div>))}</div></div><p style={{fontSize:14,color:'#B09090',lineHeight:1.85,margin:'0 0 20px',textAlign:'center',fontStyle:'italic'}}>"Quatro estrelas surgirão nos céus de Cosmum — visíveis tanto de dia quanto de noite. A cada dia que passa, elas se aproximam. Quando chegarem ao máximo possível de proximidade... algo acontecerá. O que, o Livro não ousou descrever."</p>{!coordRevealed?(<div style={{textAlign:'center',marginTop:8}}><div style={{fontSize:12,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:10,letterSpacing:'0.15em'}}>✦ A próxima página permanece selada por uma magia poderosa ✦</div><button onClick={toggleCoord} style={{padding:'9px 24px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',transition:'all 0.2s'}}>🔮 Quebrar Selo</button></div>):(<div style={{marginTop:8,padding:'18px',border:'1px solid rgba(168,85,247,0.3)',borderRadius:10,background:'rgba(168,85,247,0.06)',textAlign:'center',animation:'pageTurn 0.8s ease'}}><div style={{fontSize:10,letterSpacing:'0.35em',color:'#A855F7',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>As Coordenadas do Destino</div><div style={{fontFamily:'Cinzel,serif',fontSize:18,color:'#C8A8E8',letterSpacing:'0.25em',animation:'revealCoord 1.2s ease',marginBottom:8}}>45° 30′ 53.6″ N, 25° 22′ 1.8″ E</div><div style={{fontSize:12,color:'#7A6A8A',fontStyle:'italic',lineHeight:1.7}}>"O ponto onde as quatro estrelas convergem. Onde o véu entre o mortal e o absoluto é mais fino."</div><button onClick={toggleCoord} style={{marginTop:14,padding:'5px 14px',borderRadius:6,border:'1px solid rgba(168,85,247,0.25)',background:'transparent',color:'#5A4A6A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Selar novamente</button></div>)}</div></div>)}
-  {page===1&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis entidades foram vislumbradas nas páginas finais do Livro. Sua origem, forma e propósito permanecem parcialmente envoltos em sombra."</div><div style={{display:'flex',flexDirection:'column',gap:14}}>{ENTITIES_DATA.map((ent,i)=>{const revealed=isRevealed(ent,i);return(<div key={ent.id} style={{border:`1px solid ${revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:20}}>{ent.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:14,color:revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div><div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{revealed?'ENTIDADE REGISTRADA':'TRANCADO — AGUARDANDO O MESTRE'}</div></div>{i>=2&&(<button onClick={()=>toggleUnlock(ent.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(168,85,247,0.35)':'rgba(232,25,60,0.35)'}`,background:revealed?'rgba(168,85,247,0.07)':'rgba(232,25,60,0.07)',color:revealed?'#C8A8E8':'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Trancar':'🔓 Revelar'}</button>)}</div>{revealed?(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Lore / História</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{ent.lore||<span style={{color:'#4A4050'}}>Lore ainda não registrado.</span>}</div></div><div style={{height:1,background:'rgba(255,255,255,0.06)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características Físicas</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic'}}>{ent.fisico||<span style={{color:'#4A4050'}}>Características físicas ainda não registradas.</span>}</div></div></div>):(<div style={{padding:'22px 16px',textAlign:'center'}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🔒</div><div style={{fontSize:13,color:'#4A4050',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Esta entidade ainda não foi revelada.</div><div style={{fontSize:12,color:'#3A3040',marginTop:5}}>Aguarde o Mestre desbloquear esta página.</div></div>)}</div>);})}</div></div>)}
-  {page===2&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis artefatos de poder imensurável foram registrados nas páginas mais antigas do Livro. Uma magia poderosa sela seu conhecimento — apenas o avanço da história os revelará."</div><div style={{display:'flex',flexDirection:'column',gap:12}}>{ARTEFATOS_DATA.map((art,i)=>{const revealed=artefatosUnlocked[art.id]||false;const hasContent=!!(art.lore||art.fisico);return(<div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div><div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div></div><button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button></div>{!revealed&&(<div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}><div style={{fontSize:22,marginBottom:6,opacity:0.2}}>◆</div><div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div><div style={{fontSize:11,color:'#2A2030',marginTop:4}}>Seu poder será revelado conforme a história avança.</div></div>)}{revealed&&hasContent&&(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12,borderTop:'1px solid rgba(232,160,32,0.1)'}}><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(232,160,32,0.6)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Descrição</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{art.lore}</div></div>{art.fisico&&(<><div style={{height:1,background:'rgba(232,160,32,0.1)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(232,160,32,0.6)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Localização & Origem</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{art.fisico}</div></div></>)}</div>)}{revealed&&!hasContent&&(<div style={{padding:'14px 16px',borderTop:'1px solid rgba(232,160,32,0.1)'}}><div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7}}>Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.</div></div>)}</div>);})}</div></div>)}
+  {page===1&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis entidades foram vislumbradas nas páginas finais do Livro. Sua origem, forma e propósito permanecem parcialmente envoltos em sombra."</div><div style={{display:'flex',flexDirection:'column',gap:14}}>{ENTITIES_DATA.map((ent,i)=>{const revealed=isRevealed(ent,i);return(<div key={ent.id} style={{border:`1px solid ${revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:20}}>{ent.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:14,color:revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div><div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{revealed?'ENTIDADE REGISTRADA':'TRANCADO — AGUARDANDO O MESTRE'}</div></div>{i>=2&&(<button onClick={()=>toggleUnlock(ent.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(168,85,247,0.35)':'rgba(232,25,60,0.35)'}`,background:revealed?'rgba(168,85,247,0.07)':'rgba(232,25,60,0.07)',color:revealed?'#C8A8E8':'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Trancar':'🔓 Revelar'}</button>)}</div>{revealed?(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Lore / História</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{ent.lore||<span style={{color:'#4A4050'}}>Lore ainda não registrado.</span>}</div></div><div style={{height:1,background:'rgba(255,255,255,0.06)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características Físicas</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic'}}>{ent.fisico||<span style={{color:'#4A4050'}}>Características físicas ainda não registradas.</span>}</div></div></div>):(<div style={{padding:'22px 16px',textAlign:'center'}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🔒</div><div style={{fontSize:13,color:'#4A4050',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Esta entidade ainda não foi revelada.</div></div>)}</div>);})}</div></div>)}
+  {page===2&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis artefatos de poder imensurável foram registrados nas páginas mais antigas do Livro."</div><div style={{display:'flex',flexDirection:'column',gap:12}}>{ARTEFATOS_DATA.map((art,i)=>{const revealed=artefatosUnlocked[art.id]||false;const hasContent=!!(art.lore||art.fisico);return(<div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div><div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div></div><button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button></div>{!revealed&&(<div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}><div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div></div>)}{revealed&&hasContent&&(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12,borderTop:'1px solid rgba(232,160,32,0.1)'}}><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(232,160,32,0.6)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Descrição</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{art.lore}</div></div>{art.fisico&&(<><div style={{height:1,background:'rgba(232,160,32,0.1)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(232,160,32,0.6)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Localização & Origem</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{art.fisico}</div></div></>)}</div>)}{revealed&&!hasContent&&(<div style={{padding:'14px 16px',borderTop:'1px solid rgba(232,160,32,0.1)'}}><div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7}}>Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.</div></div>)}</div>);})}</div></div>)}
   {page===3&&<MasterPagesBook masterMode={masterMode}/>}
   </div>);
 }
@@ -1310,7 +1481,7 @@ function CronicasSection({masterMode}){
                   <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
                   <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
                 </div>
-                <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} placeholder={"Narre aqui os acontecimentos desta sessão..."} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
+                <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
                 <div style={{marginBottom:10}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
                     <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens da Sessão</label>
@@ -1350,7 +1521,7 @@ function CenariosSection({masterMode}){
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
       {loaded&&(<>
         <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Novo Cenário</button></div>
-        {cenarios.length===0&&(<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}><div style={{fontSize:32,marginBottom:10,opacity:0.3}}>🗺️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhum cenário registrado.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>Adicione os locais e mapas que os heróis exploraram.</div></div>)}
+        {cenarios.length===0&&(<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}><div style={{fontSize:32,marginBottom:10,opacity:0.3}}>🗺️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhum cenário registrado.</div></div>)}
         {cenarios.map(c=>(
           <div key={c.id} style={{border:'1px solid rgba(168,85,247,0.14)',borderRadius:14,marginBottom:14,overflow:'hidden',background:'rgba(8,10,22,0.9)'}}>
             <div onClick={()=>setOpen(open===c.id?null:c.id)} style={{padding:'14px 18px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
@@ -1365,7 +1536,7 @@ function CenariosSection({masterMode}){
                 <div style={{padding:'16px 18px',display:'flex',flexDirection:'column',gap:13}}>
                   {!c.mapa&&(<div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:8,textTransform:'uppercase'}}>Mapa do Cenário</label><div onClick={()=>mapRefs.current[c.id]?.click()} style={{padding:'30px',borderRadius:10,border:'1px dashed rgba(168,85,247,0.25)',background:'rgba(168,85,247,0.03)',textAlign:'center',cursor:'pointer'}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🗺️</div><div style={{fontSize:12,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Toque para adicionar o mapa do cenário</div></div></div>)}
                   <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Cenário</label><input value={c.nome||''} onChange={e=>upd(c.id,{...c,nome:e.target.value})} placeholder="Ex: A Taverna dos Três Mundos..." style={{width:'100%'}}/></div>
-                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição & Notas</label><textarea value={c.descricao||''} onChange={e=>upd(c.id,{...c,descricao:e.target.value})} placeholder={"Descreva este local — sua atmosfera, o que os personagens encontraram aqui, segredos revelados, eventos marcantes..."} rows={5} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
+                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição & Notas</label><textarea value={c.descricao||''} onChange={e=>upd(c.id,{...c,descricao:e.target.value})} rows={5} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
                   <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>salvo automaticamente</div>
                 </div>
               </div>
@@ -1373,97 +1544,6 @@ function CenariosSection({masterMode}){
           </div>
         ))}
       </>)}
-    </div>
-  );
-}
-// ─── MAPA MÚNDI ─────────────────────────────────────────────────────────────
-function MapaMundiSection({ masterMode }) {
-  const [mapData, setMapData] = useState({ url: '', pins: [] });
-  const mapInputRef = useRef(null);
-  
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'mapa_mundi'), snap => {
-      if(snap.exists()) setMapData(snap.data());
-    });
-    return () => unsub();
-  }, []);
-
-  const handleUpdate = async (newData) => {
-    await setDoc(doc(db, 'config', 'mapa_mundi'), newData);
-  };
-
-  const uploadMap = async e => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = async ev => {
-      const c = await compressImage(ev.target.result, 1600, 1600, 0.8);
-      handleUpdate({ ...mapData, url: c });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const addPin = (e) => {
-    if (!masterMode || !mapData.url) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
-    const novoPin = { id: Date.now(), x, y, titulo: 'Novo Local', desc: '' };
-    handleUpdate({ ...mapData, pins: [...(mapData.pins || []), novoPin] });
-  };
-
-  const updatePin = (id, key, val) => {
-    const novos = mapData.pins.map(p => p.id === id ? { ...p, [key]: val } : p);
-    handleUpdate({ ...mapData, pins: novos });
-  };
-  
-  const removePin = (id) => {
-    handleUpdate({ ...mapData, pins: mapData.pins.filter(p => p.id !== id) });
-  };
-
-  return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px 80px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#1EC8FF', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Mundo de Cosmum</div>
-        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa Múndi</h2>
-        {masterMode && <button onClick={() => mapInputRef.current?.click()} style={{ marginTop: 16, padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(30,200,255,0.4)', background: 'rgba(30,200,255,0.1)', color: '#1EC8FF', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>🗺 Atualizar Imagem do Mapa</button>}
-        <input ref={mapInputRef} type="file" accept="image/*" onChange={uploadMap} style={{ display: 'none' }} />
-      </div>
-
-      {!mapData.url ? (
-        <div style={{ textAlign: 'center', padding: 50, border: '1px dashed rgba(30,200,255,0.3)', borderRadius: 12, color: '#5A5070' }}>Nenhum mapa principal definido.</div>
-      ) : (
-        <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '2px solid rgba(30,200,255,0.3)' }}>
-          {/* A IMAGEM DO MAPA */}
-          <img src={mapData.url} alt="Mapa Mundi" onClick={addPin} style={{ width: '100%', display: 'block', cursor: masterMode ? 'crosshair' : 'default' }} />
-          
-          {/* OS MARCADORES */}
-          {(mapData.pins || []).map(pin => (
-            <div key={pin.id} style={{ position: 'absolute', left: `${pin.x}%`, top: `${pin.y}%`, transform: 'translate(-50%, -50%)', zIndex: 10 }}>
-              <div className="pin-marker" style={{ width: 16, height: 16, background: '#E8193C', border: '2px solid #FFF', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 0 10px rgba(232,25,60,0.8)' }} />
-              
-              <div className="pin-tooltip" style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(10,12,28,0.95)', border: '1px solid rgba(30,200,255,0.4)', borderRadius: 8, padding: 12, width: 220, pointerEvents: 'auto' }}>
-                {masterMode ? (
-                  <>
-                    <input value={pin.titulo} onChange={e => updatePin(pin.id, 'titulo', e.target.value)} style={{ width: '100%', marginBottom: 6, fontSize: 12, color: '#1EC8FF' }} />
-                    <textarea value={pin.desc} onChange={e => updatePin(pin.id, 'desc', e.target.value)} style={{ width: '100%', fontSize: 11, rows: 2 }} />
-                    <button onClick={() => removePin(pin.id)} style={{ width: '100%', marginTop: 6, background: 'rgba(232,25,60,0.2)', color: '#E8193C', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Excluir Pin</button>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#1EC8FF', fontWeight: 600, marginBottom: 4 }}>{pin.titulo}</div>
-                    <div style={{ fontSize: 11, color: '#C8B8A0', lineHeight: 1.5 }}>{pin.desc}</div>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {/* CSS rápido para esconder e mostrar o painel do Pin no hover */}
-      <style>{`.pin-tooltip { opacity: 0; pointer-events: none; transition: opacity 0.2s; } .pin-marker:hover + .pin-tooltip, .pin-tooltip:hover { opacity: 1; pointer-events: auto; }`}</style>
     </div>
   );
 }
@@ -1479,7 +1559,7 @@ const TABS=[
   {id:'livro',label:'Livro da Mandíbula',icon:'✦'},
   {id:'cronicas',label:'Crônicas',icon:'🗒️'},
   {id:'cenarios',label:'Cenários',icon:'🗺️'},
-  {id:'mapa_mundi',label:'Mapa Múndi',icon:'🧭'}
+  {id:'mapamundi',label:'Mapa Múndi',icon:'🌍'},
 ];
 
 function MasterToggle({masterMode,setMasterMode}){
@@ -1488,48 +1568,10 @@ function MasterToggle({masterMode,setMasterMode}){
   if(masterMode)return(<button onClick={()=>setMasterMode(false)} title="Desativar Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>🔴 MESTRE</button>);
   return(<div style={{display:'flex',alignItems:'center',gap:6}}>{showInput&&(<div style={{display:'flex',gap:5}}><input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/><button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button><button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button></div>)}{!showInput&&(<button onClick={()=>setShowInput(true)} title="Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Mestre</button>)}</div>);
 }
-// ─── PLAYER DE SOM AMBIENTE ──────────────────────────────────────────────────
-function SomAmbientePlayer({ masterMode }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioData, setAudioData] = useState({ link: "" });
-  const [inputLink, setInputLink] = useState("");
 
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'som'), snap => {
-      if (snap.exists()) setAudioData(snap.data());
-    });
-    return () => unsub();
-  }, []);
-
-  const handleSave = async () => {
-    await setDoc(doc(db, 'config', 'som'), { link: inputLink });
-    setInputLink("");
-  };
-
-  const link = audioData.link;
-
-  return (
-    <div style={{ position: 'fixed', bottom: 24, left: 24, background: 'rgba(10,12,28,0.9)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: 12, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10, zIndex: 100, backdropFilter: 'blur(10px)', boxShadow:'0 10px 40px rgba(0,0,0,0.8)' }}>
-      <div style={{ fontFamily: 'Cinzel, serif', fontSize: 12, color: '#C8A8E8', letterSpacing: '0.1em' }}>🎵 Som Ambiente</div>
-      {masterMode ? (
-        <div style={{ display: 'flex', gap: 6 }}>
-          <input value={inputLink} onChange={e => setInputLink(e.target.value)} placeholder="Cole o link do YouTube..." style={{ width: 150, fontSize: 11, padding: '4px 8px' }} />
-          <button onClick={handleSave} style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.5)', color: '#fff', borderRadius: 6, cursor: 'pointer', fontSize: 11, padding: '0 10px' }}>Tocar</button>
-        </div>
-      ) : (
-        <button onClick={() => setIsPlaying(!isPlaying)} disabled={!link} style={{ background: isPlaying ? 'rgba(232, 25, 60, 0.15)' : 'rgba(168, 85, 247, 0.15)', border: `1px solid ${isPlaying ? 'rgba(232, 25, 60, 0.5)' : 'rgba(168, 85, 247, 0.5)'}`, color: '#fff', borderRadius: 8, cursor: link ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel, serif', padding: '8px 16px', fontSize: 12, transition: 'all 0.2s', opacity: link ? 1 : 0.5 }}>
-          {isPlaying ? '⏸ Silenciar Áudio' : '▶ Ouvir Áudio do Mestre'}
-        </button>
-      )}
-      {/* Iframe oculto rodando o áudio */}
-      {isPlaying && link && (
-        <iframe width="0" height="0" src={`${link.replace("watch?v=", "embed/")}?autoplay=1&loop=1`} frameBorder="0" allow="autoplay" style={{ display: 'none' }}></iframe>
-      )}
-    </div>
-  );
-}
 export default function App(){
-  const[tab,setTab]=useState('prologo');const[masterMode,setMasterMode]=useState(false);
+  const[tab,setTab]=useState('prologo');
+  const[masterMode,setMasterMode]=useState(false);
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:'#04060F',color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative'}}>
@@ -1548,8 +1590,8 @@ export default function App(){
       <nav style={{position:'relative',zIndex:10,display:'flex',justifyContent:'center',gap:3,padding:'9px 14px',background:'rgba(4,6,15,0.9)',borderBottom:'1px solid rgba(255,255,255,0.04)',flexWrap:'wrap'}}>
         {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'6px 12px',borderRadius:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',border:tab===t.id?'1px solid rgba(168,85,247,0.5)':'1px solid transparent',background:tab===t.id?'rgba(168,85,247,0.12)':'transparent',color:tab===t.id?'#C8A8E8':'#5A4A6A',transition:'all 0.2s'}}>{t.icon} {t.label}</button>))}
       </nav>
-      <main style={{flex:1,overflowY:'auto',position:'relative',zIndex:10, scrollBehavior: 'smooth'}}>
-        <div key={tab} style={{animation: 'pageTurn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'}}>
+      <main style={{flex:1,overflowY:'auto',position:'relative',zIndex:10,scrollBehavior:'smooth'}}>
+        <div key={tab} style={{animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
           {tab==='prologo'&&<PrologueSection/>}
           {tab==='classes'&&<ClassesSection/>}
           {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
@@ -1559,17 +1601,13 @@ export default function App(){
           {tab==='livro'&&<LibroSection masterMode={masterMode}/>}
           {tab==='cronicas'&&<CronicasSection masterMode={masterMode}/>}
           {tab==='cenarios'&&<CenariosSection masterMode={masterMode}/>}
-          {tab==='mapa_mundi'&&<MapaMundiSection masterMode={masterMode}/>}
+          {tab==='mapamundi'&&<MapaMundiSection masterMode={masterMode}/>}
         </div>
       </main>
+
+      {/* Fixed widgets */}
+      <AmbientSoundPlayer masterMode={masterMode} />
       <DiceWidget />
-      {/* ... */}
-      </main>
-      <DiceWidget />
-      <SomAmbientePlayer masterMode={masterMode} /> {/* <-- ADICIONE AQUI */}
-    </div>
-  );
-}
     </div>
   );
 }
