@@ -280,12 +280,12 @@ function MapaMundiSection({ masterMode }) {
   };
 
   const updateMarker = (id, field, value) => {
-    const updated = mapData.markers.map(m => m.id === id ? { ...m, [field]: value } : m);
+    const updated = (mapData.markers || []).map(m => m.id === id ? { ...m, [field]: value } : m);
     save({ ...mapData, markers: updated });
   };
 
   const deleteMarker = (id) => {
-    const updated = mapData.markers.filter(m => m.id !== id);
+    const updated = (mapData.markers || []).filter(m => m.id !== id);
     save({ ...mapData, markers: updated });
     setActiveMarker(null);
   };
@@ -357,7 +357,7 @@ function ClassesSection(){return(<div style={{maxWidth:760,margin:'0 auto',paddi
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 const ATTRS=[{key:'forca',label:'Força',color:'#E8193C'},{key:'agilidade',label:'Agilidade',color:'#E8A020'},{key:'durabilidade',label:'Durabilidade',color:'#1EC8FF'},{key:'inteligencia',label:'Inteligência',color:'#A855F7'},{key:'percepcao',label:'Percepção',color:'#D4C5A9'}];
-function AttrDots({value,color,onChange,pulse}){return(<div className="attr-dots" style={{display:'flex',gap:4}}>{Array.from({length:10}).map((_,i)=>(<button key={i} onClick={()=>onChange(i+1)} style={{width:15,height:15,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.12)'}`,background:i<value?color+'44':'transparent',cursor:'pointer',transition:'all 0.15s',padding:0,flexShrink:0, color: color, animation: pulse && i === value ? 'pulseAttr 1.5s infinite' : 'none'}}/>))}</div>);}
+function AttrDots({value,color,onChange,pulse}){return(<div className="attr-dots" style={{display:'flex',gap:4}}>{Array.from({length:10}).map((_,i)=>(<button key={i} onClick={()=>onChange(i+1)} style={{width:15,height:15,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.12)'}`,background:i<value?color+'44':'transparent',cursor:'pointer',transition:'all 0.15s',padding:0,flexShrink:0, color: color, animation: (Boolean(pulse) && i === value) ? 'pulseAttr 1.5s infinite' : 'none'}}/>))}</div>);}
 function VigosDots({value,max,color,onChange}){return(<div className="vigos-dots" style={{display:'flex',gap:6,flexWrap:'wrap'}}>{Array.from({length:max}).map((_,i)=>(<button key={i} onClick={()=>onChange(i<value?(i===value-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:`1.5px solid ${i<value?color:'rgba(255,255,255,0.13)'}`,background:i<value?color+'33':'transparent',cursor:'pointer',transition:'all 0.2s',padding:0,boxShadow:i<value?`0 0 5px ${color}55`:'none'}}>{i<value&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>))}</div>);}
 
 function VigosWithLocked({value,nivel,color,onChange}){
@@ -385,7 +385,7 @@ function VigosWithLocked({value,nivel,color,onChange}){
 
 // ─── EQUIPAMENTO E SILHUETA ────────────────────────────────────────────────────────
 function resolveEquipIcon(tipo=''){
-  const t=tipo.toLowerCase();
+  const t=String(tipo||'').toLowerCase();
   if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina')||t.includes('lamina'))return'⚔️';
   if(t.includes('adaga')||t.includes('faca')||t.includes('punhal')||t.includes('navalha'))return'🗡️';
   if(t.includes('machado'))return'🪓';
@@ -509,18 +509,18 @@ function resolveEquipIcon(tipo=''){
 }
 
 function CompactEquipSlot({label, color, data, onChange, placeholder}){
-  const d={nome:'',dano:'',tipo:placeholder,...(data||{})};
+  const d={nome:'',dano:'',tipo:placeholder,...(typeof data==='object'&&data!==null?data:{})};
   const dynIcon=resolveEquipIcon(d.tipo||placeholder);
   return(
     <div style={{background:`${color}07`,border:`1px solid ${color}20`,borderRadius:9,padding:'9px 11px',display:'flex',flexDirection:'column',gap:6}}>
       <div style={{fontSize:8,letterSpacing:'0.3em',color:`${color}99`,fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:1}}>{label}</div>
       <div style={{display:'flex',alignItems:'center',gap:7}}>
         <span style={{fontSize:17,flexShrink:0,lineHeight:1}}>{dynIcon}</span>
-        <input value={d.nome} onChange={e=>onChange({...d,nome:e.target.value})} placeholder="Nome do item..." style={{flex:1,fontSize:13,padding:'4px 7px'}}/>
+        <input value={d.nome||''} onChange={e=>onChange({...d,nome:e.target.value})} placeholder="Nome do item..." style={{flex:1,fontSize:13,padding:'4px 7px'}}/>
       </div>
       <div className="equip-slot-inputs" style={{display:'flex',gap:6}}>
-        <input value={d.dano} onChange={e=>onChange({...d,dano:e.target.value})} placeholder="Dano / Ex: 1D6" style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(255,200,80,0.85)'}}/>
-        <input value={d.tipo} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder={placeholder} style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(200,184,160,0.6)'}}/>
+        <input value={d.dano||''} onChange={e=>onChange({...d,dano:e.target.value})} placeholder="Dano / Ex: 1D6" style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(255,200,80,0.85)'}}/>
+        <input value={d.tipo||''} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder={placeholder} style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(200,184,160,0.6)'}}/>
       </div>
     </div>
   );
@@ -625,7 +625,7 @@ function EquipamentoPanel({sheet, onChange, sheetColor}){
 function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities}){
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
-  const nivel=sheet.nivel||1;
+  const nivel=Number(sheet.nivel)||1;
   const classCustom=(customAbilities[cls.id]||[]);
 
   const handleSave=()=>{
@@ -764,15 +764,20 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
   const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
-  const hp=sheet.hp||0;const hpBonus=sheet.hp_bonus||0;
+  
+  // Safe parsing
+  const hp = Number(sheet.hp) || 0;
+  const hpBonus = Number(sheet.hp_bonus) || 0;
+  const pts = Number(sheet.pontos_atributos) || 0;
+  const status = sheet.status || {};
+  const nivel = Number(sheet.nivel) || 1;
+
   const photoInputRef=useRef(null);
   const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
   const attrBonus=val=>Math.floor(val/2);
-  const pts = sheet.pontos_atributos || 0;
-  const status = sheet.status || {};
 
   const handleAttrChange = (key, newVal) => {
-      const oldVal = sheet[key] || 0;
+      const oldVal = Number(sheet[key]) || 0;
       if (newVal > oldVal) {
           if (pts > 0) {
               onChange({...sheet, pontos_atributos: pts - 1, [key]: oldVal + 1});
@@ -800,14 +805,14 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
         {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
         {sheet.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}>
           <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div>
-          <div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel} · {label(sheet.nivel)}</div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {nivel} · {label(nivel)}</div>
         </div>}
         <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
       </div>
       <div style={{padding:'18px'}}>
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
-          <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
-          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+          <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome||''} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
+          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe||'fogo'} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
 
@@ -835,33 +840,36 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Nível · XP</div>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               {masterMode ? (
-                  <input type="number" min={1} max={30} value={sheet.nivel} onChange={e => {
+                  <input type="number" min={1} max={30} value={nivel} onChange={e => {
                       const n = Math.min(30, Math.max(1, +e.target.value));
-                      const diff = n - (sheet.nivel || 1);
-                      f('nivel', n);
-                      if (diff > 0) f('pontos_atributos', (sheet.pontos_atributos || 0) + diff);
+                      const diff = n - nivel;
+                      if (diff > 0) {
+                          onChange({...sheet, nivel: n, pontos_atributos: pts + diff});
+                      } else {
+                          f('nivel', n);
+                      }
                   }} style={{width:44, textAlign:'center'}}/>
               ) : (
-                  <span style={{fontSize:18, fontWeight:'bold', color:'#E8A020', minWidth:44, textAlign:'center'}}>{sheet.nivel}</span>
+                  <span style={{fontSize:18, fontWeight:'bold', color:'#E8A020', minWidth:44, textAlign:'center'}}>{nivel}</span>
               )}
               <span style={{color:'rgba(255,255,255,0.14)', fontSize:11}}>Nv</span>
 
               {masterMode ? (
-                  <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:65, textAlign:'center'}}/>
+                  <input type="number" min={0} value={sheet.xp||0} onChange={e=>f('xp',+e.target.value)} style={{width:65, textAlign:'center'}}/>
               ) : (
                   <span style={{fontSize:16, fontWeight:'bold', color:'#E8A020', minWidth:65, textAlign:'center'}}>{sheet.xp || 0}</span>
               )}
               <span style={{fontSize:11, color:'rgba(255,255,255,0.18)'}}>XP</span>
             </div>
-            <div style={{fontSize:10,color:'#7A6A5A',marginTop:6,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
+            <div style={{fontSize:10,color:'#7A6A5A',marginTop:6,fontFamily:'Cinzel,serif'}}>{label(nivel)}</div>
             {!masterMode && <div style={{fontSize:8, color:'rgba(232,160,32,0.5)', marginTop:6, fontStyle:'italic'}}>Somente o mestre ajusta o progresso</div>}
           </div>
           <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
-            <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
+            <VigosWithLocked value={Number(sheet.vigos)||0} nivel={nivel} color={sheetColor} onChange={v=>f('vigos',v)}/>
             <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:5}}>+2 por turno</div>
-            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +1 VC desbloqueado (Nv 8)</div>}
-            {sheet.nivel>=18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +2 VC desbloqueados (Nv 8 e 18)</div>}
+            {nivel>=8&&nivel<18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +1 VC desbloqueado (Nv 8)</div>}
+            {nivel>=18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +2 VC desbloqueados (Nv 8 e 18)</div>}
           </div>
         </div>
 
@@ -886,11 +894,11 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {ATTRS.map(a=>{const bonus=attrBonus(sheet[a.key]||0);return(
+            {ATTRS.map(a=>{const bonus=attrBonus(Number(sheet[a.key])||0);return(
               <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
                 <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-                <AttrDots value={sheet[a.key]||0} color={a.color} pulse={pts > 0} onChange={v=>handleAttrChange(a.key,v)}/>
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
+                <AttrDots value={Number(sheet[a.key])||0} color={a.color} pulse={pts > 0} onChange={v=>handleAttrChange(a.key,v)}/>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{Number(sheet[a.key])||0}</span>
                 <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>
                   {bonus>0?`+${bonus}`:'—'}
                 </span>
@@ -903,7 +911,7 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
         <div style={{marginBottom:14}}>
           <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
             <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
-              {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
+              {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?nivel>=3:nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${nivel})`}</div></div></button>);})}
             </div>
             <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
               <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
@@ -993,11 +1001,11 @@ const ENEMY_COLOR='#FF4444';const ENEMY_GLOW='rgba(255,68,68,0.18)';
 const newEnemySkill=()=>({id:Date.now()+Math.random(),nome:'',descricao:'',dano:'',cost:0,tempo:'',tipo:'normal'});
 const newEnemy=id=>({id,nome:'',tipo:'',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,foto:'',habilidades:[newEnemySkill()],notas:''});
 
-function EnemySkillEditor({skill,color,onChange,onDelete}){const update=(key,value)=>onChange({...skill,[key]:value});return(<div style={{background:'rgba(255,255,255,0.02)',border:`1px solid ${color}22`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}><div style={{display:'flex',gap:10,alignItems:'flex-end',flexWrap:'wrap'}}><div style={{flex:1,minWidth:160}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome da habilidade</label><input value={skill.nome} onChange={e=>update('nome',e.target.value)} placeholder="Ex: Golpe Sombrio" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Dano</label><input value={skill.dano} onChange={e=>update('dano',e.target.value)} placeholder="Ex: 1D8+2" style={{width:'100%'}}/></div><div style={{width:90}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Custo VC</label><input type="number" min={0} value={skill.cost} onChange={e=>update('cost',Number(e.target.value))} style={{width:'100%'}}/></div><div style={{width:120}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tempo</label><input value={skill.tempo} onChange={e=>update('tempo',e.target.value)} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo</label><select value={skill.tipo} onChange={e=>update('tipo',e.target.value)} style={{width:'100%'}}><option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option></select></div><button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 10px',fontSize:12,height:34}}>✕</button></div><div><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição</label><textarea value={skill.descricao} onChange={e=>update('descricao',e.target.value)} placeholder="Descreva o efeito, alcance, condição ou comportamento desta habilidade..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:8}}><span style={{fontSize:10,color:color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em'}}>{skill.tipo?.toUpperCase()||'HABILIDADE'}</span><div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>⚔ {skill.dano||'sem dano'}</span><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>{skill.cost} VC</span><span style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {skill.tempo||'—'}</span></div></div></div>);}
+function EnemySkillEditor({skill,color,onChange,onDelete}){const update=(key,value)=>onChange({...skill,[key]:value});return(<div style={{background:'rgba(255,255,255,0.02)',border:`1px solid ${color}22`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}><div style={{display:'flex',gap:10,alignItems:'flex-end',flexWrap:'wrap'}}><div style={{flex:1,minWidth:160}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome da habilidade</label><input value={skill.nome||''} onChange={e=>update('nome',e.target.value)} placeholder="Ex: Golpe Sombrio" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Dano</label><input value={skill.dano||''} onChange={e=>update('dano',e.target.value)} placeholder="Ex: 1D8+2" style={{width:'100%'}}/></div><div style={{width:90}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Custo VC</label><input type="number" min={0} value={skill.cost||0} onChange={e=>update('cost',Number(e.target.value))} style={{width:'100%'}}/></div><div style={{width:120}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tempo</label><input value={skill.tempo||''} onChange={e=>update('tempo',e.target.value)} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo</label><select value={skill.tipo||'normal'} onChange={e=>update('tipo',e.target.value)} style={{width:'100%'}}><option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option></select></div><button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 10px',fontSize:12,height:34}}>✕</button></div><div><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição</label><textarea value={skill.descricao||''} onChange={e=>update('descricao',e.target.value)} placeholder="Descreva o efeito, alcance, condição ou comportamento desta habilidade..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:8}}><span style={{fontSize:10,color:color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em'}}>{(skill.tipo||'normal').toUpperCase()}</span><div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>⚔ {skill.dano||'sem dano'}</span><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>{skill.cost||0} VC</span><span style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {skill.tempo||'—'}</span></div></div></div>);}
 
 function EnemyCard({enemy,onChange,onDelete,masterMode}){
   const f=(k,v)=>onChange({...enemy,[k]:v});
-  const hp=enemy.hp||0;const hpBonus=enemy.hp_bonus||0;
+  const hp=Number(enemy.hp)||0;const hpBonus=Number(enemy.hp_bonus)||0;
   const hpBarPct=Math.min(100,(hp/Math.max(50,hp))*100);
   const hpBonusBarPct=Math.min(100,(hpBonus/Math.max(20,hpBonus))*100);
   const photoRef=useRef(null);
@@ -1014,8 +1022,8 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
       </div>
       <div style={{padding:'16px 18px'}}>
         <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
-          <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
-          <div style={{flex:1,minWidth:110}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label><input value={enemy.tipo} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/></div>
+          <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome||''} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
+          <div style={{flex:1,minWidth:110}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label><input value={enemy.tipo||''} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/></div>
           {masterMode&&<button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>}
         </div>
         <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
@@ -1040,7 +1048,7 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
           </div>
           <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
-            <VigosDots value={enemy.vigos||0} max={10} color={ENEMY_COLOR} onChange={v=>f('vigos',v)}/>
+            <VigosDots value={Number(enemy.vigos)||0} max={10} color={ENEMY_COLOR} onChange={v=>f('vigos',v)}/>
             <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:5}}>10 pontos totais</div>
           </div>
           <div style={{background:`${ENEMY_COLOR}07`,border:`1px solid ${ENEMY_COLOR}22`,borderRadius:10,padding:'12px 14px'}}>
@@ -1051,7 +1059,7 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:7}}>
-            {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
+            {ATTRS.map(a=>{const bonus=attrBonus(Number(enemy[a.key])||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={Number(enemy[a.key])||0} color={a.color} onChange={v=>f(a.key,v)}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{Number(enemy[a.key])||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
           </div>
         </div>
         <div style={{marginBottom:14}}>
@@ -1124,7 +1132,7 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
           <div style={{flex:1, minWidth:130}}>
             <label style={{fontSize:10, letterSpacing:'0.3em', color:corBase, fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Nome da Criatura</label>
             {masterMode ? (
-              <input value={item.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>
+              <input value={item.nome||''} onChange={e => f('nome', e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>
             ) : (
               <div style={{fontSize:15, color:'#E8D8C0', padding:'4px 0', fontFamily:'Cinzel,serif', fontWeight:600}}>{item.nome || 'Desconhecida'}</div>
             )}
@@ -1132,7 +1140,7 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
           <div style={{width:140}}>
             <label style={{fontSize:10, letterSpacing:'0.3em', color:corBase, fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Ameaça</label>
             {masterMode ? (
-              <select value={item.nivelAmeaca} onChange={e => f('nivelAmeaca', e.target.value)} style={{width:'100%', color:corBase, fontWeight:'bold'}}>
+              <select value={item.nivelAmeaca||'Médio'} onChange={e => f('nivelAmeaca', e.target.value)} style={{width:'100%', color:corBase, fontWeight:'bold'}}>
                 <option value="Baixo">Baixo</option>
                 <option value="Médio">Médio</option>
                 <option value="Alto">Alto</option>
@@ -1149,7 +1157,7 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
         <div>
           <label style={{fontSize:10, letterSpacing:'0.3em', color:'#5A5070', fontFamily:'Cinzel,serif', display:'block', marginBottom:5, textTransform:'uppercase'}}>Descrição & Comportamento</label>
           {masterMode ? (
-            <textarea value={item.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Descreva os hábitos, a aparência bizarra, e táticas de combate da criatura..." rows={5} style={{width:'100%', resize:'vertical', lineHeight:1.7}}/>
+            <textarea value={item.descricao||''} onChange={e => f('descricao', e.target.value)} placeholder="Descreva os hábitos, a aparência bizarra, e táticas de combate da criatura..." rows={5} style={{width:'100%', resize:'vertical', lineHeight:1.7}}/>
           ) : (
             <div style={{fontSize:14, color:'#9A8A7A', lineHeight:1.85, whiteSpace:'pre-wrap', fontStyle:'italic', background:'rgba(255,255,255,0.02)', padding:'12px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)'}}>
               {item.descricao || 'Nenhum registro sobre o comportamento desta criatura foi feito até o momento.'}
@@ -1497,61 +1505,61 @@ function CenariosSection({masterMode}){
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 const TABS=[
-  {id:'prologo',label:'Prólogo',icon:'📜'},
-  {id:'classes',label:'Classes',icon:'⚔️'},
-  {id:'fichas',label:'Fichas',icon:'📋'},
-  {id:'inimigos',label:'Inimigos',icon:'💀'},
-  {id:'bestiario',label:'Bestiário',icon:'🐉'},
-  {id:'regras',label:'Regras',icon:'📖'},
-  {id:'livro',label:'Livro da Mandíbula',icon:'✦'},
-  {id:'cronicas',label:'Crônicas',icon:'🗒️'},
-  {id:'cenarios',label:'Cenários',icon:'🗺️'},
-  {id:'mapa',label:'Mapa Múndi',icon:'🌍'}
+  {id:'prologo',label:'Prólogo',icon:'📜'},
+  {id:'classes',label:'Classes',icon:'⚔️'},
+  {id:'fichas',label:'Fichas',icon:'📋'},
+  {id:'inimigos',label:'Inimigos',icon:'💀'},
+  {id:'bestiario',label:'Bestiário',icon:'🐉'},
+  {id:'regras',label:'Regras',icon:'📖'},
+  {id:'livro',label:'Livro da Mandíbula',icon:'✦'},
+  {id:'cronicas',label:'Crônicas',icon:'🗒️'},
+  {id:'cenarios',label:'Cenários',icon:'🗺️'},
+  {id:'mapa',label:'Mapa Múndi',icon:'🌍'}
 ];
 
 function MasterToggle({masterMode,setMasterMode}){
-  const[showInput,setShowInput]=useState(false);const[pin,setPin]=useState('');const[shake,setShake]=useState(false);
-  const tryUnlock=()=>{if(pin.toLowerCase()===MASTER_PIN){setMasterMode(true);setShowInput(false);setPin('');}else{setShake(true);setTimeout(()=>setShake(false),500);setPin('');}};
-  if(masterMode)return(<button onClick={()=>setMasterMode(false)} title="Desativar Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>🔴 MESTRE</button>);
-  return(<div style={{display:'flex',alignItems:'center',gap:6}}>{showInput&&(<div style={{display:'flex',gap:5}}><input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/><button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button><button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button></div>)}{!showInput&&(<button onClick={()=>setShowInput(true)} title="Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Mestre</button>)}</div>);
+  const[showInput,setShowInput]=useState(false);const[pin,setPin]=useState('');const[shake,setShake]=useState(false);
+  const tryUnlock=()=>{if(pin.toLowerCase()===MASTER_PIN){setMasterMode(true);setShowInput(false);setPin('');}else{setShake(true);setTimeout(()=>setShake(false),500);setPin('');}};
+  if(masterMode)return(<button onClick={()=>setMasterMode(false)} title="Desativar Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>🔴 MESTRE</button>);
+  return(<div style={{display:'flex',alignItems:'center',gap:6}}>{showInput&&(<div style={{display:'flex',gap:5}}><input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/><button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button><button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button></div>)}{!showInput&&(<button onClick={()=>setShowInput(true)} title="Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Mestre</button>)}</div>);
 }
 
 export default function App(){
-  const[tab,setTab]=useState('prologo');const[masterMode,setMasterMode]=useState(false);
-  useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
-  return(
-    <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:'#04060F',color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative'}}>
-      <StarField/>
-      <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
-          <div style={{width:80}}/>
-          <div style={{textAlign:'center',flex:1}}>
-            <div style={{fontSize:9,letterSpacing:'0.5em',color:'#4A3A5A',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Cosmum · O Livro da Mandíbula · Vigor Cósmico</div>
-            <h1 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:900,margin:0,letterSpacing:'0.08em',background:'linear-gradient(135deg,#C8A8E8,#E8D8C0,#A855F7)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Dinastia E</h1>
-            <div style={{fontSize:10,color:'#4A3A5A',fontFamily:'Cinzel,serif',marginTop:2,letterSpacing:'0.15em'}}>Livro do Mundo</div>
-          </div>
-          <div style={{width:80,display:'flex',justifyContent:'flex-end'}}><MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/></div>
-        </div>
-      </header>
-      <nav style={{position:'relative',zIndex:10,display:'flex',justifyContent:'center',gap:3,padding:'9px 14px',background:'rgba(4,6,15,0.9)',borderBottom:'1px solid rgba(255,255,255,0.04)',flexWrap:'wrap'}}>
-        {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'6px 12px',borderRadius:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',border:tab===t.id?'1px solid rgba(168,85,247,0.5)':'1px solid transparent',background:tab===t.id?'rgba(168,85,247,0.12)':'transparent',color:tab===t.id?'#C8A8E8':'#5A4A6A',transition:'all 0.2s'}}>{t.icon} {t.label}</button>))}
-      </nav>
-      <main style={{flex:1,overflowY:'auto',position:'relative',zIndex:10, scrollBehavior: 'smooth'}}>
-        <div key={tab} style={{animation: 'pageTurn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'}}>
-          {tab==='prologo'&&<PrologueSection/>}
-          {tab==='classes'&&<ClassesSection/>}
-          {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
-          {tab==='inimigos'&&<EnemiesSection masterMode={masterMode}/>}
-          {tab==='bestiario'&&<BestiarioSection masterMode={masterMode}/>}
-          {tab==='regras'&&<RulesSection/>}
-          {tab==='livro'&&<LibroSection masterMode={masterMode}/>}
-          {tab==='cronicas'&&<CronicasSection masterMode={masterMode}/>}
-          {tab==='cenarios'&&<CenariosSection masterMode={masterMode}/>}
-          {tab==='mapa'&&<MapaMundiSection masterMode={masterMode}/>}
-        </div>
-      </main>
-      <DiceWidget />
-      <AmbientMusicWidget masterMode={masterMode} />
-    </div>
-  );
+  const[tab,setTab]=useState('prologo');const[masterMode,setMasterMode]=useState(false);
+  useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
+  return(
+    <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:'#04060F',color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative'}}>
+      <StarField/>
+      <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
+          <div style={{width:80}}/>
+          <div style={{textAlign:'center',flex:1}}>
+            <div style={{fontSize:9,letterSpacing:'0.5em',color:'#4A3A5A',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Cosmum · O Livro da Mandíbula · Vigor Cósmico</div>
+            <h1 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:900,margin:0,letterSpacing:'0.08em',background:'linear-gradient(135deg,#C8A8E8,#E8D8C0,#A855F7)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Dinastia E</h1>
+            <div style={{fontSize:10,color:'#4A3A5A',fontFamily:'Cinzel,serif',marginTop:2,letterSpacing:'0.15em'}}>Livro do Mundo</div>
+          </div>
+          <div style={{width:80,display:'flex',justifyContent:'flex-end'}}><MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/></div>
+        </div>
+      </header>
+      <nav style={{position:'relative',zIndex:10,display:'flex',justifyContent:'center',gap:3,padding:'9px 14px',background:'rgba(4,6,15,0.9)',borderBottom:'1px solid rgba(255,255,255,0.04)',flexWrap:'wrap'}}>
+        {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'6px 12px',borderRadius:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',border:tab===t.id?'1px solid rgba(168,85,247,0.5)':'1px solid transparent',background:tab===t.id?'rgba(168,85,247,0.12)':'transparent',color:tab===t.id?'#C8A8E8':'#5A4A6A',transition:'all 0.2s'}}>{t.icon} {t.label}</button>))}
+      </nav>
+      <main style={{flex:1,overflowY:'auto',position:'relative',zIndex:10, scrollBehavior: 'smooth'}}>
+        <div key={tab} style={{animation: 'pageTurn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'}}>
+          {tab==='prologo'&&<PrologueSection/>}
+          {tab==='classes'&&<ClassesSection/>}
+          {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
+          {tab==='inimigos'&&<EnemiesSection masterMode={masterMode}/>}
+          {tab==='bestiario'&&<BestiarioSection masterMode={masterMode}/>}
+          {tab==='regras'&&<RulesSection/>}
+          {tab==='livro'&&<LibroSection masterMode={masterMode}/>}
+          {tab==='cronicas'&&<CronicasSection masterMode={masterMode}/>}
+          {tab==='cenarios'&&<CenariosSection masterMode={masterMode}/>}
+          {tab==='mapa'&&<MapaMundiSection masterMode={masterMode}/>}
+        </div>
+      </main>
+      <DiceWidget />
+      <AmbientMusicWidget masterMode={masterMode} />
+    </div>
+  );
 }
