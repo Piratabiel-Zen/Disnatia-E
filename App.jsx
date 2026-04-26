@@ -761,7 +761,6 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
     </div>
   );
 }
-
 const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,pontos_atributos:0,status:{},especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'}});
 
 function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilities}){
