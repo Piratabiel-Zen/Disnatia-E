@@ -509,18 +509,19 @@ function resolveEquipIcon(tipo=''){
 }
 
 function CompactEquipSlot({label, color, data, onChange, placeholder}){
-  const d={nome:'',dano:'',tipo:placeholder,...(typeof data==='object'&&data!==null?data:{})};
-  const dynIcon=resolveEquipIcon(d.tipo||placeholder);
+  const safeData = typeof data === 'object' && data !== null && !Array.isArray(data) ? data : {};
+  const d={nome:'',dano:'',tipo:placeholder,...safeData};
+  const dynIcon=resolveEquipIcon(String(d.tipo||placeholder));
   return(
     <div style={{background:`${color}07`,border:`1px solid ${color}20`,borderRadius:9,padding:'9px 11px',display:'flex',flexDirection:'column',gap:6}}>
       <div style={{fontSize:8,letterSpacing:'0.3em',color:`${color}99`,fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:1}}>{label}</div>
       <div style={{display:'flex',alignItems:'center',gap:7}}>
         <span style={{fontSize:17,flexShrink:0,lineHeight:1}}>{dynIcon}</span>
-        <input value={d.nome||''} onChange={e=>onChange({...d,nome:e.target.value})} placeholder="Nome do item..." style={{flex:1,fontSize:13,padding:'4px 7px'}}/>
+        <input value={String(d.nome||'')} onChange={e=>onChange({...d,nome:e.target.value})} placeholder="Nome do item..." style={{flex:1,fontSize:13,padding:'4px 7px'}}/>
       </div>
       <div className="equip-slot-inputs" style={{display:'flex',gap:6}}>
-        <input value={d.dano||''} onChange={e=>onChange({...d,dano:e.target.value})} placeholder="Dano / Ex: 1D6" style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(255,200,80,0.85)'}}/>
-        <input value={d.tipo||''} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder={placeholder} style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(200,184,160,0.6)'}}/>
+        <input value={String(d.dano||'')} onChange={e=>onChange({...d,dano:e.target.value})} placeholder="Dano / Ex: 1D6" style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(255,200,80,0.85)'}}/>
+        <input value={String(d.tipo||'')} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder={placeholder} style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(200,184,160,0.6)'}}/>
       </div>
     </div>
   );
@@ -626,16 +627,18 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
   const nivel=Number(sheet.nivel)||1;
-  const classCustom=(customAbilities[cls.id]||[]);
+  
+  const customArr = customAbilities[cls?.id];
+  const classCustom = Array.isArray(customArr) ? customArr.filter(Boolean) : [];
 
   const handleSave=()=>{
     if(!form.nome.trim())return;
-    const updated={...customAbilities,[cls.id]:[...(customAbilities[cls.id]||[]),{...form,id:Date.now()}]};
+    const updated={...customAbilities,[cls.id]:[...classCustom,{...form,id:Date.now()}]};
     onSaveCustomAbilities(updated);
     setForm(newCustomAbility());
   };
   const handleDelete=(abilityId)=>{
-    const updated={...customAbilities,[cls.id]:(customAbilities[cls.id]||[]).filter(a=>a.id!==abilityId)};
+    const updated={...customAbilities,[cls.id]:classCustom.filter(a=>a.id!==abilityId)};
     onSaveCustomAbilities(updated);
   };
 
@@ -643,24 +646,25 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const tipoLabel={normal:'Normal',especial:'Especial',passiva:'Passiva'};
   const tipoBadgeColor={normal:'rgba(255,255,255,0.5)',especial:color,passiva:'rgba(168,85,247,0.8)'};
 
-    const abilityRow=(a,isSpecial,isCustom,locked)=>{
-    const danoValue=a.dano||a.roll||''; 
+  const abilityRow=(a,isSpecial,isCustom,locked)=>{
+    if (!a) return null; // Trava contra array corrompido
+    const danoValue=String(a.dano||a.roll||''); 
     return(
     <div key={a.id||a.name} style={{background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',opacity:locked?0.45:1}}>
       <div style={{flex:1}}>
         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
           {(isSpecial||isCustom)&&<span style={{fontSize:10,color}}>✦</span>}
-          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{a.name||a.nome}</span>
-          {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {a.req}+</span>}
+          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{String(a.name||a.nome||'')}</span>
+          {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {Number(a.req)||1}+</span>}
           {isCustom&&a.tipoHab&&<span style={{fontSize:8,color:tipoBadgeColor[a.tipoHab]||color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em',background:`${color}14`,borderRadius:3,padding:'1px 5px',border:`1px solid ${color}33`}}>{(tipoLabel[a.tipoHab]||'Nova').toUpperCase()}</span>}
           {danoValue&&<span style={{fontSize:10,color:'rgba(255,200,80,0.85)',fontFamily:'Cinzel,serif',letterSpacing:'0.05em',background:'rgba(255,200,80,0.08)',border:'1px solid rgba(255,200,80,0.22)',borderRadius:4,padding:'1px 6px'}}>⚔ {danoValue}</span>}
         </div>
-        <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc||a.descricao}</div>
+        <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{String(a.desc||a.descricao||'')}</div>
       </div>
       <div style={{flexShrink:0,textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3}}>
-        <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{a.cost||a.custo} VC</div>
-        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {a.cooldown}</div>
-        {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {a.req}+</div>}
+        <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{Number(a.cost||a.custo||0)} VC</div>
+        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {String(a.cooldown||'—')}</div>
+        {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {Number(a.req)||1}+</div>}
         {isCustom&&masterMode&&(
           <button onClick={()=>handleDelete(a.id)} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.25)',color:'#E8193C',borderRadius:4,cursor:'pointer',padding:'1px 6px',fontSize:10}}>✕</button>
         )}
@@ -765,11 +769,11 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
   
-  // Safe parsing
+  // Conversões totalmente blindadas contra dados corrompidos
   const hp = Number(sheet.hp) || 0;
   const hpBonus = Number(sheet.hp_bonus) || 0;
   const pts = Number(sheet.pontos_atributos) || 0;
-  const status = sheet.status || {};
+  const status = (typeof sheet.status === 'object' && sheet.status !== null && !Array.isArray(sheet.status)) ? sheet.status : {};
   const nivel = Number(sheet.nivel) || 1;
 
   const photoInputRef=useRef(null);
@@ -804,15 +808,15 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
         }
         {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
         {sheet.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}>
-          <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div>
+          <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{String(sheet.nome||'Sem nome')}</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {nivel} · {label(nivel)}</div>
         </div>}
         <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
       </div>
       <div style={{padding:'18px'}}>
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
-          <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome||''} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
-          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe||'fogo'} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+          <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={String(sheet.nome||'')} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
+          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={String(sheet.classe||'fogo')} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
 
@@ -855,9 +859,9 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
               <span style={{color:'rgba(255,255,255,0.14)', fontSize:11}}>Nv</span>
 
               {masterMode ? (
-                  <input type="number" min={0} value={sheet.xp||0} onChange={e=>f('xp',+e.target.value)} style={{width:65, textAlign:'center'}}/>
+                  <input type="number" min={0} value={Number(sheet.xp)||0} onChange={e=>f('xp',+e.target.value)} style={{width:65, textAlign:'center'}}/>
               ) : (
-                  <span style={{fontSize:16, fontWeight:'bold', color:'#E8A020', minWidth:65, textAlign:'center'}}>{sheet.xp || 0}</span>
+                  <span style={{fontSize:16, fontWeight:'bold', color:'#E8A020', minWidth:65, textAlign:'center'}}>{Number(sheet.xp) || 0}</span>
               )}
               <span style={{fontSize:11, color:'rgba(255,255,255,0.18)'}}>XP</span>
             </div>
@@ -930,11 +934,11 @@ function SheetFull({sheet,onChange,masterMode,customAbilities,onSaveCustomAbilit
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
         <div style={{marginBottom:14}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Lore do Personagem</div>
-          <textarea value={sheet.lore_personagem||''} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos do seu personagem..." rows={4} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
+          <textarea value={String(sheet.lore_personagem||'')} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos do seu personagem..." rows={4} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
         </div>
         <div>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens & Inventário</div>
-          <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+          <textarea value={String(sheet.notas||'')} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
         </div>
       </div>
     </div>
