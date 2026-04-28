@@ -53,6 +53,7 @@ html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
 @keyframes attrPulse{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,0.7);transform:scale(1);}50%{box-shadow:0 0 0 5px rgba(168,85,247,0);transform:scale(1.18);}}
 @keyframes bannerGlow{0%,100%{box-shadow:0 0 16px rgba(168,85,247,0.4),0 0 32px rgba(168,85,247,0.15);}50%{box-shadow:0 0 24px rgba(168,85,247,0.7),0 0 48px rgba(168,85,247,0.3);}}
 @keyframes pinDrop{0%{transform:translateY(-10px) scale(0.5);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
+@keyframes cooldownIn{0%{opacity:0;transform:scale(0.85);}100%{opacity:1;transform:scale(1);}}
 
 input,textarea,select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.11);color:#C8B8A0;border-radius:6px;font-family:'Crimson Text',Georgia,serif;font-size:15px;padding:6px 10px;outline:none;transition:border-color 0.2s;}
 input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
@@ -102,7 +103,7 @@ const STATUS_LIST = [
 ];
 
 const CLASSES=[
-  {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas', dano: '1D6 + Agilidade' ,desc:'Embui um objeto com chamas de plasma e efetua uma estocada veloz que atravessa o alvo, fazendo-o sangrar (caso não tenha um objeto, usa suas proprias mãos): −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'OverHeat',cost:2,cooldown:'4 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Ao expirar, −3 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20, causando 3x o dano).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Após 2 rodadas ativo, superaquece — fica 2 rodadas completamente incapaz de agir.',req:7}]},
+  {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas', dano: '1D6 + Agilidade' ,desc:'Embui um objeto com chamas de plasma e efetua uma estocada veloz que atravessa o alvo, fazendo-o sangrar (caso não tenha um objeto, usa suas proprias mãos): −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'Over Hit',cost:2,cooldown:'4 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Ao expirar, −3 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20, causando 3x o dano).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Após 2 rodadas ativo, superaquece — fica 2 rodadas completamente incapaz de agir.',req:7}]},
   {id:'escarlate',alcance:'1m',name:'Cavaleiros Escarlate',icon:'🛡️',color:'#E8193C',glow:'rgba(232,25,60,0.16)',role:'Tanque · Protetor',lore:`A sua linhagem remonta a eras esquecidas, a povos que realizavam trabalhos braçais extremos nas profundezas da terra. Durante escavações, descobriram um minério enigmático: um rubi de cor escarlate incrivelmente denso. A exposição contínua e o suor derramado sobre o rubi criaram uma osmose biológica e mágica. O mineral fundiu-se com a genética destes trabalhadores, fazendo com que a sua própria pele se tornasse espessa, rígida e quase tão impenetrável quanto a rocha que outrora mineravam.`,passive:{name:'Pele de Rubi',desc:'Quando sem o escudo escarlate, a pele endurece. Ganha atributos bônus de defesa de acordo com a quantidade de inimigos ao redor (+1 de defesa por inimigo).'},normal:[{name:'Reflexo Escarlate',cost:2,cooldown:'3 rodadas',desc:'Se posiciona em frente a um ataque de disparo e reflete 0,5× o dano recebido utilizando um escudo.'},{name:'Lança Defensiva',cost:2,cooldown:'1 rodada', dano : '1D6 + Força' , desc:'Arremessa o escudo no inimigo. Com resultado D18–20, pode atingir múltiplos inimigos. O escudo retorna à mão automaticamente.'},{name:'Investida Ágil',cost:2,cooldown:'2 rodadas',desc:'Troca resistência por velocidade: move-se 3 passos em 1 ação para proteger alguém ou fugir. −3 resistência por 1 rodada.'}],specials:[{name:'Provocação Extrema',cost:3,cooldown:'4 rodadas',desc:'Todos os inimigos ao redor focam em você na proxima rodada. Todo dano recebido é reduzido em 50% enquanto o efeito durar (4 rodadas).',req:3},{name:'Modo Berserker',cost:3,cooldown:'4 rodadas',desc:'Troca toda a resistência por dano, força e alcance massivos. Fica imparável — mas exausto, sem poder usar habilidades por 4 rodadas.',req:7}]},
   {id:'corvos',alcance:'5m',name:'Corvos do Horizonte',icon:'🦅',color:'#E8A020',glow:'rgba(232,160,32,0.16)',role:'Atirador · Precisão Absoluta',lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes corvos e gaviões. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,passive:{name:'Visão do Gavião',desc:'Nunca sofre penalidade por distância. Ataques à longa distância ganham +2 no dado de precisão automaticamente.'},normal:[{name:'Sniper Americano',cost:2,cooldown:'—',desc:'Garante acerto em alvos de 5–10 metros sempre. Custo: causa apenas 0,50× do dano normal.'},{name:'Saque Rápido',cost:2,cooldown:'2 rodadas',desc:'Realiza um ataque a qualquer momento, mesmo fora do turno. Precisão reduzida em 3 pontos neste disparo.'},{name:'Foco Absoluto',cost:2,cooldown:'2 rodadas',desc:'Fica 1 rodada inteira sem atacar, apenas focando em um alvo. Garante acerto crítico automático na próxima rodada caso acerte.'}],specials:[{name:'Precisão Celestial',cost:3,cooldown:'4 rodadas',desc:'Disparo crítico perfurante. O inimigo atingido perde −2 de vida por rodada pelos 3 turnos seguintes.',req:3},{name:'Chuva Mortal',cost:3,cooldown:'5 rodadas',desc:'Múltiplos acertos simultâneos em uma área de 10–13 metros ao redor. Não atinge aliados.',req:7}]},
   {id:'magos',alcance:'5m',name:'Magos do Prólogo do Céu',icon:'☄️',color:'#A855F7',glow:'rgba(168,85,247,0.16)',role:'Vidente · Mago Cósmico',lore:`Outrora humanos comuns, o seu destino mudou quando uma pena celestial caiu dos céus. O primeiro a tocá-la teve a sua mente expandida além da compreensão mortal, despertando o dom absoluto da clarividência. Ele não controlava o tempo, mas conseguia observá-lo. Ao ver os fragmentos do futuro da humanidade, fundou esta ordem mágica e escreveu as suas visões no lendário Livro da Mandíbula. Transmitem o conhecimento cósmico através de diagramas sagrados, cânticos e uma profunda ligação com as anomalias do universo.`,passive:{name:'Visão Profética',desc:'Podem ver brevemente acontecimentos futuros ou preverem eventos por pistas do cenário, concedendo pontos bônus de combate ao grupo (+2 no atributo escolhido até o final do combate).'},normal:[{name:'Fortitude Ígnia',cost:2,cooldown:'1× por combate',desc:'Um personagem aliado recebe +3 de defesa por 2 rodadas. 1 uso por combate por jogador.'},{name:'Fluxo de Magia',cost:2,cooldown:'4 rodadas',desc:'Distribui parte da sua magia entre aliados em até 2m ao redor, buffando o dano deles em +2 por 4 rodadas.'},{name:'Telecinese',cost:2,cooldown:'variável', dano : '1D4|1D6|1D8|1D12 + Inteligência',desc:'Controla objetos ao redor e os arremessa contra inimigos. Tempo varia conforme o objeto. Pessoas só com consentimento.'}],specials:[{name:'Recuperação Divina',cost:3,cooldown:'7 rodadas',desc:'Remove todos os efeitos negativos de todos os aliados e cura em +8 pontos de vida.',req:3},{name:'Flecha do Último Guardião',cost:3,cooldown:'5 rodadas', dano : '1D12 + Inteligência', desc:'Invoca um arco gigante que dispara uma flecha com atributos de qualquer elemento escolhido, causando dano massivo em área (1d12).',req:7}]},
@@ -136,52 +137,68 @@ function AmbientSoundPlayer({ masterMode }) {
   const [ytUrl, setYtUrl] = useState('');
   const [savedUrl, setSavedUrl] = useState('');
   const [playerVisible, setPlayerVisible] = useState(false);
+  const [volume, setVolume] = useState(40); // 0-100
+  const iframeRef = useRef(null);
 
-  // Sync YouTube URL via Firebase
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setSavedUrl(data.url || '');
-      }
+      if (snap.exists()) setSavedUrl(snap.data().url || '');
     });
     return () => unsub();
   }, []);
 
+  // Build embed URL with volume baked in (YouTube doesn't support volume param,
+  // so we use a wrapper with Web Audio API approach via postMessage)
   const extractVideoId = (url) => {
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
     return match ? match[1] : null;
   };
 
+  const buildEmbedUrl = (videoId, vol) =>
+    `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+
   const handleSaveUrl = async () => {
     const videoId = extractVideoId(ytUrl);
     if (!videoId) return;
-    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`;
+    const embedUrl = buildEmbedUrl(videoId, volume);
     await setDoc(doc(db, 'config', 'ambient'), { url: embedUrl, raw: ytUrl });
     setSavedUrl(embedUrl);
     setYtUrl('');
   };
 
-  const videoId = savedUrl ? extractVideoId(savedUrl) || savedUrl.match(/embed\/([^?]+)/)?.[1] : null;
+  // Send volume command to iframe via postMessage
+  const applyVolume = (vol) => {
+    if (!iframeRef.current) return;
+    try {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: 'setVolume', args: [vol] }),
+        '*'
+      );
+    } catch(e) {}
+  };
+
+  const handleVolumeChange = (e) => {
+    const vol = Number(e.target.value);
+    setVolume(vol);
+    applyVolume(vol);
+  };
+
+  const volumeIcon = volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
 
   return (
     <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 100 }}>
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          title="Som Ambiente"
-          style={{
-            width: 52, height: 52, borderRadius: '50%',
-            background: savedUrl ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${savedUrl ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.15)'}`,
-            color: savedUrl ? '#4ADE80' : '#7A6A8A',
-            fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', backdropFilter: 'blur(5px)',
-            boxShadow: savedUrl ? '0 0 16px rgba(74,222,128,0.25)' : 'none',
-            transition: 'all 0.3s',
-            animation: savedUrl ? 'pulse 2.5s ease-in-out infinite' : 'none',
-          }}
-        >🎵</button>
+        <button onClick={() => setOpen(true)} title="Som Ambiente" style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: savedUrl ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
+          border: `1px solid ${savedUrl ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.15)'}`,
+          color: savedUrl ? '#4ADE80' : '#7A6A8A', fontSize: 22,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', backdropFilter: 'blur(5px)',
+          boxShadow: savedUrl ? '0 0 16px rgba(74,222,128,0.25)' : 'none',
+          transition: 'all 0.3s',
+          animation: savedUrl && playerVisible ? 'pulse 2.5s ease-in-out infinite' : 'none',
+        }}>🎵</button>
       )}
 
       {open && (
@@ -195,10 +212,8 @@ function AmbientSoundPlayer({ masterMode }) {
             <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
 
-          {/* Player só para jogadores — se há URL salva */}
           {savedUrl && !playerVisible && (
-            <button
-              onClick={() => setPlayerVisible(true)}
+            <button onClick={() => { setPlayerVisible(true); }}
               style={{
                 width: '100%', padding: '10px', borderRadius: 8, marginBottom: 12,
                 border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
@@ -210,55 +225,68 @@ function AmbientSoundPlayer({ masterMode }) {
           )}
 
           {savedUrl && playerVisible && (
-            <div style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
-              <iframe
-                width="100%" height="80"
-                src={savedUrl}
-                title="Ambient Sound"
-                allow="autoplay; encrypted-media"
-                style={{ border: 'none', display: 'block' }}
-              />
-              <button
-                onClick={() => setPlayerVisible(false)}
-                style={{
-                  marginTop: 6, width: '100%', padding: '5px', borderRadius: 6,
-                  border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)',
-                  color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
-                }}
-              >⏹ Parar</button>
+            <div style={{ marginBottom: 12 }}>
+              {/* Hidden iframe — we control via postMessage */}
+              <div style={{ borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
+                <iframe
+                  ref={iframeRef}
+                  width="100%" height="72"
+                  src={savedUrl}
+                  title="Ambient Sound"
+                  allow="autoplay; encrypted-media"
+                  style={{ border: 'none', display: 'block' }}
+                  onLoad={() => { setTimeout(() => applyVolume(volume), 1500); }}
+                />
+              </div>
+
+              {/* 🔊 Volume slider */}
+              <div style={{
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(74,222,128,0.15)',
+                borderRadius: 10, padding: '10px 12px', marginBottom: 8,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{volumeIcon}</span>
+                  <input
+                    type="range" min={0} max={100} step={5} value={volume}
+                    onChange={handleVolumeChange}
+                    style={{
+                      flex: 1, height: 4, borderRadius: 2, cursor: 'pointer',
+                      accentColor: '#4ADE80', background: 'transparent', border: 'none', padding: 0,
+                    }}
+                  />
+                  <span style={{
+                    fontSize: 11, fontFamily: 'Cinzel,serif', color: '#4ADE80',
+                    minWidth: 28, textAlign: 'right',
+                  }}>{volume}%</span>
+                </div>
+                <div style={{ fontSize: 9, color: 'rgba(74,222,128,0.4)', marginTop: 5, fontFamily: 'Cinzel,serif', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                  Volume · Clique em "Ouvir" antes de ajustar
+                </div>
+              </div>
+
+              <button onClick={() => setPlayerVisible(false)} style={{
+                width: '100%', padding: '5px', borderRadius: 6,
+                border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)',
+                color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+              }}>⏹ Parar</button>
             </div>
           )}
 
-          {/* Somente Mestre pode inserir URL */}
           {masterMode && (
             <div style={{ borderTop: savedUrl ? '1px solid rgba(255,255,255,0.07)' : 'none', paddingTop: savedUrl ? 12 : 0 }}>
               <label style={{ fontSize: 10, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.6)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Link do YouTube</label>
-              <input
-                value={ytUrl}
-                onChange={e => setYtUrl(e.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-                style={{ width: '100%', fontSize: 12, marginBottom: 8 }}
-              />
-              <button
-                onClick={handleSaveUrl}
-                disabled={!ytUrl.trim()}
-                style={{
-                  width: '100%', padding: '8px', borderRadius: 7,
-                  border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
-                  color: '#4ADE80', cursor: ytUrl.trim() ? 'pointer' : 'not-allowed',
-                  fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em',
-                  opacity: ytUrl.trim() ? 1 : 0.4,
-                }}
-              >✦ Definir Som Ambiente</button>
+              <input value={ytUrl} onChange={e => setYtUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }}/>
+              <button onClick={handleSaveUrl} disabled={!ytUrl.trim()} style={{
+                width: '100%', padding: '8px', borderRadius: 7,
+                border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
+                color: '#4ADE80', cursor: ytUrl.trim() ? 'pointer' : 'not-allowed',
+                fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: ytUrl.trim() ? 1 : 0.4,
+              }}>✦ Definir Som Ambiente</button>
               {savedUrl && (
-                <button
-                  onClick={async () => { await setDoc(doc(db, 'config', 'ambient'), { url: '', raw: '' }); setSavedUrl(''); setPlayerVisible(false); }}
-                  style={{
-                    width: '100%', padding: '6px', borderRadius: 7, marginTop: 6,
-                    border: '1px solid rgba(232,25,60,0.25)', background: 'transparent',
-                    color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
-                  }}
-                >✕ Remover áudio</button>
+                <button onClick={async () => { await setDoc(doc(db, 'config', 'ambient'), { url: '', raw: '' }); setSavedUrl(''); setPlayerVisible(false); }}
+                  style={{ width: '100%', padding: '6px', borderRadius: 7, marginTop: 6, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>
+                  ✕ Remover áudio
+                </button>
               )}
             </div>
           )}
@@ -756,7 +784,58 @@ function EquipamentoPanel({sheet, onChange, sheetColor}){
 // ─── HABILIDADES PANEL ────────────────────────────────────────────────────────
 const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1});
 
-function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities}){
+// Cooldown tracker — local per session (no need to persist to Firebase)
+function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate }) {
+  const cd = sheetCooldowns?.[abilityId] || 0;
+  const isActive = cd > 0;
+
+  const activate = (e) => {
+    e.stopPropagation();
+    // Parse cooldown number from text like "3 rodadas", "4 rodadas", etc.
+    const parsed = parseInt(String(cooldownText).replace(/\D/g,'')) || 1;
+    onUpdate(abilityId, parsed);
+  };
+  const decrement = (e) => {
+    e.stopPropagation();
+    onUpdate(abilityId, Math.max(0, cd - 1));
+  };
+  const reset = (e) => {
+    e.stopPropagation();
+    onUpdate(abilityId, 0);
+  };
+
+  if (!isActive) {
+    return (
+      <button
+        onClick={activate}
+        title="Marcar habilidade como usada (iniciar cooldown)"
+        style={{
+          fontSize: 9, padding: '2px 7px', borderRadius: 4, cursor: 'pointer',
+          border: '1px solid rgba(255,200,0,0.2)', background: 'rgba(255,200,0,0.05)',
+          color: 'rgba(255,200,0,0.45)', fontFamily: 'Cinzel,serif', letterSpacing: '0.08em',
+          transition: 'all 0.2s',
+        }}
+      >⚡ Usar</button>
+    );
+  }
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      background: 'rgba(232,100,0,0.14)', border: '1px solid rgba(232,100,0,0.4)',
+      borderRadius: 6, padding: '3px 7px',
+      animation: 'cooldownIn 0.25s ease',
+    }}>
+      <span style={{ fontSize: 10 }}>⏳</span>
+      <span style={{ fontSize: 11, fontFamily: 'Cinzel,serif', color: '#E86420', fontWeight: 700 }}>{cd}</span>
+      <span style={{ fontSize: 9, color: 'rgba(232,100,0,0.7)' }}>turno{cd !== 1 ? 's' : ''}</span>
+      <button onClick={decrement} title="-1 turno" style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E8A020', cursor: 'pointer', borderRadius: 3, fontSize: 11, padding: '0 4px', lineHeight: 1.4 }}>−</button>
+      <button onClick={reset} title="Remover cooldown" style={{ background: 'none', border: 'none', color: 'rgba(232,25,60,0.5)', cursor: 'pointer', fontSize: 9, padding: '0 2px' }}>✕</button>
+    </div>
+  );
+}
+
+function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities, sheetCooldowns, onUpdateCooldown}){
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
   const nivel = Number(sheet?.nivel) || 1;
@@ -782,9 +861,29 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const abilityRow=(a,isSpecial,isCustom,locked)=>{
     if(!a) return null;
     const danoValue=String(a.dano||a.roll||'');
+    const abilityId = String(a.id||a.name||'');
+    const isPassiva = isCustom && a.tipoHab === 'passiva';
+    const cdText = a.cooldown || a.tempo || '—';
+    const hasCd = cdText && cdText !== '—' && cdText !== '';
     return(
-    <div key={a.id||a.name} style={{background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',opacity:locked?0.45:1}}>
-      <div style={{flex:1}}>
+    <div key={abilityId} style={{
+      background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)',
+      border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`,
+      borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start',
+      opacity:locked?0.45:1,
+      position:'relative',
+      transition: 'opacity 0.2s',
+    }}>
+      {/* Cooldown overlay */}
+      {(sheetCooldowns?.[abilityId]||0) > 0 && !isPassiva && (
+        <div style={{
+          position:'absolute',inset:0,borderRadius:8,pointerEvents:'none',
+          background:'rgba(232,100,0,0.06)',
+          border:'1px solid rgba(232,100,0,0.25)',
+          zIndex:0,
+        }}/>
+      )}
+      <div style={{flex:1,position:'relative',zIndex:1}}>
         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
           {(isSpecial||isCustom)&&<span style={{fontSize:10,color}}>✦</span>}
           <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{String(a.name||a.nome||'')}</span>
@@ -794,10 +893,14 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
         </div>
         <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{String(a.desc||a.descricao||'')}</div>
       </div>
-      <div style={{flexShrink:0,textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3}}>
+      <div style={{flexShrink:0,textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,position:'relative',zIndex:1}}>
         <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{Number(a.cost||a.custo||0)} VC</div>
-        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {String(a.cooldown||'—')}</div>
+        <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {cdText}</div>
         {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {Number(a.req)||1}+</div>}
+        {/* Cooldown tracker — only for abilities with a cooldown, not passives */}
+        {!locked && !isPassiva && hasCd && onUpdateCooldown && (
+          <CooldownBadge abilityId={abilityId} cooldownText={cdText} sheetCooldowns={sheetCooldowns} onUpdate={onUpdateCooldown}/>
+        )}
         {isCustom&&masterMode&&(
           <button onClick={()=>handleDelete(a.id)} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.25)',color:'#E8193C',borderRadius:4,cursor:'pointer',padding:'1px 6px',fontSize:10}}>✕</button>
         )}
@@ -901,6 +1004,11 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
   const attrPoints = sheet.attrPoints || 0;
   const photoInputRef=useRef(null);
+  // ⏳ Cooldown tracker — local per session only
+  const [sheetCooldowns, setSheetCooldowns] = useState({});
+  const handleUpdateCooldown = (abilityId, turns) => {
+    setSheetCooldowns(prev => ({ ...prev, [abilityId]: turns }));
+  };
   const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
   const attrBonus=val=>Math.floor(val/2);
 
@@ -1082,7 +1190,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         </div>
 
         <div style={{marginBottom:14}}>
-          <HabilidadesPanel cls={cls} sheet={sheet} customAbilities={customAbilities} masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities}/>
+          <HabilidadesPanel cls={cls} sheet={sheet} customAbilities={customAbilities} masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities} sheetCooldowns={sheetCooldowns} onUpdateCooldown={handleUpdateCooldown}/>
         </div>
 
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
@@ -1161,10 +1269,139 @@ function SheetsSection({masterMode}){
 
 // ─── FICHAS DOS INIMIGOS ──────────────────────────────────────────────────────
 const ENEMY_COLOR='#FF4444';const ENEMY_GLOW='rgba(255,68,68,0.18)';
-const newEnemySkill=()=>({id:Date.now()+Math.random(),nome:'',descricao:'',dano:'',cost:0,tempo:'',tipo:'normal'});
-const newEnemy=id=>({id,nome:'',tipo:'',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,foto:'',habilidades:[newEnemySkill()],notas:''});
+const newEnemySkill=()=>({id:Date.now()+Math.random(),nome:'',descricao:'',dano:'',custo:0,cooldown:'—',tipoHab:'normal'});
+const newEnemy=id=>({id,nome:'',tipo:'',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,foto:'',habilidades:[newEnemySkill()],notas:'',status:{}});
 
-function EnemySkillEditor({skill,color,onChange,onDelete}){const update=(key,value)=>onChange({...skill,[key]:value});return(<div style={{background:'rgba(255,255,255,0.02)',border:`1px solid ${color}22`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}><div style={{display:'flex',gap:10,alignItems:'flex-end',flexWrap:'wrap'}}><div style={{flex:1,minWidth:160}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome da habilidade</label><input value={skill.nome} onChange={e=>update('nome',e.target.value)} placeholder="Ex: Golpe Sombrio" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Dano</label><input value={skill.dano} onChange={e=>update('dano',e.target.value)} placeholder="Ex: 1D8+2" style={{width:'100%'}}/></div><div style={{width:90}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Custo VC</label><input type="number" min={0} value={skill.cost} onChange={e=>update('cost',Number(e.target.value))} style={{width:'100%'}}/></div><div style={{width:120}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tempo</label><input value={skill.tempo} onChange={e=>update('tempo',e.target.value)} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div><div style={{width:110}}><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo</label><select value={skill.tipo} onChange={e=>update('tipo',e.target.value)} style={{width:'100%'}}><option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option></select></div><button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 10px',fontSize:12,height:34}}>✕</button></div><div><label style={{fontSize:10,letterSpacing:'0.25em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição</label><textarea value={skill.descricao} onChange={e=>update('descricao',e.target.value)} placeholder="Descreva o efeito, alcance, condição ou comportamento desta habilidade..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:8}}><span style={{fontSize:10,color:color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em'}}>{skill.tipo?.toUpperCase()||'HABILIDADE'}</span><div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>⚔ {skill.dano||'sem dano'}</span><span style={{fontSize:11,color:`${color}CC`,fontFamily:'Cinzel,serif'}}>{skill.cost} VC</span><span style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {skill.tempo||'—'}</span></div></div></div>);}
+// Reusable skill form for enemies — mirrors HabilidadesPanel style
+function EnemyHabilidadesPanel({ enemy, onChange }) {
+  const habilidades = enemy.habilidades || [];
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(newEnemySkill());
+  const [enemyCooldowns, setEnemyCooldowns] = useState({});
+
+  const color = ENEMY_COLOR;
+  const tipoLabel = { normal: 'Normal', especial: 'Especial', passiva: 'Passiva' };
+  const tipoBadgeColor = { normal: 'rgba(255,255,255,0.5)', especial: color, passiva: 'rgba(168,85,247,0.8)' };
+
+  const handleSave = () => {
+    if (!form.nome.trim()) return;
+    onChange({ ...enemy, habilidades: [...habilidades, { ...form, id: Date.now() }] });
+    setForm(newEnemySkill());
+  };
+  const handleDelete = (id) => {
+    onChange({ ...enemy, habilidades: habilidades.filter(h => h.id !== id) });
+  };
+  const handleUpdateCooldown = (abilityId, turns) => {
+    setEnemyCooldowns(prev => ({ ...prev, [abilityId]: turns }));
+  };
+
+  const TipoBtn = ({ val, label: l }) => (
+    <button onClick={() => setForm(f => ({ ...f, tipoHab: val }))} style={{
+      flex: 1, padding: '5px 4px', borderRadius: 5,
+      border: `1px solid ${form.tipoHab === val ? color + '66' : 'rgba(255,255,255,0.1)'}`,
+      background: form.tipoHab === val ? `${color}18` : 'rgba(255,255,255,0.02)',
+      color: form.tipoHab === val ? color : '#6A5A7A', cursor: 'pointer',
+      fontFamily: 'Cinzel,serif', fontSize: 10, letterSpacing: '0.06em', transition: 'all 0.15s',
+    }}>{l}</button>
+  );
+
+  const abilityRow = (h) => {
+    const isPassiva = h.tipoHab === 'passiva';
+    const isEspecial = h.tipoHab === 'especial';
+    const cdText = h.cooldown || '—';
+    const hasCd = cdText && cdText !== '—';
+    const cdVal = enemyCooldowns[String(h.id)] || 0;
+    return (
+      <div key={h.id} style={{
+        background: isEspecial ? `${color}09` : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${isEspecial ? color + '22' : 'rgba(255,100,100,0.1)'}`,
+        borderRadius: 8, padding: '9px 12px', display: 'flex', gap: 10, alignItems: 'flex-start',
+        position: 'relative',
+      }}>
+        {cdVal > 0 && !isPassiva && (
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 8, background: 'rgba(232,100,0,0.06)', border: '1px solid rgba(232,100,0,0.25)', pointerEvents: 'none' }} />
+        )}
+        <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+            {isEspecial && <span style={{ fontSize: 10, color }}>✦</span>}
+            <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#C8B8A0', fontWeight: 600 }}>{h.nome || '(sem nome)'}</span>
+            {h.tipoHab && <span style={{ fontSize: 8, color: tipoBadgeColor[h.tipoHab] || color, fontFamily: 'Cinzel,serif', letterSpacing: '0.12em', background: `${color}14`, borderRadius: 3, padding: '1px 5px', border: `1px solid ${color}33` }}>{(tipoLabel[h.tipoHab] || 'Normal').toUpperCase()}</span>}
+            {h.dano && <span style={{ fontSize: 10, color: 'rgba(255,200,80,0.85)', fontFamily: 'Cinzel,serif', background: 'rgba(255,200,80,0.08)', border: '1px solid rgba(255,200,80,0.22)', borderRadius: 4, padding: '1px 6px' }}>⚔ {h.dano}</span>}
+          </div>
+          {h.descricao && <div style={{ fontSize: 13, color: '#7A6A5A', lineHeight: 1.65 }}>{h.descricao}</div>}
+        </div>
+        <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: 11, color: `${color}BB`, fontFamily: 'Cinzel,serif' }}>{h.custo || 0} VC</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)' }}>⏱ {cdText}</div>
+          {!isPassiva && hasCd && (
+            <CooldownBadge abilityId={String(h.id)} cooldownText={cdText} sheetCooldowns={enemyCooldowns} onUpdate={handleUpdateCooldown} />
+          )}
+          <button onClick={() => handleDelete(h.id)} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.25)', color: '#E8193C', borderRadius: 4, cursor: 'pointer', padding: '1px 6px', fontSize: 10 }}>✕</button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ marginBottom: 14, border: `1px solid ${open ? color + '33' : 'rgba(255,100,100,0.1)'}`, borderRadius: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, background: open ? `${color}08` : 'rgba(255,255,255,0.02)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ fontSize: 15, color }}>⚔️</span>
+        <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8B8A0', fontWeight: 600, flex: 1 }}>Habilidades & Ataques</span>
+        <span style={{ fontSize: 10, color: `${color}66`, fontFamily: 'Cinzel,serif' }}>{habilidades.length > 0 ? `${habilidades.length} habilidade${habilidades.length > 1 ? 's' : ''}` : ''}</span>
+        <span style={{ color: `${color}88`, fontSize: 11, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }}>▶</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 14px' }}>
+          <div style={{ height: 8 }} />
+          {habilidades.length === 0 && (
+            <div style={{ padding: 14, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.08)', color: '#6A4A4A', textAlign: 'center', fontFamily: 'Cinzel,serif', fontSize: 11, marginBottom: 10 }}>
+              Nenhuma habilidade cadastrada.
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: habilidades.length > 0 ? 12 : 0 }}>
+            {habilidades.map(h => abilityRow(h))}
+          </div>
+
+          {/* Add new skill form */}
+          <div style={{ border: `1px solid ${color}30`, borderRadius: 10, padding: '14px', background: `${color}05` }}>
+            <div style={{ fontSize: 9, letterSpacing: '0.35em', color: `${color}AA`, fontFamily: 'Cinzel,serif', marginBottom: 12, textTransform: 'uppercase' }}>✦ Adicionar Habilidade</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div>
+                <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Nome</label>
+                <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Garra Sombria" style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Tipo</label>
+                <div style={{ display: 'flex', gap: 6 }}><TipoBtn val="normal" label="Normal" /><TipoBtn val="especial" label="Especial" /><TipoBtn val="passiva" label="Passiva" /></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 9, color: 'rgba(255,200,80,0.5)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Dano / Efeito</label>
+                  <input value={form.dano} onChange={e => setForm(f => ({ ...f, dano: e.target.value }))} placeholder="Ex: 1D8+2" style={{ width: '100%' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Custo VC</label>
+                  <input type="number" min={0} value={form.custo} onChange={e => setForm(f => ({ ...f, custo: +e.target.value }))} style={{ width: '100%' }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Cooldown</label>
+                <input value={form.cooldown} onChange={e => setForm(f => ({ ...f, cooldown: e.target.value }))} placeholder="Ex: 3 rodadas" style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Descrição</label>
+                <textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} placeholder="Efeito, alcance, condições..." rows={3} style={{ width: '100%', resize: 'vertical', lineHeight: 1.7 }} />
+              </div>
+              <button onClick={handleSave} disabled={!form.nome.trim()} style={{ padding: '8px', borderRadius: 7, border: `1px solid ${color}55`, background: form.nome.trim() ? `${color}20` : 'rgba(255,255,255,0.03)', color: form.nome.trim() ? color : '#5A5070', cursor: form.nome.trim() ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, transition: 'all 0.2s' }}>
+                ✦ Salvar Habilidade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function EnemyCard({enemy,onChange,onDelete,masterMode}){
   const f=(k,v)=>onChange({...enemy,[k]:v});
@@ -1219,22 +1456,20 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
             <input value={enemy.alcance||''} onChange={e=>f('alcance',e.target.value)} placeholder="Ex: 2m, 10m..." style={{width:'100%'}}/>
           </div>
         </div>
+
+        {/* 🩸 Status Ativos */}
+        <StatusPanel sheet={enemy} onChange={onChange} />
+
         <div style={{marginBottom:15}}>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
           <div style={{display:'flex',flexDirection:'column',gap:7}}>
             {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)} masterMode={true}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
           </div>
         </div>
-        <div style={{marginBottom:14}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:8,flexWrap:'wrap'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Habilidades & Ataques</div>
-            <button onClick={()=>f('habilidades',[...(enemy.habilidades||[]),newEnemySkill()])} style={{padding:'6px 12px',borderRadius:7,border:`1px solid ${ENEMY_COLOR}33`,background:`${ENEMY_COLOR}10`,color:ENEMY_COLOR,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em'}}>+ Adicionar habilidade</button>
-          </div>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {(enemy.habilidades||[]).length===0&&(<div style={{padding:14,borderRadius:10,border:'1px dashed rgba(255,255,255,0.08)',color:'#6A4A4A',textAlign:'center',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em'}}>Nenhuma habilidade cadastrada.</div>)}
-            {(enemy.habilidades||[]).map((skill,index)=>(<EnemySkillEditor key={skill.id||index} skill={skill} color={ENEMY_COLOR} onChange={updatedSkill=>{const updated=[...(enemy.habilidades||[])];updated[index]=updatedSkill;f('habilidades',updated);}} onDelete={()=>{const updated=(enemy.habilidades||[]).filter((_,i)=>i!==index);f('habilidades',updated);}}/>))}
-          </div>
-        </div>
+
+        {/* ⚔️ New unified skill panel */}
+        <EnemyHabilidadesPanel enemy={enemy} onChange={onChange} />
+
         <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div><textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados, comportamento narrativo..." rows={3} style={{width:'100%',resize:'vertical'}}/></div>
       </div>
     </div>
