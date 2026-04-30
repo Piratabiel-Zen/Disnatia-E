@@ -257,15 +257,30 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
       rolled.sort((a, b) => b.roll - a.roll);
       setInitiative(rolled);
       setTurnIdx(0);
+      const c = rolled[0];
+try {
+  await setDoc(doc(db, 'config', 'combat'), {
+    active: true, round: 1,
+    currentNome: c?.nome || '', currentColor: c?.color || '#E8193C', currentType: c?.type || 'player',
+  });
+} catch(_) {}
       setRolling(false);
     }, 800);
   };
 
-  const nextTurn = () => {
-    const next = (turnIdx + 1) % initiative.length;
-    if (next === 0) setRound(r => r + 1);
-    setTurnIdx(next);
-  };
+const nextTurn = async () => {
+  const next = (turnIdx + 1) % initiative.length;
+  const newRound = next === 0 ? round + 1 : round;
+  if (next === 0) setRound(newRound);
+  setTurnIdx(next);
+  const c = initiative[next];
+  try {
+    await setDoc(doc(db, 'config', 'combat'), {
+      active: true, round: newRound,
+      currentNome: c?.nome || '', currentColor: c?.color || '#E8193C', currentType: c?.type || 'player',
+    });
+  } catch(_) {}
+};
 
   const current = initiative[turnIdx];
 
@@ -296,7 +311,7 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
               animation: 'combatPulse 2s ease-in-out infinite',
             }}>Próximo Turno ▶</button>
           )}
-          <button onClick={onClose} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✕ Fechar</button>
+          <button onClick={handleClose} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✕ Fechar</button>
         </div>
       </div>
 
@@ -368,17 +383,114 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
 }
 
 // ─── 🎵 SPOTIFY PLAYER ───────────────────────────────────────────────────────
-function SpotifyPlayer({ masterMode }) {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState('');
-  const [savedEmbed, setSavedEmbed] = useState('');
+function AmbientSoundPlayer({ masterMode }) {
+  const [videoId, setVideoId] = useState('');
+  const [muted, setMuted]     = useState(true);
+  const [open, setOpen]       = useState(false);
+  const [input, setInput]     = useState('');
+  const iframeRef = useRef(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'spotify'), snap => {
-      if (snap.exists()) setSavedEmbed(snap.data().embed || '');
+    const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
+      if (!snap.exists()) return;
+      const id = snap.data().videoId || '';
+      setVideoId(prev => { if (id !== prev) setMuted(true); return id; });
     });
     return () => unsub();
   }, []);
+
+  const extractId = url => {
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+    return m ? m[1] : null;
+  };
+
+  const send = (func, args=[]) => {
+    try { iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event:'command', func, args }), '*'); }
+    catch(_) {}
+  };
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    send(next ? 'mute' : 'unMute');
+  };
+
+  const handleSave = async () => {
+    const id = extractId(input.trim());
+    if (!id) return;
+    await setDoc(doc(db, 'config', 'ambient'), { videoId: id, ts: Date.now() });
+    setInput(''); setOpen(false);
+  };
+
+  const handleRemove = async () => {
+    await setDoc(doc(db, 'config', 'ambient'), { videoId: '', ts: 0 });
+    setVideoId(''); setOpen(false);
+  };
+
+  const src = videoId
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&enablejsapi=1`
+    : '';
+
+  return (
+    <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 100 }}>
+      {src && (
+        <iframe ref={iframeRef} src={src} width="1" height="1"
+          allow="autoplay; encrypted-media"
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+          onLoad={() => setTimeout(() => send('setVolume', [80]), 1500)}
+        />
+      )}
+      {!open && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {src && (
+            <button onClick={toggleMute} title={muted ? 'Clique para ouvir' : 'Mutar'} style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: muted ? 'rgba(255,255,255,0.05)' : 'rgba(74,222,128,0.15)',
+              border: `1px solid ${muted ? 'rgba(255,255,255,0.1)' : 'rgba(74,222,128,0.45)'}`,
+              color: muted ? '#5A5070' : '#4ADE80', fontSize: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', backdropFilter: 'blur(5px)', transition: 'all 0.3s',
+            }}>{muted ? '\uD83D\uDD07' : '\uD83D\uDD0A'}</button>
+          )}
+          {masterMode && (
+            <button onClick={() => setOpen(true)} title="Gerenciar Som" style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#5A5070', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', backdropFilter: 'blur(5px)',
+            }}>{'\uD83C\uDFB5'}</button>
+          )}
+        </div>
+      )}
+      {open && masterMode && (
+        <div style={{ background: 'rgba(8,10,24,0.97)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 14, padding: 14, width: 280, boxShadow: '0 8px 32px rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#4ADE80', letterSpacing: '0.1em' }}>{'\uD83C\uDFB5'} Som Ambiente</span>
+            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
+          </div>
+          <input value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+            placeholder="https://youtube.com/watch?v=..."
+            style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
+          <button onClick={handleSave} disabled={!input.trim()} style={{
+            width: '100%', padding: '8px', borderRadius: 7,
+            border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
+            color: '#4ADE80', cursor: input.trim() ? 'pointer' : 'not-allowed',
+            fontFamily: 'Cinzel,serif', fontSize: 12, opacity: input.trim() ? 1 : 0.4, marginBottom: videoId ? 6 : 0,
+          }}>✦ Definir Música</button>
+          {videoId && (
+            <button onClick={handleRemove} style={{
+              width: '100%', padding: '6px', borderRadius: 7,
+              border: '1px solid rgba(232,25,60,0.2)', background: 'transparent',
+              color: '#6A3A3A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+            }}>✕ Remover</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
   const extractSpotifyId = (url) => {
     // supports playlist, album, track
@@ -1772,7 +1884,15 @@ function SheetsSection({masterMode}){
             background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
             fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
             display:'flex',alignItems:'center',gap:6,
-          }}>⚔️ Combate</button>
+          }}>⚔️ Combate {/* antes era sempre visível — agora só para o mestre */}
+{masterMode && (
+  <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{
+    padding:'8px 14px',borderRadius:10,border:'1px solid rgba(232,25,60,0.35)',
+    background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
+    fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
+    display:'flex',alignItems:'center',gap:6,
+  }}>⚔️ Combate</button>
+)}</button>
         </div>
         {activeSheet
           ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={saveCustom}/>
@@ -2316,11 +2436,37 @@ const TABS=[
   {id:'mapamundi',label:'Mapa Múndi',icon:'🌍'},
 ];
 
-function MasterToggle({masterMode,setMasterMode}){
-  const[showInput,setShowInput]=useState(false);const[pin,setPin]=useState('');const[shake,setShake]=useState(false);
-  const tryUnlock=()=>{if(pin.toLowerCase()===MASTER_PIN){setMasterMode(true);setShowInput(false);setPin('');}else{setShake(true);setTimeout(()=>setShake(false),500);setPin('');}};
-  if(masterMode)return(<button onClick={()=>setMasterMode(false)} title="Desativar Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>🔴 MESTRE</button>);
-  return(<div style={{display:'flex',alignItems:'center',gap:6}}>{showInput&&(<div style={{display:'flex',gap:5}}><input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/><button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button><button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button></div>)}{!showInput&&(<button onClick={()=>setShowInput(true)} title="Modo Mestre" style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Mestre</button>)}</div>);
+function PlayerCombatBanner() {
+  const [combat, setCombat] = useState({ active: false });
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+      if (snap.exists()) setCombat(snap.data());
+    });
+    return () => unsub();
+  }, []);
+  if (!combat.active) return null;
+  const color = combat.currentColor || '#E8193C';
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
+      background: 'rgba(6,8,20,0.97)', borderTop: `2px solid ${color}55`,
+      padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12,
+      backdropFilter: 'blur(10px)', animation: 'pageTurn 0.4s ease',
+    }}>
+      <span style={{ animation: 'turnArrow 0.6s ease-in-out infinite alternate', fontSize: 16 }}>▶</span>
+      <div style={{ flex: 1 }}>
+        <span style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.28)', fontFamily: 'Cinzel,serif' }}>
+          RODADA {combat.round || 1} · VEZ DE{' '}
+        </span>
+        <span style={{ fontSize: 14, fontFamily: 'Cinzel,serif', fontWeight: 700, color }}>
+          {combat.currentNome || '...'}
+        </span>
+      </div>
+      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'Cinzel,serif', letterSpacing: '0.15em' }}>
+        {combat.currentType === 'enemy' ? 'INIMIGO' : 'ALIADO'}
+      </span>
+    </div>
+  );
 }
 
 export default function App(){
@@ -2379,7 +2525,8 @@ export default function App(){
       </main>
 
       {/* Fixed widgets */}
-      <SpotifyPlayer masterMode={masterMode} />
+      <AmbientSoundPlayer masterMode={masterMode} />
+      {!masterMode && <PlayerCombatBanner />}
       <DiceWidget />
       <AtmosphereWidget masterMode={masterMode} atmosphere={atmosphere} onSet={handleSetAtmosphere}/>
     </div>
