@@ -216,7 +216,7 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
       rolled.sort((a, b) => b.roll - a.roll);
       setInitiative(rolled);
       setTurnIdx(0);
-};
+      
 const nextTurn = async () => {
   const next = (turnIdx + 1) % initiative.length;
   const newRound = next === 0 ? round + 1 : round;
