@@ -54,6 +54,13 @@ html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
 @keyframes bannerGlow{0%,100%{box-shadow:0 0 16px rgba(168,85,247,0.4),0 0 32px rgba(168,85,247,0.15);}50%{box-shadow:0 0 24px rgba(168,85,247,0.7),0 0 48px rgba(168,85,247,0.3);}}
 @keyframes pinDrop{0%{transform:translateY(-10px) scale(0.5);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
 @keyframes cooldownIn{0%{opacity:0;transform:scale(0.85);}100%{opacity:1;transform:scale(1);}}
+@keyframes toastIn{0%{opacity:0;transform:translateX(-50%) translateY(20px) scale(0.92);}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}
+@keyframes toastOut{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}100%{opacity:0;transform:translateX(-50%) translateY(-12px) scale(0.94);}}
+@keyframes levelUpBurst{0%{opacity:0;transform:scale(0.5);}60%{opacity:1;transform:scale(1.08);}100%{opacity:1;transform:scale(1);}}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--px),var(--py)) scale(0);}}
+@keyframes combatPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,25,60,0.5);}50%{box-shadow:0 0 0 8px rgba(232,25,60,0);}}
+@keyframes turnArrow{0%{transform:translateX(-4px);}100%{transform:translateX(4px);}}
+@keyframes atmosphereShift{0%{opacity:0;}100%{opacity:1;}}
 
 input,textarea,select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.11);color:#C8B8A0;border-radius:6px;font-family:'Crimson Text',Georgia,serif;font-size:15px;padding:6px 10px;outline:none;transition:border-color 0.2s;}
 input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
@@ -90,8 +97,421 @@ const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#
 const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)'};
 const MASTER_PIN='dinastia';
 
-// ─── STATUS DEFINITIONS ───────────────────────────────────────────────────────
-const STATUS_LIST = [
+// ─── 🌦️ ATMOSPHERE SYSTEM ────────────────────────────────────────────────────
+const ATMOSPHERES = {
+  neutro:    { label: 'Neutro',      icon: '🌌', accent: '#A855F7', bg: '#04060F', starColor: null },
+  combate:   { label: 'Combate',     icon: '⚔️',  accent: '#E8193C', bg: '#0F0408', starColor: '#FF4444' },
+  misterio:  { label: 'Mistério',    icon: '🌫️',  accent: '#6A5AF7', bg: '#040812', starColor: '#6A8AFF' },
+  exploracao:{ label: 'Exploração',  icon: '🌿',  accent: '#4ADE80', bg: '#040F08', starColor: '#4ADE80' },
+  descanso:  { label: 'Descanso',    icon: '🌙',  accent: '#E8A020', bg: '#080604', starColor: '#FFD070' },
+  tensao:    { label: 'Tensão',      icon: '⚡',  accent: '#FF6B35', bg: '#0F0600', starColor: '#FF8C42' },
+};
+
+// ─── 🔔 TOAST NOTIFICATION SYSTEM ────────────────────────────────────────────
+// Global event bus for toasts
+const toastListeners = [];
+function emitToast(msg, icon='✦', color='#C8A8E8') {
+  toastListeners.forEach(fn => fn({ msg, icon, color, id: Date.now() + Math.random() }));
+}
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+  useEffect(() => {
+    const handler = (t) => {
+      setToasts(prev => [...prev.slice(-3), { ...t, dying: false }]);
+      setTimeout(() => {
+        setToasts(prev => prev.map(x => x.id === t.id ? { ...x, dying: true } : x));
+        setTimeout(() => setToasts(prev => prev.filter(x => x.id !== t.id)), 500);
+      }, 3500);
+    };
+    toastListeners.push(handler);
+    return () => { const i = toastListeners.indexOf(handler); if (i > -1) toastListeners.splice(i, 1); };
+  }, []);
+
+  // Also listen to Firebase for cross-client toasts
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'lastToast'), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      if (!d.msg || !d.ts) return;
+      // Only show if recent (last 4s) to avoid re-showing on reload
+      if (Date.now() - d.ts > 4000) return;
+      const t = { msg: d.msg, icon: d.icon || '✦', color: d.color || '#C8A8E8', id: d.ts + Math.random() };
+      setToasts(prev => [...prev.slice(-3), { ...t, dying: false }]);
+      setTimeout(() => {
+        setToasts(prev => prev.map(x => x.id === t.id ? { ...x, dying: true } : x));
+        setTimeout(() => setToasts(prev => prev.filter(x => x.id !== t.id)), 500);
+      }, 3500);
+    });
+    return () => unsub();
+  }, []);
+
+  if (toasts.length === 0) return null;
+  return (
+    <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', pointerEvents: 'none' }}>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          background: 'rgba(8,10,24,0.97)', border: `1px solid ${t.color}55`,
+          borderRadius: 12, padding: '11px 20px', display: 'flex', alignItems: 'center', gap: 10,
+          boxShadow: `0 4px 24px rgba(0,0,0,0.7), 0 0 16px ${t.color}33`,
+          animation: t.dying ? 'toastOut 0.4s ease forwards' : 'toastIn 0.4s cubic-bezier(0.2,0.8,0.2,1) forwards',
+          backdropFilter: 'blur(12px)', minWidth: 220, maxWidth: 340,
+          transform: 'translateX(-50%)',
+        }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
+          <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: t.color, letterSpacing: '0.04em', lineHeight: 1.4 }}>{t.msg}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function pushToast(msg, icon='✦', color='#C8A8E8') {
+  try {
+    await setDoc(doc(db, 'config', 'lastToast'), { msg, icon, color, ts: Date.now() });
+  } catch(e) { console.error(e); }
+}
+
+// ─── ✨ LEVEL UP SCREEN ───────────────────────────────────────────────────────
+function LevelUpScreen({ data, onClose }) {
+  // data = { nome, nivel, color }
+  const [phase, setPhase] = useState('burst'); // burst → show → fade
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase('show'), 400);
+    const t2 = setTimeout(() => setPhase('fade'), 4000);
+    const t3 = setTimeout(() => onClose(), 4600);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  const color = data.color || '#A855F7';
+  const particles = Array.from({ length: 24 }, (_, i) => {
+    const angle = (i / 24) * Math.PI * 2;
+    const dist = 80 + Math.random() * 120;
+    return { px: `${Math.cos(angle) * dist}px`, py: `${Math.sin(angle) * dist}px`, delay: Math.random() * 0.6 };
+  });
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9998,
+      background: phase === 'fade' ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.88)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'background 0.6s',
+      pointerEvents: phase === 'fade' ? 'none' : 'auto',
+    }} onClick={onClose}>
+      <div style={{ position: 'relative', textAlign: 'center' }}>
+        {/* Particles */}
+        {particles.map((p, i) => (
+          <div key={i} style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: 6, height: 6, borderRadius: '50%',
+            background: color, boxShadow: `0 0 6px ${color}`,
+            '--px': p.px, '--py': p.py,
+            animation: `particleFly 1.2s ease-out ${p.delay}s forwards`,
+          }} />
+        ))}
+        <div style={{
+          animation: 'levelUpBurst 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards',
+          opacity: phase === 'fade' ? 0 : 1, transition: 'opacity 0.6s',
+        }}>
+          <div style={{ fontSize: 14, letterSpacing: '0.5em', color: `${color}AA`, fontFamily: 'Cinzel,serif', marginBottom: 16, textTransform: 'uppercase' }}>Ascensão Cósmica</div>
+          <div style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 36, fontWeight: 900, color, textShadow: `0 0 40px ${color}, 0 0 80px ${color}66`, marginBottom: 12, lineHeight: 1.2 }}>
+            {data.nome}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 20 }}>
+            <div style={{ width: 60, height: 1, background: `linear-gradient(90deg, transparent, ${color})` }} />
+            <div style={{ fontFamily: 'Cinzel,serif', fontSize: 22, color: '#E8D8C0', letterSpacing: '0.1em' }}>Nível {data.nivel}</div>
+            <div style={{ width: 60, height: 1, background: `linear-gradient(90deg, ${color}, transparent)` }} />
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'Cinzel,serif', letterSpacing: '0.2em' }}>
+            ✦ {data.nivel <= 3 ? 'Aprendiz Cósmico' : data.nivel <= 6 ? 'Portador do Destino' : data.nivel <= 9 ? 'Arauto do Fim' : data.nivel <= 14 ? 'Guardião Estelar' : data.nivel <= 19 ? 'Ascendente' : data.nivel <= 24 ? 'Transcendente' : data.nivel <= 29 ? 'Arauto Supremo' : 'Lenda Cósmica'} ✦
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ⚔️ MODO COMBATE ─────────────────────────────────────────────────────────
+function CombatMode({ sheets, enemies, onClose, masterMode }) {
+  const [round, setRound] = useState(1);
+  const [turnIdx, setTurnIdx] = useState(0);
+  const [initiative, setInitiative] = useState([]); // [{id, nome, type, hp, maxHp, color, foto}]
+  const [rolling, setRolling] = useState(false);
+
+  // Build combatant list
+  useEffect(() => {
+    const combatants = [
+      ...sheets.map(s => {
+        const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+        return { id: 'p_' + s.id, nome: s.nome || 'Personagem', type: 'player', hp: s.hp || 0, maxHp: Math.max(s.hp || 1, 1), color: SHEET_COLORS[s.classe] || cls.color, foto: s.foto, roll: 0 };
+      }),
+      ...enemies.map(e => ({ id: 'e_' + e.id, nome: e.nome || 'Inimigo', type: 'enemy', hp: e.hp || 0, maxHp: Math.max(e.hp || 1, 1), color: '#FF4444', foto: e.foto, roll: 0 })),
+    ];
+    setInitiative(combatants);
+  }, [sheets, enemies]);
+
+  const rollInitiative = () => {
+    setRolling(true);
+    setTimeout(() => {
+      const rolled = initiative.map(c => ({ ...c, roll: Math.floor(Math.random() * 20) + 1 }));
+      rolled.sort((a, b) => b.roll - a.roll);
+      setInitiative(rolled);
+      setTurnIdx(0);
+      setRolling(false);
+    }, 800);
+  };
+
+  const nextTurn = () => {
+    const next = (turnIdx + 1) % initiative.length;
+    if (next === 0) setRound(r => r + 1);
+    setTurnIdx(next);
+  };
+
+  const current = initiative[turnIdx];
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: 'rgba(4,6,15,0.97)', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(4px)' }}>
+      {/* Header */}
+      <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(232,25,60,0.25)', background: 'rgba(232,25,60,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ fontSize: 22 }}>⚔️</span>
+          <div>
+            <div style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 16, color: '#E8193C', fontWeight: 700 }}>Modo Combate</div>
+            <div style={{ fontSize: 11, color: 'rgba(232,25,60,0.6)', fontFamily: 'Cinzel,serif', letterSpacing: '0.15em' }}>Rodada {round}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {masterMode && (
+            <button onClick={rollInitiative} disabled={rolling} style={{
+              padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(168,85,247,0.5)',
+              background: 'rgba(168,85,247,0.12)', color: '#C8A8E8', cursor: rolling ? 'not-allowed' : 'pointer',
+              fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em',
+            }}>{rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}</button>
+          )}
+          {masterMode && initiative.length > 0 && (
+            <button onClick={nextTurn} style={{
+              padding: '7px 18px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.5)',
+              background: 'rgba(232,25,60,0.14)', color: '#FF6666', cursor: 'pointer',
+              fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', fontWeight: 700,
+              animation: 'combatPulse 2s ease-in-out infinite',
+            }}>Próximo Turno ▶</button>
+          )}
+          <button onClick={onClose} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✕ Fechar</button>
+        </div>
+      </div>
+
+      {/* Current turn banner */}
+      {current && (
+        <div style={{ padding: '10px 20px', background: `${current.color}18`, borderBottom: `1px solid ${current.color}33`, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 18, animation: 'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
+          <span style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: current.color, fontWeight: 700, letterSpacing: '0.06em' }}>Vez de: {current.nome}</span>
+          {current.roll > 0 && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>Iniciativa: {current.roll}</span>}
+        </div>
+      )}
+
+      {/* Combatants grid */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 80px' }}>
+        {initiative.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 60, color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13 }}>
+            Nenhum combatente carregado. Abra as fichas primeiro.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            {initiative.map((c, idx) => {
+              const isActive = idx === turnIdx;
+              const hpPct = Math.max(0, Math.min(100, (c.hp / Math.max(1, c.maxHp)) * 100));
+              const hpColor = hpPct > 60 ? '#4ADE80' : hpPct > 30 ? '#E8A020' : '#E8193C';
+              return (
+                <div key={c.id} style={{
+                  border: `1px solid ${isActive ? c.color + '88' : c.color + '28'}`,
+                  borderRadius: 12, background: isActive ? `${c.color}12` : 'rgba(8,10,22,0.9)',
+                  overflow: 'hidden', transition: 'all 0.3s',
+                  boxShadow: isActive ? `0 0 20px ${c.color}44` : 'none',
+                }}>
+                  {c.foto && <img src={c.foto} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', objectPosition: 'top', display: 'block', filter: c.hp <= 0 ? 'grayscale(100%)' : 'none' }} />}
+                  <div style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      {isActive && <span style={{ fontSize: 10, color: c.color }}>▶</span>}
+                      <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: isActive ? c.color : '#C8B8A0', fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</span>
+                      {c.type === 'enemy' && <span style={{ fontSize: 8, color: '#FF4444', fontFamily: 'Cinzel,serif', background: 'rgba(255,68,68,0.12)', padding: '1px 5px', borderRadius: 3 }}>INIMIGO</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, color: hpColor, fontFamily: 'Cinzel,serif', fontWeight: 700, minWidth: 20 }}>{c.hp}</span>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>HP</span>
+                      {c.roll > 0 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginLeft: 'auto', fontFamily: 'Cinzel,serif' }}>🎲 {c.roll}</span>}
+                    </div>
+                    <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }}>
+                      <div style={{ height: '100%', width: `${hpPct}%`, background: hpColor, borderRadius: 2, transition: 'width 0.4s, background 0.4s' }} />
+                    </div>
+                    {c.hp <= 0 && <div style={{ marginTop: 5, fontSize: 10, color: '#E8193C', fontFamily: 'Cinzel,serif', textAlign: 'center' }}>💀 Abatido</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── 🎵 SPOTIFY PLAYER ───────────────────────────────────────────────────────
+function SpotifyPlayer({ masterMode }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [savedEmbed, setSavedEmbed] = useState('');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'spotify'), snap => {
+      if (snap.exists()) setSavedEmbed(snap.data().embed || '');
+    });
+    return () => unsub();
+  }, []);
+
+  const extractSpotifyId = (url) => {
+    // supports playlist, album, track
+    const m = url.match(/spotify\.com\/(playlist|album|track|artist)\/([a-zA-Z0-9]+)/);
+    if (m) return { type: m[1], id: m[2] };
+    // spotify:playlist:xxx
+    const m2 = url.match(/spotify:(playlist|album|track|artist):([a-zA-Z0-9]+)/);
+    if (m2) return { type: m2[1], id: m2[2] };
+    return null;
+  };
+
+  const handleSave = async () => {
+    const info = extractSpotifyId(input);
+    if (!info) return;
+    const embed = `https://open.spotify.com/embed/${info.type}/${info.id}?utm_source=generator&theme=0`;
+    await setDoc(doc(db, 'config', 'spotify'), { embed, raw: input });
+    setSavedEmbed(embed);
+    setInput('');
+  };
+
+  const handleRemove = async () => {
+    await setDoc(doc(db, 'config', 'spotify'), { embed: '', raw: '' });
+    setSavedEmbed('');
+  };
+
+  const isActive = !!savedEmbed;
+
+  return (
+    <div style={{ position: 'fixed', bottom: 90, left: 24, zIndex: 100 }}>
+      {!open && (
+        <button onClick={() => setOpen(true)} title="Som Ambiente · Spotify" style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: isActive ? 'rgba(30,215,96,0.15)' : 'rgba(255,255,255,0.06)',
+          border: `1px solid ${isActive ? 'rgba(30,215,96,0.55)' : 'rgba(255,255,255,0.14)'}`,
+          color: isActive ? '#1ED760' : '#7A6A8A', fontSize: 22,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', backdropFilter: 'blur(5px)',
+          boxShadow: isActive ? '0 0 16px rgba(30,215,96,0.28)' : 'none',
+          transition: 'all 0.3s',
+        }}>🎵</button>
+      )}
+
+      {open && (
+        <div style={{
+          background: 'rgba(10,12,28,0.97)', border: '1px solid rgba(30,215,96,0.3)',
+          borderRadius: 16, padding: 16, width: 320,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18 }}>🎵</span>
+              <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#1ED760', letterSpacing: '0.1em' }}>Som Ambiente</span>
+            </div>
+            <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
+          </div>
+
+          {savedEmbed ? (
+            <>
+              <iframe
+                src={savedEmbed}
+                width="100%" height="152"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                style={{ border: 'none', borderRadius: 10, display: 'block', marginBottom: 8 }}
+              />
+              {masterMode && (
+                <button onClick={handleRemove} style={{ width: '100%', padding: '6px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>
+                  ✕ Remover música
+                </button>
+              )}
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '16px 0', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 12 }}>
+              {masterMode ? '' : 'Aguardando o Mestre definir uma playlist...'}
+            </div>
+          )}
+
+          {masterMode && (
+            <div style={{ borderTop: savedEmbed ? '1px solid rgba(255,255,255,0.07)' : 'none', paddingTop: savedEmbed ? 12 : 0, marginTop: savedEmbed ? 4 : 0 }}>
+              <label style={{ fontSize: 10, letterSpacing: '0.25em', color: 'rgba(30,215,96,0.7)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Link do Spotify</label>
+              <div style={{ fontSize: 10, color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 8, lineHeight: 1.5 }}>
+                Cole o link de uma playlist, álbum ou música do Spotify.
+              </div>
+              <input value={input} onChange={e => setInput(e.target.value)} placeholder="https://open.spotify.com/playlist/..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
+              <button onClick={handleSave} disabled={!input.trim()} style={{
+                width: '100%', padding: '8px', borderRadius: 7,
+                border: '1px solid rgba(30,215,96,0.4)', background: 'rgba(30,215,96,0.1)',
+                color: '#1ED760', cursor: input.trim() ? 'pointer' : 'not-allowed',
+                fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: input.trim() ? 1 : 0.4,
+              }}>✦ Definir Som Ambiente</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 🌦️ ATMOSPHERE WIDGET ────────────────────────────────────────────────────
+function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
+  const [open, setOpen] = useState(false);
+  const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
+
+  if (!masterMode && atmosphere === 'neutro') return null;
+
+  return (
+    <div style={{ position: 'fixed', top: 80, right: 16, zIndex: 100 }}>
+      {!open && (
+        <button onClick={() => masterMode && setOpen(true)} title={`Atmosfera: ${atm.label}`} style={{
+          padding: '5px 11px', borderRadius: 20, cursor: masterMode ? 'pointer' : 'default',
+          border: `1px solid ${atm.accent}44`, background: `${atm.accent}12`,
+          color: atm.accent, fontFamily: 'Cinzel,serif', fontSize: 11, letterSpacing: '0.06em',
+          display: 'flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(6px)',
+          transition: 'all 0.3s',
+        }}>
+          <span>{atm.icon}</span>
+          <span>{atm.label}</span>
+          {masterMode && <span style={{ fontSize: 9, opacity: 0.5 }}>▼</span>}
+        </button>
+      )}
+
+      {open && masterMode && (
+        <div style={{ background: 'rgba(10,12,28,0.97)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 14, padding: 14, width: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#C8A8E8', letterSpacing: '0.1em' }}>Atmosfera</span>
+            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 13 }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {Object.entries(ATMOSPHERES).map(([key, a]) => (
+              <button key={key} onClick={() => { onSet(key); setOpen(false); pushToast(`Atmosfera: ${a.label}`, a.icon, a.accent); }} style={{
+                padding: '7px 10px', borderRadius: 8, border: `1px solid ${atmosphere === key ? a.accent + '66' : 'rgba(255,255,255,0.06)'}`,
+                background: atmosphere === key ? `${a.accent}18` : 'rgba(255,255,255,0.02)',
+                color: atmosphere === key ? a.accent : '#8A7A9A', cursor: 'pointer',
+                fontFamily: 'Cinzel,serif', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8,
+                transition: 'all 0.2s', textAlign: 'left',
+              }}>
+                <span>{a.icon}</span><span>{a.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
   { id: 'envenenado',   label: 'Envenenado',   icon: '☠️',  color: '#4ADE80' },
   { id: 'sangrando',   label: 'Sangrando',    icon: '🩸',  color: '#E8193C' },
   { id: 'atordoado',   label: 'Atordoado',    icon: '💫',  color: '#E8A020' },
@@ -117,7 +537,7 @@ const ARTEFATOS_DATA=[{id:'artefato-1',name:'O Cristal Cristalizado da Gota de �
 const RULES_DATA=[{icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, o personagem recupera automaticamente +2 Vigor Cósmico.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigor Cósmicos.`},{icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 / 1D8 / 1D12 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},{icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados (ataques especiais só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, e etc...\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`},{icon:'📊',title:'Bônus de Atributos',body:`Os atributos do personagem concedem bônus diretos às ações em combate. A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚔️ Força (Dano e Ataques):\n• A cada 2 pontos de Força = +1 de ponto bônus.\n\n🛡️ Durabilidade (Resistência e Defesas):\n• A cada 2 pontos de Durabilidade = +1 de ponto bônus.\n\n⚡| 🏹 Agilidade (Esquivas e Ataques a Distancia):\n• A cada 2 pontos de Agilidade = +1 de ponto bônus de acerto.\n\n🧠 Inteligência (Potencialização de Ataques Mágicos e Cientificos):\n• A cada 2 pontos de Inteligência = +1 ponto bônus.\n\n🏹 Percepção (Ataques Surpresa, Detecção de Comuflagem):\n• A cada 2 pontos de Percepção = 1+ de ponto bônus.`},{icon:'🔄',title:'Teste de Reflexo',body:`Quando um personagem possui pelo menos 1 Vigor Cósmico disponível, ele pode realizar um Teste de Reflexo ao ser alvo de um ataque.\n\n🛡️ Custo: 1 VC\n🎲 Role 1D20 — se o resultado for 16 ou mais, o personagem esquiva completamente do ataque.\n\n⚠️ Limitação: O Teste de Reflexo só pode ser utilizado 1 vez por combate por personagem.\n\nEste teste representa a capacidade instintiva do personagem de reagir a perigos imediatos, exigindo foco cósmico e reflexos apurados.`},{icon:'💎',title:'Crítico de Itens',body:`Quando um item (arma, artefato, equipamento) acerta um golpe crítico (resultado 20 no D20), o dano não é rolado normalmente.\n\n✦ Regra: O item causa automaticamente o dano máximo garantido do seu dado de dano.\n\nExemplos:\n• Item com 1D6 de dano → Crítico = 6 de dano garantido\n• Item com 1D8 + 2 de dano → Crítico = 8 + 2 = 10 de dano garantido\n• Item com 2D6 de dano → Crítico = 12 de dano garantido\n\nEssa regra se aplica exclusivamente a itens e equipamentos. Habilidades de classe seguem suas próprias regras de crítico.`},{icon:'✦',title:'Progressão & XP',body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nHabilidades Novas:\nAo alcançar certos niveis (Nível 4, 10, 15, 20, 25 e 30), o personagem desbloqueia uma habilidade nova, que pode ser definida em conjunto com o Mestre.\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`}];
 
 // ─── STARFIELD ────────────────────────────────────────────────────────────────
-function StarField(){const ref=useRef(null);useEffect(()=>{const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext('2d');let raf;const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};resize();window.addEventListener('resize',resize);const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.2,phase:Math.random()*Math.PI*2,spd:Math.random()*0.025+0.008}));const ps=[{x:0.10,y:0.04,c:'#1EC8FF'},{x:0.87,y:0.05,c:'#E8A020'},{x:0.48,y:0.025,c:'#A855F7'},{x:0.70,y:0.06,c:'#E8193C'}];let t=0;const draw=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);t+=0.007;stars.forEach(s=>{const a=0.2+0.5*Math.sin(t*s.spd*50+s.phase);ctx.beginPath();ctx.arc(s.x*canvas.width,s.y*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fill();});ps.forEach((s,i)=>{const a=0.55+0.45*Math.sin(t*1.1+i*0.8),px=s.x*canvas.width,py=s.y*canvas.height;ctx.save();ctx.shadowColor=s.c;ctx.shadowBlur=14*a;ctx.globalAlpha=a;ctx.beginPath();ctx.arc(px,py,2.8,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill();ctx.restore();ctx.save();ctx.globalAlpha=a*0.4;ctx.strokeStyle=s.c;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(px-8,py);ctx.lineTo(px+8,py);ctx.stroke();ctx.beginPath();ctx.moveTo(px,py-8);ctx.lineTo(px,py+8);ctx.stroke();ctx.restore();});raf=requestAnimationFrame(draw);};draw();return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);};},[]);return <canvas ref={ref} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;}
+function StarField({atmosphere='neutro'}){const ref=useRef(null);useEffect(()=>{const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext('2d');let raf;const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};resize();window.addEventListener('resize',resize);const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.2,phase:Math.random()*Math.PI*2,spd:Math.random()*0.025+0.008}));const ps=[{x:0.10,y:0.04,c:'#1EC8FF'},{x:0.87,y:0.05,c:'#E8A020'},{x:0.48,y:0.025,c:'#A855F7'},{x:0.70,y:0.06,c:'#E8193C'}];let t=0;const draw=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);t+=0.007;const atm=ATMOSPHERES[atmosphere]||ATMOSPHERES.neutro;const sc=atm.starColor;stars.forEach(s=>{const a=0.2+0.5*Math.sin(t*s.spd*50+s.phase);ctx.beginPath();ctx.arc(s.x*canvas.width,s.y*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle=sc?`${sc}${Math.round(a*255).toString(16).padStart(2,'0')}`:`rgba(255,255,255,${a})`;ctx.fill();});ps.forEach((s,i)=>{const a=0.55+0.45*Math.sin(t*1.1+i*0.8),px=s.x*canvas.width,py=s.y*canvas.height;ctx.save();ctx.shadowColor=s.c;ctx.shadowBlur=14*a;ctx.globalAlpha=a;ctx.beginPath();ctx.arc(px,py,2.8,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill();ctx.restore();ctx.save();ctx.globalAlpha=a*0.4;ctx.strokeStyle=s.c;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(px-8,py);ctx.lineTo(px+8,py);ctx.stroke();ctx.beginPath();ctx.moveTo(px,py-8);ctx.lineTo(px,py+8);ctx.stroke();ctx.restore();});raf=requestAnimationFrame(draw);};draw();return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);};},[atmosphere]);return <canvas ref={ref} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;}
 
 // ─── BLOQUEIO MESTRE ─────────────────────────────────────────────────────────
 function RestrictedAccess({ title, text }) {
@@ -666,9 +1086,12 @@ function VigosWithLocked({value,nivel,color,onChange}){
 // ─── 🩸 STATUS PANEL ─────────────────────────────────────────────────────────
 function StatusPanel({ sheet, onChange }) {
   const activeStatus = sheet.status || {};
-  const toggle = (id) => {
-    const updated = { ...activeStatus, [id]: !activeStatus[id] };
+  const toggle = (s) => {
+    const nowActive = !activeStatus[s.id];
+    const updated = { ...activeStatus, [s.id]: nowActive };
     onChange({ ...sheet, status: updated });
+    if (nowActive) pushToast(`${sheet.nome || 'Personagem'} ficou ${s.label}`, s.icon, s.color);
+    else pushToast(`${sheet.nome || 'Personagem'} não está mais ${s.label}`, s.icon, 'rgba(200,184,160,0.8)');
   };
   return (
     <div style={{ marginBottom: 14 }}>
@@ -681,7 +1104,7 @@ function StatusPanel({ sheet, onChange }) {
           return (
             <button
               key={s.id}
-              onClick={() => toggle(s.id)}
+              onClick={() => toggle(s)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '5px 10px', borderRadius: 20,
@@ -993,7 +1416,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
 }
 
 // ─── FICHAS DOS PERSONAGENS ───────────────────────────────────────────────────
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{}});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:''});
 
 function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
@@ -1004,6 +1427,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
   const attrPoints = sheet.attrPoints || 0;
   const photoInputRef=useRef(null);
+  const [levelUpData, setLevelUpData] = useState(null);
   // ⏳ Cooldown tracker — local per session only
   const [sheetCooldowns, setSheetCooldowns] = useState({});
   const handleUpdateCooldown = (abilityId, turns) => {
@@ -1018,7 +1442,12 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
     const clamped = Math.min(30, Math.max(1, newNivel));
     if (masterMode && clamped > old) {
       const gained = clamped - old;
-      onChange({ ...sheet, nivel: clamped, attrPoints: (sheet.attrPoints || 0) + gained });
+      const updated = { ...sheet, nivel: clamped, attrPoints: (sheet.attrPoints || 0) + gained };
+      onChange(updated);
+      // 🎉 Level up screen + toast for all players
+      const color = SHEET_COLORS[sheet.classe] || '#A855F7';
+      setLevelUpData({ nome: sheet.nome || 'Personagem', nivel: clamped, color });
+      pushToast(`${sheet.nome || 'Personagem'} subiu para Nível ${clamped}!`, '⬆️', color);
     } else {
       f('nivel', clamped);
     }
@@ -1032,6 +1461,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
 
   return(
     <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`}}>
+      {levelUpData && <LevelUpScreen data={levelUpData} onClose={() => setLevelUpData(null)} />}
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
 
       {/* Photo */}
@@ -1205,6 +1635,22 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens & Inventário</div>
           <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
         </div>
+
+        {/* 🔒 Senha da ficha */}
+        <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+          {masterMode ? (
+            <div>
+              <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>🔒 Senha da Ficha</div>
+              <div style={{display:'flex',gap:8}}>
+                <input type="password" value={sheet.senha||''} onChange={e=>f('senha',e.target.value)} placeholder="Definir senha do jogador..." style={{flex:1,fontSize:13}}/>
+                {sheet.senha && <button onClick={()=>f('senha','')} style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',fontSize:11}}>Resetar</button>}
+              </div>
+              <div style={{fontSize:10,color:'#4A4050',marginTop:5,fontFamily:'Cinzel,serif'}}>O Mestre pode resetar a senha. Jogadores precisam dela para abrir a ficha.</div>
+            </div>
+          ) : (
+            sheet.senha ? <div style={{fontSize:11,color:'#4A4050',fontFamily:'Cinzel,serif',textAlign:'center'}}>🔒 Ficha protegida por senha.</div> : null
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1213,16 +1659,45 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
 function SheetsSection({masterMode}){
   const[sheets,setSheets]=useState([]);const[loaded,setLoaded]=useState(false);const[activeId,setActiveId]=useState(null);
   const[customAbilities,setCustomAbilities]=useState({});
+  const[unlockedIds,setUnlockedIds]=useState({}); // {sheetId: true} — password cleared this session
+  const[pwInput,setPwInput]=useState('');const[pwTarget,setPwTarget]=useState(null);const[pwError,setPwError]=useState(false);
+  const[combatOpen,setCombatOpen]=useState(false);
+  const[enemies,setEnemies]=useState([]);
   const saveTimeout=useRef({});
+
   useEffect(()=>{
     const u1=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});
     const u2=onSnapshot(doc(db,'config','customAbilities'),snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});});
-    return()=>{u1();u2();};
+    const u3=onSnapshot(collection(db,'enemies'),snap=>{setEnemies(snap.docs.map(d=>({id:d.id,...d.data()})));});
+    return()=>{u1();u2();u3();};
   },[]);
+
   const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
-  const add=()=>{if(sheets.length>=5)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));};
+  const add=()=>{if(sheets.length>=5)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
   const upd=(id,data)=>{if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
   const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
+
+  const handleTabClick = (s) => {
+    const sid = String(s.id);
+    if (activeId === sid) { setActiveId(null); return; }
+    // Master bypasses password
+    if (masterMode || !s.senha || unlockedIds[sid]) { setActiveId(sid); return; }
+    // Needs password
+    setPwTarget(sid); setPwInput(''); setPwError(false);
+  };
+
+  const tryPassword = () => {
+    const s = sheets.find(x => String(x.id) === pwTarget);
+    if (s && pwInput === s.senha) {
+      setUnlockedIds(prev=>({...prev,[pwTarget]:true}));
+      setActiveId(pwTarget);
+      setPwTarget(null); setPwInput('');
+    } else {
+      setPwError(true); setPwInput('');
+      setTimeout(()=>setPwError(false),600);
+    }
+  };
+
   const activeSheet=sheets.find(s=>String(s.id)===activeId);
   return(
     <div style={{maxWidth:820,margin:'0 auto',padding:'24px 14px 80px'}}>
@@ -1233,27 +1708,62 @@ function SheetsSection({masterMode}){
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(30,200,255,0.6),transparent)',margin:'12px auto 0'}}/>
       </div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+
+      {/* Password modal */}
+      {pwTarget && (
+        <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(6px)'}} onClick={()=>setPwTarget(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'rgba(10,12,28,0.98)',border:'1px solid rgba(168,85,247,0.4)',borderRadius:16,padding:28,width:300,textAlign:'center',boxShadow:'0 10px 40px rgba(0,0,0,0.8)'}}>
+            <div style={{fontSize:32,marginBottom:12}}>🔒</div>
+            <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:16,color:'#C8A8E8',marginBottom:6}}>Ficha Protegida</div>
+            <div style={{fontSize:12,color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:18}}>Digite a senha para acessar esta ficha.</div>
+            <input
+              type="password" value={pwInput} onChange={e=>setPwInput(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&tryPassword()}
+              placeholder="Senha..." autoFocus
+              style={{width:'100%',textAlign:'center',marginBottom:12,fontSize:16,border:`1px solid ${pwError?'rgba(232,25,60,0.7)':'rgba(168,85,247,0.4)'}`,transition:'border-color 0.3s'}}
+            />
+            {pwError&&<div style={{fontSize:12,color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:10}}>Senha incorreta.</div>}
+            <div style={{display:'flex',gap:8'}}>
+              <button onClick={()=>setPwTarget(null)} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12}}>Cancelar</button>
+              <button onClick={tryPassword} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid rgba(168,85,247,0.5)',background:'rgba(168,85,247,0.12)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,fontWeight:600}}>Entrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {combatOpen && <CombatMode sheets={sheets} enemies={enemies} onClose={()=>setCombatOpen(false)} masterMode={masterMode}/>}
+
       {loaded&&(<>
-        <div className="sheet-tabs-nav" style={{display:'flex',gap:6,marginBottom:20,overflowX:'auto',paddingBottom:2}}>
-          {sheets.map(s=>{
-            const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
-            const sc=SHEET_COLORS[s.classe]||cls.color;
-            const isActive=String(s.id)===activeId;
-            const hasPts = (s.attrPoints||0) > 0;
-            return(<button key={s.id} onClick={()=>setActiveId(isActive?null:String(s.id))}
-              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap',position:'relative'}}>
-              {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{cls.icon}</div>}
-              <div style={{textAlign:'left'}}>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
-                <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}</div>
-              </div>
-              {hasPts && <span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
-            </button>);
-          })}
-          {sheets.length<5&&(<button onClick={add}
-            style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>
-            + Novo Personagem
-          </button>)}
+        <div style={{display:'flex',gap:8,marginBottom:16,alignItems:'center',flexWrap:'wrap'}}>
+          <div className="sheet-tabs-nav" style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:2,flex:1}}>
+            {sheets.map(s=>{
+              const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
+              const sc=SHEET_COLORS[s.classe]||cls.color;
+              const isActive=String(s.id)===activeId;
+              const hasPts=(s.attrPoints||0)>0;
+              const locked=!masterMode&&s.senha&&!unlockedIds[String(s.id)];
+              return(<button key={s.id} onClick={()=>handleTabClick(s)}
+                style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap',position:'relative'}}>
+                {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`,filter:locked?'grayscale(60%)':'none'}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{locked?'🔒':cls.icon}</div>}
+                <div style={{textAlign:'left'}}>
+                  <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
+                  <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}{locked?' · 🔒':''}</div>
+                </div>
+                {hasPts&&<span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
+              </button>);
+            })}
+            {sheets.length<5&&(<button onClick={add}
+              style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>
+              + Novo Personagem
+            </button>)}
+          </div>
+          {/* ⚔️ Combat button */}
+          <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{
+            padding:'8px 14px',borderRadius:10,border:'1px solid rgba(232,25,60,0.35)',
+            background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
+            fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
+            display:'flex',alignItems:'center',gap:6,
+          }}>⚔️ Combate</button>
         </div>
         {activeSheet
           ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={saveCustom}/>
@@ -1807,10 +2317,29 @@ function MasterToggle({masterMode,setMasterMode}){
 export default function App(){
   const[tab,setTab]=useState('prologo');
   const[masterMode,setMasterMode]=useState(false);
+  const[atmosphere,setAtmosphere]=useState('neutro');
+
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
+
+  // Sync atmosphere from Firebase so all players see it
+  useEffect(()=>{
+    const unsub=onSnapshot(doc(db,'config','atmosphere'),snap=>{
+      if(snap.exists()) setAtmosphere(snap.data().key||'neutro');
+    });
+    return()=>unsub();
+  },[]);
+
+  const handleSetAtmosphere = async (key) => {
+    setAtmosphere(key);
+    try { await setDoc(doc(db,'config','atmosphere'),{key}); } catch(e){}
+  };
+
+  const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
+
   return(
-    <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:'#04060F',color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative'}}>
-      <StarField/>
+    <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
+      <StarField atmosphere={atmosphere}/>
+      <ToastContainer/>
       <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
           <div style={{width:80}}/>
@@ -1823,7 +2352,7 @@ export default function App(){
         </div>
       </header>
       <nav style={{position:'relative',zIndex:10,display:'flex',justifyContent:'center',gap:3,padding:'9px 14px',background:'rgba(4,6,15,0.9)',borderBottom:'1px solid rgba(255,255,255,0.04)',flexWrap:'wrap'}}>
-        {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'6px 12px',borderRadius:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',border:tab===t.id?'1px solid rgba(168,85,247,0.5)':'1px solid transparent',background:tab===t.id?'rgba(168,85,247,0.12)':'transparent',color:tab===t.id?'#C8A8E8':'#5A4A6A',transition:'all 0.2s'}}>{t.icon} {t.label}</button>))}
+        {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'6px 12px',borderRadius:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',border:tab===t.id?`1px solid ${atm.accent}66`:'1px solid transparent',background:tab===t.id?`${atm.accent}14`:'transparent',color:tab===t.id?atm.accent:'#5A4A6A',transition:'all 0.3s'}}>{t.icon} {t.label}</button>))}
       </nav>
       <main style={{flex:1,overflowY:'auto',position:'relative',zIndex:10,scrollBehavior:'smooth'}}>
         <div key={tab} style={{animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
@@ -1841,8 +2370,9 @@ export default function App(){
       </main>
 
       {/* Fixed widgets */}
-      <AmbientSoundPlayer masterMode={masterMode} />
+      <SpotifyPlayer masterMode={masterMode} />
       <DiceWidget />
+      <AtmosphereWidget masterMode={masterMode} atmosphere={atmosphere} onSet={handleSetAtmosphere}/>
     </div>
   );
 }
