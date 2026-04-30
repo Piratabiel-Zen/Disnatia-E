@@ -216,17 +216,7 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
       rolled.sort((a, b) => b.roll - a.roll);
       setInitiative(rolled);
       setTurnIdx(0);
-      const c = rolled[0];
-try {
-  await setDoc(doc(db, 'config', 'combat'), {
-    active: true, round: 1,
-    currentNome: c?.nome || '', currentColor: c?.color || '#E8193C', currentType: c?.type || 'player',
-  });
-} catch(_) {}
-      setRolling(false);
-    }, 800);
-  };
-
+};
 const nextTurn = async () => {
   const next = (turnIdx + 1) % initiative.length;
   const newRound = next === 0 ? round + 1 : round;
