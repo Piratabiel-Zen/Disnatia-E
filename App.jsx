@@ -512,14 +512,15 @@ function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
     </div>
   );
 }
-  { id: 'envenenado',   label: 'Envenenado',   icon: '☠️',  color: '#4ADE80' },
-  { id: 'sangrando',   label: 'Sangrando',    icon: '🩸',  color: '#E8193C' },
-  { id: 'atordoado',   label: 'Atordoado',    icon: '💫',  color: '#E8A020' },
-  { id: 'queimando',   label: 'Queimando',    icon: '🔥',  color: '#FF6B35' },
-  { id: 'congelado',   label: 'Congelado',    icon: '❄️',  color: '#1EC8FF' },
-  { id: 'amaldicado',  label: 'Amaldiçoado',  icon: '💀',  color: '#A855F7' },
-  { id: 'invisivel',   label: 'Invisível',    icon: '👁️',  color: '#C8B8A0' },
-  { id: 'protegido',   label: 'Protegido',    icon: '🛡️',  color: '#4ADE80' },
+const STATUS_LIST = [
+  { id: 'envenenado',  label: 'Envenenado',   icon: '\u2620',       color: '#4ADE80' },
+  { id: 'sangrando',   label: 'Sangrando',    icon: '\uD83E\uDE78', color: '#E8193C' },
+  { id: 'atordoado',   label: 'Atordoado',    icon: '\uD83D\uDCAB', color: '#E8A020' },
+  { id: 'queimando',   label: 'Queimando',    icon: '\uD83D\uDD25', color: '#FF6B35' },
+  { id: 'congelado',   label: 'Congelado',    icon: '\u2C22',       color: '#1EC8FF' },
+  { id: 'amaldicado',  label: 'Amaldicado',   icon: '\uD83D\uDC80', color: '#A855F7' },
+  { id: 'invisivel',   label: 'Invisivel',    icon: '\uD83D\uDC7B', color: '#C8B8A0' },
+  { id: 'protegido',   label: 'Protegido',    icon: '\uD83D\uDEE1', color: '#4ADE80' },
 ];
 
 const CLASSES=[
