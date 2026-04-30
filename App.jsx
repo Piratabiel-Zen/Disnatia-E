@@ -1709,29 +1709,6 @@ function SheetsSection({masterMode}){
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(30,200,255,0.6),transparent)',margin:'12px auto 0'}}/>
       </div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-
-      {/* Password modal */}
-      {pwTarget && (
-        <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(6px)'}} onClick={()=>setPwTarget(null)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'rgba(10,12,28,0.98)',border:'1px solid rgba(168,85,247,0.4)',borderRadius:16,padding:28,width:300,textAlign:'center',boxShadow:'0 10px 40px rgba(0,0,0,0.8)'}}>
-            <div style={{fontSize:32,marginBottom:12}}>🔒</div>
-            <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:16,color:'#C8A8E8',marginBottom:6}}>Ficha Protegida</div>
-            <div style={{fontSize:12,color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:18}}>Digite a senha para acessar esta ficha.</div>
-            <input
-              type="password" value={pwInput} onChange={e=>setPwInput(e.target.value)}
-              onKeyDown={e=>e.key==='Enter'&&tryPassword()}
-              placeholder="Senha..." autoFocus
-              style={{width:'100%',textAlign:'center',marginBottom:12,fontSize:16,border:`1px solid ${pwError?'rgba(232,25,60,0.7)':'rgba(168,85,247,0.4)'}`,transition:'border-color 0.3s'}}
-            />
-            {pwError&&<div style={{fontSize:12,color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:10}}>Senha incorreta.</div>}
-            <div style={{display:'flex',gap:8'}}>
-              <button onClick={()=>setPwTarget(null)} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12}}>Cancelar</button>
-              <button onClick={tryPassword} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid rgba(168,85,247,0.5)',background:'rgba(168,85,247,0.12)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,fontWeight:600}}>Entrar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {combatOpen && <CombatMode sheets={sheets} enemies={enemies} onClose={()=>setCombatOpen(false)} masterMode={masterMode}/>}
 
       {loaded&&(<>
