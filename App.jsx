@@ -423,9 +423,7 @@ function AmbientSoundPlayer({ masterMode }) {
     </div>
   );
 }
-              }}>✦ Definir Som Ambiente</button>
-            </div>
-          )}
+
         </div>
       )}
     </div>
