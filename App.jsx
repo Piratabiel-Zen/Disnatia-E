@@ -416,12 +416,6 @@ function AmbientSoundPlayer({ masterMode }) {
     </div>
   );
 }
-
-        </div>
-      )}
-    </div>
-  );
-}
 // ─── 🌦️ ATMOSPHERE WIDGET ────────────────────────────────────────────────────
 function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
   const [open, setOpen] = useState(false);
