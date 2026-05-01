@@ -411,13 +411,6 @@ function AmbientSoundPlayer({ masterMode }) {
             color: '#4ADE80', cursor: input.trim() ? 'pointer' : 'not-allowed',
             fontFamily: 'Cinzel,serif', fontSize: 12, opacity: input.trim() ? 1 : 0.4, marginBottom: videoId ? 6 : 0,
           }}>✦ Definir Música</button>
-          {videoId && (
-            <button onClick={handleRemove} style={{
-              width: '100%', padding: '6px', borderRadius: 7,
-              border: '1px solid rgba(232,25,60,0.2)', background: 'transparent',
-              color: '#6A3A3A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
-            }}>✕ Remover</button>
-          )}
         </div>
       )}
     </div>
