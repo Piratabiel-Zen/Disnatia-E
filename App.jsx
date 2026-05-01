@@ -358,11 +358,6 @@ function AmbientSoundPlayer({ masterMode }) {
     setInput(''); setOpen(false);
   };
 
-  const handleRemove = async () => {
-    await setDoc(doc(db, 'config', 'ambient'), { videoId: '', ts: 0 });
-    setVideoId(''); setOpen(false);
-  };
-
   const src = videoId
     ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&enablejsapi=1`
     : '';
@@ -1803,8 +1798,6 @@ function SheetsSection({masterMode}){
               background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
               fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
               display:'flex',alignItems:'center',gap:6,
-            }}>⚔️ Combate</button>
-          )}
         </div>
         {activeSheet
           ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={saveCustom}/>
