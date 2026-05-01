@@ -423,76 +423,6 @@ function AmbientSoundPlayer({ masterMode }) {
     </div>
   );
 }
-
-  const handleRemove = async () => {
-    await setDoc(doc(db, 'config', 'spotify'), { embed: '', raw: '' });
-    setSavedEmbed('');
-  };
-
-  const isActive = !!savedEmbed;
-
-  return (
-    <div style={{ position: 'fixed', bottom: 90, left: 24, zIndex: 100 }}>
-      {!open && (
-        <button onClick={() => setOpen(true)} title="Som Ambiente · Spotify" style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: isActive ? 'rgba(30,215,96,0.15)' : 'rgba(255,255,255,0.06)',
-          border: `1px solid ${isActive ? 'rgba(30,215,96,0.55)' : 'rgba(255,255,255,0.14)'}`,
-          color: isActive ? '#1ED760' : '#7A6A8A', fontSize: 22,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', backdropFilter: 'blur(5px)',
-          boxShadow: isActive ? '0 0 16px rgba(30,215,96,0.28)' : 'none',
-          transition: 'all 0.3s',
-        }}>🎵</button>
-      )}
-
-      {open && (
-        <div style={{
-          background: 'rgba(10,12,28,0.97)', border: '1px solid rgba(30,215,96,0.3)',
-          borderRadius: 16, padding: 16, width: 320,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>🎵</span>
-              <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#1ED760', letterSpacing: '0.1em' }}>Som Ambiente</span>
-            </div>
-            <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
-          </div>
-
-          {savedEmbed ? (
-            <>
-              <iframe
-                src={savedEmbed}
-                width="100%" height="152"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                style={{ border: 'none', borderRadius: 10, display: 'block', marginBottom: 8 }}
-              />
-              {masterMode && (
-                <button onClick={handleRemove} style={{ width: '100%', padding: '6px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>
-                  ✕ Remover música
-                </button>
-              )}
-            </>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '16px 0', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 12 }}>
-              {masterMode ? '' : 'Aguardando o Mestre definir uma playlist...'}
-            </div>
-          )}
-
-          {masterMode && (
-            <div style={{ borderTop: savedEmbed ? '1px solid rgba(255,255,255,0.07)' : 'none', paddingTop: savedEmbed ? 12 : 0, marginTop: savedEmbed ? 4 : 0 }}>
-              <label style={{ fontSize: 10, letterSpacing: '0.25em', color: 'rgba(30,215,96,0.7)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Link do Spotify</label>
-              <div style={{ fontSize: 10, color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 8, lineHeight: 1.5 }}>
-                Cole o link de uma playlist, álbum ou música do Spotify.
-              </div>
-              <input value={input} onChange={e => setInput(e.target.value)} placeholder="https://open.spotify.com/playlist/..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
-              <button onClick={handleSave} disabled={!input.trim()} style={{
-                width: '100%', padding: '8px', borderRadius: 7,
-                border: '1px solid rgba(30,215,96,0.4)', background: 'rgba(30,215,96,0.1)',
-                color: '#1ED760', cursor: input.trim() ? 'pointer' : 'not-allowed',
-                fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: input.trim() ? 1 : 0.4,
               }}>✦ Definir Som Ambiente</button>
             </div>
           )}
@@ -500,7 +430,7 @@ function AmbientSoundPlayer({ masterMode }) {
       )}
     </div>
   );
-
+}
 // ─── 🌦️ ATMOSPHERE WIDGET ────────────────────────────────────────────────────
 function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
   const [open, setOpen] = useState(false);
