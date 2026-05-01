@@ -409,167 +409,204 @@ function RestrictedAccess({ title, text }) {
 function AmbientSoundPlayer({ masterMode }) {
   const [open, setOpen] = useState(false);
   const [ytUrl, setYtUrl] = useState('');
-  const [savedUrl, setSavedUrl] = useState('');
-  const [playerVisible, setPlayerVisible] = useState(false);
-  const [volume, setVolume] = useState(40); // 0-100
+  const [videoId, setVideoId] = useState('');
+  const [playing, setPlaying] = useState(false);
+  const [volume, setVolume] = useState(50);
   const iframeRef = useRef(null);
 
+  // Sync videoId from Firebase
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
-      if (snap.exists()) setSavedUrl(snap.data().url || '');
+      if (snap.exists()) {
+        const id = snap.data().videoId || '';
+        setVideoId(prev => {
+          if (id !== prev) setPlaying(false); // reset play state on track change
+          return id;
+        });
+      }
     });
     return () => unsub();
   }, []);
 
-  // Build embed URL with volume baked in (YouTube doesn't support volume param,
-  // so we use a wrapper with Web Audio API approach via postMessage)
-  const extractVideoId = (url) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
-    return match ? match[1] : null;
+  const extractId = (url) => {
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+    return m ? m[1] : url.trim(); // allow raw ID too
   };
 
-  const buildEmbedUrl = (videoId, vol) =>
-    `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
-
-  const handleSaveUrl = async () => {
-    const videoId = extractVideoId(ytUrl);
-    if (!videoId) return;
-    const embedUrl = buildEmbedUrl(videoId, volume);
-    await setDoc(doc(db, 'config', 'ambient'), { url: embedUrl, raw: ytUrl });
-    setSavedUrl(embedUrl);
-    setYtUrl('');
-  };
-
-  // Send volume command to iframe via postMessage
-  const applyVolume = (vol) => {
-    if (!iframeRef.current) return;
+  const sendCmd = (func, args = []) => {
     try {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'setVolume', args: [vol] }),
-        '*'
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func, args }), '*'
       );
-    } catch(e) {}
+    } catch (_) {}
+  };
+
+  const handlePlay = () => {
+    setPlaying(true);
+    setOpen(false);
+    setTimeout(() => sendCmd('setVolume', [volume]), 2000);
+  };
+
+  const handleStop = () => {
+    setPlaying(false);
+    sendCmd('pauseVideo');
   };
 
   const handleVolumeChange = (e) => {
-    const vol = Number(e.target.value);
-    setVolume(vol);
-    applyVolume(vol);
+    const v = Number(e.target.value);
+    setVolume(v);
+    sendCmd('setVolume', [v]);
   };
 
-  const volumeIcon = volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
+  const handleSave = async () => {
+    const id = extractId(ytUrl.trim());
+    if (!id) return;
+    await setDoc(doc(db, 'config', 'ambient'), { videoId: id, ts: Date.now() });
+    setYtUrl('');
+    pushToast('Som ambiente atualizado!', '🎵', '#4ADE80');
+  };
+
+  const handleRemove = async () => {
+    await setDoc(doc(db, 'config', 'ambient'), { videoId: '', ts: Date.now() });
+    setVideoId('');
+    setPlaying(false);
+  };
+
+  const embedSrc = videoId
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&controls=0`
+    : '';
+
+  const volIcon = volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
 
   return (
     <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 100 }}>
-      {!open && (
-        <button onClick={() => setOpen(true)} title="Som Ambiente" style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: savedUrl ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
-          border: `1px solid ${savedUrl ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.15)'}`,
-          color: savedUrl ? '#4ADE80' : '#7A6A8A', fontSize: 22,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', backdropFilter: 'blur(5px)',
-          boxShadow: savedUrl ? '0 0 16px rgba(74,222,128,0.25)' : 'none',
-          transition: 'all 0.3s',
-          animation: savedUrl && playerVisible ? 'pulse 2.5s ease-in-out infinite' : 'none',
-        }}>🎵</button>
+      {/* Hidden autoplay iframe */}
+      {playing && embedSrc && (
+        <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+          <iframe
+            ref={iframeRef}
+            src={embedSrc}
+            width="1" height="1"
+            allow="autoplay; encrypted-media"
+            onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)}
+          />
+        </div>
       )}
 
-      {open && (
+      {/* Main button */}
+      {!open && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Play/Stop button — visible to everyone when there's music */}
+          {videoId && (
+            <button
+              onClick={playing ? handleStop : handlePlay}
+              title={playing ? 'Parar música' : 'Ouvir som ambiente'}
+              style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: playing ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${playing ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.14)'}`,
+                color: playing ? '#4ADE80' : '#7A6A8A', fontSize: 20,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', backdropFilter: 'blur(6px)',
+                boxShadow: playing ? '0 0 18px rgba(74,222,128,0.28)' : 'none',
+                transition: 'all 0.3s',
+                animation: playing ? 'pulse 2.5s ease-in-out infinite' : 'none',
+              }}
+            >{playing ? '🔊' : '🎵'}</button>
+          )}
+
+          {/* Volume slider — only when playing */}
+          {playing && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'rgba(10,12,28,0.92)', border: '1px solid rgba(74,222,128,0.25)',
+              borderRadius: 24, padding: '6px 14px',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            }}>
+              <span style={{ fontSize: 14 }}>{volIcon}</span>
+              <input
+                type="range" min={0} max={100} step={5} value={volume}
+                onChange={handleVolumeChange}
+                style={{ width: 80, accentColor: '#4ADE80', cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }}
+              />
+              <span style={{ fontSize: 10, color: '#4ADE80', fontFamily: 'Cinzel,serif', minWidth: 28 }}>{volume}%</span>
+            </div>
+          )}
+
+          {/* Settings button — master only */}
+          {masterMode && (
+            <button
+              onClick={() => setOpen(true)}
+              title="Gerenciar som ambiente"
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
+                color: '#5A5070', fontSize: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', backdropFilter: 'blur(5px)', transition: 'all 0.2s',
+              }}
+            >⚙️</button>
+          )}
+        </div>
+      )}
+
+      {/* Master panel */}
+      {open && masterMode && (
         <div style={{
-          background: 'rgba(10,12,28,0.97)', border: '1px solid rgba(74,222,128,0.3)',
-          borderRadius: 16, padding: 16, width: 300,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+          background: 'rgba(8,10,24,0.97)', border: '1px solid rgba(74,222,128,0.3)',
+          borderRadius: 16, padding: 16, width: 290,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#4ADE80', letterSpacing: '0.1em' }}>🎵 Som Ambiente</div>
             <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
 
-          {savedUrl && !playerVisible && (
-            <button onClick={() => { setPlayerVisible(true); }}
-              style={{
-                width: '100%', padding: '10px', borderRadius: 8, marginBottom: 12,
-                border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
-                color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif',
-                fontSize: 13, letterSpacing: '0.08em', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', gap: 8,
-              }}
-            >▶ Ouvir Áudio</button>
-          )}
+          <label style={{ fontSize: 9, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.65)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>
+            Link do YouTube
+          </label>
+          <input
+            value={ytUrl}
+            onChange={e => setYtUrl(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+            placeholder="https://youtube.com/watch?v=..."
+            style={{ width: '100%', fontSize: 12, marginBottom: 10 }}
+          />
+          <button
+            onClick={handleSave}
+            disabled={!ytUrl.trim()}
+            style={{
+              width: '100%', padding: '9px', borderRadius: 8,
+              border: '1px solid rgba(74,222,128,0.45)', background: 'rgba(74,222,128,0.12)',
+              color: '#4ADE80', cursor: ytUrl.trim() ? 'pointer' : 'not-allowed',
+              fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em',
+              opacity: ytUrl.trim() ? 1 : 0.4, marginBottom: videoId ? 8 : 0,
+            }}
+          >✦ Definir Música</button>
 
-          {savedUrl && playerVisible && (
-            <div style={{ marginBottom: 12 }}>
-              {/* Hidden iframe — we control via postMessage */}
-              <div style={{ borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
-                <iframe
-                  ref={iframeRef}
-                  width="100%" height="72"
-                  src={savedUrl}
-                  title="Ambient Sound"
-                  allow="autoplay; encrypted-media"
-                  style={{ border: 'none', display: 'block' }}
-                  onLoad={() => { setTimeout(() => applyVolume(volume), 1500); }}
-                />
+          {videoId && (
+            <>
+              <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(74,222,128,0.07)', border: '1px solid rgba(74,222,128,0.18)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12 }}>🎵</span>
+                <span style={{ fontSize: 11, color: 'rgba(74,222,128,0.8)', fontFamily: 'Cinzel,serif', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  ID: {videoId}
+                </span>
               </div>
-
-              {/* 🔊 Volume slider */}
-              <div style={{
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(74,222,128,0.15)',
-                borderRadius: 10, padding: '10px 12px', marginBottom: 8,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>{volumeIcon}</span>
-                  <input
-                    type="range" min={0} max={100} step={5} value={volume}
-                    onChange={handleVolumeChange}
-                    style={{
-                      flex: 1, height: 4, borderRadius: 2, cursor: 'pointer',
-                      accentColor: '#4ADE80', background: 'transparent', border: 'none', padding: 0,
-                    }}
-                  />
-                  <span style={{
-                    fontSize: 11, fontFamily: 'Cinzel,serif', color: '#4ADE80',
-                    minWidth: 28, textAlign: 'right',
-                  }}>{volume}%</span>
-                </div>
-                <div style={{ fontSize: 9, color: 'rgba(74,222,128,0.4)', marginTop: 5, fontFamily: 'Cinzel,serif', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-                  Volume · Clique em "Ouvir" antes de ajustar
-                </div>
-              </div>
-
-              <button onClick={() => setPlayerVisible(false)} style={{
-                width: '100%', padding: '5px', borderRadius: 6,
-                border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)',
-                color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
-              }}>⏹ Parar</button>
-            </div>
+              <button
+                onClick={handleRemove}
+                style={{
+                  width: '100%', padding: '6px', borderRadius: 7,
+                  border: '1px solid rgba(232,25,60,0.25)', background: 'transparent',
+                  color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                }}
+              >✕ Remover música</button>
+            </>
           )}
 
-          {masterMode && (
-            <div style={{ borderTop: savedUrl ? '1px solid rgba(255,255,255,0.07)' : 'none', paddingTop: savedUrl ? 12 : 0 }}>
-              <label style={{ fontSize: 10, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.6)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Link do YouTube</label>
-              <input value={ytUrl} onChange={e => setYtUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }}/>
-              <button onClick={handleSaveUrl} disabled={!ytUrl.trim()} style={{
-                width: '100%', padding: '8px', borderRadius: 7,
-                border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)',
-                color: '#4ADE80', cursor: ytUrl.trim() ? 'pointer' : 'not-allowed',
-                fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: ytUrl.trim() ? 1 : 0.4,
-              }}>✦ Definir Som Ambiente</button>
-              {savedUrl && (
-                <button onClick={async () => { await setDoc(doc(db, 'config', 'ambient'), { url: '', raw: '' }); setSavedUrl(''); setPlayerVisible(false); }}
-                  style={{ width: '100%', padding: '6px', borderRadius: 7, marginTop: 6, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>
-                  ✕ Remover áudio
-                </button>
-              )}
-            </div>
-          )}
-
-          {!masterMode && !savedUrl && (
-            <div style={{ textAlign: 'center', padding: '12px 0', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 12 }}>
-              Aguardando o Mestre definir um som ambiente...
-            </div>
-          )}
+          <div style={{ marginTop: 12, fontSize: 10, color: '#4A4050', fontFamily: 'Cinzel,serif', lineHeight: 1.6 }}>
+            Todos os jogadores verão o botão 🎵 e poderão clicar para ouvir.
+          </div>
         </div>
       )}
     </div>
