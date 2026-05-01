@@ -174,7 +174,6 @@ async function pushToast(msg, icon='✦', color='#C8A8E8') {
 
 // ─── ✨ LEVEL UP SCREEN ───────────────────────────────────────────────────────
 function LevelUpScreen({ data, onClose }) {
-function LevelUpScreen({ data, onClose }) {
   const [phase, setPhase] = useState('burst');
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('show'), 400);
@@ -429,15 +428,6 @@ function AmbientSoundPlayer({ masterMode }) {
     </div>
   );
 }
-
-  const handleSave = async () => {
-    const info = extractSpotifyId(input);
-    if (!info) return;
-    const embed = `https://open.spotify.com/embed/${info.type}/${info.id}?utm_source=generator&theme=0`;
-    await setDoc(doc(db, 'config', 'spotify'), { embed, raw: input });
-    setSavedEmbed(embed);
-    setInput('');
-  };
 
   const handleRemove = async () => {
     await setDoc(doc(db, 'config', 'spotify'), { embed: '', raw: '' });
@@ -1807,20 +1797,14 @@ function SheetsSection({masterMode}){
             </button>)}
           </div>
           {/* ⚔️ Combat button */}
-          <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{
-            padding:'8px 14px',borderRadius:10,border:'1px solid rgba(232,25,60,0.35)',
-            background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
-            fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
-            display:'flex',alignItems:'center',gap:6,
-          }}>⚔️ Combate {/* antes era sempre visível — agora só para o mestre */}
 {masterMode && (
-  <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{
-    padding:'8px 14px',borderRadius:10,border:'1px solid rgba(232,25,60,0.35)',
-    background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
-    fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
-    display:'flex',alignItems:'center',gap:6,
-  }}>⚔️ Combate</button>
-)}</button>
+            <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{
+              padding:'8px 14px',borderRadius:10,border:'1px solid rgba(232,25,60,0.35)',
+              background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',
+              fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,
+              display:'flex',alignItems:'center',gap:6,
+            }}>⚔️ Combate</button>
+          )}
         </div>
         {activeSheet
           ?<SheetFull sheet={activeSheet} onChange={d=>upd(activeSheet.id,d)} masterMode={masterMode} customAbilities={customAbilities} onSaveCustomAbilities={saveCustom}/>
