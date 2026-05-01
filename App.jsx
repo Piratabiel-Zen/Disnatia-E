@@ -500,7 +500,6 @@ function AmbientSoundPlayer({ masterMode }) {
       )}
     </div>
   );
-}
 
 // ─── 🌦️ ATMOSPHERE WIDGET ────────────────────────────────────────────────────
 function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
