@@ -174,163 +174,151 @@ async function pushToast(msg, icon='✦', color='#C8A8E8') {
 
 // ─── ✨ LEVEL UP SCREEN ───────────────────────────────────────────────────────
 function LevelUpScreen({ data, onClose }) {
-  // data = { nome, nivel, color }
-  const [phase, setPhase] = useState('burst'); // burst → show → fade
+function LevelUpScreen({ data, onClose }) {
+  const [phase, setPhase] = useState('burst');
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('show'), 400);
     const t2 = setTimeout(() => setPhase('fade'), 4000);
     const t3 = setTimeout(() => onClose(), 4600);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
-
   const color = data.color || '#A855F7';
   const particles = Array.from({ length: 24 }, (_, i) => {
     const angle = (i / 24) * Math.PI * 2;
     const dist = 80 + Math.random() * 120;
     return { px: `${Math.cos(angle) * dist}px`, py: `${Math.sin(angle) * dist}px`, delay: Math.random() * 0.6 };
   });
-
-// ─── ⚔️ MODO COMBATE ─────────────────────────────────────────────────────────
-function CombatMode({ sheets, enemies, onClose, masterMode }) {
-  const [round, setRound] = useState(1);
-  const [turnIdx, setTurnIdx] = useState(0);
-  const [initiative, setInitiative] = useState([]); // [{id, nome, type, hp, maxHp, color, foto}]
-  const [rolling, setRolling] = useState(false);
-
-  // Build combatant list
-  useEffect(() => {
-    const combatants = [
-      ...sheets.map(s => {
-        const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
-        return { id: 'p_' + s.id, nome: s.nome || 'Personagem', type: 'player', hp: s.hp || 0, maxHp: Math.max(s.hp || 1, 1), color: SHEET_COLORS[s.classe] || cls.color, foto: s.foto, roll: 0 };
-      }),
-      ...enemies.map(e => ({ id: 'e_' + e.id, nome: e.nome || 'Inimigo', type: 'enemy', hp: e.hp || 0, maxHp: Math.max(e.hp || 1, 1), color: '#FF4444', foto: e.foto, roll: 0 })),
-    ];
-    setInitiative(combatants);
-  }, [sheets, enemies]);
-
-  const rollInitiative = () => {
-    setRolling(true);
-    setTimeout(() => {
-      const rolled = initiative.map(c => ({ ...c, roll: Math.floor(Math.random() * 20) + 1 }));
-      rolled.sort((a, b) => b.roll - a.roll);
-      setInitiative(rolled);
-      setTurnIdx(0);
-      
-const nextTurn = async () => {
-  const next = (turnIdx + 1) % initiative.length;
-  const newRound = next === 0 ? round + 1 : round;
-  if (next === 0) setRound(newRound);
-  setTurnIdx(next);
-  const c = initiative[next];
-  try {
-    await setDoc(doc(db, 'config', 'combat'), {
-      active: true, round: newRound,
-      currentNome: c?.nome || '', currentColor: c?.color || '#E8193C', currentType: c?.type || 'player',
-    });
-  } catch(_) {}
-};
-
-  const current = initiative[turnIdx];
-
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: 'rgba(4,6,15,0.97)', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(4px)' }}>
-      {/* Header */}
-      <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(232,25,60,0.25)', background: 'rgba(232,25,60,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 22 }}>⚔️</span>
-          <div>
-            <div style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 16, color: '#E8193C', fontWeight: 700 }}>Modo Combate</div>
-            <div style={{ fontSize: 11, color: 'rgba(232,25,60,0.6)', fontFamily: 'Cinzel,serif', letterSpacing: '0.15em' }}>Rodada {round}</div>
+    <div style={{ position:'fixed',inset:0,zIndex:9998,background:phase==='fade'?'rgba(0,0,0,0)':'rgba(0,0,0,0.88)',display:'flex',alignItems:'center',justifyContent:'center',transition:'background 0.6s',pointerEvents:phase==='fade'?'none':'auto' }} onClick={onClose}>
+      <div style={{ position:'relative',textAlign:'center' }}>
+        {particles.map((p,i)=>(
+          <div key={i} style={{ position:'absolute',top:'50%',left:'50%',width:6,height:6,borderRadius:'50%',background:color,boxShadow:`0 0 6px ${color}`,'--px':p.px,'--py':p.py,animation:`particleFly 1.2s ease-out ${p.delay}s forwards` }}/>
+        ))}
+        <div style={{ animation:'levelUpBurst 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards',opacity:phase==='fade'?0:1,transition:'opacity 0.6s' }}>
+          <div style={{ fontSize:14,letterSpacing:'0.5em',color:`${color}AA`,fontFamily:'Cinzel,serif',marginBottom:16,textTransform:'uppercase' }}>Ascensão Cósmica</div>
+          <div style={{ fontFamily:'Cinzel Decorative,serif',fontSize:36,fontWeight:900,color,textShadow:`0 0 40px ${color}, 0 0 80px ${color}66`,marginBottom:12,lineHeight:1.2 }}>{data.nome}</div>
+          <div style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:16,marginBottom:20 }}>
+            <div style={{ width:60,height:1,background:`linear-gradient(90deg,transparent,${color})` }}/>
+            <div style={{ fontFamily:'Cinzel,serif',fontSize:22,color:'#E8D8C0',letterSpacing:'0.1em' }}>Nível {data.nivel}</div>
+            <div style={{ width:60,height:1,background:`linear-gradient(90deg,${color},transparent)` }}/>
+          </div>
+          <div style={{ fontSize:13,color:'rgba(255,255,255,0.4)',fontFamily:'Cinzel,serif',letterSpacing:'0.2em' }}>
+            ✦ {data.nivel<=3?'Aprendiz Cósmico':data.nivel<=6?'Portador do Destino':data.nivel<=9?'Arauto do Fim':data.nivel<=14?'Guardião Estelar':data.nivel<=19?'Ascendente':data.nivel<=24?'Transcendente':data.nivel<=29?'Arauto Supremo':'Lenda Cósmica'} ✦
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {masterMode && (
-            <button onClick={rollInitiative} disabled={rolling} style={{
-              padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(168,85,247,0.5)',
-              background: 'rgba(168,85,247,0.12)', color: '#C8A8E8', cursor: rolling ? 'not-allowed' : 'pointer',
-              fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em',
-            }}>{rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}</button>
-          )}
-          {masterMode && initiative.length > 0 && (
-            <button onClick={nextTurn} style={{
-              padding: '7px 18px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.5)',
-              background: 'rgba(232,25,60,0.14)', color: '#FF6666', cursor: 'pointer',
-              fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', fontWeight: 700,
-              animation: 'combatPulse 2s ease-in-out infinite',
-            }}>Próximo Turno ▶</button>
-          )}
-          <button onClick={handleClose} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✕ Fechar</button>
-        </div>
-      </div>
-
-      {/* Current turn banner */}
-      {current && (
-        <div style={{ padding: '10px 20px', background: `${current.color}18`, borderBottom: `1px solid ${current.color}33`, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 18, animation: 'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
-          <span style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: current.color, fontWeight: 700, letterSpacing: '0.06em' }}>Vez de: {current.nome}</span>
-          {current.roll > 0 && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>Iniciativa: {current.roll}</span>}
-        </div>
-      )}
-
-      {/* Combatants grid */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 80px' }}>
-        {initiative.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13 }}>
-            Nenhum combatente carregado. Abra as fichas primeiro.
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            {initiative.map((c, idx) => {
-              const isActive = idx === turnIdx;
-              const hpPct = Math.max(0, Math.min(100, (c.hp / Math.max(1, c.maxHp)) * 100));
-              const hpColor = hpPct > 60 ? '#4ADE80' : hpPct > 30 ? '#E8A020' : '#E8193C';
-              return (
-                <div key={c.id} style={{
-                  border: `1px solid ${isActive ? c.color + '88' : c.color + '28'}`,
-                  borderRadius: 12, background: isActive ? `${c.color}12` : 'rgba(8,10,22,0.9)',
-                  overflow: 'hidden', transition: 'all 0.3s',
-                  boxShadow: isActive ? `0 0 20px ${c.color}44` : 'none',
-                }}>
-                 {c.foto && <img src={c.foto} alt="" style={{ width: '100%', height: 140, objectFit: 'cover',
-  objectPosition: 'top', display: 'block',
-  filter: c.hp <= 0 ? 'grayscale(100%) brightness(0.4)' : 'none',
-  transition: 'filter 0.5s',
-}}/>}
-{!c.foto && (
-  <div style={{ width: '100%', height: 60, display: 'flex', alignItems: 'center',
-    justifyContent: 'center', fontSize: 28, background: `${c.color}12`,
-    borderBottom: `1px solid ${c.color}22`,
-  }}>
-    {c.type === 'enemy' ? '💀' : '⚔️'}
-  </div>
-)}
-                  <div style={{ padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                      {isActive && <span style={{ fontSize: 10, color: c.color }}>▶</span>}
-                      <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: isActive ? c.color : '#C8B8A0', fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</span>
-                      {c.type === 'enemy' && <span style={{ fontSize: 8, color: '#FF4444', fontFamily: 'Cinzel,serif', background: 'rgba(255,68,68,0.12)', padding: '1px 5px', borderRadius: 3 }}>INIMIGO</span>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, color: hpColor, fontFamily: 'Cinzel,serif', fontWeight: 700, minWidth: 20 }}>{c.hp}</span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>HP</span>
-                      {c.roll > 0 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginLeft: 'auto', fontFamily: 'Cinzel,serif' }}>🎲 {c.roll}</span>}
-                    </div>
-                    <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }}>
-                      <div style={{ height: '100%', width: `${hpPct}%`, background: hpColor, borderRadius: 2, transition: 'width 0.4s, background 0.4s' }} />
-                    </div>
-                    {c.hp <= 0 && <div style={{ marginTop: 5, fontSize: 10, color: '#E8193C', fontFamily: 'Cinzel,serif', textAlign: 'center' }}>💀 Abatido</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );
 }
+// ─── ⚔️ MODO COMBATE ─────────────────────────────────────────────────────────
+function CombatMode({ sheets, enemies, onClose, masterMode }) {
+  const [round, setRound] = useState(1);
+  const [turnIdx, setTurnIdx] = useState(0);
+  const [initiative, setInitiative] = useState([]);
+  const [rolling, setRolling] = useState(false);
 
+  useEffect(() => {
+    const combatants = [
+      ...sheets.map(s => {
+        const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+        return { id:'p_'+s.id, nome:s.nome||'Personagem', type:'player', hp:s.hp||0, maxHp:Math.max(s.hp||1,1), color:SHEET_COLORS[s.classe]||cls.color, foto:s.foto, roll:0 };
+      }),
+      ...enemies.map(e => ({ id:'e_'+e.id, nome:e.nome||'Inimigo', type:'enemy', hp:e.hp||0, maxHp:Math.max(e.hp||1,1), color:'#FF4444', foto:e.foto, roll:0 })),
+    ];
+    setInitiative(combatants);
+  }, [sheets, enemies]);
+
+  const handleClose = async () => {
+    try { await setDoc(doc(db,'config','combat'),{ active:false }); } catch(_) {}
+    onClose();
+  };
+
+  const rollInitiative = async () => {
+    setRolling(true);
+    setTimeout(async () => {
+      const rolled = initiative.map(c => ({ ...c, roll: Math.floor(Math.random()*20)+1 }));
+      rolled.sort((a,b) => b.roll - a.roll);
+      setInitiative(rolled);
+      setTurnIdx(0);
+      setRolling(false);
+      const c = rolled[0];
+      try { await setDoc(doc(db,'config','combat'), { active:true, round:1, currentNome:c?.nome||'', currentColor:c?.color||'#E8193C', currentType:c?.type||'player' }); } catch(_) {}
+    }, 800);
+  };
+
+  const nextTurn = async () => {
+    const next = (turnIdx + 1) % initiative.length;
+    const newRound = next === 0 ? round + 1 : round;
+    if (next === 0) setRound(newRound);
+    setTurnIdx(next);
+    const c = initiative[next];
+    try { await setDoc(doc(db,'config','combat'), { active:true, round:newRound, currentNome:c?.nome||'', currentColor:c?.color||'#E8193C', currentType:c?.type||'player' }); } catch(_) {}
+  };
+
+  const current = initiative[turnIdx];
+
+  return (
+    <div style={{ position:'fixed',inset:0,zIndex:9990,background:'rgba(4,6,15,0.97)',display:'flex',flexDirection:'column',backdropFilter:'blur(4px)' }}>
+      <div style={{ padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid rgba(232,25,60,0.25)',background:'rgba(232,25,60,0.06)' }}>
+        <div style={{ display:'flex',alignItems:'center',gap:14 }}>
+          <span style={{ fontSize:22 }}>⚔️</span>
+          <div>
+            <div style={{ fontFamily:'Cinzel Decorative,serif',fontSize:16,color:'#E8193C',fontWeight:700 }}>Modo Combate</div>
+            <div style={{ fontSize:11,color:'rgba(232,25,60,0.6)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em' }}>Rodada {round}</div>
+          </div>
+        </div>
+        <div style={{ display:'flex',gap:10,alignItems:'center' }}>
+          {masterMode && <button onClick={rollInitiative} disabled={rolling} style={{ padding:'7px 16px',borderRadius:8,border:'1px solid rgba(168,85,247,0.5)',background:'rgba(168,85,247,0.12)',color:'#C8A8E8',cursor:rolling?'not-allowed':'pointer',fontFamily:'Cinzel,serif',fontSize:12 }}>{rolling?'🎲 Rolando...':'🎲 Rolar Iniciativa'}</button>}
+          {masterMode && initiative.length>0 && <button onClick={nextTurn} style={{ padding:'7px 18px',borderRadius:8,border:'1px solid rgba(232,25,60,0.5)',background:'rgba(232,25,60,0.14)',color:'#FF6666',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,animation:'combatPulse 2s ease-in-out infinite' }}>Próximo Turno ▶</button>}
+          <button onClick={handleClose} style={{ padding:'7px 14px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12 }}>✕ Fechar</button>
+        </div>
+      </div>
+      {current && (
+        <div style={{ padding:'10px 20px',background:`${current.color}18`,borderBottom:`1px solid ${current.color}33`,display:'flex',alignItems:'center',gap:12 }}>
+          <span style={{ fontSize:18,animation:'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
+          <span style={{ fontFamily:'Cinzel,serif',fontSize:14,color:current.color,fontWeight:700 }}>Vez de: {current.nome}</span>
+          {current.roll>0 && <span style={{ fontSize:11,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif' }}>Iniciativa: {current.roll}</span>}
+        </div>
+      )}
+      <div style={{ flex:1,overflowY:'auto',padding:'16px 16px 80px' }}>
+        {initiative.length===0
+          ? <div style={{ textAlign:'center',padding:60,color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13 }}>Nenhum combatente carregado. Abra as fichas primeiro.</div>
+          : <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12 }}>
+              {initiative.map((c,idx) => {
+                const isActive = idx===turnIdx;
+                const hpPct = Math.max(0,Math.min(100,(c.hp/Math.max(1,c.maxHp))*100));
+                const hpColor = hpPct>60?'#4ADE80':hpPct>30?'#E8A020':'#E8193C';
+                return (
+                  <div key={c.id} style={{ border:`1px solid ${isActive?c.color+'88':c.color+'28'}`,borderRadius:12,background:isActive?`${c.color}12`:'rgba(8,10,22,0.9)',overflow:'hidden',transition:'all 0.3s',boxShadow:isActive?`0 0 20px ${c.color}44`:'none' }}>
+                    {c.foto
+                      ? <img src={c.foto} alt="" style={{ width:'100%',height:140,objectFit:'cover',objectPosition:'top',display:'block',filter:c.hp<=0?'grayscale(100%) brightness(0.4)':'none',transition:'filter 0.5s' }}/>
+                      : <div style={{ width:'100%',height:60,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,background:`${c.color}12`,borderBottom:`1px solid ${c.color}22` }}>{c.type==='enemy'?'💀':'⚔️'}</div>
+                    }
+                    <div style={{ padding:'10px 12px' }}>
+                      <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:6 }}>
+                        {isActive && <span style={{ fontSize:10,color:c.color }}>▶</span>}
+                        <span style={{ fontFamily:'Cinzel,serif',fontSize:12,color:isActive?c.color:'#C8B8A0',fontWeight:700,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{c.nome}</span>
+                        {c.type==='enemy' && <span style={{ fontSize:8,color:'#FF4444',fontFamily:'Cinzel,serif',background:'rgba(255,68,68,0.12)',padding:'1px 5px',borderRadius:3 }}>INIMIGO</span>}
+                      </div>
+                      <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:4 }}>
+                        <span style={{ fontSize:11,color:hpColor,fontFamily:'Cinzel,serif',fontWeight:700,minWidth:20 }}>{c.hp}</span>
+                        <span style={{ fontSize:10,color:'rgba(255,255,255,0.2)' }}>HP</span>
+                        {c.roll>0 && <span style={{ fontSize:10,color:'rgba(255,255,255,0.25)',marginLeft:'auto',fontFamily:'Cinzel,serif' }}>🎲 {c.roll}</span>}
+                      </div>
+                      <div style={{ height:4,background:'rgba(255,255,255,0.07)',borderRadius:2 }}>
+                        <div style={{ height:'100%',width:`${hpPct}%`,background:hpColor,borderRadius:2,transition:'width 0.4s,background 0.4s' }}/>
+                      </div>
+                      {c.hp<=0 && <div style={{ marginTop:5,fontSize:10,color:'#E8193C',fontFamily:'Cinzel,serif',textAlign:'center' }}>💀 Abatido</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+        }
+      </div>
+    </div>
+  );
+}
 // ─── 🎵 SPOTIFY PLAYER ───────────────────────────────────────────────────────
 function AmbientSoundPlayer({ masterMode }) {
   const [videoId, setVideoId] = useState('');
@@ -382,12 +370,13 @@ function AmbientSoundPlayer({ masterMode }) {
 
   return (
     <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 100 }}>
-      {src && (
-        <iframe ref={iframeRef} src={src} width="1" height="1"
-          allow="autoplay; encrypted-media"
-          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
-          onLoad={() => setTimeout(() => send('setVolume', [80]), 1500)}
-        />
+       {src && (
+        <div style={{ position:'fixed',bottom:-300,left:-300,width:1,height:1,overflow:'hidden',opacity:0,pointerEvents:'none' }}>
+          <iframe ref={iframeRef} src={src} width="1" height="1"
+            allow="autoplay; encrypted-media"
+            onLoad={() => setTimeout(() => send('setVolume', [80]), 1500)}
+          />
+        </div>
       )}
       {!open && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -440,16 +429,6 @@ function AmbientSoundPlayer({ masterMode }) {
     </div>
   );
 }
-
-  const extractSpotifyId = (url) => {
-    // supports playlist, album, track
-    const m = url.match(/spotify\.com\/(playlist|album|track|artist)\/([a-zA-Z0-9]+)/);
-    if (m) return { type: m[1], id: m[2] };
-    // spotify:playlist:xxx
-    const m2 = url.match(/spotify:(playlist|album|track|artist):([a-zA-Z0-9]+)/);
-    if (m2) return { type: m2[1], id: m2[2] };
-    return null;
-  };
 
   const handleSave = async () => {
     const info = extractSpotifyId(input);
@@ -2385,6 +2364,13 @@ const TABS=[
   {id:'mapamundi',label:'Mapa Múndi',icon:'🌍'},
 ];
 
+function MasterToggle({masterMode,setMasterMode}){
+  const[showInput,setShowInput]=useState(false);const[pin,setPin]=useState('');const[shake,setShake]=useState(false);
+  const tryUnlock=()=>{if(pin.toLowerCase()===MASTER_PIN){setMasterMode(true);setShowInput(false);setPin('');}else{setShake(true);setTimeout(()=>setShake(false),500);setPin('');}};
+  if(masterMode)return(<button onClick={()=>setMasterMode(false)} style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.12)',color:'#E8193C',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',animation:'pulse 2s ease-in-out infinite'}}>🔴 MESTRE</button>);
+  return(<div style={{display:'flex',alignItems:'center',gap:6}}>{showInput&&(<div style={{display:'flex',gap:5}}><input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()} placeholder="senha..." autoFocus style={{width:80,padding:'3px 7px',fontSize:12,border:`1px solid ${shake?'rgba(232,25,60,0.6)':'rgba(255,255,255,0.15)'}`,transition:'border-color 0.3s'}}/><button onClick={tryUnlock} style={{padding:'3px 8px',borderRadius:5,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontSize:11}}>✓</button><button onClick={()=>{setShowInput(false);setPin('');}} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#5A5070',cursor:'pointer',fontSize:11}}>✕</button></div>)}{!showInput&&(<button onClick={()=>setShowInput(true)} style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#5A5070',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Mestre</button>)}</div>);
+}
+
 function PlayerCombatBanner() {
   const [combat, setCombat] = useState({ active: false });
   useEffect(() => {
@@ -2396,24 +2382,13 @@ function PlayerCombatBanner() {
   if (!combat.active) return null;
   const color = combat.currentColor || '#E8193C';
   return (
-    <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
-      background: 'rgba(6,8,20,0.97)', borderTop: `2px solid ${color}55`,
-      padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12,
-      backdropFilter: 'blur(10px)', animation: 'pageTurn 0.4s ease',
-    }}>
-      <span style={{ animation: 'turnArrow 0.6s ease-in-out infinite alternate', fontSize: 16 }}>▶</span>
-      <div style={{ flex: 1 }}>
-        <span style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.28)', fontFamily: 'Cinzel,serif' }}>
-          RODADA {combat.round || 1} · VEZ DE{' '}
-        </span>
-        <span style={{ fontSize: 14, fontFamily: 'Cinzel,serif', fontWeight: 700, color }}>
-          {combat.currentNome || '...'}
-        </span>
+    <div style={{ position:'fixed',bottom:0,left:0,right:0,zIndex:200,background:'rgba(6,8,20,0.97)',borderTop:`2px solid ${color}55`,padding:'10px 20px',display:'flex',alignItems:'center',gap:12,backdropFilter:'blur(10px)',animation:'pageTurn 0.4s ease' }}>
+      <span style={{ animation:'turnArrow 0.6s ease-in-out infinite alternate',fontSize:16 }}>▶</span>
+      <div style={{ flex:1 }}>
+        <span style={{ fontSize:10,letterSpacing:'0.22em',color:'rgba(255,255,255,0.28)',fontFamily:'Cinzel,serif' }}>RODADA {combat.round||1} · VEZ DE </span>
+        <span style={{ fontSize:14,fontFamily:'Cinzel,serif',fontWeight:700,color }}>{combat.currentNome||'...'}</span>
       </div>
-      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'Cinzel,serif', letterSpacing: '0.15em' }}>
-        {combat.currentType === 'enemy' ? 'INIMIGO' : 'ALIADO'}
-      </span>
+      <span style={{ fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em' }}>{combat.currentType==='enemy'?'INIMIGO':'ALIADO'}</span>
     </div>
   );
 }
