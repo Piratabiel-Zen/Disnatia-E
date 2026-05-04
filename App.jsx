@@ -1966,7 +1966,6 @@ export default function App(){
 
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
 
-  // Mantendo o sincronismo de atmosfera
   useEffect(()=>{
     const unsub=onSnapshot(doc(db,'config','atmosphere'),snap=>{
       if(snap.exists()) setAtmosphere(snap.data().key||'neutro');
@@ -1987,7 +1986,6 @@ export default function App(){
       <ToastContainer/>
       <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
-          {/* Espaçador para o widget no desktop/mobile não sobrepor o título */}
           <div style={{width:80}}/>
           <div style={{textAlign:'center',flex:1}}>
             <div className="header-sub" style={{fontSize:9,letterSpacing:'0.5em',color:'#4A3A5A',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Cosmum · O Livro da Mandíbula · Vigor Cósmico</div>
