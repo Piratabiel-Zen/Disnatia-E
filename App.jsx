@@ -1426,69 +1426,6 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
     </div>
   );
 }
-function EnemyCard({enemy,onChange,onDelete,masterMode}){
-  const f=(k,v)=>onChange({...enemy,[k]:v});
-  const hp=enemy.hp||0;const hpBonus=enemy.hp_bonus||0;
-  const hpBarPct=Math.min(100,(hp/Math.max(50,hp))*100);
-  const hpBonusBarPct=Math.min(100,(hpBonus/Math.max(20,hpBonus))*100);
-  const photoRef=useRef(null);
-  const handlePhoto=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const c=await compressImage(ev.target.result,800,800,0.72);f('foto',c);};reader.readAsDataURL(file);};
-  const attrBonus=val=>Math.floor(val/2);
-  return(
-    <div style={{border:`1px solid ${ENEMY_COLOR}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18,boxShadow:`0 4px 24px ${ENEMY_GLOW}`}}>
-      <div style={{height:3,background:`linear-gradient(90deg,${ENEMY_COLOR},transparent)`}}/>
-      <div onClick={()=>photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
-        {enemy.foto?<img src={enemy.foto} alt="inimigo" style={{width:'100%',maxHeight:300,objectFit:'cover',objectPosition:'center top',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'20px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>Toque para adicionar imagem do inimigo</span></div>}
-        {enemy.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.85))',pointerEvents:'none'}}/>}
-        {enemy.foto&&enemy.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:16,fontWeight:700,color:ENEMY_COLOR,textShadow:'0 0 14px rgba(255,68,68,0.5)'}}>{enemy.nome}</div>}
-        <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
-      </div>
-      <div style={{padding:'16px 18px'}}>
-        <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
-          <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
-          <div style={{flex:1,minWidth:110}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label><input value={enemy.tipo} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/></div>
-          {masterMode&&<button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>}
-        </div>
-        <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
-          <div style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
-            <div style={{display:'flex',alignItems:'center',gap:7}}>
-              <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
-              <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:36,textAlign:'center'}}>{hp}</span>
-              <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
-            </div>
-            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${hpBarPct}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
-            <div style={{marginTop:8,paddingTop:7,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-              <div style={{fontSize:9,letterSpacing:'0.2em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Vida Bônus</div>
-              <div style={{display:'flex',alignItems:'center',gap:5}}>
-                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:20,height:20,borderRadius:4,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:13,lineHeight:1,padding:0}}>−</button>
-                <span style={{fontFamily:'Cinzel,serif',fontSize:14,fontWeight:700,color:'#4ADE80',minWidth:20,textAlign:'center'}}>{hpBonus}</span>
-                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:20,height:20,borderRadius:4,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:13,lineHeight:1,padding:0}}>+</button>
-              </div>
-            </div>
-          </div>
-          <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
-            <VigosDots value={enemy.vigos||0} max={10} color={ENEMY_COLOR} onChange={v=>f('vigos',v)}/>
-          </div>
-          <div style={{background:`${ENEMY_COLOR}07`,border:`1px solid ${ENEMY_COLOR}22`,borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Alcance</div>
-            <input value={enemy.alcance||''} onChange={e=>f('alcance',e.target.value)} placeholder="Ex: 2m, 10m..." style={{width:'100%'}}/>
-          </div>
-        </div>
-        <StatusPanel sheet={enemy} onChange={onChange}/>
-        <div style={{marginBottom:15}}>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
-          <div style={{display:'flex',flexDirection:'column',gap:7}}>
-            {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)} masterMode={true}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
-          </div>
-        </div>
-        <EnemyHabilidadesPanel enemy={enemy} onChange={onChange}/>
-        <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div><textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados..." rows={3} style={{width:'100%',resize:'vertical'}}/></div>
-      </div>
-    </div>
-  );
-}
 
 function EnemyCard({enemy,onChange,onDelete,masterMode}){
   const f=(k,v)=>onChange({...enemy,[k]:v});
@@ -1966,6 +1903,7 @@ export default function App(){
 
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
 
+  // Mantendo o sincronismo de atmosfera
   useEffect(()=>{
     const unsub=onSnapshot(doc(db,'config','atmosphere'),snap=>{
       if(snap.exists()) setAtmosphere(snap.data().key||'neutro');
@@ -1986,6 +1924,7 @@ export default function App(){
       <ToastContainer/>
       <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
+          {/* Espaçador para o widget no desktop/mobile não sobrepor o título */}
           <div style={{width:80}}/>
           <div style={{textAlign:'center',flex:1}}>
             <div className="header-sub" style={{fontSize:9,letterSpacing:'0.5em',color:'#4A3A5A',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Cosmum · O Livro da Mandíbula · Vigor Cósmico</div>
