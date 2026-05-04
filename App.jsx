@@ -1340,6 +1340,11 @@ function SheetsSection({masterMode}){
   );
 }
 
+const ENEMY_COLOR='#FF4444';
+const ENEMY_GLOW='rgba(255,68,68,0.18)';
+const newEnemySkill=()=>({id:Date.now()+Math.random(),nome:'',descricao:'',dano:'',custo:0,cooldown:'—',tipoHab:'normal'});
+const newEnemy=id=>({id,nome:'',tipo:'',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,foto:'',habilidades:[newEnemySkill()],notas:'',status:{}});
+
 function EnemyHabilidadesPanel({ enemy, onChange }) {
   const habilidades = enemy.habilidades || [];
   const [open, setOpen] = useState(false);
@@ -1421,7 +1426,239 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
     </div>
   );
 }
+function EnemyCard({enemy,onChange,onDelete,masterMode}){
+  const f=(k,v)=>onChange({...enemy,[k]:v});
+  const hp=enemy.hp||0;const hpBonus=enemy.hp_bonus||0;
+  const hpBarPct=Math.min(100,(hp/Math.max(50,hp))*100);
+  const hpBonusBarPct=Math.min(100,(hpBonus/Math.max(20,hpBonus))*100);
+  const photoRef=useRef(null);
+  const handlePhoto=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const c=await compressImage(ev.target.result,800,800,0.72);f('foto',c);};reader.readAsDataURL(file);};
+  const attrBonus=val=>Math.floor(val/2);
+  return(
+    <div style={{border:`1px solid ${ENEMY_COLOR}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18,boxShadow:`0 4px 24px ${ENEMY_GLOW}`}}>
+      <div style={{height:3,background:`linear-gradient(90deg,${ENEMY_COLOR},transparent)`}}/>
+      <div onClick={()=>photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
+        {enemy.foto?<img src={enemy.foto} alt="inimigo" style={{width:'100%',maxHeight:300,objectFit:'cover',objectPosition:'center top',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'20px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>Toque para adicionar imagem do inimigo</span></div>}
+        {enemy.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.85))',pointerEvents:'none'}}/>}
+        {enemy.foto&&enemy.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:16,fontWeight:700,color:ENEMY_COLOR,textShadow:'0 0 14px rgba(255,68,68,0.5)'}}>{enemy.nome}</div>}
+        <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
+      </div>
+      <div style={{padding:'16px 18px'}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
+          <div style={{flex:1,minWidth:110}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label><input value={enemy.tipo} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/></div>
+          {masterMode&&<button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>}
+        </div>
+        <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
+          <div style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
+            <div style={{display:'flex',alignItems:'center',gap:7}}>
+              <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:36,textAlign:'center'}}>{hp}</span>
+              <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+            </div>
+            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${hpBarPct}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
+            <div style={{marginTop:8,paddingTop:7,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+              <div style={{fontSize:9,letterSpacing:'0.2em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Vida Bônus</div>
+              <div style={{display:'flex',alignItems:'center',gap:5}}>
+                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:20,height:20,borderRadius:4,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:13,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:14,fontWeight:700,color:'#4ADE80',minWidth:20,textAlign:'center'}}>{hpBonus}</span>
+                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:20,height:20,borderRadius:4,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:13,lineHeight:1,padding:0}}>+</button>
+              </div>
+            </div>
+          </div>
+          <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosDots value={enemy.vigos||0} max={10} color={ENEMY_COLOR} onChange={v=>f('vigos',v)}/>
+          </div>
+          <div style={{background:`${ENEMY_COLOR}07`,border:`1px solid ${ENEMY_COLOR}22`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Alcance</div>
+            <input value={enemy.alcance||''} onChange={e=>f('alcance',e.target.value)} placeholder="Ex: 2m, 10m..." style={{width:'100%'}}/>
+          </div>
+        </div>
+        <StatusPanel sheet={enemy} onChange={onChange}/>
+        <div style={{marginBottom:15}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+          <div style={{display:'flex',flexDirection:'column',gap:7}}>
+            {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)} masterMode={true}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
+          </div>
+        </div>
+        <EnemyHabilidadesPanel enemy={enemy} onChange={onChange}/>
+        <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div><textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados..." rows={3} style={{width:'100%',resize:'vertical'}}/></div>
+      </div>
+    </div>
+  );
+}
 
+function EnemyCard({enemy,onChange,onDelete,masterMode}){
+  const f=(k,v)=>onChange({...enemy,[k]:v});
+  const hp=enemy.hp||0;const hpBonus=enemy.hp_bonus||0;
+  const hpBarPct=Math.min(100,(hp/Math.max(50,hp))*100);
+  const hpBonusBarPct=Math.min(100,(hpBonus/Math.max(20,hpBonus))*100);
+  const photoRef=useRef(null);
+  const handlePhoto=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const c=await compressImage(ev.target.result,800,800,0.72);f('foto',c);};reader.readAsDataURL(file);};
+  const attrBonus=val=>Math.floor(val/2);
+  return(
+    <div style={{border:`1px solid ${ENEMY_COLOR}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18,boxShadow:`0 4px 24px ${ENEMY_GLOW}`}}>
+      <div style={{height:3,background:`linear-gradient(90deg,${ENEMY_COLOR},transparent)`}}/>
+      <div onClick={()=>photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
+        {enemy.foto?<img src={enemy.foto} alt="inimigo" style={{width:'100%',maxHeight:300,objectFit:'cover',objectPosition:'center top',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'20px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>Toque para adicionar imagem do inimigo</span></div>}
+        {enemy.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.85))',pointerEvents:'none'}}/>}
+        {enemy.foto&&enemy.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:16,fontWeight:700,color:ENEMY_COLOR,textShadow:'0 0 14px rgba(255,68,68,0.5)'}}>{enemy.nome}</div>}
+        <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
+      </div>
+      <div style={{padding:'16px 18px'}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
+          <div style={{flex:1,minWidth:110}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label><input value={enemy.tipo} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/></div>
+          {masterMode&&<button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>}
+        </div>
+        <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
+          <div style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
+            <div style={{display:'flex',alignItems:'center',gap:7}}>
+              <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:36,textAlign:'center'}}>{hp}</span>
+              <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+            </div>
+            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}><div style={{height:'100%',width:`${hpBarPct}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/></div>
+            <div style={{marginTop:8,paddingTop:7,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+              <div style={{fontSize:9,letterSpacing:'0.2em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>Vida Bônus</div>
+              <div style={{display:'flex',alignItems:'center',gap:5}}>
+                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:20,height:20,borderRadius:4,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:13,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:14,fontWeight:700,color:'#4ADE80',minWidth:20,textAlign:'center'}}>{hpBonus}</span>
+                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:20,height:20,borderRadius:4,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:13,lineHeight:1,padding:0}}>+</button>
+              </div>
+            </div>
+          </div>
+          <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosDots value={enemy.vigos||0} max={10} color={ENEMY_COLOR} onChange={v=>f('vigos',v)}/>
+          </div>
+          <div style={{background:`${ENEMY_COLOR}07`,border:`1px solid ${ENEMY_COLOR}22`,borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Alcance</div>
+            <input value={enemy.alcance||''} onChange={e=>f('alcance',e.target.value)} placeholder="Ex: 2m, 10m..." style={{width:'100%'}}/>
+          </div>
+        </div>
+        <StatusPanel sheet={enemy} onChange={onChange}/>
+        <div style={{marginBottom:15}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+          <div style={{display:'flex',flexDirection:'column',gap:7}}>
+            {ATTRS.map(a=>{const bonus=attrBonus(enemy[a.key]||0);return(<div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}><span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92}}>{a.label}</span><AttrDots value={enemy[a.key]||0} color={a.color} onChange={v=>f(a.key,v)} masterMode={true}/><span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{enemy[a.key]||0}</span><span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center'}}>{bonus>0?`+${bonus}`:'—'}</span></div>);})}
+          </div>
+        </div>
+        <EnemyHabilidadesPanel enemy={enemy} onChange={onChange}/>
+        <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div><textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados..." rows={3} style={{width:'100%',resize:'vertical'}}/></div>
+      </div>
+    </div>
+  );
+}
+
+function EnemiesSection({masterMode}){
+  if(!masterMode) return <RestrictedAccess title="Acesso Restrito ao Mestre" text="As fichas dos inimigos estão ocultas nas sombras. Apenas o mestre possui este conhecimento." />;
+  const[enemies,setEnemies]=useState([]);const[loaded,setLoaded]=useState(false);const saveTimeout=useRef({});
+  useEffect(()=>{const unsub=onSnapshot(collection(db,'enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setEnemies(data);setLoaded(true);});return()=>unsub();},[]);
+  const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{try{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);}catch(e){console.error(e);}},900);};
+  const add=()=>{if(enemies.length>=3)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
+  const upd=(id,data)=>{setEnemies(prev=>prev.map(e=>e.id===id?data:e));saveEnemy(data);};
+  const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));};
+  return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/></div>{!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}{loaded&&enemies.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>⚔️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div></div>)}{enemies.map(e=><EnemyCard key={e.id} enemy={e} onChange={d=>upd(e.id,d)} onDelete={()=>del(e.id)} masterMode={masterMode}/>)}{loaded&&enemies.length<3&&masterMode&&(<button onClick={add} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Adicionar Inimigo ({enemies.length}/3)</button>)}</div>);
+}
+const newBestiary = id => ({ id, nome: '', foto: '', descricao: '', nivelAmeaca: 'Médio' });
+
+function BestiarioCard({ item, onChange, onDelete, masterMode }) {
+  const f = (k,v) => onChange({...item, [k]:v});
+  const photoRef = useRef(null);
+  const handlePhoto = async e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => { const c = await compressImage(ev.target.result, 800, 800, 0.72); f('foto', c); };
+    reader.readAsDataURL(file);
+  };
+  const ameacaCores = {"Baixo":"#4ADE80","Médio":"#E8A020","Alto":"#E8193C","Supremo":"#A855F7","Catastrófico":"#1EC8FF"};
+  const corBase = ameacaCores[item.nivelAmeaca] || "#E8A020";
+  return (
+    <div style={{border:`1px solid ${corBase}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18}}>
+      <div style={{height:3,background:`linear-gradient(90deg,${corBase},transparent)`}}/>
+      <div onClick={()=>masterMode&&photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:masterMode?'pointer':'default',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
+        {item.foto?<img src={item.foto} alt="monstro" style={{width:'100%',maxHeight:350,objectFit:'cover',objectPosition:'center',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'30px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>{masterMode?'Toque para adicionar a foto':'Nenhuma imagem catalogada'}</span></div>}
+        {item.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.9))',pointerEvents:'none'}}/>}
+        {item.foto&&item.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:18,fontWeight:700,color:corBase}}>{item.nome}</div>}
+        {masterMode&&<input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>}
+      </div>
+      <div style={{padding:'16px 18px'}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:130}}>
+            <label style={{fontSize:10,letterSpacing:'0.3em',color:corBase,fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome da Criatura</label>
+            {masterMode?<input value={item.nome} onChange={e=>f('nome',e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>:<div style={{fontSize:15,color:'#E8D8C0',fontFamily:'Cinzel,serif',fontWeight:600}}>{item.nome||'Desconhecida'}</div>}
+          </div>
+          <div style={{width:140}}>
+            <label style={{fontSize:10,letterSpacing:'0.3em',color:corBase,fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Ameaça</label>
+            {masterMode?<select value={item.nivelAmeaca} onChange={e=>f('nivelAmeaca',e.target.value)} style={{width:'100%',color:corBase,fontWeight:'bold'}}><option value="Baixo">Baixo</option><option value="Médio">Médio</option><option value="Alto">Alto</option><option value="Supremo">Supremo</option><option value="Catastrófico">Catastrófico</option></select>:<div style={{fontSize:14,color:corBase,fontWeight:'bold',fontFamily:'Cinzel,serif'}}>{item.nivelAmeaca}</div>}
+          </div>
+          {masterMode&&<button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
+        </div>
+        <div>
+          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Descrição & Comportamento</label>
+          {masterMode?<textarea value={item.descricao} onChange={e=>f('descricao',e.target.value)} placeholder="Descreva os hábitos, aparência e táticas..." rows={5} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/>:<div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,whiteSpace:'pre-wrap',fontStyle:'italic',background:'rgba(255,255,255,0.02)',padding:'12px',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.05)'}}>{item.descricao||'Nenhum registro sobre esta criatura.'}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BestiarioSection({ masterMode }) {
+  const [bestiario, setBestiario] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimeout = useRef({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterAmeaca, setFilterAmeaca] = useState('Todas');
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
+      setBestiario(snap.docs.map(d => ({id:d.id,...d.data()}))); setLoaded(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const saveItem = item => {
+    clearTimeout(saveTimeout.current[item.id]);
+    saveTimeout.current[item.id] = setTimeout(async () => {
+      try { await setDoc(doc(db,'bestiario',String(item.id)),item); } catch(e) { console.error(e); }
+    }, 800);
+  };
+
+  const add = () => { const item = newBestiary(Date.now()); setDoc(doc(db,'bestiario',String(item.id)),item); };
+  const upd = (id, data) => { setBestiario(prev => prev.map(b => b.id===id?data:b)); saveItem(data); };
+  const del = async id => { await deleteDoc(doc(db,'bestiario',String(id))); };
+
+  const pesosAmeaca = {"Baixo":1,"Médio":2,"Alto":3,"Supremo":4,"Catastrófico":5};
+  const filtered = bestiario.filter(item => {
+    return (item.nome||'').toLowerCase().includes(searchTerm.toLowerCase()) && (filterAmeaca==='Todas'||item.nivelAmeaca===filterAmeaca);
+  }).sort((a,b) => (pesosAmeaca[a.nivelAmeaca]||0)-(pesosAmeaca[b.nivelAmeaca]||0));
+
+  return (
+    <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:32}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Compêndio das Aberrações</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Bestiário</h2>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'14px auto 0'}}/>
+      </div>
+      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Abrindo o tomo...</div>}
+      {loaded&&masterMode&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(232,160,32,0.4)',background:'rgba(232,160,32,0.1)',color:'#E8D8C0',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12}}>+ Catalogar Criatura</button></div>}
+      {loaded&&bestiario.length>0&&(
+        <div style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap',background:'rgba(255,255,255,0.02)',padding:'14px',borderRadius:'12px',border:'1px solid rgba(232,160,32,0.15)'}}>
+          <div style={{flex:1,minWidth:200}}><input type="text" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Nome da criatura..." style={{width:'100%',background:'rgba(0,0,0,0.4)'}}/></div>
+          <div style={{width:160,flexShrink:0}}><select value={filterAmeaca} onChange={e=>setFilterAmeaca(e.target.value)} style={{width:'100%',background:'rgba(0,0,0,0.4)'}}><option value="Todas">Todas as Ameaças</option><option value="Baixo">Baixo</option><option value="Médio">Médio</option><option value="Alto">Alto</option><option value="Supremo">Supremo</option><option value="Catastrófico">Catastrófico</option></select></div>
+        </div>
+      )}
+      {loaded&&bestiario.length===0&&<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,160,32,0.2)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>🐉</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#8A7A6A'}}>Nenhuma criatura catalogada.</div></div>}
+      {filtered.map(item=><BestiarioCard key={item.id} item={item} onChange={d=>upd(item.id,d)} onDelete={()=>del(item.id)} masterMode={masterMode}/>)}
+    </div>
+  );
+}
+function RulesSection(){const[open,setOpen]=useState(0);return(<div style={{maxWidth:720,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Leis do Cosmos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Manual de Regras</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>{RULES_DATA.map((r,i)=>(<div key={i} style={{marginBottom:9,border:'1px solid rgba(255,255,255,0.07)',borderRadius:11,overflow:'hidden',background:'rgba(8,10,22,0.8)'}}><button onClick={()=>setOpen(open===i?-1:i)} style={{width:'100%',padding:'14px 18px',display:'flex',alignItems:'center',gap:12,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}><span style={{fontSize:16}}>{r.icon}</span><span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>{r.title}</span><span style={{color:'rgba(255,255,255,0.2)',transform:open===i?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span></button>{open===i&&(<div style={{padding:'0 18px 16px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'pageTurn 0.3s ease'}}><div style={{height:10}}/>{r.body.split('\n').map((line,j)=>{if(!line.trim())return <div key={j} style={{height:6}}/>;const isBullet=line.startsWith('•');const isHead=!isBullet&&line.length<60&&!line.includes('→')&&line.endsWith(':');return <p key={j} style={{margin:'0 0 5px',fontSize:14,lineHeight:1.8,color:isHead?'#C8B8A0':isBullet?'#9A8A7A':'#8A7A6A',fontFamily:isHead?'Cinzel,serif':'inherit',fontWeight:isHead?600:400,paddingLeft:isBullet?12:0}}>{line}</p>;})}</div>)}</div>))}</div>);}
+const newMasterPage=id=>({id,titulo:'',dataAquisicao:new Date().toLocaleDateString('pt-BR'),descricao:''});
 // ─── PÁGINAS DO MESTRE NO LIVRO DA MANDÍBULA ─────────────────────────────────
 function MasterPagesBook({masterMode}){
   const[pages,setPages]=useState([]);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(null);
@@ -1593,8 +1830,7 @@ function CronicasSection({masterMode}){
     <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
       <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Registro dos Acontecimentos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Crônicas da Campanha</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os eventos, batalhas, revelações e narrativas de cada sessão</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-      {loaded&&(<>
-        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button></div>
+      {loaded&&(<>{masterMode && <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button></div>}
         {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div></div>)}
         {entries.map(entry=>(
           <div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
