@@ -1427,7 +1427,7 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
   );
 }
 
-function EnemyCard({enemy,onChange,onDelete,masterMode}){
+function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefatosHabs}){
   const f=(k,v)=>onChange({...enemy,[k]:v});
   const hp=enemy.hp||0;const hpBonus=enemy.hp_bonus||0;
   const hpBarPct=Math.min(100,(hp/Math.max(50,hp))*100);
@@ -1485,6 +1485,14 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
           </div>
         </div>
         <EnemyHabilidadesPanel enemy={enemy} onChange={onChange}/>
+        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14,marginTop:14}}/>
+<ArtefatoFichaPanel
+  sheet={enemy}
+  onChange={onChange}
+  sheetColor={ENEMY_COLOR}
+  revealedArtefatos={revealedArtefatos||[]}
+  artefatosHabs={artefatosHabs||{}}
+/>
         <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Notas do Mestre</div><textarea value={enemy.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Motivações, fraquezas, itens dropados..." rows={3} style={{width:'100%',resize:'vertical'}}/></div>
       </div>
     </div>
@@ -1493,13 +1501,65 @@ function EnemyCard({enemy,onChange,onDelete,masterMode}){
 
 function EnemiesSection({masterMode}){
   if(!masterMode) return <RestrictedAccess title="Acesso Restrito ao Mestre" text="As fichas dos inimigos estão ocultas nas sombras. Apenas o mestre possui este conhecimento." />;
-  const[enemies,setEnemies]=useState([]);const[loaded,setLoaded]=useState(false);const saveTimeout=useRef({});
-  useEffect(()=>{const unsub=onSnapshot(collection(db,'enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setEnemies(data);setLoaded(true);});return()=>unsub();},[]);
+  const[enemies,setEnemies]=useState([]);
+  const[loaded,setLoaded]=useState(false);
+  const[artefatosUnlockedState,setArtefatosUnlockedState]=useState({});
+  const[artefatosHabsState,setArtefatosHabsState]=useState({});
+  const saveTimeout=useRef({});
+
+  useEffect(()=>{
+    const u1=onSnapshot(collection(db,'enemies'),snap=>{
+      const data=snap.docs.map(d=>({id:d.id,...d.data()}));
+      setEnemies(data);setLoaded(true);
+    });
+    const u2=onSnapshot(doc(db,'config','artefatos'),snap=>{
+      if(snap.exists())setArtefatosUnlockedState(snap.data().unlocked||{});
+    });
+    const u3=onSnapshot(doc(db,'config','artefatos_habilidades'),snap=>{
+      if(snap.exists())setArtefatosHabsState(snap.data()||{});
+    });
+    return()=>{u1();u2();u3();};
+  },[]);
+
+  const revealedArtefatos = ARTEFATOS_DATA.filter(a => artefatosUnlockedState[a.id]);
+
   const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{try{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);}catch(e){console.error(e);}},900);};
-  const add=()=>{if(enemies.length>=3)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
+  const add=()=>{if(enemies.length>=6)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
   const upd=(id,data)=>{setEnemies(prev=>prev.map(e=>e.id===id?data:e));saveEnemy(data);};
   const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));};
-  return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/></div>{!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}{loaded&&enemies.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>⚔️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div></div>)}{enemies.map(e=><EnemyCard key={e.id} enemy={e} onChange={d=>upd(e.id,d)} onDelete={()=>del(e.id)} masterMode={masterMode}/>)}{loaded&&enemies.length<3&&masterMode&&(<button onClick={add} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Adicionar Inimigo ({enemies.length}/3)</button>)}</div>);
+
+  return(
+    <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:32}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/>
+      </div>
+      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+      {loaded&&enemies.length===0&&(
+        <div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}>
+          <div style={{fontSize:30,marginBottom:10}}>⚔️</div>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div>
+        </div>
+      )}
+      {enemies.map(e=>
+        <EnemyCard
+          key={e.id}
+          enemy={e}
+          onChange={d=>upd(e.id,d)}
+          onDelete={()=>del(e.id)}
+          masterMode={masterMode}
+          revealedArtefatos={revealedArtefatos}
+          artefatosHabs={artefatosHabsState}
+        />
+      )}
+      {loaded&&enemies.length<6&&masterMode&&(
+        <button onClick={add} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>
+          + Adicionar Inimigo ({enemies.length}/6)
+        </button>
+      )}
+    </div>
+  );
 }
 const newBestiary = id => ({ id, nome: '', foto: '', descricao: '', nivelAmeaca: 'Médio' });
 
