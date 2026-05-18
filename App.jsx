@@ -2055,26 +2055,74 @@ function CronicasSection({masterMode}){
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
               </div>
             </div>
-            {open===entry.id&&(
+{open===entry.id&&(
               <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'pageTurn 0.3s ease'}}>
                 <div style={{height:11}}/>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
-                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
-                  <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
-                </div>
-                <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
-                <div style={{marginBottom:10}}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
-                    <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens da Sessão</label>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(entry.imagens||[]).length}/6</span>
-                      <button onClick={()=>imgInputRefs.current[entry.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em'}}>🖼 Adicionar Imagem</button>
-                      <input ref={el=>imgInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
+                {masterMode ? (
+                  <>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
+                      <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
+                      <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
                     </div>
-                  </div>
-                  {(entry.imagens||[]).length>0?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',maxHeight:420,objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>:<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem adicionada. (máx 6)</div>}
-                </div>
-                <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
+                    <div style={{marginBottom:11}}>
+                      <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label>
+                      <textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
+                    </div>
+                    <div style={{marginBottom:10}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
+                        <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens da Sessão</label>
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(entry.imagens||[]).length}/6</span>
+                          <button onClick={()=>imgInputRefs.current[entry.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em'}}>🖼 Adicionar Imagem</button>
+                          <input ref={el=>imgInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
+                        </div>
+                      </div>
+                      {(entry.imagens||[]).length>0
+                        ?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>
+                        :<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem adicionada. (máx 6)</div>
+                      }
+                    </div>
+                    <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
+                  </>
+                ) : (
+                  <>
+                    {/* Cabeçalho da crônica para jogadores */}
+                    {(entry.titulo || entry.sessao) && (
+                      <div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                        {entry.titulo && <div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#C8A8E8',fontWeight:700,marginBottom:4}}>{entry.titulo}</div>}
+                        <div style={{display:'flex',gap:14,flexWrap:'wrap'}}>
+                          {entry.sessao && <span style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Sessão {entry.sessao}</span>}
+                          <span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{entry.data}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Conteúdo totalmente expandido — sem scroll */}
+                    {entry.conteudo ? (
+                      <div style={{
+                        fontSize:15,color:'#B0A090',lineHeight:1.95,
+                        whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",
+                        marginBottom:16,
+                      }}>{entry.conteudo}</div>
+                    ) : (
+                      <div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>
+                        Esta crônica ainda não possui narrativa registrada.
+                      </div>
+                    )}
+
+                    {/* Imagens — só leitura */}
+                    {(entry.imagens||[]).length>0 && (
+                      <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}>
+                        <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:4}}>Imagens da Sessão</div>
+                        {entry.imagens.map((img,idx)=>(
+                          <div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}>
+                            <img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -2101,7 +2149,11 @@ function CenariosSection({masterMode}){
       <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>Os Lugares de Cosmum</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Cenários Explorados</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os mapas e locais por onde os personagens passaram</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.5),transparent)',margin:'16px auto 0'}}/></div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
       {loaded&&(<>
-        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Novo Cenário</button></div>
+{masterMode && (
+          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
+            <button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button>
+          </div>
+        )}
         {cenarios.length===0&&(<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}><div style={{fontSize:32,marginBottom:10,opacity:0.3}}>🗺️</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhum cenário registrado.</div></div>)}
         {cenarios.map(c=>(
           <div key={c.id} style={{border:'1px solid rgba(168,85,247,0.14)',borderRadius:14,marginBottom:14,overflow:'hidden',background:'rgba(8,10,22,0.9)'}}>
