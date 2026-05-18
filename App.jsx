@@ -372,14 +372,15 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
 
 // ─── DADOS / CONSTANTES ───────────────────────────────────────────────────────
 const STATUS_LIST = [
-  { id: 'envenenado',  label: 'Envenenado',   icon: '\u2620',       color: '#4ADE80' },
-  { id: 'sangrando',   label: 'Sangrando',    icon: '\uD83E\uDE78', color: '#E8193C' },
-  { id: 'atordoado',   label: 'Atordoado',    icon: '\uD83D\uDCAB', color: '#E8A020' },
-  { id: 'queimando',   label: 'Queimando',    icon: '\uD83D\uDD25', color: '#FF6B35' },
-  { id: 'congelado',   label: 'Congelado',    icon: '\u2C22',       color: '#1EC8FF' },
-  { id: 'amaldicado',  label: 'Amaldicado',   icon: '\uD83D\uDC80', color: '#A855F7' },
-  { id: 'invisivel',   label: 'Invisivel',    icon: '\uD83D\uDC7B', color: '#C8B8A0' },
-  { id: 'protegido',   label: 'Protegido',    icon: '\uD83D\uDEE1', color: '#4ADE80' },
+  { id: 'envenenado',  label: 'Envenenado',   icon: '☠',  color: '#4ADE80' },
+  { id: 'sangrando',   label: 'Sangrando',    icon: '🩸', color: '#E8193C' },
+  { id: 'atordoado',   label: 'Atordoado',    icon: '💫', color: '#E8A020' },
+  { id: 'queimando',   label: 'Queimando',    icon: '🔥', color: '#FF6B35' },
+  { id: 'congelado',   label: 'Congelado',    icon: '✦',  color: '#1EC8FF' },
+  { id: 'amaldicado',  label: 'Amaldicado',   icon: '💀', color: '#A855F7' },
+  { id: 'invisivel',   label: 'Invisivel',    icon: '👻', color: '#C8B8A0' },
+  { id: 'protegido',   label: 'Protegido',    icon: '🛡', color: '#4ADE80' },
+  { id: 'sorte',       label: 'Sorte',        icon: '🍀', color: '#F0C040' },
 ];
 
 const CLASSES=[
@@ -891,22 +892,47 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
 
 const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1});
 
-function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate }) {
+function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC }) {
   const cd = sheetCooldowns?.[abilityId] || 0;
   const isActive = cd > 0;
+  const cost = abilityCost || 0;
+  const hasCooldown = cooldownText && cooldownText !== '—' && cooldownText !== '';
+  const hasEnoughVC = cost === 0 || (currentVigos >= cost);
+
   const activate = (e) => {
     e.stopPropagation();
-    const parsed = parseInt(String(cooldownText).replace(/\D/g,'')) || 1;
-    onUpdate(abilityId, parsed);
+    if (!hasEnoughVC) return;
+    if (hasCooldown) {
+      const parsed = parseInt(String(cooldownText).replace(/\D/g, '')) || 1;
+      onUpdate(abilityId, parsed);
+    }
+    if (onSpendVC && cost > 0) onSpendVC(cost);
   };
+
   const decrement = (e) => { e.stopPropagation(); onUpdate(abilityId, Math.max(0, cd - 1)); };
   const reset = (e) => { e.stopPropagation(); onUpdate(abilityId, 0); };
 
   if (!isActive) {
+    if (!hasEnoughVC) {
+      return (
+        <span style={{
+          fontSize: 9, padding: '2px 8px', borderRadius: 4,
+          border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.07)',
+          color: 'rgba(232,25,60,0.75)', fontFamily: 'Cinzel,serif', letterSpacing: '0.05em',
+        }}>
+          Vigor insuficiente
+        </span>
+      );
+    }
     return (
-      <button onClick={activate} title="Marcar habilidade como usada (iniciar cooldown)" style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, cursor: 'pointer', border: '1px solid rgba(255,200,0,0.2)', background: 'rgba(255,200,0,0.05)', color: 'rgba(255,200,0,0.45)', fontFamily: 'Cinzel,serif', letterSpacing: '0.08em', transition: 'all 0.2s' }}>⚡ Usar</button>
+      <button onClick={activate} title={`Usar — gasta ${cost} VC`} style={{
+        fontSize: 9, padding: '2px 7px', borderRadius: 4, cursor: 'pointer',
+        border: '1px solid rgba(255,200,0,0.2)', background: 'rgba(255,200,0,0.05)',
+        color: 'rgba(255,200,0,0.55)', fontFamily: 'Cinzel,serif', letterSpacing: '0.08em', transition: 'all 0.2s',
+      }}>⚡ Usar</button>
     );
   }
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(232,100,0,0.14)', border: '1px solid rgba(232,100,0,0.4)', borderRadius: 6, padding: '3px 7px', animation: 'cooldownIn 0.25s ease' }}>
       <span style={{ fontSize: 10 }}>⏳</span>
@@ -918,7 +944,7 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate }) {
   );
 }
 
-function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities, sheetCooldowns, onUpdateCooldown}){
+function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities, sheetCooldowns, onUpdateCooldown, currentVigos, onSpendVC}){
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
   const nivel = Number(sheet?.nivel) || 1;
@@ -964,7 +990,17 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
         <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{Number(a.cost||a.custo||0)} VC</div>
         <div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>⏱ {cdText}</div>
         {a.req&&!isCustom&&<div style={{fontSize:10,color:'rgba(255,255,255,0.16)'}}>Nív {Number(a.req)||1}+</div>}
-        {!locked && !isPassiva && hasCd && onUpdateCooldown && <CooldownBadge abilityId={abilityId} cooldownText={cdText} sheetCooldowns={sheetCooldowns} onUpdate={onUpdateCooldown}/>}
+        {!locked && !isPassiva && onUpdateCooldown && (
+  <CooldownBadge
+    abilityId={abilityId}
+    cooldownText={cdText}
+    sheetCooldowns={sheetCooldowns}
+    onUpdate={onUpdateCooldown}
+    abilityCost={Number(a.cost || a.custo || 0)}
+    currentVigos={currentVigos ?? 0}
+    onSpendVC={onSpendVC}
+  />
+  )}
         {isCustom&&masterMode&&<button onClick={()=>handleDelete(a.id)} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.25)',color:'#E8193C',borderRadius:4,cursor:'pointer',padding:'1px 6px',fontSize:10}}>✕</button>}
       </div>
     </div>
@@ -1180,9 +1216,18 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         </div>
 
         <div style={{marginBottom:14}}>
-          <HabilidadesPanel cls={cls} sheet={sheet} customAbilities={customAbilities} masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities} sheetCooldowns={sheetCooldowns} onUpdateCooldown={handleUpdateCooldown}/>
-        </div>
-
+<HabilidadesPanel
+  cls={cls}
+  sheet={sheet}
+  customAbilities={customAbilities}
+  masterMode={masterMode}
+  onSaveCustomAbilities={onSaveCustomAbilities}
+  sheetCooldowns={sheetCooldowns}
+  onUpdateCooldown={handleUpdateCooldown}
+  currentVigos={sheet.vigos ?? 0}
+  onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+/>
+</div>
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
         <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
 
@@ -1350,6 +1395,9 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(newEnemySkill());
   const [enemyCooldowns, setEnemyCooldowns] = useState({});
+  const handleSpendVC = (cost) => {
+  onChange({ ...enemy, vigos: Math.max(0, (enemy.vigos || 0) - cost) });
+};
   const color = ENEMY_COLOR;
   const tipoLabel = { normal: 'Normal', especial: 'Especial', passiva: 'Passiva' };
   const tipoBadgeColor = { normal: 'rgba(255,255,255,0.5)', especial: color, passiva: 'rgba(168,85,247,0.8)' };
@@ -1387,7 +1435,17 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
         <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 11, color: `${color}BB`, fontFamily: 'Cinzel,serif' }}>{h.custo || 0} VC</div>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)' }}>⏱ {cdText}</div>
-          {!isPassiva && hasCd && <CooldownBadge abilityId={String(h.id)} cooldownText={cdText} sheetCooldowns={enemyCooldowns} onUpdate={handleUpdateCooldown} />}
+          {!isPassiva && (
+  <CooldownBadge
+    abilityId={String(h.id)}
+    cooldownText={cdText}
+    sheetCooldowns={enemyCooldowns}
+    onUpdate={handleUpdateCooldown}
+    abilityCost={Number(h.custo || 0)}
+    currentVigos={enemy.vigos ?? 0}
+    onSpendVC={handleSpendVC}
+  />
+)}
           <button onClick={() => handleDelete(h.id)} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.25)', color: '#E8193C', borderRadius: 4, cursor: 'pointer', padding: '1px 6px', fontSize: 10 }}>✕</button>
         </div>
       </div>
@@ -1498,7 +1556,159 @@ function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefat
     </div>
   );
 }
+const newNPC = id => ({ id, nome: '', foto: '', genero: '', idade: '', descricao: '' });
 
+function NPCCard({ npc, onChange, onDelete, masterMode }) {
+  const f = (k, v) => onChange({ ...npc, [k]: v });
+  const photoRef = useRef(null);
+  const handlePhoto = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => { const c = await compressImage(ev.target.result, 900, 900, 0.75); f('foto', c); };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div style={{ border: '1px solid rgba(168,85,247,0.28)', borderRadius: 14, overflow: 'hidden', background: 'rgba(8,10,22,0.95)', marginBottom: 16, boxShadow: '0 4px 28px rgba(168,85,247,0.07)' }}>
+      <div style={{ height: 3, background: 'linear-gradient(90deg,#A855F7,#A855F722,transparent)' }} />
+
+      <div onClick={() => masterMode && photoRef.current?.click()} style={{ position: 'relative', width: '100%', cursor: masterMode ? 'pointer' : 'default', background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+        {npc.foto
+          ? <img src={npc.foto} alt={npc.nome} style={{ width: '100%', maxHeight: 360, objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
+          : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '28px', opacity: 0.3 }}>
+              <span style={{ fontSize: 24 }}>👤</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'Cinzel,serif' }}>{masterMode ? 'Toque para adicionar foto' : 'Sem foto disponível'}</span>
+            </div>
+        }
+        {npc.foto && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(8,10,22,0.92))', pointerEvents: 'none' }} />}
+        {npc.foto && (
+          <div style={{ position: 'absolute', bottom: 14, left: 18 }}>
+            <div style={{ fontFamily: 'Cinzel,serif', fontSize: 19, fontWeight: 700, color: '#C8A8E8', textShadow: '0 0 20px rgba(168,85,247,0.7)' }}>{npc.nome || '—'}</div>
+            {(npc.genero || npc.idade) && (
+              <div style={{ fontSize: 12, color: 'rgba(200,168,232,0.65)', marginTop: 3, fontFamily: 'Cinzel,serif' }}>
+                {[npc.genero, npc.idade && `${npc.idade} anos`].filter(Boolean).join(' · ')}
+              </div>
+            )}
+          </div>
+        )}
+        {masterMode && <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />}
+      </div>
+
+      <div style={{ padding: '16px 18px' }}>
+        {masterMode ? (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px', gap: 10, marginBottom: 12 }}>
+              <div>
+                <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Nome</label>
+                <input value={npc.nome} onChange={e => f('nome', e.target.value)} placeholder="Nome do personagem..." style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Gênero</label>
+                <select value={npc.genero} onChange={e => f('genero', e.target.value)} style={{ width: '100%' }}>
+                  <option value="">—</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Feminino">Feminino</option>
+                  <option value="Não-binário">Não-binário</option>
+                  <option value="Desconhecido">Desconhecido</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Idade</label>
+                <input value={npc.idade} onChange={e => f('idade', e.target.value)} placeholder="Ex: 34" style={{ width: '100%' }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Descrição</label>
+              <textarea value={npc.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Papel na história, personalidade, motivações..." rows={4} style={{ width: '100%', resize: 'vertical', lineHeight: 1.8 }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={onDelete} style={{ background: 'rgba(232,25,60,0.08)', border: '1px solid rgba(232,25,60,0.28)', color: '#E8193C', borderRadius: 6, cursor: 'pointer', padding: '5px 14px', fontSize: 11, fontFamily: 'Cinzel,serif' }}>✕ Remover</button>
+            </div>
+          </>
+        ) : (
+          <>
+            {!npc.foto && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontFamily: 'Cinzel,serif', fontSize: 17, fontWeight: 700, color: '#C8A8E8', marginBottom: 4 }}>{npc.nome || 'Desconhecido'}</div>
+                {(npc.genero || npc.idade) && (
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                    {npc.genero && <span style={{ fontSize: 11, color: '#A855F7', fontFamily: 'Cinzel,serif', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.22)', borderRadius: 12, padding: '3px 10px' }}>{npc.genero}</span>}
+                    {npc.idade && <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12, padding: '3px 10px' }}>{npc.idade} anos</span>}
+                  </div>
+                )}
+              </div>
+            )}
+            {npc.foto && (npc.genero || npc.idade) && (
+              <div style={{ display: 'flex', gap: 7, marginBottom: 10, flexWrap: 'wrap' }}>
+                {npc.genero && <span style={{ fontSize: 11, color: '#A855F7', fontFamily: 'Cinzel,serif', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.22)', borderRadius: 12, padding: '3px 10px' }}>{npc.genero}</span>}
+                {npc.idade && <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12, padding: '3px 10px' }}>{npc.idade} anos</span>}
+              </div>
+            )}
+            {npc.descricao
+              ? <div style={{ fontSize: 14, color: '#9A8A7A', lineHeight: 1.85, fontStyle: 'italic', whiteSpace: 'pre-wrap', background: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>{npc.descricao}</div>
+              : <div style={{ fontSize: 13, color: '#4A4050', fontStyle: 'italic', fontFamily: 'Cinzel,serif' }}>Nenhuma descrição disponível.</div>
+            }
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PersonagensSection({ masterMode }) {
+  const [npcs, setNpcs] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimeout = useRef({});
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'npcs'), snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => b.id - a.id);
+      setNpcs(data);
+      setLoaded(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const save = npc => {
+    clearTimeout(saveTimeout.current[npc.id]);
+    saveTimeout.current[npc.id] = setTimeout(async () => {
+      try { await setDoc(doc(db, 'npcs', String(npc.id)), npc); } catch (e) { console.error(e); }
+    }, 800);
+  };
+
+  const add = () => { const n = newNPC(Date.now()); setDoc(doc(db, 'npcs', String(n.id)), n); };
+  const upd = (id, data) => { setNpcs(prev => prev.map(n => n.id === id ? data : n)); save(data); };
+  const del = async id => { await deleteDoc(doc(db, 'npcs', String(id))); };
+
+  return (
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B5A9A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>Os Habitantes de Cosmum</div>
+        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Personagens</h2>
+        <div style={{ fontSize: 12, color: '#4A4050', marginTop: 9, fontFamily: 'Cinzel,serif' }}>Personagens encontrados ao longo da jornada</div>
+        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)', margin: '16px auto 0' }} />
+      </div>
+      {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Conectando ao cosmos...</div>}
+      {loaded && masterMode && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 18 }}>
+          <button onClick={add} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.1)', color: '#C8A8E8', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em' }}>+ Adicionar Personagem</button>
+        </div>
+      )}
+      {loaded && npcs.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 44, border: '1px dashed rgba(168,85,247,0.15)', borderRadius: 14 }}>
+          <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.25 }}>👤</div>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#6A5A7A' }}>
+            {masterMode ? 'Clique em "+ Adicionar Personagem" para começar.' : 'Nenhum personagem registrado ainda.'}
+          </div>
+        </div>
+      )}
+      {npcs.map(npc => (
+        <NPCCard key={npc.id} npc={npc} onChange={d => upd(npc.id, d)} onDelete={() => del(npc.id)} masterMode={masterMode} />
+      ))}
+    </div>
+  );
+}
 function EnemiesSection({masterMode}){
   if(!masterMode) return <RestrictedAccess title="Acesso Restrito ao Mestre" text="As fichas dos inimigos estão ocultas nas sombras. Apenas o mestre possui este conhecimento." />;
   const[enemies,setEnemies]=useState([]);
@@ -1915,16 +2125,17 @@ function CenariosSection({masterMode}){
 
 // ─── APP E NAVEGAÇÃO PRINCIPAL ────────────────────────────────────────────────
 const TABS=[
-  {id:'prologo',label:'Prólogo',icon:'📜'},
-  {id:'classes',label:'Classes',icon:'⚔️'},
-  {id:'fichas',label:'Fichas',icon:'📋'},
-  {id:'inimigos',label:'Inimigos',icon:'💀'},
-  {id:'bestiario',label:'Bestiário',icon:'🐉'},
-  {id:'regras',label:'Regras',icon:'📖'},
-  {id:'livro',label:'Livro da Mandíbula',icon:'✦'},
-  {id:'cronicas',label:'Crônicas',icon:'🗒️'},
-  {id:'cenarios',label:'Cenários',icon:'🗺️'},
-  {id:'mapamundi',label:'Mapa Múndi',icon:'🌍'},
+  {id:'prologo',    label:'Prólogo',            icon:'📜'},
+  {id:'classes',    label:'Classes',            icon:'⚔️'},
+  {id:'fichas',     label:'Fichas',             icon:'📋'},
+  {id:'personagens',label:'Personagens',        icon:'👤'},  // ← NOVO
+  {id:'inimigos',   label:'Inimigos',           icon:'💀'},
+  {id:'bestiario',  label:'Bestiário',          icon:'🐉'},
+  {id:'regras',     label:'Regras',             icon:'📖'},
+  {id:'livro',      label:'Livro da Mandíbula', icon:'✦'},
+  {id:'cronicas',   label:'Crônicas',           icon:'🗒️'},
+  {id:'cenarios',   label:'Cenários',           icon:'🗺️'},
+  {id:'mapamundi',  label:'Mapa Múndi',         icon:'🌍'},
 ];
 
 function MasterToggle({masterMode,setMasterMode}){
@@ -2008,6 +2219,7 @@ export default function App(){
           {tab==='prologo'&&<PrologueSection/>}
           {tab==='classes'&&<ClassesSection/>}
           {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
+          {tab==='personagens'&&<PersonagensSection masterMode={masterMode}/>}
           {tab==='inimigos'&&<EnemiesSection masterMode={masterMode}/>}
           {tab==='bestiario'&&<BestiarioSection masterMode={masterMode}/>}
           {tab==='regras'&&<RulesSection/>}
