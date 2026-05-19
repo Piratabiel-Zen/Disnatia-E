@@ -750,21 +750,181 @@ function StatusPanel({ sheet, onChange }) {
 }
 
 function resolveEquipIcon(tipo=''){
-  const t=tipo.toLowerCase();
-  if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina')||t.includes('lamina'))return'⚔️';
-  if(t.includes('adaga')||t.includes('faca')||t.includes('punhal')||t.includes('navalha'))return'🗡️';
-  if(t.includes('machado'))return'🪓';
-  if(t.includes('martelo')||t.includes('maça')||t.includes('maca'))return'🔨';
-  if(t.includes('lança')||t.includes('lanca')||t.includes('alabarda'))return'🪄';
-  if(t.includes('arco')||t.includes('besta'))return'🏹';
-  if(t.includes('pistola')||t.includes('rifle')||t.includes('fuzil')||t.includes('sniper'))return'🔫';
-  if(t.includes('escudo'))return'🛡️';
-  if(t.includes('armadura'))return'🛡️';
-  if(t.includes('capacete'))return'⛑️';
-  if(t.includes('poção')||t.includes('pocao'))return'🧪';
-  if(t.includes('anel'))return'💍';
-  if(t.includes('manto')||t.includes('capa'))return'🧥';
-  return'📦';
+  const t = tipo.toLowerCase();
+
+  // ── Espadas e lâminas ──────────────────────────────────────────
+  if(t.includes('espada')||t.includes('sabre')||t.includes('lâmina')||t.includes('lamina')||
+     t.includes('katana')||t.includes('claymore')||t.includes('florete')||t.includes('rapieira')||
+     t.includes('espadão')||t.includes('espadao')||t.includes('montante')) return '\u2694\uFE0F';
+
+  // ── Adagas e facas ─────────────────────────────────────────────
+  if(t.includes('adaga')||t.includes('faca')||t.includes('punhal')||t.includes('navalha')||
+     t.includes('kunai')||t.includes('sai')||t.includes('estilete')||t.includes('bisturi')) return '\uD83D\uDDE1\uFE0F';
+
+  // ── Machados ───────────────────────────────────────────────────
+  if(t.includes('machado')||t.includes('alabarda')||t.includes('cimitarra')) return '\uD83E\uFA93';
+
+  // ── Martelos e maças ───────────────────────────────────────────
+  if(t.includes('martelo')||t.includes('maça')||t.includes('maca')||t.includes('clava')||
+     t.includes('mangual')||t.includes('tacape')) return '\uD83D\uDD28';
+
+  // ── Lanças e hastes ────────────────────────────────────────────
+  if(t.includes('lança')||t.includes('lanca')||t.includes('tridente')||t.includes('zagaia')||
+     t.includes('glaive')||t.includes('partisana')) return '\uD83E\uDEB1';
+
+  // ── Arcos e bestas ─────────────────────────────────────────────
+  if(t.includes('arco')||t.includes('besta')||t.includes('flechas')||t.includes('flecha')||
+     t.includes('aljava')) return '\uD83C\uDFF9';
+
+  // ── Armas de fogo ──────────────────────────────────────────────
+  if(t.includes('pistola')||t.includes('rifle')||t.includes('fuzil')||t.includes('sniper')||
+     t.includes('revólver')||t.includes('revolver')||t.includes('espingarda')||
+     t.includes('metralhadora')||t.includes('carabina')) return '\uD83D\uDD2B';
+
+  // ── Cajados e varinhas ─────────────────────────────────────────
+  if(t.includes('cajado')||t.includes('varinha')||t.includes('cetro')||t.includes('báculo')||
+     t.includes('baculo')||t.includes('bordão')||t.includes('bordao')) return '\uD83E\uDE84';
+
+  // ── Orbes e cristais mágicos ───────────────────────────────────
+  if(t.includes('orbe')||t.includes('cristal')||t.includes('gema')||t.includes('pedra arcana')||
+     t.includes('esfera mágica')||t.includes('esfera magica')) return '\uD83D\uDD2E';
+
+  // ── Shurikens ─────────────────────────────────────────────────
+  if(t.includes('shuriken')||t.includes('estrela ninja')||t.includes('chakram')) return '\u2B50';
+
+  // ── Bombas e explosivos ────────────────────────────────────────
+  if(t.includes('bomba')||t.includes('granada')||t.includes('dinamite')||t.includes('explosivo')) return '\uD83D\uDCA3';
+
+  // ── Escudos ────────────────────────────────────────────────────
+  if(t.includes('escudo')||t.includes('broquel')||t.includes('aegis')||t.includes('égide')||
+     t.includes('egide')) return '\uD83D\uDEE1\uFE0F';
+
+  // ── Armaduras ─────────────────────────────────────────────────
+  if(t.includes('armadura')||t.includes('cota')||t.includes('loriga')||t.includes('peitoral')||
+     t.includes('colete')||t.includes('gibão')||t.includes('gibao')) return '\uD83E\uDDBA';
+
+  // ── Capacetes e elmos ──────────────────────────────────────────
+  if(t.includes('capacete')||t.includes('elmo')||t.includes('chapéu')||t.includes('chapeu')||
+     t.includes('coroa')||t.includes('tiara')||t.includes('tricórnio')||t.includes('tricornio')) return '\u26D1\uFE0F';
+
+  // ── Luvas ──────────────────────────────────────────────────────
+  if(t.includes('luva')||t.includes('manopla')||t.includes('vambrace')) return '\uD83E\uDDE4';
+
+  // ── Botas e calçados ───────────────────────────────────────────
+  if(t.includes('bota')||t.includes('sandália')||t.includes('sandalia')||t.includes('sapato')||
+     t.includes('calçado')||t.includes('calcado')||t.includes('greave')) return '\uD83D\uDC62';
+
+  // ── Mantos e roupas ────────────────────────────────────────────
+  if(t.includes('manto')||t.includes('capa')||t.includes('robe')||t.includes('túnica')||
+     t.includes('tunica')||t.includes('traje')||t.includes('veste')||t.includes('sobretudo')) return '\uD83E\uDDE5';
+
+  // ── Poções e elixires ──────────────────────────────────────────
+  if(t.includes('poção')||t.includes('pocao')||t.includes('elixir')||t.includes('antídoto')||
+     t.includes('antidoto')||t.includes('frasco')||t.includes('ampola')) return '\uD83E\uDDEA';
+
+  // ── Venenos ────────────────────────────────────────────────────
+  if(t.includes('veneno')||t.includes('toxina')||t.includes('peçonha')||t.includes('peconha')) return '\u2620\uFE0F';
+
+  // ── Anéis ──────────────────────────────────────────────────────
+  if(t.includes('anel')) return '\uD83D\uDC8D';
+
+  // ── Colares e amuletos ─────────────────────────────────────────
+  if(t.includes('colar')||t.includes('amuleto')||t.includes('medalha')||t.includes('pingente')||
+     t.includes('corrente de ouro')) return '\uD83D\uDCFF';
+
+  // ── Brincos ────────────────────────────────────────────────────
+  if(t.includes('brinco')) return '\uD83D\uDC8E';
+
+  // ── Talismãs e runas ───────────────────────────────────────────
+  if(t.includes('talismã')||t.includes('talisma')||t.includes('runa')||t.includes('olho mágico')||
+     t.includes('olho magico')||t.includes('sigilo')) return '\uD83E\uDDFF';
+
+  // ── Grimórios e livros ─────────────────────────────────────────
+  if(t.includes('grimório')||t.includes('grimorio')||t.includes('tomo')||t.includes('livro arcano')||
+     t.includes('spellbook')||t.includes('codex')) return '\uD83D\uDCDA';
+
+  // ── Pergaminhos ────────────────────────────────────────────────
+  if(t.includes('pergaminho')||t.includes('rolo')||t.includes('papiro')) return '\uD83D\uDCDC';
+
+  // ── Tochas e lanternas ─────────────────────────────────────────
+  if(t.includes('tocha')||t.includes('lanterna')||t.includes('lampião')||t.includes('lampiao')) return '\uD83D\uDD26';
+
+  // ── Velas ──────────────────────────────────────────────────────
+  if(t.includes('vela')||t.includes('candelabro')) return '\uD83D\uDD6F\uFE0F';
+
+  // ── Correntes e algemas ────────────────────────────────────────
+  if(t.includes('corrente')||t.includes('algema')||t.includes('acorrentado')) return '\u26D3\uFE0F';
+
+  // ── Chicotes ───────────────────────────────────────────────────
+  if(t.includes('chicote')||t.includes('açoite')||t.includes('acoite')||t.includes('flagelo')) return '\uD83E\uDEB6';
+
+  // ── Cordas e ganchos ───────────────────────────────────────────
+  if(t.includes('corda')||t.includes('lasso')||t.includes('laço')||t.includes('laco')) return '\uD83E\uDEA2';
+  if(t.includes('gancho')||t.includes('arpão')||t.includes('arpao')) return '\uD83E\uDE9D';
+
+  // ── Chaves ─────────────────────────────────────────────────────
+  if(t.includes('chave')) return '\uD83D\uDDDD\uFE0F';
+
+  // ── Lunetas e instrumentos de observação ───────────────────────
+  if(t.includes('luneta')||t.includes('binóculo')||t.includes('binoculo')||
+     t.includes('telescópio')||t.includes('telescopio')) return '\uD83D\uDD2D';
+
+  // ── Lupas ──────────────────────────────────────────────────────
+  if(t.includes('lupa')||t.includes('monóculo')||t.includes('monoculo')) return '\uD83D\uDD0D';
+
+  // ── Seringas e instrumentos médicos ───────────────────────────
+  if(t.includes('seringa')||t.includes('injeção')||t.includes('injecao')) return '\uD83D\uDC89';
+
+  // ── Ferramentas ────────────────────────────────────────────────
+  if(t.includes('chave inglesa')||t.includes('ferramenta')||t.includes('alicate')||
+     t.includes('engrenagem')) return '\uD83D\uDD27';
+  if(t.includes('tesoura')||t.includes('faca de corte')) return '\u2702\uFE0F';
+
+  // ── Instrumentos musicais (bardos) ────────────────────────────
+  if(t.includes('alaúde')||t.includes('alaud')||t.includes('flauta')||t.includes('harpa')||
+     t.includes('violão')||t.includes('violao')||t.includes('instrumento')||t.includes('lira')) return '\uD83C\uDFB5';
+
+  // ── Moedas e tesouros ──────────────────────────────────────────
+  if(t.includes('moeda')||t.includes('ouro')||t.includes('tesouro')||t.includes('bolsa de ouro')||
+     t.includes('pepita')) return '\uD83D\uDCB0';
+
+  // ── Bússola e mapa ─────────────────────────────────────────────
+  if(t.includes('bússola')||t.includes('bussola')||t.includes('compasso')) return '\uD83E\uDDED';
+  if(t.includes('mapa')||t.includes('carta náutica')||t.includes('carta nautica')) return '\uD83D\uDDFA\uFE0F';
+
+  // ── Máscaras ───────────────────────────────────────────────────
+  if(t.includes('máscara')||t.includes('mascara')||t.includes('capuz')) return '\uD83C\uDFAD';
+
+  // ── Ossos e itens de necromancia ───────────────────────────────
+  if(t.includes('osso')||t.includes('crânio')||t.includes('cranio')||t.includes('caveira')||
+     t.includes('fêmur')||t.includes('femur')) return '\uD83D\uDC80';
+
+  // ── Penas e asas ───────────────────────────────────────────────
+  if(t.includes('pena')||t.includes('pluma')||t.includes('asa')||t.includes('asas')) return '\uD83E\uDEB6';
+
+  // ── Garras e presas ────────────────────────────────────────────
+  if(t.includes('garra')||t.includes('presa')||t.includes('dente')) return '\uD83E\uDDB7';
+
+  // ── Bolsas e mochilas ──────────────────────────────────────────
+  if(t.includes('mochila')||t.includes('bolsa')||t.includes('sacola')||t.includes('saco')) return '\uD83C\uDF92';
+
+  // ── Sinos e alarmes ────────────────────────────────────────────
+  if(t.includes('sino')||t.includes('campainha')||t.includes('alarme')) return '\uD83D\uDD14';
+
+  // ── Bandeiras e estandartes ────────────────────────────────────
+  if(t.includes('bandeira')||t.includes('estandarte')||t.includes('pendão')||t.includes('pendao')) return '\uD83D\uDEA9';
+
+  // ── Âncoras ────────────────────────────────────────────────────
+  if(t.includes('âncora')||t.includes('ancora')) return '\u2693';
+
+  // ── Foices ────────────────────────────────────────────────────
+  if(t.includes('foice')||t.includes('gadanho')) return '\uD83C\uDF3E';
+
+  // ── Ninjas e furtividade ───────────────────────────────────────
+  if(t.includes('fumaça')||t.includes('fumaca')||t.includes('bomba de fumaça')) return '\uD83D\uDCA8';
+
+  // ── Default ───────────────────────────────────────────────────
+  return '\uD83D\uDCE6';
 }
 
 function CompactEquipSlot({label, color, data, onChange, placeholder}){
