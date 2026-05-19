@@ -2192,6 +2192,37 @@ const newEntry=id=>({id,titulo:'',sessao:'',data:new Date().toLocaleDateString('
 function CronicasSection({masterMode}){
   const[entries,setEntries]=useState([]);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(null);const saveTimeout=useRef({});
   useEffect(()=>{const unsub=onSnapshot(collection(db,'cronicas'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setEntries(data);setLoaded(true);});return()=>unsub();},[]);
+  useEffect(()=>{
+  const unsub = onSnapshot(collection(db,'ovas'), snap=>{
+    const data = snap.docs.map(d=>({id:d.id,...d.data()}));
+    data.sort((a,b)=>b.id-a.id);
+    setOvas(data); setOvasLoaded(true);
+  });
+  return()=>unsub();
+},[]);
+
+const newOva = id => ({id, titulo:'', episodio:'', data: new Date().toLocaleDateString('pt-BR'), conteudo:'', imagens:[]});
+const saveOva = ova => {
+  clearTimeout(saveOvaTimeout.current[ova.id]);
+  saveOvaTimeout.current[ova.id] = setTimeout(async()=>{
+    try { const{imagens,...sem}=ova; await setDoc(doc(db,'ovas',String(ova.id)),sem); if(imagens&&imagens.length>0) await setDoc(doc(db,'ovas',String(ova.id)),ova); }
+    catch(e){ alert('Aviso: OVA muito grande. Tente menos imagens.'); }
+  }, 800);
+};
+const addOva = () => { const o = newOva(Date.now()); setDoc(doc(db,'ovas',String(o.id)),o); setOpenOva(o.id); };
+const updOva = (id,data) => { setOvas(prev=>prev.map(o=>o.id===id?data:o)); saveOva(data); };
+const delOva = async id => { await deleteDoc(doc(db,'ovas',String(id))); if(openOva===id) setOpenOva(null); };
+const addOvaImage = async(ova,file)=>{
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    const compressed = await compressImage(ev.target.result,1000,1000,0.68);
+    const imagens = [...(ova.imagens||[]), compressed];
+    if(imagens.length>6){ alert('Máximo de 6 imagens por OVA.'); return; }
+    updOva(ova.id,{...ova,imagens});
+  };
+  reader.readAsDataURL(file);
+};
+const removeOvaImage = (ova,idx) => { const imagens=(ova.imagens||[]).filter((_,i)=>i!==idx); updOva(ova.id,{...ova,imagens}); };
   const saveEntry=entry=>{clearTimeout(saveTimeout.current[entry.id]);saveTimeout.current[entry.id]=setTimeout(async()=>{try{const{imagens,...sem}=entry;await setDoc(doc(db,'cronicas',String(entry.id)),sem);if(imagens&&imagens.length>0)await setDoc(doc(db,'cronicas',String(entry.id)),entry);}catch(e){alert('Aviso: Crônica muito grande. Tente usar menos imagens.');}},800);};
   const add=()=>{const e=newEntry(Date.now());setDoc(doc(db,'cronicas',String(e.id)),e);setOpen(e.id);};
   const upd=(id,data)=>{setEntries(prev=>prev.map(e=>e.id===id?data:e));saveEntry(data);};
@@ -2199,99 +2230,160 @@ function CronicasSection({masterMode}){
   const addImage=async(entry,file)=>{const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,1000,1000,0.68);const imagens=[...(entry.imagens||[]),compressed];if(imagens.length>6){alert('Máximo de 6 imagens por crônica.');return;}upd(entry.id,{...entry,imagens});};reader.readAsDataURL(file);};
   const removeImage=(entry,idx)=>{const imagens=(entry.imagens||[]).filter((_,i)=>i!==idx);upd(entry.id,{...entry,imagens});};
   const imgInputRefs=useRef({});
+  const [subTab, setSubTab] = useState('cronicas');
+  const [ovas, setOvas] = useState([]);
+  const [ovasLoaded, setOvasLoaded] = useState(false);
+  const [openOva, setOpenOva] = useState(null);
+  const saveOvaTimeout = useRef({});
+  const ovaInputRefs = useRef({});
   return(
     <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
-      <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Registro dos Acontecimentos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Crônicas da Campanha</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os eventos, batalhas, revelações e narrativas de cada sessão</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>
-      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-      {loaded&&(<>{masterMode && <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button></div>}
-        {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div></div>)}
-        {entries.map(entry=>(
-          <div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
-            <div onClick={()=>setOpen(open===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
-              <span style={{fontSize:15}}>📜</span>
-              <div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div><div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>{entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>{entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}{(entry.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {entry.imagens.length}</span>}</div></div>
-              <div style={{display:'flex',gap:7}}>
-                {masterMode&&<button onClick={e=>{e.stopPropagation();del(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
-                <span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
-              </div>
-            </div>
-{open===entry.id&&(
-              <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'pageTurn 0.3s ease'}}>
-                <div style={{height:11}}/>
-                {masterMode ? (
-                  <>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
-                      <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
-                      <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
-                    </div>
-                    <div style={{marginBottom:11}}>
-                      <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label>
-                      <textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
-                    </div>
-                    <div style={{marginBottom:10}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
-                        <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens da Sessão</label>
-                        <div style={{display:'flex',alignItems:'center',gap:8}}>
-                          <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(entry.imagens||[]).length}/6</span>
-                          <button onClick={()=>imgInputRefs.current[entry.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em'}}>🖼 Adicionar Imagem</button>
-                          <input ref={el=>imgInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
-                        </div>
-                      </div>
-                      {(entry.imagens||[]).length>0
-                        ?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>
-                        :<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem adicionada. (máx 6)</div>
-                      }
-                    </div>
-                    <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
-                  </>
-                ) : (
-                  <>
-                    {/* Cabeçalho da crônica para jogadores */}
-                    {(entry.titulo || entry.sessao) && (
-                      <div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                        {entry.titulo && <div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#C8A8E8',fontWeight:700,marginBottom:4}}>{entry.titulo}</div>}
-                        <div style={{display:'flex',gap:14,flexWrap:'wrap'}}>
-                          {entry.sessao && <span style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Sessão {entry.sessao}</span>}
-                          <span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{entry.data}</span>
-                        </div>
-                      </div>
-                    )}
+      <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Registro dos Acontecimentos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Crônicas da Campanha</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os eventos, batalhas, revelações e narrativas de cada sessão</div>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/>
+      </div>
 
-                    {/* Conteúdo totalmente expandido — sem scroll */}
-                    {entry.conteudo ? (
-                      <div style={{
-                        fontSize:15,color:'#B0A090',lineHeight:1.95,
-                        whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",
-                        marginBottom:16,
-                      }}>{entry.conteudo}</div>
-                    ) : (
-                      <div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>
-                        Esta crônica ainda não possui narrativa registrada.
-                      </div>
-                    )}
-
-                    {/* Imagens — só leitura */}
-                    {(entry.imagens||[]).length>0 && (
-                      <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}>
-                        <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:4}}>Imagens da Sessão</div>
-                        {entry.imagens.map((img,idx)=>(
-                          <div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}>
-                            <img src={img} alt={`Imagem ${idx+1}`} style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+      {/* Sub-abas */}
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:24}}>
+        {[
+          {id:'cronicas', label:'📜 Crônicas'},
+          {id:'ovas',     label:'\uD83C\uDFAC OVA(s)'},
+        ].map(st=>(
+          <button key={st.id} onClick={()=>setSubTab(st.id)} style={{
+            padding:'7px 22px', borderRadius:20, fontFamily:'Cinzel,serif', fontSize:12,
+            letterSpacing:'0.07em', cursor:'pointer', transition:'all 0.2s',
+            border: subTab===st.id ? '1px solid rgba(168,85,247,0.55)' : '1px solid rgba(255,255,255,0.08)',
+            background: subTab===st.id ? 'rgba(168,85,247,0.14)' : 'transparent',
+            color: subTab===st.id ? '#C8A8E8' : '#5A4A6A',
+          }}>{st.label}</button>
         ))}
+      </div>
+      {/* ── ABA CRÔNICAS ── */}
+      {subTab === 'cronicas' && (<>
+        {!loaded && <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+        {loaded && (<>
+          {masterMode && (
+            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
+              <button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button>
+            </div>
+          )}
+          {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div></div>)}
+          {entries.map(entry=>(
+            <div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
+              <div onClick={()=>setOpen(open===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
+                <span style={{fontSize:15}}>📜</span>
+                <div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div><div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>{entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>{entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}{(entry.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {entry.imagens.length}</span>}</div></div>
+                <div style={{display:'flex',gap:7}}>
+                  {masterMode&&<button onClick={e=>{e.stopPropagation();del(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
+                  <span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
+                </div>
+              </div>
+              {open===entry.id&&(
+                <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'pageTurn 0.3s ease'}}>
+                  <div style={{height:11}}/>
+                  {masterMode ? (
+                    <>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
+                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
+                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
+                      </div>
+                      <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
+                      <div style={{marginBottom:10}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
+                          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens</label>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(entry.imagens||[]).length}/6</span>
+                            <button onClick={()=>imgInputRefs.current[entry.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11}}>🖼 Adicionar</button>
+                            <input ref={el=>imgInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
+                          </div>
+                        </div>
+                        {(entry.imagens||[]).length>0?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>:<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem. (máx 6)</div>}
+                      </div>
+                      <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
+                    </>
+                  ) : (
+                    <>
+                      {(entry.titulo||entry.sessao)&&(<div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>{entry.titulo&&<div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#C8A8E8',fontWeight:700,marginBottom:4}}>{entry.titulo}</div>}<div style={{display:'flex',gap:14,flexWrap:'wrap'}}>{entry.sessao&&<span style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Sessão {entry.sessao}</span>}<span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{entry.data}</span></div></div>)}
+                      {entry.conteudo?<div style={{fontSize:15,color:'#B0A090',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",marginBottom:16}}>{entry.conteudo}</div>:<div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>Esta crônica ainda não possui narrativa.</div>}
+                      {(entry.imagens||[]).length>0&&(<div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:4}}>Imagens</div>{entry.imagens.map((img,idx)=>(<div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/></div>))}</div>)}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </>)}
+      </>)}
+
+      {/* ── ABA OVA(s) ── */}
+      {subTab === 'ovas' && (<>
+        <div style={{marginBottom:20,padding:'12px 18px',border:'1px solid rgba(168,85,247,0.15)',borderRadius:10,background:'rgba(168,85,247,0.04)',fontFamily:"'Crimson Text',Georgia,serif",fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>
+          "Histórias paralelas — episódios que acontecem fora das mesas principais, mas que fazem parte do mesmo mundo."
+        </div>
+        {!ovasLoaded && <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Carregando OVAs...</div>}
+        {ovasLoaded && (<>
+          {masterMode && (
+            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
+              <button onClick={addOva} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>{'\uD83C\uDFAC'} + Nova OVA</button>
+            </div>
+          )}
+          {ovas.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(168,85,247,0.15)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>{'\uD83C\uDFAC'}</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma OVA registrada.</div><div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>{masterMode?'Clique em "+ Nova OVA" para começar.':'Aguarde o Mestre adicionar histórias paralelas.'}</div></div>)}
+          {ovas.map(ova=>(
+            <div key={ova.id} style={{border:'1px solid rgba(168,85,247,0.18)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(10,8,22,0.88)'}}>
+              <div onClick={()=>setOpenOva(openOva===ova.id?null:ova.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
+                <span style={{fontSize:15}}>{'\uD83C\uDFAC'}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8A8E8',fontWeight:600}}>{ova.titulo||'(Sem título)'}</div>
+                  <div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>
+                    {ova.episodio&&<span style={{color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ep. {ova.episodio}</span>}
+                    <span>{ova.data}</span>
+                    {ova.conteudo&&<span style={{color:'#4A4050'}}>{ova.conteudo.split(' ').length} palavras</span>}
+                    {(ova.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {ova.imagens.length}</span>}
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:7}}>
+                  {masterMode&&<button onClick={e=>{e.stopPropagation();delOva(ova.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
+                  <span style={{color:'rgba(168,85,247,0.4)',fontSize:11,transform:openOva===ova.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
+                </div>
+              </div>
+              {openOva===ova.id&&(
+                <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(168,85,247,0.1)',animation:'pageTurn 0.3s ease'}}>
+                  <div style={{height:11}}/>
+                  {masterMode ? (
+                    <>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
+                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título da OVA</label><input value={ova.titulo||''} onChange={e=>updOva(ova.id,{...ova,titulo:e.target.value})} placeholder="Ex: A Noite dos Laranjais..." style={{width:'100%'}}/></div>
+                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Ep.</label><input value={ova.episodio||''} onChange={e=>updOva(ova.id,{...ova,episodio:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
+                      </div>
+                      <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa</label><textarea value={ova.conteudo||''} onChange={e=>updOva(ova.id,{...ova,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
+                      <div style={{marginBottom:10}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
+                          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens</label>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(ova.imagens||[]).length}/6</span>
+                            <button onClick={()=>ovaInputRefs.current[ova.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11}}>🖼 Adicionar</button>
+                            <input ref={el=>ovaInputRefs.current[ova.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addOvaImage(ova,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
+                          </div>
+                        </div>
+                        {(ova.imagens||[]).length>0?<div style={{display:'flex',flexDirection:'column',gap:10}}>{ova.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeOvaImage(ova,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>:<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem. (máx 6)</div>}
+                      </div>
+                      <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(ova.conteudo||'').length} caracteres · salvo automaticamente</div>
+                    </>
+                  ) : (
+                    <>
+                      {(ova.titulo||ova.episodio)&&(<div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(168,85,247,0.1)'}}>{ova.titulo&&<div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#C8A8E8',fontWeight:700,marginBottom:4}}>{ova.titulo}</div>}<div style={{display:'flex',gap:14,flexWrap:'wrap'}}>{ova.episodio&&<span style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Episódio {ova.episodio}</span>}<span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{ova.data}</span></div></div>)}
+                      {ova.conteudo?<div style={{fontSize:15,color:'#B0A090',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",marginBottom:16}}>{ova.conteudo}</div>:<div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>Esta OVA ainda não possui narrativa.</div>}
+                      {(ova.imagens||[]).length>0&&(<div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}>{ova.imagens.map((img,idx)=>(<div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/></div>))}</div>)}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </>)}
       </>)}
     </div>
   );
 }
-
 // ─── CENÁRIOS ─────────────────────────────────────────────────────────────────
 const newCenario=id=>({id,nome:'',descricao:'',mapa:'',data:new Date().toLocaleDateString('pt-BR')});
 
