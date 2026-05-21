@@ -1409,16 +1409,48 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         />
 
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
-
         <div style={{marginBottom:14}}>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Lore do Personagem</div>
-          <textarea value={sheet.lore_personagem||''} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos do seu personagem..." rows={4} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
-        </div>
-        <div>
           <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens & Inventário</div>
           <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
         </div>
 
+        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{color:sheetColor}}>✦</span> Lore do Personagem
+            {!masterMode && sheet.lore_personagem && <span style={{fontSize:9,color:sheetColor+'66',marginLeft:'auto',letterSpacing:'0.15em'}}>SOMENTE LEITURA</span>}
+          </div>
+          {masterMode ? (
+            <textarea
+              value={sheet.lore_personagem||''}
+              onChange={e=>f('lore_personagem',e.target.value)}
+              placeholder="Escreva aqui a história, origem, motivações e segredos do personagem..."
+              rows={7}
+              style={{width:'100%',resize:'vertical',lineHeight:1.85}}
+            />
+          ) : sheet.lore_personagem ? (
+            <div style={{
+              fontSize:15, color:'#B8A898', lineHeight:2,
+              whiteSpace:'pre-wrap', fontFamily:"'Crimson Text',Georgia,serif",
+              padding:'16px 18px',
+              background:`${sheetColor}06`,
+              borderRadius:10,
+              border:`1px solid ${sheetColor}22`,
+              borderLeft:`3px solid ${sheetColor}55`,
+            }}>
+              {sheet.lore_personagem}
+            </div>
+          ) : (
+            <div style={{
+              fontSize:13, color:'#4A4050', fontStyle:'italic',
+              fontFamily:'Cinzel,serif', textAlign:'center',
+              padding:'24px 0', border:'1px dashed rgba(255,255,255,0.05)',
+              borderRadius:10,
+            }}>
+              A história deste personagem ainda não foi escrita pelo Mestre.
+            </div>
+          )}
+        </div>
         <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
           {masterMode ? (
             <div>
