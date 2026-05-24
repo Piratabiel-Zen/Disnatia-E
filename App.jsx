@@ -1665,27 +1665,57 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
         <span style={{ fontSize: 10, color: `${color}66`, fontFamily: 'Cinzel,serif' }}>{habilidades.length > 0 ? `${habilidades.length} habilidade${habilidades.length > 1 ? 's' : ''}` : ''}</span>
         <span style={{ color: `${color}88`, fontSize: 11, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }}>▶</span>
       </button>
-      {open && (
-        <div style={{ padding: '0 14px 14px' }}>
-          <div style={{ height: 8 }} />
-          {habilidades.length === 0 && <div style={{ padding: 14, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.08)', color: '#6A4A4A', textAlign: 'center', fontFamily: 'Cinzel,serif', fontSize: 11, marginBottom: 10 }}>Nenhuma habilidade cadastrada.</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: habilidades.length > 0 ? 12 : 0 }}>{habilidades.map(h => abilityRow(h))}</div>
-          <div style={{ border: `1px solid ${color}30`, borderRadius: 10, padding: '14px', background: `${color}05` }}>
-            <div style={{ fontSize: 9, letterSpacing: '0.35em', color: `${color}AA`, fontFamily: 'Cinzel,serif', marginBottom: 12, textTransform: 'uppercase' }}>✦ Adicionar Habilidade</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <div><label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Nome</label><input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Garra Sombria" style={{ width: '100%' }} /></div>
-              <div><label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Tipo</label><div style={{ display: 'flex', gap: 6 }}><TipoBtn val="normal" label="Normal" /><TipoBtn val="especial" label="Especial" /><TipoBtn val="passiva" label="Passiva" /></div></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div><label style={{ fontSize: 9, color: 'rgba(255,200,80,0.5)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Dano / Efeito</label><input value={form.dano} onChange={e => setForm(f => ({ ...f, dano: e.target.value }))} placeholder="Ex: 1D8+2" style={{ width: '100%' }} /></div>
-                <div><label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Custo VC</label><input type="number" min={0} value={form.custo} onChange={e => setForm(f => ({ ...f, custo: +e.target.value }))} style={{ width: '100%' }} /></div>
-              </div>
-              <div><label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Cooldown</label><input value={form.cooldown} onChange={e => setForm(f => ({ ...f, cooldown: e.target.value }))} placeholder="Ex: 3 rodadas" style={{ width: '100%' }} /></div>
-              <div><label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.22em' }}>Descrição</label><textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} placeholder="Efeito, alcance, condições..." rows={3} style={{ width: '100%', resize: 'vertical', lineHeight: 1.7 }} /></div>
-              <button onClick={handleSave} disabled={!form.nome.trim()} style={{ padding: '8px', borderRadius: 7, border: `1px solid ${color}55`, background: form.nome.trim() ? `${color}20` : 'rgba(255,255,255,0.03)', color: form.nome.trim() ? color : '#5A5070', cursor: form.nome.trim() ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, transition: 'all 0.2s' }}>✦ Salvar Habilidade</button>
-            </div>
-          </div>
+{open&&(
+  <div style={{padding:'0 14px 14px'}}>
+    <div style={{height:8}}/>
+    {cls.id !== 'personalizado' && (
+      <>
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Passiva</div>
+          <div style={{background:`${color}0D`,border:`1px solid ${color}28`,borderRadius:8,padding:'9px 12px'}}><div style={{fontFamily:'Cinzel,serif',fontSize:12,color,fontWeight:600,marginBottom:3}}>{cls.passive.name}</div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{cls.passive.desc}</div></div>
         </div>
-      )}
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map(a=>abilityRow(a,false,false,false))}</div>
+        </div>
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Especiais — 3 VC cada</div>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map(a=>abilityRow(a,true,false,nivel<a.req))}</div>
+        </div>
+      </>
+    )}
+    {cls.id === 'personalizado' && classCustom.length === 0 && !masterMode && (
+      <div style={{padding:'18px',borderRadius:10,border:'1px dashed rgba(192,192,192,0.15)',color:'#5A5070',textAlign:'center',fontFamily:'Cinzel,serif',fontSize:12,marginBottom:10}}>
+        As habilidades deste personagem serão reveladas pelo Mestre.
+      </div>
+    )}
+    {classCustom.length>0&&(
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:9,letterSpacing:'0.3em',color:`${color}88`,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Desbloqueadas pelo Mestre</div>
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>{classCustom.map(a=>abilityRow(a,false,true,a.req&&nivel<a.req))}</div>
+      </div>
+    )}
+    {masterMode&&(
+      <div style={{border:`1px solid ${color}30`,borderRadius:10,padding:'14px',background:`${color}05`,marginTop:4}}>
+        <div style={{fontSize:9,letterSpacing:'0.35em',color:`${color}AA`,fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>✦ Adicionar Habilidade Nova · {cls.name}</div>
+        <div style={{display:'flex',flexDirection:'column',gap:9}}>
+          <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Nome da Habilidade</label><input value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Golpe Cósmico" style={{width:'100%'}}/></div>
+          <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.22em'}}>Tipo de Habilidade</label><div style={{display:'flex',gap:6}}><TipoBtn val="normal" label="Normal"/><TipoBtn val="especial" label="Especial"/><TipoBtn val="passiva" label="Passiva"/></div></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <div><label style={{fontSize:9,color:'rgba(255,200,80,0.5)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Dano / Efeito</label><input value={form.dano} onChange={e=>setForm(f=>({...f,dano:e.target.value}))} placeholder="Ex: 1D8, 3D4, +2 vida" style={{width:'100%'}}/></div>
+            <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Custo VC</label><input type="number" min={0} value={form.custo} onChange={e=>setForm(f=>({...f,custo:+e.target.value}))} style={{width:'100%'}}/></div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Cooldown / Rodadas</label><input value={form.cooldown} onChange={e=>setForm(f=>({...f,cooldown:e.target.value}))} placeholder="Ex: 3 rodadas" style={{width:'100%'}}/></div>
+            <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Nível Mínimo</label><input type="number" min={1} max={30} value={form.req} onChange={e=>setForm(f=>({...f,req:+e.target.value}))} style={{width:'100%'}}/></div>
+          </div>
+          <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Descrição</label><textarea value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Descreva o efeito, duração, condições especiais, área de alcance..." rows={3} style={{width:'100%',resize:'vertical',lineHeight:1.7}}/></div>
+          <button onClick={handleSave} disabled={!form.nome.trim()} style={{padding:'8px',borderRadius:7,border:`1px solid ${color}55`,background:form.nome.trim()?`${color}20`:'rgba(255,255,255,0.03)',color:form.nome.trim()?color:'#5A5070',cursor:form.nome.trim()?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',fontWeight:600,transition:'all 0.2s'}}>✦ Salvar Habilidade em {cls.name}</button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
     </div>
   );
 }
