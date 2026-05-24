@@ -95,8 +95,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
 }
 `;
 
-const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80'};
-const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)'};
+const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80',personalizado:'#C0C0C0'};
+const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)',personalizado:'rgba(192,192,192,0.16)'};
 const MASTER_PIN='dinastia';
 
 // ─── 🌦️ ATMOSPHERE SYSTEM ────────────────────────────────────────────────────
@@ -383,6 +383,7 @@ const STATUS_LIST = [
 ];
 
 const CLASSES=[
+  {id:'personalizado',alcance:'—',name:'Personalizado',icon:'⚙️',color:'#C0C0C0',glow:'rgba(192,192,192,0.16)',role:'Classe Personalizada · Definida pelo Mestre',lore:`Esta ficha possui uma classe personalizada, criada exclusivamente pelo Mestre para este personagem. Suas habilidades, origem e poderes são únicos e revelados ao longo da campanha.`,passive:{name:'—',desc:'Habilidades definidas pelo Mestre.'},normal:[],specials:[]},
   {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas', dano: '1D8 + Agilidade' ,desc:'Embui um objeto com chamas de plasma e efetua uma estocada veloz que atravessa o alvo, fazendo-o sangrar (caso não tenha um objeto, usa suas proprias mãos): −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'Over Hit',cost:2,cooldown:'4 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Ao expirar, −3 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20, causando 3x o dano).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Após 2 rodadas ativo, superaquece — fica 2 rodadas completamente incapaz de agir.',req:7}]},
   {id:'escarlate',alcance:'1m',name:'Cavaleiros Escarlate',icon:'🛡️',color:'#E8193C',glow:'rgba(232,25,60,0.16)',role:'Tanque · Protetor',lore:`A sua linhagem remonta a eras esquecidas, a povos que realizavam trabalhos braçais extremos nas profundezas da terra. Durante escavações, descobriram um minério enigmático: um rubi de cor escarlate incrivelmente denso. A exposição contínua e o suor derramado sobre o rubi criaram uma osmose biológica e mágica. O mineral fundiu-se com a genética destes trabalhadores, fazendo com que a sua própria pele se tornasse espessa, rígida e quase tão impenetrável quanto a rocha que outrora mineravam.`,passive:{name:'Pele de Rubi',desc:'Quando sem o escudo escarlate, a pele endurece. Ganha atributos bônus de defesa de acordo com a quantidade de inimigos ao redor (+1 de defesa por inimigo).'},normal:[{name:'Reflexo Escarlate',cost:2,cooldown:'3 rodadas',desc:'Se posiciona em frente a um ataque de disparo e reflete 0,5× o dano recebido utilizando um escudo.'},{name:'Lança Defensiva',cost:2,cooldown:'1 rodada', dano : '1D6 + Força' , desc:'Arremessa o escudo no inimigo. Com resultado D18–20, pode atingir múltiplos inimigos. O escudo retorna à mão automaticamente.'},{name:'Investida Ágil',cost:2,cooldown:'2 rodadas', dano: '+4 de Dano ou Chance de Esquiva',desc:'Troca resistência por velocidade: você avança até 3 passos em 1 ação. Esse impulso súbito pode ser focado em um ataque ou em evasão. Ofensiva: O peso da investida garante +4 de Dano no seu ataque durante este avanço. Evasão: Tenta escapar de um ataque inimigo no último segundo. O inimigo rola 1d10; se tirar 1, 2 ou 3 (30% de chance), ele erra o golpe. O esforço extremo desestabiliza sua base. Independentemente da escolha, você sofre -3 de Defesa por 3 rodadas imediatamente após o uso.'}],specials:[{name:'Provocação Extrema',cost:3,cooldown:'4 rodadas',desc:'Todos os inimigos ao redor focam em você na proxima rodada. Todo dano recebido é reduzido em 50% enquanto o efeito durar (2 rodadas).',req:3},{name:'Modo Berserker',cost:3,cooldown:'4 rodadas',desc:'Troca toda a resistência por dano, força e alcance massivos. Fica imparável — mas exausto, sem poder usar habilidades por 4 rodadas.',req:7}]},
   {id:'corvos',alcance:'5m',name:'Corvos do Horizonte',icon:'🦅',color:'#E8A020',glow:'rgba(232,160,32,0.16)',role:'Atirador · Precisão Absoluta',lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes corvos e gaviões. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,passive:{name:'Visão do Gavião',desc:'Nunca sofre penalidade por distância. Ataques à longa distância ganham +2 no dado de precisão automaticamente. Além disso, a cada 2 ataques, seu próximo terá um acerto garantido.'},normal:[{name:'Sniper Americano',cost:2,cooldown:'—',desc:'Garante acerto em alvos de 5–10 metros sempre. Custo: causa apenas 0,50× do dano normal.'},{name:'Saque Rápido',cost:2,cooldown:'2 rodadas',desc:'Realiza um ataque a qualquer momento, mesmo fora do turno. Precisão reduzida em 3 pontos neste disparo.'},{name:'Foco Absoluto',cost:2,cooldown:'2 rodadas',desc:'Fica 1 rodada inteira sem atacar, apenas focando em um alvo. Garante acerto crítico automático na próxima rodada caso acerte.'}],specials:[{name:'Precisão Celestial',cost:3,cooldown:'4 rodadas',desc:'Disparo crítico perfurante no primeiro alvo e nos demais que estejam na mesma trajetória. O(s) inimigo(s) atingido(s) perde −2 de vida por rodada pelos 3 turnos seguintes.',req:3},{name:'Chuva Mortal',cost:3,cooldown:'5 rodadas', dano: '3D8',desc:'Canaliza calmamente sua arma atual com uma precisão fora do comum, disparando múltiplos acertos simultâneos em uma área de 10–13 metros ao redor. Não atinge aliados.',req:7}]},
@@ -1186,23 +1187,27 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
       {open&&(
         <div style={{padding:'0 14px 14px'}}>
           <div style={{height:8}}/>
-          <div style={{marginBottom:10}}>
-            <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Passiva</div>
-            <div style={{background:`${color}0D`,border:`1px solid ${color}28`,borderRadius:8,padding:'9px 12px'}}><div style={{fontFamily:'Cinzel,serif',fontSize:12,color,fontWeight:600,marginBottom:3}}>{cls.passive.name}</div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{cls.passive.desc}</div></div>
-          </div>
-          <div style={{marginBottom:10}}>
-            <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div>
-            <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map(a=>abilityRow(a,false,false,false))}</div>
-          </div>
-          <div style={{marginBottom:10}}>
-            <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Especiais — 3 VC cada</div>
-            <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map(a=>abilityRow(a,true,false,nivel<a.req))}</div>
-          </div>
-          {classCustom.length>0&&(
-            <div style={{marginBottom:10}}>
-              <div style={{fontSize:9,letterSpacing:'0.3em',color:`${color}88`,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Desbloqueadas pelo Mestre</div>
-              <div style={{display:'flex',flexDirection:'column',gap:6}}>{classCustom.map(a=>abilityRow(a,false,true,a.req&&nivel<a.req))}</div>
-            </div>
+          {cls.id !== 'personalizado' && (
+  <>
+    <div style={{marginBottom:10}}>
+      <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Passiva</div>
+      <div style={{background:`${color}0D`,border:`1px solid ${color}28`,borderRadius:8,padding:'9px 12px'}}><div style={{fontFamily:'Cinzel,serif',fontSize:12,color,fontWeight:600,marginBottom:3}}>{cls.passive.name}</div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{cls.passive.desc}</div></div>
+    </div>
+    <div style={{marginBottom:10}}>
+      <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map(a=>abilityRow(a,false,false,false))}</div>
+    </div>
+    <div style={{marginBottom:10}}>
+      <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Especiais — 3 VC cada</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map(a=>abilityRow(a,true,false,nivel<a.req))}</div>
+    </div>
+  </>
+)}
+{cls.id === 'personalizado' && classCustom.length === 0 && !masterMode && (
+  <div style={{padding:'18px',borderRadius:10,border:'1px dashed rgba(192,192,192,0.15)',color:'#5A5070',textAlign:'center',fontFamily:'Cinzel,serif',fontSize:12,marginBottom:10}}>
+    As habilidades deste personagem serão reveladas pelo Mestre.
+  </div>
+)}
           )}
           {masterMode&&(
             <div style={{border:`1px solid ${color}30`,borderRadius:10,padding:'14px',background:`${color}05`,marginTop:4}}>
@@ -1369,17 +1374,19 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
         </div>
 
-        <div style={{marginBottom:14}}>
-          <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
-            <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
-              {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
-            </div>
-            <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
-              <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
-              <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:sheetColor,fontWeight:700}}>{cls.alcance}</div>
-            </div>
-          </div>
-        </div>
+<div style={{marginBottom:14}}>
+  <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
+    {cls.id !== 'personalizado' && (
+      <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
+        {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
+      </div>
+    )}
+    <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
+      <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
+      <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:sheetColor,fontWeight:700}}>{cls.alcance}</div>
+    </div>
+  </div>
+</div>
 
         <div style={{marginBottom:14}}>
 <HabilidadesPanel
@@ -1694,12 +1701,21 @@ function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefat
   return(
     <div style={{border:`1px solid ${ENEMY_COLOR}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18,boxShadow:`0 4px 24px ${ENEMY_GLOW}`}}>
       <div style={{height:3,background:`linear-gradient(90deg,${ENEMY_COLOR},transparent)`}}/>
-      <div onClick={()=>photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
-        {enemy.foto?<img src={enemy.foto} alt="inimigo" style={{width:'100%',maxHeight:300,objectFit:'cover',objectPosition:'center top',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'20px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>Toque para adicionar imagem do inimigo</span></div>}
-        {enemy.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.85))',pointerEvents:'none'}}/>}
-        {enemy.foto&&enemy.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:16,fontWeight:700,color:ENEMY_COLOR,textShadow:'0 0 14px rgba(255,68,68,0.5)'}}>{enemy.nome}</div>}
-        <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
-      </div>
+<div onClick={()=>photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',minHeight:enemy.foto?0:130}}>
+  {enemy.foto
+    ?<img src={enemy.foto} alt="inimigo" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>
+    :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px 20px',gap:10}}>
+      <div style={{fontSize:40,opacity:0.15}}>📷</div>
+      <div style={{fontSize:12,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>Toque para adicionar a foto do inimigo</div>
+    </div>
+  }
+  {enemy.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(12,6,6,0.95))',pointerEvents:'none'}}/>}
+  {enemy.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}>
+    <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:ENEMY_COLOR,textShadow:`0 0 24px rgba(255,68,68,0.5)`}}>{enemy.nome||''}</div>
+    {enemy.tipo&&<div style={{fontSize:12,color:'rgba(255,100,100,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{enemy.tipo}</div>}
+  </div>}
+  <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
+</div>
       <div style={{padding:'16px 18px'}}>
         <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
