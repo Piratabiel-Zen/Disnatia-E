@@ -1693,7 +1693,7 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
       )}
     </div>
   );
-
+}
 function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefatosHabs}){
   const f=(k,v)=>onChange({...enemy,[k]:v});
   const hp=enemy.hp||0;const hpBonus=enemy.hp_bonus||0;
