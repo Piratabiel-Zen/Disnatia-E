@@ -405,9 +405,12 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
     }, 700);
   };
 
-  const handleClose = async () => {
-    try { await setDoc(doc(db, 'config', 'combat'), { active: false }); await setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] }); } catch (_) {}
-    onClose();
+const handleClose = () => {
+    onClose(); // Fecha a tela IMEDIATAMENTE para o mestre
+    
+    // Atualiza o banco de dados em segundo plano, sem travar a tela
+    setDoc(doc(db, 'config', 'combat'), { active: false }).catch(()=>{}); 
+    setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] }).catch(()=>{});
   };
 
   const current = initiative[turnIdx];
@@ -1525,22 +1528,29 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
 
         <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>            
-            <div style={{display:'flex',alignItems:'center',gap:10, flexWrap:'wrap', justifyContent: 'center'}}>
-              <div style={{display:'flex', gap:3}}>
-                {[-15, -10, -5, -1].map(v => (
-                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>{v}</button>
-                ))}
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
+
+            <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap: 10}}>
+              {/* Controles Principais */}
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:32,height:32,borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.15)',color:'#E8193C',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:32,fontWeight:700,color:hpColor(hp, 50),minWidth:46,textAlign:'center'}}>{hp}</span>
+                <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:32,height:32,borderRadius:6,border:'1px solid rgba(74,222,128,0.4)',background:'rgba(74,222,128,0.15)',color:'#4ADE80',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>+</button>
               </div>
-              <span style={{fontFamily:'Cinzel,serif',fontSize:26,fontWeight:700,color:hpColor(hp, 30),minWidth:36,textAlign:'center'}}>{hp}</span>
-              <div style={{display:'flex', gap:3}}>
-                {[+1, +5, +10, +15].map(v => (
-                  <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>+{v}</button>
+
+              {/* Botões de Dano/Cura em Massa */}
+              <div style={{display:'flex', gap:4, flexWrap:'wrap', justifyContent:'center'}}>
+                {[-15, -10, -5].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 8px',borderRadius:4,border:'1px solid rgba(232,25,60,0.25)',background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>{v}</button>
+                ))}
+                <div style={{width: 6}} /> {/* Espaçador no meio */}
+                {[+5, +10, +15].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.min(400,hp+v))} style={{padding:'4px 8px',borderRadius:4,border:'1px solid rgba(74,222,128,0.25)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>+{v}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
+            <div style={{marginTop:8,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
               <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
               <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:30,textAlign:'center'}}>{hp}</span>
               <button onClick={()=>f('hp',hp+1)} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
@@ -1960,21 +1970,28 @@ function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefat
         <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
-            <div style={{display:'flex',alignItems:'center',gap:10, flexWrap:'wrap', justifyContent:'center'}}>
-              <div style={{display:'flex', gap:3}}>
-                {[-15, -10, -5, -1].map(v => (
-                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>{v}</button>
-                ))}
+
+            <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap: 10}}>
+              {/* Controles Principais */}
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:32,height:32,borderRadius:6,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.15)',color:'#E8193C',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:32,fontWeight:700,color:hpColor(hp, 50),minWidth:46,textAlign:'center'}}>{hp}</span>
+                <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:32,height:32,borderRadius:6,border:'1px solid rgba(74,222,128,0.4)',background:'rgba(74,222,128,0.15)',color:'#4ADE80',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>+</button>
               </div>
-              <span style={{fontFamily:'Cinzel,serif',fontSize:26,fontWeight:700,color:hpColor(hp, 50),minWidth:36,textAlign:'center'}}>{hp}</span>
-              <div style={{display:'flex', gap:3}}>
-                {[+1, +5, +10, +15].map(v => (
-                  <button key={v} onClick={()=>f('hp',Math.min(400,hp+v))} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>+{v}</button>
+
+              {/* Botões de Dano/Cura em Massa */}
+              <div style={{display:'flex', gap:4, flexWrap:'wrap', justifyContent:'center'}}>
+                {[-15, -10, -5].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 8px',borderRadius:4,border:'1px solid rgba(232,25,60,0.25)',background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>{v}</button>
+                ))}
+                <div style={{width: 6}} /> {/* Espaçador no meio */}
+                {[+5, +10, +15].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.min(400,hp+v))} style={{padding:'4px 8px',borderRadius:4,border:'1px solid rgba(74,222,128,0.25)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>+{v}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
+            <div style={{marginTop:8,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
               <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
               <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:36,textAlign:'center'}}>{hp}</span>
               <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
