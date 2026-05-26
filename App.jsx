@@ -259,7 +259,13 @@ function LevelUpScreen({ data, onClose }) {
     </div>
   );
 }
-
+function hpColor(hp, maxHp) {
+  if (hp <= 0) return '#555555'; // Cinza (Morto)
+  const pct = hp / Math.max(1, maxHp);
+  if (pct > 0.6) return '#4ADE80'; // Verde (>60%)
+  if (pct > 0.3) return '#E8A020'; // Amarelo (30% - 60%)
+  return '#E8193C'; // Vermelho (<30%)
+}
 // ─── ⚔️ MODO COMBATE ─────────────────────────────────────────────────────────
 function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [round, setRound] = useState(1);
@@ -276,8 +282,7 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [surpriseAttacker, setSurpriseAttacker] = useState(null);
   const [showSurprisePanel, setShowSurprisePanel] = useState(false);
   const logRef = useRef(null);
- 
-  // ── Sincroniza estado do combate via Firestore (todos veem em tempo real) ──
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
       if (!snap.exists()) return;
@@ -289,663 +294,238 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
     });
     return () => unsub();
   }, []);
- 
-  // ── Sincroniza rolagem de dados em tempo real (todos no site veem) ─────────
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
       if (!snap.exists()) return;
       const d = snap.data();
-      if (!d.ts) return;
-      if (Date.now() - d.ts > 8000) return; // ignora resultados com >8s
+      if (!d.ts || Date.now() - d.ts > 8000) return;
       setDiceResult(d);
     });
     return () => unsub();
   }, []);
- 
-  // ── Scroll automático do log ───────────────────────────────────────────────
+
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
- 
-  // ── Montar lista de combatentes a partir das fichas ─────────────────────
+
   const buildCombatants = () => [
     ...sheets.map(s => {
       const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
       return {
-        id: 'p_' + s.id,
-        nome: s.nome || 'Personagem',
-        type: 'player',
-        hp: s.hp || 0,
-        maxHp: Math.max(s.hp || 1, 10),
-        color: SHEET_COLORS[s.classe] || cls.color,
-        foto: s.foto,
-        roll: 0,
-        agiBonus: Math.floor((s.agilidade || 0) / 2),   // bônus agilidade na iniciativa
-        perBonus: Math.floor((s.percepcao || 0) / 2),   // bônus percepção para desempate
-        status: s.status || {},
+        id: 'p_' + s.id, nome: s.nome || 'Personagem', type: 'player',
+        hp: s.hp || 0, maxHp: Math.max(s.hp || 1, 30), // MaxHP estimado para cores
+        color: SHEET_COLORS[s.classe] || cls.color, foto: s.foto, roll: 0,
+        agiBonus: Math.floor((s.agilidade || 0) / 2), perBonus: Math.floor((s.percepcao || 0) / 2), status: s.status || {},
       };
     }),
     ...enemies.map(e => ({
-      id: 'e_' + e.id,
-      nome: e.nome || 'Inimigo',
-      type: 'enemy',
-      hp: e.hp || 0,
-      maxHp: Math.max(e.hp || 1, 10),
-      color: '#FF4444',
-      foto: e.foto,
-      roll: 0,
-      agiBonus: Math.floor((e.agilidade || 0) / 2),
-      perBonus: Math.floor((e.percepcao || 0) / 2),
-      status: e.status || {},
+      id: 'e_' + e.id, nome: e.nome || 'Inimigo', type: 'enemy',
+      hp: e.hp || 0, maxHp: Math.max(e.hp || 1, 30), color: '#FF4444', foto: e.foto, roll: 0,
+      agiBonus: Math.floor((e.agilidade || 0) / 2), perBonus: Math.floor((e.percepcao || 0) / 2), status: e.status || {},
     })),
   ];
- 
+
   useEffect(() => {
-    if (initiative.length === 0) {
-      setInitiative(buildCombatants());
-    }
+    if (initiative.length === 0) setInitiative(buildCombatants());
   }, [sheets, enemies]);
- 
-  // ── Persistir estado no Firestore ──────────────────────────────────────────
+
   const persist = async (newInit, newRound, newTurnIdx, newLog) => {
-    try {
-      await setDoc(doc(db, 'config', 'combat_state'), {
-        initiative: newInit ?? initiative,
-        round: newRound ?? round,
-        turnIdx: newTurnIdx ?? turnIdx,
-        log: (newLog ?? log).slice(-60),
-      });
-    } catch (e) { console.error(e); }
+    try { await setDoc(doc(db, 'config', 'combat_state'), { initiative: newInit ?? initiative, round: newRound ?? round, turnIdx: newTurnIdx ?? turnIdx, log: (newLog ?? log).slice(-60) }); } catch (e) { console.error(e); }
   };
- 
+
   const addLog = (msg, color = '#C8B8A0', icon = '▸') => {
-    const entry = { msg, color, icon, ts: Date.now(), round };
-    const newLog = [...log, entry].slice(-60);
-    setLog(newLog);
-    return newLog;
+    const newLog = [...log, { msg, color, icon, ts: Date.now(), round }].slice(-60);
+    setLog(newLog); return newLog;
   };
- 
-  // ── Rolar Iniciativa: D20 + Agilidade; empate por Percepção ───────────────
+
   const rollInitiative = async () => {
     setRolling(true);
+    // ALERTA GLOBAL DO COMEÇO DO COMBATE:
+    pushToast('⚔️ O Combate foi Iniciado!', '⚔️', '#E8193C');
+    
     setTimeout(async () => {
-      const rolled = buildCombatants().map(c => ({
-        ...c,
-        roll: Math.floor(Math.random() * 20) + 1 + c.agiBonus,
-      }));
- 
-      // Ordena: maior roll → maior percepção → player ganha empate total
+      const rolled = buildCombatants().map(c => ({ ...c, roll: Math.floor(Math.random() * 20) + 1 + c.agiBonus }));
       rolled.sort((a, b) => {
         if (b.roll !== a.roll) return b.roll - a.roll;
-        if (b.perBonus !== a.perBonus) return b.perBonus - a.perBonus;
+        if (b.perBonus !== a.perBonus) return b.perBonus - a.perBonus; // Desempate por Percepção
         return a.type === 'player' ? -1 : 1;
       });
- 
-      const newLog = addLog(
-        `🎲 Iniciativa rolada! ${rolled[0]?.nome} age primeiro (${rolled[0]?.roll})`,
-        '#A855F7', '🎲'
-      );
-      setInitiative(rolled);
-      setTurnIdx(0);
-      setRound(1);
-      setRolling(false);
- 
-      try {
-        await setDoc(doc(db, 'config', 'combat'), {
-          active: true, round: 1,
-          currentNome: rolled[0]?.nome || '',
-          currentColor: rolled[0]?.color || '#E8193C',
-          currentType: rolled[0]?.type || 'player',
-        });
-      } catch (_) {}
- 
+
+      const newLog = addLog(`🎲 Iniciativa rolada! ${rolled[0]?.nome} age primeiro (${rolled[0]?.roll})`, '#A855F7', '🎲');
+      setInitiative(rolled); setTurnIdx(0); setRound(1); setRolling(false);
+      try { await setDoc(doc(db, 'config', 'combat'), { active: true, round: 1, currentNome: rolled[0]?.nome || '', currentColor: rolled[0]?.color || '#E8193C', currentType: rolled[0]?.type || 'player' }); } catch (_) {}
       persist(rolled, 1, 0, newLog);
     }, 900);
   };
- 
-  // ── Próximo Turno ──────────────────────────────────────────────────────────
+
+  const moveInitiative = (idx, dir) => {
+    if (!masterMode) return;
+    const newInit = [...initiative];
+    if (dir === -1 && idx > 0) [newInit[idx - 1], newInit[idx]] = [newInit[idx], newInit[idx - 1]];
+    else if (dir === 1 && idx < newInit.length - 1) [newInit[idx + 1], newInit[idx]] = [newInit[idx], newInit[idx + 1]];
+    else return;
+    setInitiative(newInit);
+    persist(newInit, round, turnIdx, log);
+  };
+
   const nextTurn = async () => {
     const next = (turnIdx + 1) % initiative.length;
     const newRound = next === 0 ? round + 1 : round;
     if (next === 0) setRound(newRound);
     setTurnIdx(next);
- 
     const c = initiative[next];
-    const newLog = addLog(
-      `Vez de ${c?.nome}${next === 0 ? ` — Rodada ${newRound} começa!` : ''}`,
-      c?.color || '#C8B8A0', '▶'
-    );
- 
-    try {
-      await setDoc(doc(db, 'config', 'combat'), {
-        active: true, round: newRound,
-        currentNome: c?.nome || '',
-        currentColor: c?.color || '#E8193C',
-        currentType: c?.type || 'player',
-      });
-    } catch (_) {}
- 
+    const newLog = addLog(`Vez de ${c?.nome}${next === 0 ? ` — Rodada ${newRound} começa!` : ''}`, c?.color || '#C8B8A0', '▶');
+    try { await setDoc(doc(db, 'config', 'combat'), { active: true, round: newRound, currentNome: c?.nome || '', currentColor: c?.color || '#E8193C', currentType: c?.type || 'player' }); } catch (_) {}
     persist(initiative, newRound, next, newLog);
   };
- 
-  // ── Ataque de Oportunidade (Surpresa) ─────────────────────────────────────
+
   const triggerOpportunityAttack = async () => {
     if (!surpriseAttacker || !surpriseTarget) return;
     const atk = initiative.find(c => c.id === surpriseAttacker);
     const tgt = initiative.find(c => c.id === surpriseTarget);
     if (!atk || !tgt) return;
- 
-    const newLog = addLog(
-      `⚡ ATAQUE DE OPORTUNIDADE! ${atk.nome} ataca ${tgt.nome} (${tgt.nome} deu as costas!)`,
-      '#FF6B35', '⚡'
-    );
-    setShowSurprisePanel(false);
-    setSurpriseAttacker(null);
-    setSurpriseTarget(null);
+    const newLog = addLog(`⚡ ATAQUE DE OPORTUNIDADE! ${atk.nome} ataca ${tgt.nome} (${tgt.nome} tentou fugir!)`, '#FF6B35', '⚡');
+    setShowSurprisePanel(false); setSurpriseAttacker(null); setSurpriseTarget(null);
     persist(initiative, round, turnIdx, newLog);
-    pushToast(`⚡ Ataque de Oportunidade! ${atk.nome} → ${tgt.nome}`, '⚡', '#FF6B35');
+    pushToast(`⚡ Ataque de Oportunidade! ${atk.nome} → ${tgt.nome}`, '⚡', '#FF6B35'); // Dispara aviso global
   };
- 
-  // ── Dado Público — todos no site veem o resultado ─────────────────────────
+
   const rollDice = async () => {
     setDiceRolling(true);
     setTimeout(async () => {
       const base = Math.floor(Math.random() * diceSides) + 1;
       const total = base + Number(diceBonus);
-      const roller = masterMode ? 'Mestre' : 'Jogador';
-      const isCrit = diceSides === 20 && base === 20;
-      const isFail = diceSides === 20 && base === 1;
- 
-      const result = { base, total, sides: diceSides, bonus: Number(diceBonus), roller, ts: Date.now(), isCrit, isFail };
-      setDiceResult(result);
-      setDiceRolling(false);
- 
-      try {
-        await setDoc(doc(db, 'config', 'combat_dice'), result);
-      } catch (e) { console.error(e); }
- 
-      const color = isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8';
-      const icon = isCrit ? '🌟' : isFail ? '💀' : '🎲';
-      const newLog = addLog(
-        `${roller} rolou D${diceSides}${diceBonus ? ` +${diceBonus}` : ''}: ${total}${isCrit ? ' — CRÍTICO!' : isFail ? ' — FALHA CRÍTICA!' : ''}`,
-        color, icon
-      );
+      const isCrit = diceSides === 20 && base === 20; const isFail = diceSides === 20 && base === 1;
+      const result = { base, total, sides: diceSides, bonus: Number(diceBonus), roller: masterMode ? 'Mestre' : 'Jogador', ts: Date.now(), isCrit, isFail };
+      setDiceResult(result); setDiceRolling(false);
+      try { await setDoc(doc(db, 'config', 'combat_dice'), result); } catch (e) {}
+      const newLog = addLog(`${result.roller} rolou D${diceSides}${diceBonus ? ` +${diceBonus}` : ''}: ${total}${isCrit ? ' — CRÍTICO!' : isFail ? ' — FALHA CRÍTICA!' : ''}`, isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8', isCrit ? '🌟' : isFail ? '💀' : '🎲');
       persist(initiative, round, turnIdx, newLog);
     }, 700);
   };
- 
-  // ── Aplicar dano ou cura rápida ────────────────────────────────────────────
-  const applyHp = async (combatantId, delta) => {
-    const updated = initiative.map(c => {
-      if (c.id !== combatantId) return c;
-      return { ...c, hp: Math.max(0, c.hp + delta) };
-    });
-    const target = updated.find(c => c.id === combatantId);
-    const icon = delta < 0 ? '🩸' : '💚';
-    const color = delta < 0 ? '#E8193C' : '#4ADE80';
-    const newLog = addLog(
-      `${icon} ${target?.nome}: ${delta > 0 ? '+' : ''}${delta} HP (restam ${target?.hp})`,
-      color, icon
-    );
-    setInitiative(updated);
-    persist(updated, round, turnIdx, newLog);
-  };
- 
+
   const handleClose = async () => {
-    try {
-      await setDoc(doc(db, 'config', 'combat'), { active: false });
-      await setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] });
-    } catch (_) {}
+    try { await setDoc(doc(db, 'config', 'combat'), { active: false }); await setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] }); } catch (_) {}
     onClose();
   };
- 
-  // ── Helpers de cor por HP ──────────────────────────────────────────────────
-  const hpColor = (hp, maxHp) => {
-    if (hp <= 0) return '#555';
-    const pct = hp / Math.max(1, maxHp);
-    if (pct > 0.6) return '#4ADE80';
-    if (pct > 0.3) return '#E8A020';
-    return '#E8193C';
-  };
- 
-  const hpLabel = (hp, maxHp) => {
-    if (hp <= 0) return { text: '💀 Abatido', color: '#555' };
-    const pct = hp / Math.max(1, maxHp);
-    if (pct > 0.6) return { text: '● Saudável', color: '#4ADE80' };
-    if (pct > 0.3) return { text: '● Ferido', color: '#E8A020' };
-    return { text: '● Crítico', color: '#E8193C' };
-  };
- 
-  const STATUS_ICONS = {
-    envenenado: '☠', sangrando: '🩸', atordoado: '💫',
-    queimando: '🔥', congelado: '✦', amaldicado: '💀',
-    invisivel: '👻', protegido: '🛡',
-  };
- 
-  const activeStatuses = (statusObj) =>
-    Object.entries(statusObj || {})
-      .filter(([, v]) => v)
-      .map(([k]) => STATUS_ICONS[k] || '?');
- 
+
   const current = initiative[turnIdx];
-  const DICE_OPTS = [4, 6, 8, 10, 12, 20];
- 
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9990,
-      background: 'rgba(4,6,15,0.98)',
-      display: 'flex', flexDirection: 'column',
-      backdropFilter: 'blur(4px)', fontFamily: "'Cinzel',serif",
-    }}>
- 
-      {/* ════ HEADER ════ */}
-      <div style={{
-        padding: '12px 18px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(232,25,60,0.3)',
-        background: 'rgba(232,25,60,0.06)',
-        flexWrap: 'wrap', gap: 8,
-      }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: 'rgba(4,6,15,0.98)', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(4px)', fontFamily: "'Cinzel',serif" }}>
+      {/* HEADER */}
+      <div style={{ padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.06)', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 22 }}>⚔️</span>
           <div>
             <div style={{ fontSize: 15, color: '#E8193C', fontWeight: 700 }}>Modo Combate</div>
-            <div style={{ fontSize: 11, color: 'rgba(232,25,60,0.5)', letterSpacing: '0.15em' }}>
-              Rodada {round} · {initiative.length} combatente{initiative.length !== 1 ? 's' : ''}
-            </div>
+            <div style={{ fontSize: 11, color: 'rgba(232,25,60,0.5)', letterSpacing: '0.15em' }}>Rodada {round} · {initiative.length} combatentes</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {masterMode && (
             <>
-              <button onClick={rollInitiative} disabled={rolling} style={btnStyle('#A855F7')}>
-                {rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}
-              </button>
+              <button onClick={rollInitiative} disabled={rolling} style={btnStyle('#A855F7')}>{rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}</button>
               {initiative.length > 0 && (
                 <>
-                  <button
-                    onClick={() => setShowSurprisePanel(p => !p)}
-                    style={btnStyle('#FF6B35')}
-                  >⚡ Oportunidade</button>
-                  <button onClick={nextTurn} style={{
-                    ...btnStyle('#E8193C'),
-                    animation: 'combatPulse 2s ease-in-out infinite',
-                    fontWeight: 700,
-                  }}>Próximo Turno ▶</button>
+                  <button onClick={() => setShowSurprisePanel(p => !p)} style={btnStyle('#FF6B35')}>⚡ Oportunidade</button>
+                  <button onClick={nextTurn} style={{ ...btnStyle('#E8193C'), animation: 'combatPulse 2s ease-in-out infinite', fontWeight: 700 }}>Próximo Turno ▶</button>
                 </>
               )}
             </>
           )}
-          <button onClick={() => setShowDice(p => !p)} style={btnStyle('#4ADE80')}>
-            🎲 {showDice ? 'Fechar Dado' : 'Dado Público'}
-          </button>
+          <button onClick={() => setShowDice(p => !p)} style={btnStyle('#4ADE80')}>🎲 {showDice ? 'Fechar Dado' : 'Dado Público'}</button>
           <button onClick={handleClose} style={btnStyle('rgba(255,255,255,0.2)')}>✕ Fechar</button>
         </div>
       </div>
- 
-      {/* ════ TURNO ATUAL ════ */}
-      {current && (
-        <div style={{
-          padding: '8px 18px',
-          background: `${current.color}18`,
-          borderBottom: `1px solid ${current.color}33`,
-          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        }}>
-          <span style={{ fontSize: 16, animation: 'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
-          <span style={{ fontSize: 14, color: current.color, fontWeight: 700 }}>
-            Vez de: {current.nome}
-          </span>
-          {current.roll > 0 && (
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-              Iniciativa: {current.roll}
-              {current.agiBonus > 0 && (
-                <span style={{ color: 'rgba(232,160,32,0.55)', fontSize: 10 }}>
-                  {' '}(D20 +{current.agiBonus} agi)
-                </span>
-              )}
-            </span>
-          )}
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 5 }}>
-            {activeStatuses(current.status).map((ic, i) => (
-              <span key={i} style={{ fontSize: 14 }}>{ic}</span>
-            ))}
-          </div>
-        </div>
-      )}
- 
-      {/* ════ PAINEL ATAQUE DE OPORTUNIDADE ════ */}
-      {showSurprisePanel && masterMode && (
-        <div style={{
-          padding: '12px 18px',
-          background: 'rgba(255,107,53,0.08)',
-          borderBottom: '1px solid rgba(255,107,53,0.3)',
-          display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap',
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 13, color: '#FF6B35', fontWeight: 700, letterSpacing: '0.08em' }}>
-                ⚡ Ataque de Oportunidade
-              </span>
-              <select
-                value={surpriseAttacker || ''}
-                onChange={e => setSurpriseAttacker(e.target.value)}
-                style={{ fontSize: 12, padding: '4px 8px' }}
-              >
-                <option value="">Quem ataca...</option>
-                {initiative.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
-              <span style={{ color: '#FF6B35', fontSize: 14 }}>→</span>
-              <select
-                value={surpriseTarget || ''}
-                onChange={e => setSurpriseTarget(e.target.value)}
-                style={{ fontSize: 12, padding: '4px 8px' }}
-              >
-                <option value="">Quem deu as costas...</option>
-                {initiative.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
-              <button
-                onClick={triggerOpportunityAttack}
-                disabled={!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget}
-                style={{
-                  ...btnStyle('#FF6B35'),
-                  opacity: (!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget) ? 0.35 : 1,
-                }}
-              >⚡ Confirmar</button>
-              <button onClick={() => setShowSurprisePanel(false)} style={btnStyle('rgba(255,255,255,0.15)')}>✕</button>
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,107,53,0.55)', fontFamily: 'Crimson Text,Georgia,serif', fontStyle: 'italic' }}>
-              Quando um combatente foge ou dá as costas ao inimigo, ele pode receber um ataque gratuito — mesmo fora do turno do atacante.
-            </div>
-          </div>
-        </div>
-      )}
- 
-      {/* ════ DADO PÚBLICO ════ */}
-      {showDice && (
-        <div style={{
-          padding: '12px 18px',
-          background: 'rgba(74,222,128,0.05)',
-          borderBottom: '1px solid rgba(74,222,128,0.18)',
-          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        }}>
-          <span style={{ fontSize: 11, color: 'rgba(74,222,128,0.6)', letterSpacing: '0.2em' }}>🎲 DADO PÚBLICO</span>
- 
-          <div style={{ display: 'flex', gap: 4 }}>
-            {DICE_OPTS.map(d => (
-              <button key={d} onClick={() => setDiceSides(d)} style={{
-                padding: '4px 9px', borderRadius: 5, fontSize: 11, cursor: 'pointer',
-                border: `1px solid ${diceSides === d ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.09)'}`,
-                background: diceSides === d ? 'rgba(74,222,128,0.14)' : 'rgba(255,255,255,0.02)',
-                color: diceSides === d ? '#4ADE80' : '#6A6A6A',
-                transition: 'all 0.15s',
-              }}>D{d}</button>
-            ))}
-          </div>
- 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: 11, color: '#5A7A5A' }}>Bônus</span>
-            <input
-              type="number" value={diceBonus}
-              onChange={e => setDiceBonus(Number(e.target.value))}
-              style={{ width: 46, fontSize: 12, textAlign: 'center', padding: '3px 5px' }}
-            />
-          </div>
- 
-          <button onClick={rollDice} disabled={diceRolling} style={{ ...btnStyle('#4ADE80'), fontWeight: 700 }}>
-            <span style={{ display: 'inline-block', animation: diceRolling ? 'diceRollAnim 0.5s infinite' : 'none' }}>🎲</span>
-            {' '}{diceRolling ? 'Rolando...' : `Rolar D${diceSides}`}
-          </button>
- 
-          {diceResult && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '6px 14px', borderRadius: 10,
-              background: diceResult.isCrit ? 'rgba(74,222,128,0.1)' : diceResult.isFail ? 'rgba(232,25,60,0.1)' : 'rgba(168,85,247,0.08)',
-              border: `1px solid ${diceResult.isCrit ? 'rgba(74,222,128,0.4)' : diceResult.isFail ? 'rgba(232,25,60,0.4)' : 'rgba(168,85,247,0.22)'}`,
-              animation: 'cooldownIn 0.3s ease',
-            }}>
-              <span style={{
-                fontSize: 22, fontWeight: 900,
-                color: diceResult.isCrit ? '#4ADE80' : diceResult.isFail ? '#E8193C' : '#C8A8E8',
-              }}>{diceResult.total}</span>
-              {diceResult.bonus !== 0 && (
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>
-                  ({diceResult.base} +{diceResult.bonus})
-                </span>
-              )}
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Crimson Text,serif' }}>
-                D{diceResult.sides} · {diceResult.roller}
-              </span>
-              {diceResult.isCrit && <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 700 }}>🌟 CRÍTICO!</span>}
-              {diceResult.isFail && <span style={{ fontSize: 12, color: '#E8193C', fontWeight: 700 }}>💀 FALHA!</span>}
-            </div>
-          )}
-        </div>
-      )}
- 
-      {/* ════ FILA DE INICIATIVA HORIZONTAL ════ */}
-      <div style={{
-        padding: '14px 18px 10px',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        background: 'rgba(0,0,0,0.28)',
-        overflowX: 'auto',
-        flexShrink: 0,
-      }}>
-        {initiative.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '12px 0', color: '#3A3050', fontSize: 12, fontFamily: 'Cinzel,serif' }}>
-            Nenhum combatente carregado. Abra as fichas e inimigos primeiro, depois role a iniciativa.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', minWidth: 'max-content', paddingBottom: 4 }}>
-            {initiative.map((c, idx) => {
-              const isActive = idx === turnIdx;
-              const isDead = c.hp <= 0;
-              const hpPct = Math.max(0, Math.min(100, (c.hp / Math.max(1, c.maxHp)) * 100));
-              const hpC = hpColor(c.hp, c.maxHp);
-              const lbl = hpLabel(c.hp, c.maxHp);
-              const statIcons = activeStatuses(c.status);
-              const w = isActive ? 72 : 54;
- 
-              return (
-                <div key={c.id} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                  opacity: isDead ? 0.38 : 1,
-                  transition: 'all 0.35s',
-                  position: 'relative',
+
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* FILA VERTICAL (ESQUERDA) */}
+        <div style={{ width: 100, background: 'rgba(0,0,0,0.4)', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0', overflowY: 'auto', gap: 16, flexShrink: 0 }}>
+          {initiative.length === 0 && <div style={{color: '#555', fontSize: 10, textAlign:'center'}}>Vazio</div>}
+          {initiative.map((c, idx) => {
+            const isActive = idx === turnIdx;
+            const isDead = c.hp <= 0;
+            const hpC = hpColor(c.hp, c.maxHp);
+
+            return (
+              <div key={c.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, opacity: isDead ? 0.38 : 1, position: 'relative' }}>
+                {masterMode && (
+                  <div style={{ display: 'flex', gap: 10, marginBottom: -4 }}>
+                    <button onClick={() => moveInitiative(idx, -1)} disabled={idx === 0} style={{ background: 'none', border: 'none', color: idx === 0 ? 'transparent' : '#888', cursor: 'pointer', fontSize: 16, padding: 0 }}>▲</button>
+                    <button onClick={() => moveInitiative(idx, 1)} disabled={idx === initiative.length - 1} style={{ background: 'none', border: 'none', color: idx === initiative.length - 1 ? 'transparent' : '#888', cursor: 'pointer', fontSize: 16, padding: 0 }}>▼</button>
+                  </div>
+                )}
+                <div style={{
+                  width: isActive ? 60 : 48, height: isActive ? 60 : 48, borderRadius: '50%',
+                  border: `3px solid ${hpC}`, boxShadow: isActive ? `0 0 16px ${hpC}` : 'none',
+                  overflow: 'hidden', background: c.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.3s'
                 }}>
-                  {/* Número de ordem */}
-                  <div style={{
-                    fontSize: 9, letterSpacing: '0.12em',
-                    color: isActive ? c.color : 'rgba(255,255,255,0.18)',
-                    fontWeight: isActive ? 700 : 400,
-                  }}>#{idx + 1}</div>
- 
-                  {/* Foto / avatar */}
-                  <div style={{
-                    position: 'relative',
-                    border: `2px solid ${isActive ? c.color : isDead ? '#2A2A2A' : c.color + '44'}`,
-                    borderRadius: 10,
-                    boxShadow: isActive
-                      ? `0 0 20px ${c.color}55, 0 0 48px ${c.color}18`
-                      : 'none',
-                    transition: 'all 0.35s',
-                    overflow: 'hidden',
-                    width: w, height: w,
-                    flexShrink: 0,
-                    background: c.color + '14',
-                  }}>
-                    {c.foto ? (
-                      <img src={c.foto} alt="" style={{
-                        width: '100%', height: '100%',
-                        objectFit: 'cover', objectPosition: 'top',
-                        filter: isDead ? 'grayscale(100%) brightness(0.25)' : 'none',
-                        transition: 'filter 0.45s',
-                      }} />
-                    ) : (
-                      <div style={{
-                        width: '100%', height: '100%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: isActive ? 30 : 22,
-                      }}>{c.type === 'enemy' ? '💀' : '⚔️'}</div>
-                    )}
- 
-                    {/* Status icons sobrepostos */}
-                    {statIcons.length > 0 && (
-                      <div style={{
-                        position: 'absolute', bottom: 2, left: 2, right: 2,
-                        display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap',
-                      }}>
-                        {statIcons.slice(0, 3).map((ic, i) => (
-                          <span key={i} style={{
-                            fontSize: 9, background: 'rgba(0,0,0,0.75)',
-                            borderRadius: 3, padding: '1px 2px',
-                          }}>{ic}</span>
-                        ))}
-                      </div>
-                    )}
- 
-                    {/* Ponto ativo pulsante */}
-                    {isActive && (
-                      <div style={{
-                        position: 'absolute', top: 4, right: 4,
-                        width: 8, height: 8, borderRadius: '50%',
-                        background: c.color,
-                        boxShadow: `0 0 8px ${c.color}`,
-                        animation: 'pulse 1.4s ease-in-out infinite',
-                      }} />
-                    )}
- 
-                    {/* Overlay morto */}
-                    {isDead && (
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 24, background: 'rgba(0,0,0,0.55)',
-                      }}>💀</div>
-                    )}
-                  </div>
- 
-                  {/* Nome */}
-                  <div style={{
-                    fontSize: 10, fontWeight: isActive ? 700 : 400,
-                    color: isActive ? c.color : isDead ? '#383838' : '#7A6A8A',
-                    maxWidth: w + 6, textAlign: 'center',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    letterSpacing: '0.03em',
-                  }}>{c.nome}</div>
- 
-                  {/* Tag inimigo */}
-                  {c.type === 'enemy' && (
-                    <div style={{
-                      fontSize: 8, color: '#FF4444', letterSpacing: '0.12em',
-                      background: 'rgba(255,68,68,0.1)', borderRadius: 3, padding: '1px 5px',
-                      border: '1px solid rgba(255,68,68,0.2)',
-                    }}>INIMIGO</div>
-                  )}
- 
-                  {/* Barra HP — cor muda conforme estado */}
-                  <div style={{ width: w + 6, height: 5, background: 'rgba(255,255,255,0.07)', borderRadius: 3 }}>
-                    <div style={{
-                      height: '100%', width: `${hpPct}%`,
-                      background: hpC, borderRadius: 3,
-                      transition: 'width 0.4s, background 0.4s',
-                      boxShadow: hpPct < 30 && c.hp > 0 ? `0 0 7px ${hpC}` : 'none',
-                    }} />
-                  </div>
- 
-                  {/* HP número + rótulo de estado */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: hpC }}>{c.hp}</div>
-                    <div style={{ fontSize: 8, color: lbl.color, letterSpacing: '0.04em' }}>{lbl.text}</div>
-                  </div>
- 
-                  {/* Badge de iniciativa */}
-                  {c.roll > 0 && (
-                    <div style={{
-                      fontSize: 9, color: 'rgba(255,200,0,0.55)',
-                      background: 'rgba(255,200,0,0.05)',
-                      border: '1px solid rgba(255,200,0,0.14)',
-                      borderRadius: 4, padding: '1px 5px',
-                    }}>🎲 {c.roll}</div>
-                  )}
- 
-                  {/* Botões rápidos de HP (só mestre, combatente vivo) */}
-                  {masterMode && !isDead && (
-                    <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
-                      {[-5, -1, +1, +5].map(delta => (
-                        <button
-                          key={delta}
-                          onClick={() => applyHp(c.id, delta)}
-                          title={delta > 0 ? `+${delta} HP` : `${delta} HP`}
-                          style={{
-                            width: 22, height: 18, fontSize: 9, borderRadius: 3, padding: 0,
-                            border: `1px solid ${delta < 0 ? 'rgba(232,25,60,0.38)' : 'rgba(74,222,128,0.38)'}`,
-                            background: delta < 0 ? 'rgba(232,25,60,0.08)' : 'rgba(74,222,128,0.08)',
-                            color: delta < 0 ? '#E8193C' : '#4ADE80',
-                            cursor: 'pointer', lineHeight: 1,
-                          }}
-                        >{delta > 0 ? `+${delta}` : delta}</button>
-                      ))}
-                    </div>
-                  )}
- 
-                  {/* Seta conectora entre combatentes */}
-                  {idx < initiative.length - 1 && (
-                    <div style={{
-                      position: 'absolute', right: -9, top: '35%',
-                      fontSize: 9, color: 'rgba(255,255,255,0.08)',
-                    }}>▸</div>
-                  )}
+                  {c.foto ? <img src={c.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isDead ? 'grayscale(1)' : 'none' }} /> : <span style={{ fontSize: 20 }}>{c.type === 'enemy' ? '💀' : '⚔️'}</span>}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
- 
-      {/* ════ LOG DE EVENTOS ════ */}
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <div style={{
-          padding: '8px 18px 4px',
-          fontSize: 9, letterSpacing: '0.28em',
-          color: '#3A3050', textTransform: 'uppercase',
-          borderBottom: '1px solid rgba(255,255,255,0.03)',
-        }}>
-          📜 Registro de Combate
-        </div>
-        <div
-          ref={logRef}
-          style={{ flex: 1, overflowY: 'auto', padding: '10px 18px 28px', display: 'flex', flexDirection: 'column', gap: 3 }}
-        >
-          {log.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '28px 0', color: '#3A3050', fontSize: 12, fontStyle: 'italic', fontFamily: 'Crimson Text,serif' }}>
-              Role a iniciativa para começar o combate. Todos os eventos aparecerão aqui.
-            </div>
-          ) : (
-            log.map((entry, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 8,
-                padding: '5px 10px', borderRadius: 6,
-                background: i === log.length - 1 ? 'rgba(255,255,255,0.03)' : 'transparent',
-                borderLeft: `2px solid ${i === log.length - 1 ? entry.color + '66' : 'transparent'}`,
-                transition: 'all 0.25s',
-              }}>
-                <span style={{ fontSize: 12, flexShrink: 0, opacity: 0.8 }}>{entry.icon}</span>
-                <span style={{
-                  fontSize: 13, fontFamily: 'Crimson Text,Georgia,serif',
-                  color: i === log.length - 1 ? entry.color : 'rgba(200,184,160,0.35)',
-                  lineHeight: 1.5, flex: 1,
-                }}>{entry.msg}</span>
-                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.1)', flexShrink: 0 }}>
-                  R{entry.round}
-                </span>
+                <div style={{ fontSize: 9, color: isActive ? hpC : '#777', fontWeight: isActive ? 700 : 400, maxWidth: 80, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {isActive ? '▶ VEZ' : `#${idx + 1}`}
+                </div>
               </div>
-            ))
+            );
+          })}
+        </div>
+
+        {/* ÁREA PRINCIPAL E LOG (DIREITA) */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* TURNO ATUAL INFO */}
+          {current && (
+            <div style={{ padding: '8px 18px', background: `${current.color}18`, borderBottom: `1px solid ${current.color}33`, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 16, animation: 'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
+              <span style={{ fontSize: 14, color: current.color, fontWeight: 700 }}>Vez de: {current.nome}</span>
+              {current.roll > 0 && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Ini: {current.roll} {current.agiBonus > 0 && `(D20 +${current.agiBonus})`}</span>}
+            </div>
           )}
+
+          {/* PAINEL SURPRESA */}
+          {showSurprisePanel && masterMode && (
+            <div style={{ padding: '12px 18px', background: 'rgba(255,107,53,0.08)', borderBottom: '1px solid rgba(255,107,53,0.3)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13, color: '#FF6B35', fontWeight: 700 }}>⚡ Ataque de Oportunidade</span>
+              <select value={surpriseAttacker || ''} onChange={e => setSurpriseAttacker(e.target.value)} style={{ fontSize: 12, padding: '4px 8px' }}><option value="">Quem ataca...</option>{initiative.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+              <span style={{ color: '#FF6B35' }}>→</span>
+              <select value={surpriseTarget || ''} onChange={e => setSurpriseTarget(e.target.value)} style={{ fontSize: 12, padding: '4px 8px' }}><option value="">Quem deu as costas...</option>{initiative.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+              <button onClick={triggerOpportunityAttack} disabled={!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget} style={{ ...btnStyle('#FF6B35'), opacity: (!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget) ? 0.35 : 1 }}>⚡ Confirmar</button>
+            </div>
+          )}
+
+          {/* DADO PUBLICO */}
+          {showDice && (
+            <div style={{ padding: '12px 18px', background: 'rgba(74,222,128,0.05)', borderBottom: '1px solid rgba(74,222,128,0.18)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, color: 'rgba(74,222,128,0.6)' }}>🎲 DADO PÚBLICO</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[4, 6, 8, 10, 12, 20].map(d => (
+                  <button key={d} onClick={() => setDiceSides(d)} style={{ padding: '4px 9px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${diceSides === d ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.09)'}`, background: diceSides === d ? 'rgba(74,222,128,0.14)' : 'rgba(255,255,255,0.02)', color: diceSides === d ? '#4ADE80' : '#6A6A6A' }}>D{d}</button>
+                ))}
+              </div>
+              <input type="number" value={diceBonus} onChange={e => setDiceBonus(Number(e.target.value))} style={{ width: 46, fontSize: 12, textAlign: 'center', padding: '3px 5px' }} placeholder="Bônus" />
+              <button onClick={rollDice} disabled={diceRolling} style={{ ...btnStyle('#4ADE80'), fontWeight: 700 }}>{diceRolling ? 'Rolando...' : `Rolar D${diceSides}`}</button>
+              {diceResult && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 10, background: diceResult.isCrit ? 'rgba(74,222,128,0.1)' : diceResult.isFail ? 'rgba(232,25,60,0.1)' : 'rgba(168,85,247,0.08)' }}>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: diceResult.isCrit ? '#4ADE80' : diceResult.isFail ? '#E8193C' : '#C8A8E8' }}>{diceResult.total}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Crimson Text,serif' }}>D{diceResult.sides} · {diceResult.roller}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* LOG */}
+          <div style={{ padding: '8px 18px 4px', fontSize: 9, letterSpacing: '0.28em', color: '#3A3050', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>📜 Registro de Combate</div>
+          <div ref={logRef} style={{ flex: 1, overflowY: 'auto', padding: '10px 18px 28px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {log.map((entry, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 10px', borderRadius: 6, background: i === log.length - 1 ? 'rgba(255,255,255,0.03)' : 'transparent', borderLeft: `2px solid ${i === log.length - 1 ? entry.color + '66' : 'transparent'}` }}>
+                <span style={{ fontSize: 12, opacity: 0.8 }}>{entry.icon}</span>
+                <span style={{ fontSize: 13, color: i === log.length - 1 ? entry.color : 'rgba(200,184,160,0.35)', lineHeight: 1.5, flex: 1 }}>{entry.msg}</span>
+                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.1)' }}>R{entry.round}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -987,8 +567,53 @@ const PROLOGUE=[{type:'intro',text:'No início, não existia nada.'},{type:'paus
 const MILESTONES=[{year:'~400.000 AC',event:'Descoberta e controle do fogo',icon:'🔥'},{year:'~10.000 AC',event:'Revolução agrícola — os humanos se tornam sedentários',icon:'🌾'},{year:'~3.500 AC',event:'Surgimento das primeiras civilizações: Mesopotâmia e Egito',icon:'🏛️'},{year:'~3.000 AC',event:'Invenção da escrita cuneiforme',icon:'📜'},{year:'~500 AC',event:'Apogeu dos grandes impérios: Persa, Grego, Romano',icon:'⚔️'},{year:'Séc. XV',event:'Era das grandes navegações e descobrimento dos continentes',icon:'🌊'},{year:'Séc. XVIII',event:'Revolução Industrial — a máquina a vapor muda o mundo',icon:'⚙️'},{year:'1905',event:'Albert Einstein publica a Teoria da Relatividade',icon:'🧠'},{year:'1945',event:'Era Atômica — o poder de destruição da humanidade se torna real',icon:'☢️'},{year:'1969',event:'O primeiro ser humano pisa na Lua',icon:'🌕'},{year:'1990s',event:'Era digital — a internet conecta a humanidade globalmente',icon:'💻'},{year:'Séc. XXI',event:'Inteligência artificial: a humanidade cria inteligência',icon:'🤖'},{year:'AGORA',event:'Quatro estrelas aparecem nos céus de Cosmum. Elas se aproximam.',icon:'✦',prophecy:true}];
 const ENTITIES_DATA=[{id:'homem-agua',name:'Homem Água',icon:'💧',revealed:true,lore:`Era um homem comum chamado David, que vivia por volta de 1544, com seu amigo Billy Laranjais. Um dia como qualquer outro, uma lágrima celestial caiu dos céus — era de JhonKenteiker. Ninguém sabe o motivo daquela lágrima ter caído, mas ao entrar em contato com o corpo de David, tornou-o extremamente poderoso, expelindo água de seu corpo e a controlando de forma quase que divina.\n\nAo ver isso, Billy teve uma ideia, movido pela ganância. Ele atraiu seu amigo até um local, onde o prendeu e ficou drenando toda sua água, dia após dia. Com isso, Billy criou uma fortuna e o parque temático para esconder seu pecado — conhecido como "Thermas dos Laranjais".\n\nApós isso, a cada 200 a 300 anos o Homem Água não morre, mas reencarna sua essência em outro hospedeiro. Quando isso acontece, todos os Cavaleiros dos Laranjais — descendentes diretos de Billy — são acionados para capturar a criança assim que nasce, e colocá-la na prisão que um dia foi de David, para drenar sua água até que o ciclo comece outra vez.`,fisico:`Um ser formado completamente pela água mais pura já vista — transparente, límpida, quase luminosa. Seus olhos são os únicos traços aparentes: dois pontos visíveis dentro de uma forma humana inteiramente aquosa. Não possui cor, não possui sombra. Apenas água com vontade própria.`},{id:'cabecas-azuis',name:'Os Cabeças Azuis',icon:'🔵',revealed:true,lore:`No ano de 830 d.C., uma entidade senciente de vontade própria e poder imensurável despertou. Embora fosse poderosa, ela se sentia incompleta em sua solidão. Foi então que seduziu o primeiro humano — um homem cujo nome original foi apagado da história, restando apenas o "Chamado" que ressoa em sua mente.\n\nA entidade convenceu este primeiro hospedeiro de que a individualidade era um fardo e que pertencer a um único ser pensante, abrindo mão da própria dignidade e vontade, seria o maior prazer de uma vida. Ao longo dos séculos, mais e mais humanos foram abduzidos e assimilados.\n\nHoje, eles não são mais indivíduos, mas componentes de uma Mente Coletiva. Funcionam como um "software" biológico: cada novo humano assimilado serve como processamento e memória, fazendo com que a entidade cresça em inteligência e alcance a cada segundo.`,fisico:`Seres finos, quase esqueléticos, com uma cabeça desproporcional e grande. Não possuem boca nem nariz — apenas um único olho no centro do rosto, brilhando na cor de safira profunda. Sua presença, embora não seja aterrorizante, é completamente desconfortável. Como se algo essencial estivesse faltando onde deveria haver um rosto.`},{id:'homem-leite',name:'O Homem de Leite',icon:'◌',revealed:false,lore:'',fisico:''},{id:'ventus',name:'Ventus o Rei dus Tempus',icon:'🌪️',revealed:false,lore:'',fisico:''},{id:'sixseven',name:'O 67 (SixSeven)',icon:'⚡',revealed:false,lore:'',fisico:''},{id:'unknown',name:'???',icon:'◈',revealed:false,lore:'',fisico:''}];
 const ARTEFATOS_DATA=[{id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💎',lore:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha.... (o livro não descreve)`,fisico:`Localização: Desconhecida\nOrigem: Corpo do Homem Água`},{id:'artefato-2',name:'Sandaliers Six',icon:'👟',lore:`Quem possui esse artefato pode estar onde bem entender, espaço e tempo não o param, podendo se movimentar de forma livre em qualquer momento, um teleporte instantâneo.`,fisico:`Localização: Desconhecida\nOrigem: Desconhecida`},{id:'artefato-3',name:'Artefato III',icon:'◆',lore:'',fisico:''},{id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},{id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},{id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}];
-const RULES_DATA=[{icon:'⚔️',title:'Estrutura do Turno',body:`O combate em Dinastia E é por turnos. O Mestre define a ordem de iniciativa antes de cada encontro.\n\nEm seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, o personagem recupera automaticamente +2 Vigor Cósmico.\n\nQualquer ação que envolva esforço físico, mental ou mágico consome Vigor Cósmicos.`},{icon:'🎲',title:'Os Dados',body:`Dois tipos de dados são usados em Dinastia E:\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 / 1D8 / 1D12 — Dado de Dano:\nUsado após um ataque bem-sucedido (≥11 no D20). Cada habilidade especifica qual dado usar.`},{icon:'🎯',title:'Tipos de Ação e Custos',body:`Ações possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos 3 ataques normais da sua classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais desbloqueados (ataques especiais só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, e etc...\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`},{icon:'📊',title:'Bônus de Atributos',body:`Os atributos do personagem concedem bônus diretos às ações em combate. A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚔️ Força (Dano e Ataques):\n• A cada 2 pontos de Força = +1 de ponto bônus.\n\n🛡️ Durabilidade (Resistência e Defesas):\n• A cada 2 pontos de Durabilidade = +1 de ponto bônus.\n\n⚡| 🏹 Agilidade (Esquivas e Ataques a Distancia):\n• A cada 2 pontos de Agilidade = +1 de ponto bônus de acerto.\n\n🧠 Inteligência (Potencialização de Ataques Mágicos e Cientificos):\n• A cada 2 pontos de Inteligência = +1 ponto bônus.\n\n🏹 Percepção (Ataques Surpresa, Detecção de Comuflagem):\n• A cada 2 pontos de Percepção = 1+ de ponto bônus.`},{icon:'🔄',title:'Teste de Reflexo',body:`Quando um personagem possui pelo menos 1 Vigor Cósmico disponível, ele pode realizar um Teste de Reflexo ao ser alvo de um ataque.\n\n🛡️ Custo: 1 VC\n🎲 Role 1D20 — se o resultado for 16 ou mais, o personagem esquiva completamente do ataque.\n\n⚠️ Limitação: O Teste de Reflexo só pode ser utilizado 1 vez por combate por personagem.\n\nEste teste representa a capacidade instintiva do personagem de reagir a perigos imediatos, exigindo foco cósmico e reflexos apurados.`},{icon:'💎',title:'Crítico de Itens',body:`Quando um item (arma, artefato, equipamento) acerta um golpe crítico (resultado 20 no D20), o dano não é rolado normalmente.\n\n✦ Regra: O item causa automaticamente o dano máximo garantido do seu dado de dano.\n\nExemplos:\n• Item com 1D6 de dano → Crítico = 6 de dano garantido\n• Item com 1D8 + 2 de dano → Crítico = 8 + 2 = 10 de dano garantido\n• Item com 2D6 de dano → Crítico = 12 de dano garantido\n\nEssa regra se aplica exclusivamente a itens e equipamentos. Habilidades de classe seguem suas próprias regras de crítico.`},{icon:'✦',title:'Progressão & XP',body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado ao atingir Nível 3\n• Especial II — desbloqueado ao atingir Nível 7\n\nHabilidades Novas:\nAo alcançar certos niveis (Nível 4, 10, 15, 20, 25 e 30), o personagem desbloqueia uma habilidade nova, que pode ser definida em conjunto com o Mestre.\n\nOs valores de XP por nível são definidos pelo Mestre conforme o ritmo da campanha.`}];
-
+const RULES_DATA=[
+  {
+    icon:'⚔️',
+    title:'Estrutura do Turno & Iniciativa',
+    body:`O combate em Dinastia E é por turnos. A ordem de iniciativa agora é dinâmica e definida rolando 1D20 + Bônus de Agilidade.\n\nDesempates de Iniciativa:\nCaso dois combatentes tirem o mesmo valor, o desempate é feito pelo atributo Percepção. Se o empate persistir, o Jogador tem prioridade sobre o Inimigo.\n\nO Mestre também pode definir ou alterar a ordem manualmente. A fila de turnos fica sempre visível no lado esquerdo da tela durante o combate.`
+  },
+  {
+    icon:'⚡',
+    title:'Ataques de Oportunidade (Surpresa)',
+    body:`O posicionamento é vital em Dinastia E. Caso um personagem ou inimigo dê as costas para um oponente ou tente fugir de um combate corpo-a-corpo de forma imprudente, ele sofrerá um Ataque de Oportunidade.\n\nEsse ataque é uma reação imediata e gratuita do atacante contra quem deu as costas, ocorrendo fora do seu turno normal. O Mestre pode acionar esse ataque diretamente no painel de combate.`
+  },
+  {
+    icon:'🎲',
+    title:'Os Dados e Rolagens Públicas',
+    body:`Agora as rolagens de dados podem ser feitas diretamente pelo site no painel de "Dado Público". O resultado, incluindo bônus, acertos críticos e falhas, aparece na tela de todos que estiverem na sala.\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 / 1D8 / 1D12 / 1D20 — Dado de Dano:\nUsado após um ataque bem-sucedido.`
+  },
+  {
+    icon:'🎯',
+    title:'Tipos de Ação e Custos',
+    body:`Em seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, ele recupera automaticamente +2 Vigor Cósmico.\n\nAções possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos ataques normais da classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais (só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, etc.\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`
+  },
+  {
+    icon:'📊',
+    title:'Bônus de Atributos',
+    body:`A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚔️ Força: +1 Bônus em Dano físico e Ataques corpo-a-corpo.\n🛡️ Durabilidade: +1 Bônus em Resistência e Defesas.\n⚡ Agilidade: +1 Bônus em Esquivas, Ataques a Distância e +1 Bônus na Iniciativa.\n🧠 Inteligência: +1 Bônus em Ataques Mágicos e Científicos.\n🏹 Percepção: +1 Bônus em Ataques Surpresa e usado como critério de desempate na Iniciativa.`
+  },
+  {
+    icon:'❤️',
+    title:'Cores e Estado de Vida (HP)',
+    body:`A interface do combate indica visualmente a saúde atual do combatente através das cores da barra de vida:\n\n🟢 Verde (Saudável): Acima de 60% de HP.\n🟡 Amarelo (Ferido): Entre 30% e 60% de HP.\n🔴 Vermelho (Crítico): Abaixo de 30% de HP.\n⚫ Cinza e foto escura (Abatido): 0 HP (Morto).`
+  },
+  {
+    icon:'🔄',
+    title:'Teste de Reflexo',
+    body:`Quando um personagem possui pelo menos 1 Vigor Cósmico disponível, ele pode realizar um Teste de Reflexo ao ser alvo de um ataque.\n\n🛡️ Custo: 1 VC\n🎲 Role 1D20 — se o resultado for 16 ou mais, o personagem esquiva completamente do ataque.\n\n⚠️ Limitação: O Teste de Reflexo só pode ser utilizado 1 vez por combate por personagem.`
+  },
+  {
+    icon:'💎',
+    title:'Crítico de Itens',
+    body:`Quando um item (arma, artefato, equipamento) acerta um golpe crítico (resultado 20 no D20), o dano não é rolado normalmente.\n\n✦ Regra: O item causa automaticamente o dano máximo garantido do seu dado de dano.\n\nExemplos:\n• Item com 1D6 de dano → Crítico = 6 de dano garantido\n• Item com 1D8 + 2 de dano → Crítico = 8 + 2 = 10 de dano garantido\n• Item com 2D6 de dano → Crítico = 12 de dano garantido\n\nEssa regra se aplica exclusivamente a itens e equipamentos. Habilidades de classe seguem suas próprias regras de crítico.`
+  },
+  {
+    icon:'✦',
+    title:'Progressão & XP',
+    body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado no Nível 3\n• Especial II — desbloqueado no Nível 7\n\nAo alcançar os níveis 4, 10, 15, 20, 25 e 30, o personagem desbloqueia uma habilidade nova, definida em conjunto com o Mestre.`
+  }
+];
 function StarField({atmosphere='neutro'}){const ref=useRef(null);useEffect(()=>{const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext('2d');let raf;const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};resize();window.addEventListener('resize',resize);const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.2,phase:Math.random()*Math.PI*2,spd:Math.random()*0.025+0.008}));const ps=[{x:0.10,y:0.04,c:'#1EC8FF'},{x:0.87,y:0.05,c:'#E8A020'},{x:0.48,y:0.025,c:'#A855F7'},{x:0.70,y:0.06,c:'#E8193C'}];let t=0;const draw=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);t+=0.007;const atm=ATMOSPHERES[atmosphere]||ATMOSPHERES.neutro;const sc=atm.starColor;stars.forEach(s=>{const a=0.2+0.5*Math.sin(t*s.spd*50+s.phase);ctx.beginPath();ctx.arc(s.x*canvas.width,s.y*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle=sc?`${sc}${Math.round(a*255).toString(16).padStart(2,'0')}`:`rgba(255,255,255,${a})`;ctx.fill();});ps.forEach((s,i)=>{const a=0.55+0.45*Math.sin(t*1.1+i*0.8),px=s.x*canvas.width,py=s.y*canvas.height;ctx.save();ctx.shadowColor=s.c;ctx.shadowBlur=14*a;ctx.globalAlpha=a;ctx.beginPath();ctx.arc(px,py,2.8,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill();ctx.restore();ctx.save();ctx.globalAlpha=a*0.4;ctx.strokeStyle=s.c;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(px-8,py);ctx.lineTo(px+8,py);ctx.stroke();ctx.beginPath();ctx.moveTo(px,py-8);ctx.lineTo(px,py+8);ctx.stroke();ctx.restore();});raf=requestAnimationFrame(draw);};draw();return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);};},[atmosphere]);return <canvas ref={ref} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;}
 
 function RestrictedAccess({ title, text }) {
@@ -1900,8 +1525,22 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
 
         <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
-            <div style={{display:'flex',alignItems:'center',gap:7}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>            
+            <div style={{display:'flex',alignItems:'center',gap:10, flexWrap:'wrap', justifyContent: 'center'}}>
+              <div style={{display:'flex', gap:3}}>
+                {[-15, -10, -5, -1].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>{v}</button>
+                ))}
+              </div>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:26,fontWeight:700,color:hpColor(hp, 30),minWidth:36,textAlign:'center'}}>{hp}</span>
+              <div style={{display:'flex', gap:3}}>
+                {[+1, +5, +10, +15].map(v => (
+                  <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>+{v}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
               <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
               <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:30,textAlign:'center'}}>{hp}</span>
               <button onClick={()=>f('hp',hp+1)} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
@@ -2321,7 +1960,21 @@ function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefat
         <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
           <div style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Pontos de Vida</div>
-            <div style={{display:'flex',alignItems:'center',gap:7}}>
+            <div style={{display:'flex',alignItems:'center',gap:10, flexWrap:'wrap', justifyContent:'center'}}>
+              <div style={{display:'flex', gap:3}}>
+                {[-15, -10, -5, -1].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>{v}</button>
+                ))}
+              </div>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:26,fontWeight:700,color:hpColor(hp, 50),minWidth:36,textAlign:'center'}}>{hp}</span>
+              <div style={{display:'flex', gap:3}}>
+                {[+1, +5, +10, +15].map(v => (
+                  <button key={v} onClick={()=>f('hp',Math.min(400,hp+v))} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold', lineHeight:1}}>+{v}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{marginTop:6,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
               <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
               <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8193C',minWidth:36,textAlign:'center'}}>{hp}</span>
               <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:26,height:26,borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
