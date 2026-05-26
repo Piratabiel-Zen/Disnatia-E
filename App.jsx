@@ -266,108 +266,700 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [turnIdx, setTurnIdx] = useState(0);
   const [initiative, setInitiative] = useState([]);
   const [rolling, setRolling] = useState(false);
-
+  const [log, setLog] = useState([]);
+  const [diceResult, setDiceResult] = useState(null);
+  const [diceRolling, setDiceRolling] = useState(false);
+  const [diceSides, setDiceSides] = useState(20);
+  const [diceBonus, setDiceBonus] = useState(0);
+  const [showDice, setShowDice] = useState(false);
+  const [surpriseTarget, setSurpriseTarget] = useState(null);
+  const [surpriseAttacker, setSurpriseAttacker] = useState(null);
+  const [showSurprisePanel, setShowSurprisePanel] = useState(false);
+  const logRef = useRef(null);
+ 
+  // ── Sincroniza estado do combate via Firestore (todos veem em tempo real) ──
   useEffect(() => {
-    const combatants = [
-      ...sheets.map(s => {
-        const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
-        return { id:'p_'+s.id, nome:s.nome||'Personagem', type:'player', hp:s.hp||0, maxHp:Math.max(s.hp||1,1), color:SHEET_COLORS[s.classe]||cls.color, foto:s.foto, roll:0 };
-      }),
-      ...enemies.map(e => ({ id:'e_'+e.id, nome:e.nome||'Inimigo', type:'enemy', hp:e.hp||0, maxHp:Math.max(e.hp||1,1), color:'#FF4444', foto:e.foto, roll:0 })),
-    ];
-    setInitiative(combatants);
+    const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      if (d.initiative) setInitiative(d.initiative);
+      if (d.round !== undefined) setRound(d.round);
+      if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
+      if (d.log) setLog(d.log);
+    });
+    return () => unsub();
+  }, []);
+ 
+  // ── Sincroniza rolagem de dados em tempo real (todos no site veem) ─────────
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      if (!d.ts) return;
+      if (Date.now() - d.ts > 8000) return; // ignora resultados com >8s
+      setDiceResult(d);
+    });
+    return () => unsub();
+  }, []);
+ 
+  // ── Scroll automático do log ───────────────────────────────────────────────
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [log]);
+ 
+  // ── Montar lista de combatentes a partir das fichas ─────────────────────
+  const buildCombatants = () => [
+    ...sheets.map(s => {
+      const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+      return {
+        id: 'p_' + s.id,
+        nome: s.nome || 'Personagem',
+        type: 'player',
+        hp: s.hp || 0,
+        maxHp: Math.max(s.hp || 1, 10),
+        color: SHEET_COLORS[s.classe] || cls.color,
+        foto: s.foto,
+        roll: 0,
+        agiBonus: Math.floor((s.agilidade || 0) / 2),   // bônus agilidade na iniciativa
+        perBonus: Math.floor((s.percepcao || 0) / 2),   // bônus percepção para desempate
+        status: s.status || {},
+      };
+    }),
+    ...enemies.map(e => ({
+      id: 'e_' + e.id,
+      nome: e.nome || 'Inimigo',
+      type: 'enemy',
+      hp: e.hp || 0,
+      maxHp: Math.max(e.hp || 1, 10),
+      color: '#FF4444',
+      foto: e.foto,
+      roll: 0,
+      agiBonus: Math.floor((e.agilidade || 0) / 2),
+      perBonus: Math.floor((e.percepcao || 0) / 2),
+      status: e.status || {},
+    })),
+  ];
+ 
+  useEffect(() => {
+    if (initiative.length === 0) {
+      setInitiative(buildCombatants());
+    }
   }, [sheets, enemies]);
-
-  const handleClose = async () => {
-    try { await setDoc(doc(db,'config','combat'),{ active:false }); } catch(_) {}
-    onClose();
+ 
+  // ── Persistir estado no Firestore ──────────────────────────────────────────
+  const persist = async (newInit, newRound, newTurnIdx, newLog) => {
+    try {
+      await setDoc(doc(db, 'config', 'combat_state'), {
+        initiative: newInit ?? initiative,
+        round: newRound ?? round,
+        turnIdx: newTurnIdx ?? turnIdx,
+        log: (newLog ?? log).slice(-60),
+      });
+    } catch (e) { console.error(e); }
   };
-
+ 
+  const addLog = (msg, color = '#C8B8A0', icon = '▸') => {
+    const entry = { msg, color, icon, ts: Date.now(), round };
+    const newLog = [...log, entry].slice(-60);
+    setLog(newLog);
+    return newLog;
+  };
+ 
+  // ── Rolar Iniciativa: D20 + Agilidade; empate por Percepção ───────────────
   const rollInitiative = async () => {
     setRolling(true);
     setTimeout(async () => {
-      const rolled = initiative.map(c => ({ ...c, roll: Math.floor(Math.random()*20)+1 }));
-      rolled.sort((a,b) => b.roll - a.roll);
+      const rolled = buildCombatants().map(c => ({
+        ...c,
+        roll: Math.floor(Math.random() * 20) + 1 + c.agiBonus,
+      }));
+ 
+      // Ordena: maior roll → maior percepção → player ganha empate total
+      rolled.sort((a, b) => {
+        if (b.roll !== a.roll) return b.roll - a.roll;
+        if (b.perBonus !== a.perBonus) return b.perBonus - a.perBonus;
+        return a.type === 'player' ? -1 : 1;
+      });
+ 
+      const newLog = addLog(
+        `🎲 Iniciativa rolada! ${rolled[0]?.nome} age primeiro (${rolled[0]?.roll})`,
+        '#A855F7', '🎲'
+      );
       setInitiative(rolled);
       setTurnIdx(0);
+      setRound(1);
       setRolling(false);
-      const c = rolled[0];
-      try { await setDoc(doc(db,'config','combat'), { active:true, round:1, currentNome:c?.nome||'', currentColor:c?.color||'#E8193C', currentType:c?.type||'player' }); } catch(_) {}
-    }, 800);
+ 
+      try {
+        await setDoc(doc(db, 'config', 'combat'), {
+          active: true, round: 1,
+          currentNome: rolled[0]?.nome || '',
+          currentColor: rolled[0]?.color || '#E8193C',
+          currentType: rolled[0]?.type || 'player',
+        });
+      } catch (_) {}
+ 
+      persist(rolled, 1, 0, newLog);
+    }, 900);
   };
-
+ 
+  // ── Próximo Turno ──────────────────────────────────────────────────────────
   const nextTurn = async () => {
     const next = (turnIdx + 1) % initiative.length;
     const newRound = next === 0 ? round + 1 : round;
     if (next === 0) setRound(newRound);
     setTurnIdx(next);
+ 
     const c = initiative[next];
-    try { await setDoc(doc(db,'config','combat'), { active:true, round:newRound, currentNome:c?.nome||'', currentColor:c?.color||'#E8193C', currentType:c?.type||'player' }); } catch(_) {}
+    const newLog = addLog(
+      `Vez de ${c?.nome}${next === 0 ? ` — Rodada ${newRound} começa!` : ''}`,
+      c?.color || '#C8B8A0', '▶'
+    );
+ 
+    try {
+      await setDoc(doc(db, 'config', 'combat'), {
+        active: true, round: newRound,
+        currentNome: c?.nome || '',
+        currentColor: c?.color || '#E8193C',
+        currentType: c?.type || 'player',
+      });
+    } catch (_) {}
+ 
+    persist(initiative, newRound, next, newLog);
   };
-
+ 
+  // ── Ataque de Oportunidade (Surpresa) ─────────────────────────────────────
+  const triggerOpportunityAttack = async () => {
+    if (!surpriseAttacker || !surpriseTarget) return;
+    const atk = initiative.find(c => c.id === surpriseAttacker);
+    const tgt = initiative.find(c => c.id === surpriseTarget);
+    if (!atk || !tgt) return;
+ 
+    const newLog = addLog(
+      `⚡ ATAQUE DE OPORTUNIDADE! ${atk.nome} ataca ${tgt.nome} (${tgt.nome} deu as costas!)`,
+      '#FF6B35', '⚡'
+    );
+    setShowSurprisePanel(false);
+    setSurpriseAttacker(null);
+    setSurpriseTarget(null);
+    persist(initiative, round, turnIdx, newLog);
+    pushToast(`⚡ Ataque de Oportunidade! ${atk.nome} → ${tgt.nome}`, '⚡', '#FF6B35');
+  };
+ 
+  // ── Dado Público — todos no site veem o resultado ─────────────────────────
+  const rollDice = async () => {
+    setDiceRolling(true);
+    setTimeout(async () => {
+      const base = Math.floor(Math.random() * diceSides) + 1;
+      const total = base + Number(diceBonus);
+      const roller = masterMode ? 'Mestre' : 'Jogador';
+      const isCrit = diceSides === 20 && base === 20;
+      const isFail = diceSides === 20 && base === 1;
+ 
+      const result = { base, total, sides: diceSides, bonus: Number(diceBonus), roller, ts: Date.now(), isCrit, isFail };
+      setDiceResult(result);
+      setDiceRolling(false);
+ 
+      try {
+        await setDoc(doc(db, 'config', 'combat_dice'), result);
+      } catch (e) { console.error(e); }
+ 
+      const color = isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8';
+      const icon = isCrit ? '🌟' : isFail ? '💀' : '🎲';
+      const newLog = addLog(
+        `${roller} rolou D${diceSides}${diceBonus ? ` +${diceBonus}` : ''}: ${total}${isCrit ? ' — CRÍTICO!' : isFail ? ' — FALHA CRÍTICA!' : ''}`,
+        color, icon
+      );
+      persist(initiative, round, turnIdx, newLog);
+    }, 700);
+  };
+ 
+  // ── Aplicar dano ou cura rápida ────────────────────────────────────────────
+  const applyHp = async (combatantId, delta) => {
+    const updated = initiative.map(c => {
+      if (c.id !== combatantId) return c;
+      return { ...c, hp: Math.max(0, c.hp + delta) };
+    });
+    const target = updated.find(c => c.id === combatantId);
+    const icon = delta < 0 ? '🩸' : '💚';
+    const color = delta < 0 ? '#E8193C' : '#4ADE80';
+    const newLog = addLog(
+      `${icon} ${target?.nome}: ${delta > 0 ? '+' : ''}${delta} HP (restam ${target?.hp})`,
+      color, icon
+    );
+    setInitiative(updated);
+    persist(updated, round, turnIdx, newLog);
+  };
+ 
+  const handleClose = async () => {
+    try {
+      await setDoc(doc(db, 'config', 'combat'), { active: false });
+      await setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] });
+    } catch (_) {}
+    onClose();
+  };
+ 
+  // ── Helpers de cor por HP ──────────────────────────────────────────────────
+  const hpColor = (hp, maxHp) => {
+    if (hp <= 0) return '#555';
+    const pct = hp / Math.max(1, maxHp);
+    if (pct > 0.6) return '#4ADE80';
+    if (pct > 0.3) return '#E8A020';
+    return '#E8193C';
+  };
+ 
+  const hpLabel = (hp, maxHp) => {
+    if (hp <= 0) return { text: '💀 Abatido', color: '#555' };
+    const pct = hp / Math.max(1, maxHp);
+    if (pct > 0.6) return { text: '● Saudável', color: '#4ADE80' };
+    if (pct > 0.3) return { text: '● Ferido', color: '#E8A020' };
+    return { text: '● Crítico', color: '#E8193C' };
+  };
+ 
+  const STATUS_ICONS = {
+    envenenado: '☠', sangrando: '🩸', atordoado: '💫',
+    queimando: '🔥', congelado: '✦', amaldicado: '💀',
+    invisivel: '👻', protegido: '🛡',
+  };
+ 
+  const activeStatuses = (statusObj) =>
+    Object.entries(statusObj || {})
+      .filter(([, v]) => v)
+      .map(([k]) => STATUS_ICONS[k] || '?');
+ 
   const current = initiative[turnIdx];
-
+  const DICE_OPTS = [4, 6, 8, 10, 12, 20];
+ 
   return (
-    <div style={{ position:'fixed',inset:0,zIndex:9990,background:'rgba(4,6,15,0.97)',display:'flex',flexDirection:'column',backdropFilter:'blur(4px)' }}>
-      <div style={{ padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid rgba(232,25,60,0.25)',background:'rgba(232,25,60,0.06)' }}>
-        <div style={{ display:'flex',alignItems:'center',gap:14 }}>
-          <span style={{ fontSize:22 }}>⚔️</span>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9990,
+      background: 'rgba(4,6,15,0.98)',
+      display: 'flex', flexDirection: 'column',
+      backdropFilter: 'blur(4px)', fontFamily: "'Cinzel',serif",
+    }}>
+ 
+      {/* ════ HEADER ════ */}
+      <div style={{
+        padding: '12px 18px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(232,25,60,0.3)',
+        background: 'rgba(232,25,60,0.06)',
+        flexWrap: 'wrap', gap: 8,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 22 }}>⚔️</span>
           <div>
-            <div style={{ fontFamily:'Cinzel Decorative,serif',fontSize:16,color:'#E8193C',fontWeight:700 }}>Modo Combate</div>
-            <div style={{ fontSize:11,color:'rgba(232,25,60,0.6)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em' }}>Rodada {round}</div>
+            <div style={{ fontSize: 15, color: '#E8193C', fontWeight: 700 }}>Modo Combate</div>
+            <div style={{ fontSize: 11, color: 'rgba(232,25,60,0.5)', letterSpacing: '0.15em' }}>
+              Rodada {round} · {initiative.length} combatente{initiative.length !== 1 ? 's' : ''}
+            </div>
           </div>
         </div>
-        <div style={{ display:'flex',gap:10,alignItems:'center' }}>
-          {masterMode && <button onClick={rollInitiative} disabled={rolling} style={{ padding:'7px 16px',borderRadius:8,border:'1px solid rgba(168,85,247,0.5)',background:'rgba(168,85,247,0.12)',color:'#C8A8E8',cursor:rolling?'not-allowed':'pointer',fontFamily:'Cinzel,serif',fontSize:12 }}>{rolling?'🎲 Rolando...':'🎲 Rolar Iniciativa'}</button>}
-          {masterMode && initiative.length>0 && <button onClick={nextTurn} style={{ padding:'7px 18px',borderRadius:8,border:'1px solid rgba(232,25,60,0.5)',background:'rgba(232,25,60,0.14)',color:'#FF6666',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,animation:'combatPulse 2s ease-in-out infinite' }}>Próximo Turno ▶</button>}
-          <button onClick={handleClose} style={{ padding:'7px 14px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12 }}>✕ Fechar</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {masterMode && (
+            <>
+              <button onClick={rollInitiative} disabled={rolling} style={btnStyle('#A855F7')}>
+                {rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}
+              </button>
+              {initiative.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setShowSurprisePanel(p => !p)}
+                    style={btnStyle('#FF6B35')}
+                  >⚡ Oportunidade</button>
+                  <button onClick={nextTurn} style={{
+                    ...btnStyle('#E8193C'),
+                    animation: 'combatPulse 2s ease-in-out infinite',
+                    fontWeight: 700,
+                  }}>Próximo Turno ▶</button>
+                </>
+              )}
+            </>
+          )}
+          <button onClick={() => setShowDice(p => !p)} style={btnStyle('#4ADE80')}>
+            🎲 {showDice ? 'Fechar Dado' : 'Dado Público'}
+          </button>
+          <button onClick={handleClose} style={btnStyle('rgba(255,255,255,0.2)')}>✕ Fechar</button>
         </div>
       </div>
+ 
+      {/* ════ TURNO ATUAL ════ */}
       {current && (
-        <div style={{ padding:'10px 20px',background:`${current.color}18`,borderBottom:`1px solid ${current.color}33`,display:'flex',alignItems:'center',gap:12 }}>
-          <span style={{ fontSize:18,animation:'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
-          <span style={{ fontFamily:'Cinzel,serif',fontSize:14,color:current.color,fontWeight:700 }}>Vez de: {current.nome}</span>
-          {current.roll>0 && <span style={{ fontSize:11,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif' }}>Iniciativa: {current.roll}</span>}
+        <div style={{
+          padding: '8px 18px',
+          background: `${current.color}18`,
+          borderBottom: `1px solid ${current.color}33`,
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 16, animation: 'turnArrow 0.6s ease-in-out infinite alternate' }}>▶</span>
+          <span style={{ fontSize: 14, color: current.color, fontWeight: 700 }}>
+            Vez de: {current.nome}
+          </span>
+          {current.roll > 0 && (
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+              Iniciativa: {current.roll}
+              {current.agiBonus > 0 && (
+                <span style={{ color: 'rgba(232,160,32,0.55)', fontSize: 10 }}>
+                  {' '}(D20 +{current.agiBonus} agi)
+                </span>
+              )}
+            </span>
+          )}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 5 }}>
+            {activeStatuses(current.status).map((ic, i) => (
+              <span key={i} style={{ fontSize: 14 }}>{ic}</span>
+            ))}
+          </div>
         </div>
       )}
-      <div style={{ flex:1,overflowY:'auto',padding:'16px 16px 80px' }}>
-        {initiative.length===0
-          ? <div style={{ textAlign:'center',padding:60,color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13 }}>Nenhum combatente carregado. Abra as fichas primeiro.</div>
-          : <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12 }}>
-              {initiative.map((c,idx) => {
-                const isActive = idx===turnIdx;
-                const hpPct = Math.max(0,Math.min(100,(c.hp/Math.max(1,c.maxHp))*100));
-                const hpColor = hpPct>60?'#4ADE80':hpPct>30?'#E8A020':'#E8193C';
-                return (
-                  <div key={c.id} style={{ border:`1px solid ${isActive?c.color+'88':c.color+'28'}`,borderRadius:12,background:isActive?`${c.color}12`:'rgba(8,10,22,0.9)',overflow:'hidden',transition:'all 0.3s',boxShadow:isActive?`0 0 20px ${c.color}44`:'none' }}>
-                    {c.foto
-                      ? <img src={c.foto} alt="" style={{ width:'100%',height:140,objectFit:'cover',objectPosition:'top',display:'block',filter:c.hp<=0?'grayscale(100%) brightness(0.4)':'none',transition:'filter 0.5s' }}/>
-                      : <div style={{ width:'100%',height:60,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,background:`${c.color}12`,borderBottom:`1px solid ${c.color}22` }}>{c.type==='enemy'?'💀':'⚔️'}</div>
-                    }
-                    <div style={{ padding:'10px 12px' }}>
-                      <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:6 }}>
-                        {isActive && <span style={{ fontSize:10,color:c.color }}>▶</span>}
-                        <span style={{ fontFamily:'Cinzel,serif',fontSize:12,color:isActive?c.color:'#C8B8A0',fontWeight:700,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{c.nome}</span>
-                        {c.type==='enemy' && <span style={{ fontSize:8,color:'#FF4444',fontFamily:'Cinzel,serif',background:'rgba(255,68,68,0.12)',padding:'1px 5px',borderRadius:3 }}>INIMIGO</span>}
-                      </div>
-                      <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:4 }}>
-                        <span style={{ fontSize:11,color:hpColor,fontFamily:'Cinzel,serif',fontWeight:700,minWidth:20 }}>{c.hp}</span>
-                        <span style={{ fontSize:10,color:'rgba(255,255,255,0.2)' }}>HP</span>
-                        {c.roll>0 && <span style={{ fontSize:10,color:'rgba(255,255,255,0.25)',marginLeft:'auto',fontFamily:'Cinzel,serif' }}>🎲 {c.roll}</span>}
-                      </div>
-                      <div style={{ height:4,background:'rgba(255,255,255,0.07)',borderRadius:2 }}>
-                        <div style={{ height:'100%',width:`${hpPct}%`,background:hpColor,borderRadius:2,transition:'width 0.4s,background 0.4s' }}/>
-                      </div>
-                      {c.hp<=0 && <div style={{ marginTop:5,fontSize:10,color:'#E8193C',fontFamily:'Cinzel,serif',textAlign:'center' }}>💀 Abatido</div>}
-                    </div>
-                  </div>
-                );
-              })}
+ 
+      {/* ════ PAINEL ATAQUE DE OPORTUNIDADE ════ */}
+      {showSurprisePanel && masterMode && (
+        <div style={{
+          padding: '12px 18px',
+          background: 'rgba(255,107,53,0.08)',
+          borderBottom: '1px solid rgba(255,107,53,0.3)',
+          display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13, color: '#FF6B35', fontWeight: 700, letterSpacing: '0.08em' }}>
+                ⚡ Ataque de Oportunidade
+              </span>
+              <select
+                value={surpriseAttacker || ''}
+                onChange={e => setSurpriseAttacker(e.target.value)}
+                style={{ fontSize: 12, padding: '4px 8px' }}
+              >
+                <option value="">Quem ataca...</option>
+                {initiative.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+              <span style={{ color: '#FF6B35', fontSize: 14 }}>→</span>
+              <select
+                value={surpriseTarget || ''}
+                onChange={e => setSurpriseTarget(e.target.value)}
+                style={{ fontSize: 12, padding: '4px 8px' }}
+              >
+                <option value="">Quem deu as costas...</option>
+                {initiative.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+              <button
+                onClick={triggerOpportunityAttack}
+                disabled={!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget}
+                style={{
+                  ...btnStyle('#FF6B35'),
+                  opacity: (!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget) ? 0.35 : 1,
+                }}
+              >⚡ Confirmar</button>
+              <button onClick={() => setShowSurprisePanel(false)} style={btnStyle('rgba(255,255,255,0.15)')}>✕</button>
             </div>
-        }
+            <div style={{ fontSize: 12, color: 'rgba(255,107,53,0.55)', fontFamily: 'Crimson Text,Georgia,serif', fontStyle: 'italic' }}>
+              Quando um combatente foge ou dá as costas ao inimigo, ele pode receber um ataque gratuito — mesmo fora do turno do atacante.
+            </div>
+          </div>
+        </div>
+      )}
+ 
+      {/* ════ DADO PÚBLICO ════ */}
+      {showDice && (
+        <div style={{
+          padding: '12px 18px',
+          background: 'rgba(74,222,128,0.05)',
+          borderBottom: '1px solid rgba(74,222,128,0.18)',
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 11, color: 'rgba(74,222,128,0.6)', letterSpacing: '0.2em' }}>🎲 DADO PÚBLICO</span>
+ 
+          <div style={{ display: 'flex', gap: 4 }}>
+            {DICE_OPTS.map(d => (
+              <button key={d} onClick={() => setDiceSides(d)} style={{
+                padding: '4px 9px', borderRadius: 5, fontSize: 11, cursor: 'pointer',
+                border: `1px solid ${diceSides === d ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.09)'}`,
+                background: diceSides === d ? 'rgba(74,222,128,0.14)' : 'rgba(255,255,255,0.02)',
+                color: diceSides === d ? '#4ADE80' : '#6A6A6A',
+                transition: 'all 0.15s',
+              }}>D{d}</button>
+            ))}
+          </div>
+ 
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ fontSize: 11, color: '#5A7A5A' }}>Bônus</span>
+            <input
+              type="number" value={diceBonus}
+              onChange={e => setDiceBonus(Number(e.target.value))}
+              style={{ width: 46, fontSize: 12, textAlign: 'center', padding: '3px 5px' }}
+            />
+          </div>
+ 
+          <button onClick={rollDice} disabled={diceRolling} style={{ ...btnStyle('#4ADE80'), fontWeight: 700 }}>
+            <span style={{ display: 'inline-block', animation: diceRolling ? 'diceRollAnim 0.5s infinite' : 'none' }}>🎲</span>
+            {' '}{diceRolling ? 'Rolando...' : `Rolar D${diceSides}`}
+          </button>
+ 
+          {diceResult && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 14px', borderRadius: 10,
+              background: diceResult.isCrit ? 'rgba(74,222,128,0.1)' : diceResult.isFail ? 'rgba(232,25,60,0.1)' : 'rgba(168,85,247,0.08)',
+              border: `1px solid ${diceResult.isCrit ? 'rgba(74,222,128,0.4)' : diceResult.isFail ? 'rgba(232,25,60,0.4)' : 'rgba(168,85,247,0.22)'}`,
+              animation: 'cooldownIn 0.3s ease',
+            }}>
+              <span style={{
+                fontSize: 22, fontWeight: 900,
+                color: diceResult.isCrit ? '#4ADE80' : diceResult.isFail ? '#E8193C' : '#C8A8E8',
+              }}>{diceResult.total}</span>
+              {diceResult.bonus !== 0 && (
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>
+                  ({diceResult.base} +{diceResult.bonus})
+                </span>
+              )}
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Crimson Text,serif' }}>
+                D{diceResult.sides} · {diceResult.roller}
+              </span>
+              {diceResult.isCrit && <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 700 }}>🌟 CRÍTICO!</span>}
+              {diceResult.isFail && <span style={{ fontSize: 12, color: '#E8193C', fontWeight: 700 }}>💀 FALHA!</span>}
+            </div>
+          )}
+        </div>
+      )}
+ 
+      {/* ════ FILA DE INICIATIVA HORIZONTAL ════ */}
+      <div style={{
+        padding: '14px 18px 10px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(0,0,0,0.28)',
+        overflowX: 'auto',
+        flexShrink: 0,
+      }}>
+        {initiative.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '12px 0', color: '#3A3050', fontSize: 12, fontFamily: 'Cinzel,serif' }}>
+            Nenhum combatente carregado. Abra as fichas e inimigos primeiro, depois role a iniciativa.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', minWidth: 'max-content', paddingBottom: 4 }}>
+            {initiative.map((c, idx) => {
+              const isActive = idx === turnIdx;
+              const isDead = c.hp <= 0;
+              const hpPct = Math.max(0, Math.min(100, (c.hp / Math.max(1, c.maxHp)) * 100));
+              const hpC = hpColor(c.hp, c.maxHp);
+              const lbl = hpLabel(c.hp, c.maxHp);
+              const statIcons = activeStatuses(c.status);
+              const w = isActive ? 72 : 54;
+ 
+              return (
+                <div key={c.id} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  opacity: isDead ? 0.38 : 1,
+                  transition: 'all 0.35s',
+                  position: 'relative',
+                }}>
+                  {/* Número de ordem */}
+                  <div style={{
+                    fontSize: 9, letterSpacing: '0.12em',
+                    color: isActive ? c.color : 'rgba(255,255,255,0.18)',
+                    fontWeight: isActive ? 700 : 400,
+                  }}>#{idx + 1}</div>
+ 
+                  {/* Foto / avatar */}
+                  <div style={{
+                    position: 'relative',
+                    border: `2px solid ${isActive ? c.color : isDead ? '#2A2A2A' : c.color + '44'}`,
+                    borderRadius: 10,
+                    boxShadow: isActive
+                      ? `0 0 20px ${c.color}55, 0 0 48px ${c.color}18`
+                      : 'none',
+                    transition: 'all 0.35s',
+                    overflow: 'hidden',
+                    width: w, height: w,
+                    flexShrink: 0,
+                    background: c.color + '14',
+                  }}>
+                    {c.foto ? (
+                      <img src={c.foto} alt="" style={{
+                        width: '100%', height: '100%',
+                        objectFit: 'cover', objectPosition: 'top',
+                        filter: isDead ? 'grayscale(100%) brightness(0.25)' : 'none',
+                        transition: 'filter 0.45s',
+                      }} />
+                    ) : (
+                      <div style={{
+                        width: '100%', height: '100%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: isActive ? 30 : 22,
+                      }}>{c.type === 'enemy' ? '💀' : '⚔️'}</div>
+                    )}
+ 
+                    {/* Status icons sobrepostos */}
+                    {statIcons.length > 0 && (
+                      <div style={{
+                        position: 'absolute', bottom: 2, left: 2, right: 2,
+                        display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap',
+                      }}>
+                        {statIcons.slice(0, 3).map((ic, i) => (
+                          <span key={i} style={{
+                            fontSize: 9, background: 'rgba(0,0,0,0.75)',
+                            borderRadius: 3, padding: '1px 2px',
+                          }}>{ic}</span>
+                        ))}
+                      </div>
+                    )}
+ 
+                    {/* Ponto ativo pulsante */}
+                    {isActive && (
+                      <div style={{
+                        position: 'absolute', top: 4, right: 4,
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: c.color,
+                        boxShadow: `0 0 8px ${c.color}`,
+                        animation: 'pulse 1.4s ease-in-out infinite',
+                      }} />
+                    )}
+ 
+                    {/* Overlay morto */}
+                    {isDead && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 24, background: 'rgba(0,0,0,0.55)',
+                      }}>💀</div>
+                    )}
+                  </div>
+ 
+                  {/* Nome */}
+                  <div style={{
+                    fontSize: 10, fontWeight: isActive ? 700 : 400,
+                    color: isActive ? c.color : isDead ? '#383838' : '#7A6A8A',
+                    maxWidth: w + 6, textAlign: 'center',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    letterSpacing: '0.03em',
+                  }}>{c.nome}</div>
+ 
+                  {/* Tag inimigo */}
+                  {c.type === 'enemy' && (
+                    <div style={{
+                      fontSize: 8, color: '#FF4444', letterSpacing: '0.12em',
+                      background: 'rgba(255,68,68,0.1)', borderRadius: 3, padding: '1px 5px',
+                      border: '1px solid rgba(255,68,68,0.2)',
+                    }}>INIMIGO</div>
+                  )}
+ 
+                  {/* Barra HP — cor muda conforme estado */}
+                  <div style={{ width: w + 6, height: 5, background: 'rgba(255,255,255,0.07)', borderRadius: 3 }}>
+                    <div style={{
+                      height: '100%', width: `${hpPct}%`,
+                      background: hpC, borderRadius: 3,
+                      transition: 'width 0.4s, background 0.4s',
+                      boxShadow: hpPct < 30 && c.hp > 0 ? `0 0 7px ${hpC}` : 'none',
+                    }} />
+                  </div>
+ 
+                  {/* HP número + rótulo de estado */}
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: hpC }}>{c.hp}</div>
+                    <div style={{ fontSize: 8, color: lbl.color, letterSpacing: '0.04em' }}>{lbl.text}</div>
+                  </div>
+ 
+                  {/* Badge de iniciativa */}
+                  {c.roll > 0 && (
+                    <div style={{
+                      fontSize: 9, color: 'rgba(255,200,0,0.55)',
+                      background: 'rgba(255,200,0,0.05)',
+                      border: '1px solid rgba(255,200,0,0.14)',
+                      borderRadius: 4, padding: '1px 5px',
+                    }}>🎲 {c.roll}</div>
+                  )}
+ 
+                  {/* Botões rápidos de HP (só mestre, combatente vivo) */}
+                  {masterMode && !isDead && (
+                    <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
+                      {[-5, -1, +1, +5].map(delta => (
+                        <button
+                          key={delta}
+                          onClick={() => applyHp(c.id, delta)}
+                          title={delta > 0 ? `+${delta} HP` : `${delta} HP`}
+                          style={{
+                            width: 22, height: 18, fontSize: 9, borderRadius: 3, padding: 0,
+                            border: `1px solid ${delta < 0 ? 'rgba(232,25,60,0.38)' : 'rgba(74,222,128,0.38)'}`,
+                            background: delta < 0 ? 'rgba(232,25,60,0.08)' : 'rgba(74,222,128,0.08)',
+                            color: delta < 0 ? '#E8193C' : '#4ADE80',
+                            cursor: 'pointer', lineHeight: 1,
+                          }}
+                        >{delta > 0 ? `+${delta}` : delta}</button>
+                      ))}
+                    </div>
+                  )}
+ 
+                  {/* Seta conectora entre combatentes */}
+                  {idx < initiative.length - 1 && (
+                    <div style={{
+                      position: 'absolute', right: -9, top: '35%',
+                      fontSize: 9, color: 'rgba(255,255,255,0.08)',
+                    }}>▸</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+ 
+      {/* ════ LOG DE EVENTOS ════ */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{
+          padding: '8px 18px 4px',
+          fontSize: 9, letterSpacing: '0.28em',
+          color: '#3A3050', textTransform: 'uppercase',
+          borderBottom: '1px solid rgba(255,255,255,0.03)',
+        }}>
+          📜 Registro de Combate
+        </div>
+        <div
+          ref={logRef}
+          style={{ flex: 1, overflowY: 'auto', padding: '10px 18px 28px', display: 'flex', flexDirection: 'column', gap: 3 }}
+        >
+          {log.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '28px 0', color: '#3A3050', fontSize: 12, fontStyle: 'italic', fontFamily: 'Crimson Text,serif' }}>
+              Role a iniciativa para começar o combate. Todos os eventos aparecerão aqui.
+            </div>
+          ) : (
+            log.map((entry, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                padding: '5px 10px', borderRadius: 6,
+                background: i === log.length - 1 ? 'rgba(255,255,255,0.03)' : 'transparent',
+                borderLeft: `2px solid ${i === log.length - 1 ? entry.color + '66' : 'transparent'}`,
+                transition: 'all 0.25s',
+              }}>
+                <span style={{ fontSize: 12, flexShrink: 0, opacity: 0.8 }}>{entry.icon}</span>
+                <span style={{
+                  fontSize: 13, fontFamily: 'Crimson Text,Georgia,serif',
+                  color: i === log.length - 1 ? entry.color : 'rgba(200,184,160,0.35)',
+                  lineHeight: 1.5, flex: 1,
+                }}>{entry.msg}</span>
+                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                  R{entry.round}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
+}
+ function btnStyle(color) {
+  return {
+    padding: '7px 14px', borderRadius: 8,
+    border: `1px solid ${color}55`,
+    background: `${color}18`,
+    color: color.startsWith('rgba') ? '#6A5A7A' : color,
+    cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+    letterSpacing: '0.06em', transition: 'all 0.2s',
+  };
 }
 
 // ─── DADOS / CONSTANTES ───────────────────────────────────────────────────────
