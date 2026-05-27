@@ -1709,7 +1709,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   onUpdateCooldown={handleUpdateCooldown}
   currentVigos={sheet.vigos ?? 0}
   onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
-  characterName={sheet.nome || 'Personagem'}   {/* ← NOVO */}
+  characterName={sheet.nome || 'Personagem'}
 />
 </div>
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
