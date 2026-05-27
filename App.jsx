@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAnaJjwoJ6YgGrR5pIoPrTIj7PculaIfyA",
@@ -283,6 +283,32 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [showSurprisePanel, setShowSurprisePanel] = useState(false);
   const logRef = useRef(null);
 
+const syncStatusToSheet = async (combatant, statusId, active) => {
+  if (!masterMode) return;
+  try {
+    if (combatant.type === 'player') {
+      // Busca a ficha atual e atualiza o status
+      const sheetId = combatant.id.replace('p_', '');
+      const sheetRef = doc(db, 'sheets', String(sheetId));
+      const snap = await getDoc(sheetRef);
+      if (snap.exists()) {
+        const currentStatus = snap.data().status || {};
+        await setDoc(sheetRef, { ...snap.data(), status: { ...currentStatus, [statusId]: active } });
+      }
+    } else {
+      const enemyId = combatant.id.replace('e_', '');
+      const enemyRef = doc(db, 'enemies', String(enemyId));
+      const snap = await getDoc(sheetRef);
+      if (snap.exists()) {
+        const currentStatus = snap.data().status || {};
+        await setDoc(enemyRef, { ...snap.data(), status: { ...currentStatus, [statusId]: active } });
+      }
+    }
+    const s = STATUS_LIST.find(s => s.id === statusId);
+    if (s) pushToast(`${combatant.nome}: ${active ? s.label : `Sem ${s.label}`}`, s.icon, active ? s.color : '#888');
+  } catch(e) { console.error('Erro ao sincronizar status:', e); }
+};
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
       if (!snap.exists()) return;
@@ -470,6 +496,40 @@ const handleClose = () => {
                 </div>
                 <div style={{ fontSize: 9, color: isActive ? hpC : '#777', fontWeight: isActive ? 700 : 400, maxWidth: 80, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {isActive ? '▶ VEZ' : `#${idx + 1}`}
+                  {/* Status rápido — apenas para o mestre */}
+{masterMode && (
+  <div style={{display:'flex',flexWrap:'wrap',gap:3,justifyContent:'center',maxWidth:88}}>
+    {STATUS_LIST.map(s => {
+      const active = !!(c.status?.[s.id]);
+      return (
+        <button
+          key={s.id}
+          title={`${active?'Remover':'Aplicar'}: ${s.label}`}
+          onClick={() => {
+            // Atualiza localmente na initiative
+            const newInit = initiative.map(x =>
+              x.id === c.id
+                ? { ...x, status: { ...(x.status||{}), [s.id]: !active } }
+                : x
+            );
+            setInitiative(newInit);
+            persist(newInit, round, turnIdx, log);
+            // Sincroniza com a ficha no Firebase
+            syncStatusToSheet(c, s.id, !active);
+          }}
+          style={{
+            width: 18, height: 18, borderRadius: '50%', padding: 0, border: 'none',
+            background: active ? `${s.color}44` : 'rgba(255,255,255,0.05)',
+            fontSize: 10, cursor: 'pointer', lineHeight: 1,
+            boxShadow: active ? `0 0 5px ${s.color}88` : 'none',
+            transition: 'all 0.2s', flexShrink: 0,
+            filter: active ? 'none' : 'grayscale(1) opacity(0.35)',
+          }}
+        >{s.icon}</button>
+      );
+    })}
+  </div>
+)}
                 </div>
               </div>
             );
@@ -1528,47 +1588,47 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
 
         <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
           
-          {/* BLOCO DA VIDA (AGORA OCUPA A LINHA TODA) */}
-          <div style={{gridColumn: '1 / -1', background:'rgba(232,25,60,0.07)',border:'1px solid rgba(232,25,60,0.2)',borderRadius:10,padding:'16px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase', textAlign:'center'}}>Pontos de Vida</div>
-            
-            <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap: 14}}>
-              {/* Controles Principais Grandes */}
-              <div style={{display:'flex',alignItems:'center',gap:16}}>
-                <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.15)',color:'#E8193C',cursor:'pointer',fontSize:24,lineHeight:1,padding:0}}>−</button>
-                <span style={{fontFamily:'Cinzel,serif',fontSize:36,fontWeight:700,color:hpColor(hp, 30),minWidth:60,textAlign:'center'}}>{hp}</span>
-                <button onClick={()=>f('hp',hp+1)} style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(74,222,128,0.4)',background:'rgba(74,222,128,0.15)',color:'#4ADE80',cursor:'pointer',fontSize:24,lineHeight:1,padding:0}}>+</button>
-              </div>
+          <div style={{gridColumn:'1 / -1', background:'rgba(232,25,60,0.06)', border:'1px solid rgba(232,25,60,0.18)', borderRadius:14, padding:'20px 18px'}}>
+  <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:16,textTransform:'uppercase',textAlign:'center'}}>
+    ❤️ Pontos de Vida
+  </div>
 
-              {/* Botões de Dano/Cura em Massa */}
-              <div style={{display:'flex', gap:6, flexWrap:'wrap', justifyContent:'center'}}>
-                {[-15, -10, -5].map(v => (
-                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'6px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:13,fontWeight:'bold'}}>{v}</button>
-                ))}
-                <div style={{width: 12}} /> {/* Espaçador */}
-                {[+5, +10, +15].map(v => (
-                  <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'6px 10px',borderRadius:6,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:13,fontWeight:'bold'}}>+{v}</button>
-                ))}
-              </div>
-            </div>
+  {/* Número grande com glow dinâmico */}
+  <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:16}}>
+    <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>−</button>
+    <div style={{textAlign:'center',minWidth:80}}>
+      <div style={{fontFamily:'Cinzel,serif',fontSize:52,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 28px ${hpColor(hp,30)}88, 0 0 6px ${hpColor(hp,30)}44`,transition:'color 0.4s, text-shadow 0.4s'}}>{hp}</div>
+      <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}% de vida</div>
+    </div>
+    <button onClick={()=>f('hp',hp+1)} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
+  </div>
 
-            <div style={{marginTop:12,height:4,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
-              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/>
-            </div>
+  {/* Barra de vida com gradiente de cor */}
+  <div style={{height:8,background:'rgba(255,255,255,0.06)',borderRadius:6,marginBottom:14,overflow:'hidden'}}>
+    <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
+  </div>
 
-            {/* VIDA BÔNUS */}
-            <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', alignItems:'center'}}>
-              <div style={{fontSize:9,letterSpacing:'0.25em',color:'rgba(74,222,128,0.7)',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Vida Bônus</div>
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:28,height:28,borderRadius:6,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:18,lineHeight:1,padding:0}}>−</button>
-                <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:30,textAlign:'center'}}>{hpBonus}</span>
-                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:28,height:28,borderRadius:6,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:18,lineHeight:1,padding:0}}>+</button>
-              </div>
-              <div style={{width:'100%', marginTop:8,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
-                <div style={{height:'100%',width:`${hpBonus>0?Math.min(100,(hpBonus/Math.max(1,hp))*100):0}%`,background:'#4ADE80',borderRadius:2,transition:'width 0.3s'}}/>
-              </div>
-            </div>
-          </div>
+  {/* Botões de dano/cura em massa */}
+  <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
+    {[-15,-10,-5].map(v=>(
+      <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>{v}</button>
+    ))}
+    <div style={{width:10}}/>
+    {[+5,+10,+15].map(v=>(
+      <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
+    ))}
+  </div>
+
+  {/* Vida Bônus */}
+  <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:14,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+    <div style={{fontSize:9,letterSpacing:'0.25em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>🛡 Vida Bônus</div>
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+      <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:28,textAlign:'center'}}>{hpBonus}</span>
+      <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+    </div>
+  </div>
+</div>
           
           <div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Nível · XP</div>
@@ -1971,44 +2031,47 @@ function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefat
         </div>
         <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
           
-          {/* BLOCO DA VIDA INIMIGO (AGORA OCUPA A LINHA TODA) */}
-          <div style={{gridColumn: '1 / -1', background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.25)',borderRadius:10,padding:'16px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase', textAlign:'center'}}>Pontos de Vida</div>
-            
-            <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap: 14}}>
-              {/* Controles Principais */}
-              <div style={{display:'flex',alignItems:'center',gap:16}}>
-                <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.15)',color:'#E8193C',cursor:'pointer',fontSize:24,lineHeight:1,padding:0}}>−</button>
-                <span style={{fontFamily:'Cinzel,serif',fontSize:36,fontWeight:700,color:hpColor(hp, 50),minWidth:60,textAlign:'center'}}>{hp}</span>
-                <button onClick={()=>f('hp',Math.min(400,hp+1))} style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(74,222,128,0.4)',background:'rgba(74,222,128,0.15)',color:'#4ADE80',cursor:'pointer',fontSize:24,lineHeight:1,padding:0}}>+</button>
-              </div>
+          <div style={{gridColumn:'1 / -1', background:'rgba(232,25,60,0.06)', border:'1px solid rgba(232,25,60,0.18)', borderRadius:14, padding:'20px 18px'}}>
+  <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:16,textTransform:'uppercase',textAlign:'center'}}>
+    ❤️ Pontos de Vida
+  </div>
 
-              {/* Botões de Dano/Cura em Massa */}
-              <div style={{display:'flex', gap:6, flexWrap:'wrap', justifyContent:'center'}}>
-                {[-15, -10, -5].map(v => (
-                  <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'6px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:13,fontWeight:'bold'}}>{v}</button>
-                ))}
-                <div style={{width: 12}} /> {/* Espaçador */}
-                {[+5, +10, +15].map(v => (
-                  <button key={v} onClick={()=>f('hp',Math.min(400,hp+v))} style={{padding:'6px 10px',borderRadius:6,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:13,fontWeight:'bold'}}>+{v}</button>
-                ))}
-              </div>
-            </div>
+  {/* Número grande com glow dinâmico */}
+  <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:16}}>
+    <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>−</button>
+    <div style={{textAlign:'center',minWidth:80}}>
+      <div style={{fontFamily:'Cinzel,serif',fontSize:52,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 28px ${hpColor(hp,30)}88, 0 0 6px ${hpColor(hp,30)}44`,transition:'color 0.4s, text-shadow 0.4s'}}>{hp}</div>
+      <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}% de vida</div>
+    </div>
+    <button onClick={()=>f('hp',hp+1)} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
+  </div>
 
-            <div style={{marginTop:12,height:4,background:'rgba(255,255,255,0.06)',borderRadius:2}}>
-              <div style={{height:'100%',width:`${hpBarPct}%`,background:'#E8193C',borderRadius:2,transition:'width 0.3s'}}/>
-            </div>
+  {/* Barra de vida com gradiente de cor */}
+  <div style={{height:8,background:'rgba(255,255,255,0.06)',borderRadius:6,marginBottom:14,overflow:'hidden'}}>
+    <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
+  </div>
 
-            {/* VIDA BÔNUS INIMIGO */}
-            <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', alignItems:'center'}}>
-              <div style={{fontSize:9,letterSpacing:'0.2em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Vida Bônus</div>
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:28,height:28,borderRadius:6,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:18,lineHeight:1,padding:0}}>−</button>
-                <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:30,textAlign:'center'}}>{hpBonus}</span>
-                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:28,height:28,borderRadius:6,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.08)',color:'#4ADE80',cursor:'pointer',fontSize:18,lineHeight:1,padding:0}}>+</button>
-              </div>
-            </div>
-          </div>
+  {/* Botões de dano/cura em massa */}
+  <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
+    {[-15,-10,-5].map(v=>(
+      <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>{v}</button>
+    ))}
+    <div style={{width:10}}/>
+    {[+5,+10,+15].map(v=>(
+      <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
+    ))}
+  </div>
+
+  {/* Vida Bônus */}
+  <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:14,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+    <div style={{fontSize:9,letterSpacing:'0.25em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>🛡 Vida Bônus</div>
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+      <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:28,textAlign:'center'}}>{hpBonus}</span>
+      <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+    </div>
+  </div>
+</div>
           
           <div style={{background:`${ENEMY_COLOR}09`,border:`1px solid ${ENEMY_COLOR}28`,borderRadius:10,padding:'12px 14px'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:ENEMY_COLOR,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
@@ -2775,26 +2838,121 @@ function MasterToggle({masterMode,setMasterMode}){
 
 function PlayerCombatBanner() {
   const [combat, setCombat] = useState({ active: false });
+  const [log, setLog] = useState([]);
+  const [lastDice, setLastDice] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+    const u1 = onSnapshot(doc(db, 'config', 'combat'), snap => {
       if (snap.exists()) setCombat(snap.data());
     });
-    return () => unsub();
+    const u2 = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
+      if (snap.exists() && snap.data().log) setLog(snap.data().log.slice(-6));
+    });
+    const u3 = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      if (d.ts && Date.now() - d.ts < 15000) setLastDice(d);
+    });
+    return () => { u1(); u2(); u3(); };
   }, []);
+
   if (!combat.active) return null;
+
   const color = combat.currentColor || '#E8193C';
+
   return (
-    <div style={{ position:'fixed',bottom:0,left:0,right:0,zIndex:200,background:'rgba(6,8,20,0.97)',borderTop:`2px solid ${color}55`,padding:'10px 20px',display:'flex',alignItems:'center',gap:12,backdropFilter:'blur(10px)',animation:'pageTurn 0.4s ease' }}>
-      <span style={{ animation:'turnArrow 0.6s ease-in-out infinite alternate',fontSize:16 }}>▶</span>
-      <div style={{ flex:1 }}>
-        <span style={{ fontSize:10,letterSpacing:'0.22em',color:'rgba(255,255,255,0.28)',fontFamily:'Cinzel,serif' }}>RODADA {combat.round||1} · VEZ DE </span>
-        <span style={{ fontSize:14,fontFamily:'Cinzel,serif',fontWeight:700,color }}>{combat.currentNome||'...'}</span>
+    <div style={{
+      position:'fixed', bottom:0, left:0, right:0, zIndex:200,
+      background:'rgba(6,8,20,0.97)', borderTop:`2px solid ${color}55`,
+      backdropFilter:'blur(12px)',
+    }}>
+      {/* Linha principal — sempre visível */}
+      <div style={{padding:'10px 18px',display:'flex',alignItems:'center',gap:12,cursor:'pointer'}} onClick={()=>setExpanded(o=>!o)}>
+        <span style={{animation:'turnArrow 0.6s ease-in-out infinite alternate',fontSize:16}}>▶</span>
+        <div style={{flex:1}}>
+          <span style={{fontSize:10,letterSpacing:'0.22em',color:'rgba(255,255,255,0.28)',fontFamily:'Cinzel,serif'}}>RODADA {combat.round||1} · VEZ DE </span>
+          <span style={{fontSize:14,fontFamily:'Cinzel,serif',fontWeight:700,color}}>{combat.currentNome||'...'}</span>
+        </div>
+        {lastDice && (
+          <div style={{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',borderRadius:8,background:`${lastDice.isCrit?'rgba(74,222,128,0.1)':lastDice.isFail?'rgba(232,25,60,0.1)':'rgba(168,85,247,0.08)'}`,border:`1px solid ${lastDice.isCrit?'rgba(74,222,128,0.3)':lastDice.isFail?'rgba(232,25,60,0.3)':'rgba(168,85,247,0.2)'}`}}>
+            <span style={{fontSize:11}}>🎲</span>
+            <span style={{fontFamily:'Cinzel,serif',fontSize:15,fontWeight:700,color:lastDice.isCrit?'#4ADE80':lastDice.isFail?'#E8193C':'#C8A8E8'}}>{lastDice.total}</span>
+            <span style={{fontSize:9,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif'}}>D{lastDice.sides} · {lastDice.roller}</span>
+          </div>
+        )}
+        <span style={{fontSize:11,color:'rgba(255,255,255,0.2)',transform:expanded?'rotate(180deg)':'none',transition:'transform 0.3s'}}>▲</span>
       </div>
-      <span style={{ fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em' }}>{combat.currentType==='enemy'?'INIMIGO':'ALIADO'}</span>
+
+      {/* Log expandível */}
+      {expanded && (
+        <div style={{borderTop:`1px solid ${color}22`,padding:'10px 18px',display:'flex',flexDirection:'column',gap:4,maxHeight:180,overflowY:'auto'}}>
+          <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>📜 Registro de Combate</div>
+          {log.length===0 && <div style={{fontSize:12,color:'#4A4050',fontFamily:'Cinzel,serif',fontStyle:'italic'}}>Nenhuma ação registrada ainda.</div>}
+          {[...log].reverse().map((entry,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,opacity:i===0?1:0.55,fontSize:12,padding:'3px 0'}}>
+              <span style={{fontSize:12,flexShrink:0}}>{entry.icon}</span>
+              <span style={{fontFamily:'Cinzel,serif',color:i===0?entry.color:'rgba(200,184,160,0.4)',flex:1,lineHeight:1.4}}>{entry.msg}</span>
+              <span style={{fontSize:9,color:'rgba(255,255,255,0.12)',flexShrink:0}}>R{entry.round}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+// ─── 🎲 OVERLAY PÚBLICO DE DADO (visível para todos, fora do combate) ──────
+function PublicDiceOverlay() {
+  const [result, setResult] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const hideTimer = useRef(null);
 
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      if (!d.ts || Date.now() - d.ts > 12000) return; // ignora resultados velhos
+      setResult(d);
+      setVisible(true);
+      clearTimeout(hideTimer.current);
+      hideTimer.current = setTimeout(() => setVisible(false), 7000);
+    });
+    return () => unsub();
+  }, []);
+
+  if (!visible || !result) return null;
+
+  const isCrit = result.isCrit;
+  const isFail = result.isFail;
+  const color = isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8';
+
+  return (
+    <div style={{
+      position:'fixed', bottom: 80, right: 24, zIndex: 9995,
+      background:'rgba(8,10,24,0.97)', border:`1px solid ${color}55`,
+      borderRadius:16, padding:'16px 20px', minWidth:200,
+      boxShadow:`0 6px 32px rgba(0,0,0,0.8), 0 0 24px ${color}33`,
+      animation:'pageTurn 0.35s cubic-bezier(0.2,0.8,0.2,1) forwards',
+      backdropFilter:'blur(12px)',
+    }}>
+      <div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>
+        🎲 {result.roller || 'Alguém'} rolou
+      </div>
+      <div style={{display:'flex',alignItems:'baseline',gap:10}}>
+        <span style={{fontFamily:'Cinzel Decorative,serif',fontSize:42,fontWeight:900,color,textShadow:`0 0 20px ${color}88`,lineHeight:1}}>{result.total}</span>
+        <div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',fontFamily:'Cinzel,serif'}}>D{result.sides}{result.bonus ? ` + ${result.bonus}` : ''}</div>
+          {(isCrit || isFail) && (
+            <div style={{fontSize:11,fontFamily:'Cinzel,serif',color,fontWeight:700,letterSpacing:'0.08em'}}>
+              {isCrit ? '🌟 CRÍTICO!' : '💀 FALHA CRÍTICA!'}
+            </div>
+          )}
+        </div>
+      </div>
+      <button onClick={()=>setVisible(false)} style={{position:'absolute',top:8,right:10,background:'none',border:'none',color:'rgba(255,255,255,0.2)',cursor:'pointer',fontSize:12}}>✕</button>
+    </div>
+  );
+}
 export default function App(){
   const[tab,setTab]=useState('prologo');
   const[masterMode,setMasterMode]=useState(false);
@@ -2821,6 +2979,7 @@ export default function App(){
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
       <StarField atmosphere={atmosphere}/>
       <ToastContainer/>
+      <PublicDiceOverlay />
       <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
           {/* Espaçador para o widget no desktop/mobile não sobrepor o título */}
