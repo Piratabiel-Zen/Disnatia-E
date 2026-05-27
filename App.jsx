@@ -338,10 +338,31 @@ const [showSelector, setShowSelector] = useState(true);
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
 
-
-    const buildCombatants = () => [
-  ...sheets.filter(s => selectedPlayers.includes(s.id)).map(s => { ... }),
-  ...enemies.filter(e => selectedEnemies.includes(e.id)).map(e => { ... }),
+const buildCombatants = () => [
+  ...sheets.filter(s => selectedPlayers.includes(s.id)).map(s => ({
+    id: `p_${s.id}`,
+    nome: s.nome || 'Personagem',
+    type: 'player',
+    hp: s.hp || 0,
+    maxHp: (s.hp || 0) + (s.hp_bonus || 0),
+    color: SHEET_COLORS[s.classe] || '#A855F7',
+    foto: s.foto || '',
+    agiBonus: Math.floor((s.agilidade || 0) / 2),
+    perBonus: Math.floor((s.percepcao || 0) / 2),
+    status: s.status || {},
+  })),
+  ...enemies.filter(e => selectedEnemies.includes(e.id)).map(e => ({
+    id: `e_${e.id}`,
+    nome: e.nome || 'Inimigo',
+    type: 'enemy',
+    hp: e.hp || 0,
+    maxHp: (e.hp || 0) + (e.hp_bonus || 0),
+    color: ENEMY_COLOR,
+    foto: e.foto || '',
+    agiBonus: Math.floor((e.agilidade || 0) / 2),
+    perBonus: Math.floor((e.percepcao || 0) / 2),
+    status: e.status || {},
+  })),
 ];
   
   const persist = async (newInit, newRound, newTurnIdx, newLog) => {
@@ -2602,7 +2623,8 @@ function CronicasSection({masterMode}){
   const[loaded,setLoaded]=useState(false);
   const[open,setOpen]=useState(null);
   const saveTimeout=useRef({});
-  const[subTab, setSubTab]=useState('cronicas');   
+  const[subTab, setSubTab]=useState('cronicas');
+  const [openOva, setOpenOva] = useState(null);
   const[ovas, setOvas]=useState([]);               
   const[ovasLoaded, setOvasLoaded]=useState(false);
   const saveOvaTimeout=useRef({});                
