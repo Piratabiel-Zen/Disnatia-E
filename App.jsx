@@ -2912,43 +2912,39 @@ function PlayerCombatBanner() {
 
   const color = combat.currentColor || '#E8193C';
 
-  return (
+return (
     <div style={{
-      position:'fixed', bottom:0, left:0, right:0, zIndex:200,
-      background:'rgba(6,8,20,0.97)', borderTop:`2px solid ${color}55`,
-      backdropFilter:'blur(12px)',
+      position:'fixed', bottom:22, left:'50%', transform:'translateX(-50%)',
+      zIndex:200,
+      background:'rgba(6,8,20,0.97)',
+      border:`1px solid ${color}55`,
+      borderRadius:16,
+      padding:'10px 22px',
+      display:'flex', alignItems:'center', gap:12,
+      backdropFilter:'blur(14px)',
+      boxShadow:`0 4px 24px rgba(0,0,0,0.7), 0 0 20px ${color}22`,
+      animation:'pageTurn 0.4s ease',
+      minWidth:240, maxWidth:'calc(100vw - 180px)',
+      whiteSpace:'nowrap',
     }}>
-      {/* Linha principal — sempre visível */}
-      <div style={{padding:'10px 18px',display:'flex',alignItems:'center',gap:12,cursor:'pointer'}} onClick={()=>setExpanded(o=>!o)}>
-        <span style={{animation:'turnArrow 0.6s ease-in-out infinite alternate',fontSize:16}}>▶</span>
-        <div style={{flex:1}}>
-          <span style={{fontSize:10,letterSpacing:'0.22em',color:'rgba(255,255,255,0.28)',fontFamily:'Cinzel,serif'}}>RODADA {combat.round||1} · VEZ DE </span>
-          <span style={{fontSize:14,fontFamily:'Cinzel,serif',fontWeight:700,color}}>{combat.currentNome||'...'}</span>
-        </div>
-        {lastDice && (
-          <div style={{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',borderRadius:8,background:`${lastDice.isCrit?'rgba(74,222,128,0.1)':lastDice.isFail?'rgba(232,25,60,0.1)':'rgba(168,85,247,0.08)'}`,border:`1px solid ${lastDice.isCrit?'rgba(74,222,128,0.3)':lastDice.isFail?'rgba(232,25,60,0.3)':'rgba(168,85,247,0.2)'}`}}>
-            <span style={{fontSize:11}}>🎲</span>
-            <span style={{fontFamily:'Cinzel,serif',fontSize:15,fontWeight:700,color:lastDice.isCrit?'#4ADE80':lastDice.isFail?'#E8193C':'#C8A8E8'}}>{lastDice.total}</span>
-            <span style={{fontSize:9,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif'}}>D{lastDice.sides} · {lastDice.roller}</span>
-          </div>
-        )}
-        <span style={{fontSize:11,color:'rgba(255,255,255,0.2)',transform:expanded?'rotate(180deg)':'none',transition:'transform 0.3s'}}>▲</span>
+      <span style={{ animation:'turnArrow 0.6s ease-in-out infinite alternate', fontSize:14, color, flexShrink:0 }}>▶</span>
+      <div style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis' }}>
+        <span style={{ fontSize:10, letterSpacing:'0.2em', color:'rgba(255,255,255,0.28)', fontFamily:'Cinzel,serif' }}>
+          RD {combat.round||1} · {' '}
+        </span>
+        <span style={{ fontSize:13, fontFamily:'Cinzel,serif', fontWeight:700, color }}>
+          {combat.currentNome||'...'}
+        </span>
       </div>
-
-      {/* Log expandível */}
-      {expanded && (
-        <div style={{borderTop:`1px solid ${color}22`,padding:'10px 18px',display:'flex',flexDirection:'column',gap:4,maxHeight:180,overflowY:'auto'}}>
-          <div style={{fontSize:9,letterSpacing:'0.3em',color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:4,textTransform:'uppercase'}}>📜 Registro de Combate</div>
-          {log.length===0 && <div style={{fontSize:12,color:'#4A4050',fontFamily:'Cinzel,serif',fontStyle:'italic'}}>Nenhuma ação registrada ainda.</div>}
-          {[...log].reverse().map((entry,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,opacity:i===0?1:0.55,fontSize:12,padding:'3px 0'}}>
-              <span style={{fontSize:12,flexShrink:0}}>{entry.icon}</span>
-              <span style={{fontFamily:'Cinzel,serif',color:i===0?entry.color:'rgba(200,184,160,0.4)',flex:1,lineHeight:1.4}}>{entry.msg}</span>
-              <span style={{fontSize:9,color:'rgba(255,255,255,0.12)',flexShrink:0}}>R{entry.round}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <span style={{
+        fontSize:8, color: combat.currentType==='enemy' ? '#FF6666' : '#4ADE80',
+        fontFamily:'Cinzel,serif', letterSpacing:'0.12em',
+        background: combat.currentType==='enemy' ? 'rgba(255,68,68,0.12)' : 'rgba(74,222,128,0.12)',
+        border: `1px solid ${combat.currentType==='enemy' ? 'rgba(255,68,68,0.3)' : 'rgba(74,222,128,0.3)'}`,
+        borderRadius:4, padding:'2px 7px', flexShrink:0,
+      }}>
+        {combat.currentType==='enemy' ? 'INIMIGO' : 'ALIADO'}
+      </span>
     </div>
   );
 }
