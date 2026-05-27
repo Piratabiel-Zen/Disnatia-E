@@ -309,7 +309,9 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
     if (s) pushToast(`${combatant.nome}: ${active ? s.label : `Sem ${s.label}`}`, s.icon, active ? s.color : '#888');
   } catch(e) { console.error('Erro ao sincronizar status:', e); }
 };
-
+const [selectedPlayers, setSelectedPlayers] = useState(sheets.map(s => s.id));
+const [selectedEnemies, setSelectedEnemies] = useState(enemies.map(e => e.id));
+const [showSelector, setShowSelector] = useState(true);
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
       if (!snap.exists()) return;
@@ -336,22 +338,11 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
 
-  const buildCombatants = () => [
-    ...sheets.map(s => {
-      const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
-      return {
-        id: 'p_' + s.id, nome: s.nome || 'Personagem', type: 'player',
-        hp: s.hp || 0, maxHp: Math.max(s.hp || 1, 30), // MaxHP estimado para cores
-        color: SHEET_COLORS[s.classe] || cls.color, foto: s.foto, roll: 0,
-        agiBonus: Math.floor((s.agilidade || 0) / 2), perBonus: Math.floor((s.percepcao || 0) / 2), status: s.status || {},
-      };
-    }),
-    ...enemies.map(e => ({
-      id: 'e_' + e.id, nome: e.nome || 'Inimigo', type: 'enemy',
-      hp: e.hp || 0, maxHp: Math.max(e.hp || 1, 30), color: '#FF4444', foto: e.foto, roll: 0,
-      agiBonus: Math.floor((e.agilidade || 0) / 2), perBonus: Math.floor((e.percepcao || 0) / 2), status: e.status || {},
-    })),
-  ];
+
+    const buildCombatants = () => [
+  ...sheets.filter(s => selectedPlayers.includes(s.id)).map(s => { ... }),
+  ...enemies.filter(e => selectedEnemies.includes(e.id)).map(e => { ... }),
+];
   
   const persist = async (newInit, newRound, newTurnIdx, newLog) => {
     try { await setDoc(doc(db, 'config', 'combat_state'), { initiative: newInit ?? initiative, round: newRound ?? round, turnIdx: newTurnIdx ?? turnIdx, log: (newLog ?? log).slice(-60) }); } catch (e) { console.error(e); }
@@ -429,17 +420,38 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
   };
 
 const handleClose = () => {
-    onClose(); // Fecha a tela IMEDIATAMENTE para o mestre
-    
-    // Atualiza o banco de dados em segundo plano, sem travar a tela
-    setDoc(doc(db, 'config', 'combat'), { active: false }).catch(()=>{}); 
-    setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] }).catch(()=>{});
-  };
+  onClose();
+  setDoc(doc(db, 'config', 'combat'), { active: false }).catch(() => {});
+};
 
   const current = initiative[turnIdx];
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: 'rgba(4,6,15,0.98)', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(4px)', fontFamily: "'Cinzel',serif" }}>
+      {showSelector && (
+  <div style={{ padding: '12px 18px', background: 'rgba(232,160,32,0.05)', borderBottom: '1px solid rgba(232,160,32,0.2)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+    <div>
+      <div style={{ fontSize: 10, color: '#E8A020', fontFamily: 'Cinzel,serif', marginBottom: 6 }}>JOGADORES</div>
+      {sheets.map(s => (
+        <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, cursor: 'pointer', fontSize: 12, color: '#C8B8A0' }}>
+          <input type="checkbox" checked={selectedPlayers.includes(s.id)}
+            onChange={e => setSelectedPlayers(prev => e.target.checked ? [...prev, s.id] : prev.filter(x => x !== s.id))} />
+          {s.nome || 'Personagem'}
+        </label>
+      ))}
+    </div>
+    <div>
+      <div style={{ fontSize: 10, color: '#FF4444', fontFamily: 'Cinzel,serif', marginBottom: 6 }}>INIMIGOS</div>
+      {enemies.map(e => (
+        <label key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, cursor: 'pointer', fontSize: 12, color: '#C8B8A0' }}>
+          <input type="checkbox" checked={selectedEnemies.includes(e.id)}
+            onChange={ev => setSelectedEnemies(prev => ev.target.checked ? [...prev, e.id] : prev.filter(x => x !== e.id))} />
+          {e.nome || 'Inimigo'}
+        </label>
+      ))}
+    </div>
+  </div>
+)}
       {/* HEADER */}
       <div style={{ padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.06)', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -452,6 +464,9 @@ const handleClose = () => {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {masterMode && (
             <>
+              <button onClick={() => setShowSelector(o => !o)} style={btnStyle('#E8A020')}>
+  ⚙️ Participantes
+</button>
               <button onClick={rollInitiative} disabled={rolling} style={btnStyle('#A855F7')}>{rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}</button>
               {initiative.length > 0 && (
                 <>
@@ -907,10 +922,19 @@ function DiceWidget() {
   const [result, setResult] = useState(null);
   const [rolling, setRolling] = useState(false);
 
-  const roll = () => {
-    setRolling(true); setResult(null);
-    setTimeout(() => { const base = Math.floor(Math.random() * dice) + 1; setResult({ base, total: base + Number(bonus) }); setRolling(false); }, 600);
-  };
+const roll = async () => {
+  setRolling(true); setResult(null);
+  setTimeout(async () => {
+    const base = Math.floor(Math.random() * dice) + 1;
+    const total = base + Number(bonus);
+    const isCrit = dice === 20 && base === 20;
+    const isFail = dice === 20 && base === 1;
+    const res = { base, total, sides: dice, bonus: Number(bonus), isCrit, isFail, ts: Date.now(), roller: 'Jogador' };
+    setResult(res);
+    setRolling(false);
+    try { await setDoc(doc(db, 'config', 'combat_dice'), res); } catch(e) {}
+  }, 600);
+};
 
   return (
     <div className="dice-widget" style={{position:'fixed', bottom:24, right:24, zIndex:100}}>
