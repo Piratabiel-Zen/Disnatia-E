@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAnaJjwoJ6YgGrR5pIoPrTIj7PculaIfyA",
@@ -221,7 +221,21 @@ async function pushToast(msg, icon='✦', color='#C8A8E8') {
     await setDoc(doc(db, 'config', 'lastToast'), { msg, icon, color, ts: Date.now() });
   } catch(e) { console.error(e); }
 }
-
+// Registra ação de habilidade no log do combate (funciona de qualquer componente)
+async function logAbilityUsed(characterName, abilityName, cost, color = '#C8A8E8') {
+  try {
+    const snap = await getDoc(doc(db, 'config', 'combat_state'));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (!d.round) return; // combate não está ativo
+    const entry = {
+      msg: `${characterName} usou ${abilityName}${cost > 0 ? ` (−${cost} VC)` : ''}`,
+      color, icon: '⚡', ts: Date.now(), round: d.round || 1
+    };
+    const newLog = [...(d.log || []), entry].slice(-60);
+    await updateDoc(doc(db, 'config', 'combat_state'), { log: newLog });
+  } catch (e) { /* silencioso fora do combate */ }
+}
 // ─── ✨ LEVEL UP SCREEN ───────────────────────────────────────────────────────
 function LevelUpScreen({ data, onClose }) {
   const [phase, setPhase] = useState('burst');
@@ -286,24 +300,11 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
 const syncStatusToSheet = async (combatant, statusId, active) => {
   if (!masterMode) return;
   try {
-    if (combatant.type === 'player') {
-      // Busca a ficha atual e atualiza o status
-      const sheetId = combatant.id.replace('p_', '');
-      const sheetRef = doc(db, 'sheets', String(sheetId));
-      const snap = await getDoc(sheetRef);
-      if (snap.exists()) {
-        const currentStatus = snap.data().status || {};
-        await setDoc(sheetRef, { ...snap.data(), status: { ...currentStatus, [statusId]: active } });
-      }
-    } else {
-      const enemyId = combatant.id.replace('e_', '');
-      const enemyRef = doc(db, 'enemies', String(enemyId));
-      const snap = await getDoc(sheetRef);
-      if (snap.exists()) {
-        const currentStatus = snap.data().status || {};
-        await setDoc(enemyRef, { ...snap.data(), status: { ...currentStatus, [statusId]: active } });
-      }
-    }
+    const collectionName = combatant.type === 'player' ? 'sheets' : 'enemies';
+    const entityId = combatant.id.replace(combatant.type === 'player' ? 'p_' : 'e_', '');
+    const ref = doc(db, collectionName, String(entityId));
+    // updateDoc faz escrita parcial — sem precisar ler antes, muito mais rápido
+    await updateDoc(ref, { [`status.${statusId}`]: active });
     const s = STATUS_LIST.find(s => s.id === statusId);
     if (s) pushToast(`${combatant.nome}: ${active ? s.label : `Sem ${s.label}`}`, s.icon, active ? s.color : '#888');
   } catch(e) { console.error('Erro ao sincronizar status:', e); }
@@ -351,11 +352,7 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
       agiBonus: Math.floor((e.agilidade || 0) / 2), perBonus: Math.floor((e.percepcao || 0) / 2), status: e.status || {},
     })),
   ];
-
-  useEffect(() => {
-    if (initiative.length === 0) setInitiative(buildCombatants());
-  }, [sheets, enemies]);
-
+  
   const persist = async (newInit, newRound, newTurnIdx, newLog) => {
     try { await setDoc(doc(db, 'config', 'combat_state'), { initiative: newInit ?? initiative, round: newRound ?? round, turnIdx: newTurnIdx ?? turnIdx, log: (newLog ?? log).slice(-60) }); } catch (e) { console.error(e); }
   };
@@ -1339,7 +1336,7 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
 
 const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1});
 
-function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC }) {
+function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName }) {
   const cd = sheetCooldowns?.[abilityId] || 0;
   const isActive = cd > 0;
   const cost = abilityCost || 0;
@@ -1354,6 +1351,9 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
       onUpdate(abilityId, parsed);
     }
     if (onSpendVC && cost > 0) onSpendVC(cost);
+    if (abilityName && characterName) {
+      logAbilityUsed(characterName, abilityName, cost);
+    }
   };
 
   const decrement = (e) => { e.stopPropagation(); onUpdate(abilityId, Math.max(0, cd - 1)); };
@@ -1391,7 +1391,7 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
   );
 }
 
-function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities, sheetCooldowns, onUpdateCooldown, currentVigos, onSpendVC}){
+function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustomAbilities, sheetCooldowns, onUpdateCooldown, currentVigos, onSpendVC, characterName}) {
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
   const nivel = Number(sheet?.nivel) || 1;
@@ -1446,8 +1446,10 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
     abilityCost={Number(a.cost || a.custo || 0)}
     currentVigos={currentVigos ?? 0}
     onSpendVC={onSpendVC}
+    abilityName={String(a.name || a.nome || '')}
+    characterName={characterName || ''}            
   />
-  )}
+)}
         {isCustom&&masterMode&&<button onClick={()=>handleDelete(a.id)} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.25)',color:'#E8193C',borderRadius:4,cursor:'pointer',padding:'1px 6px',fontSize:10}}>✕</button>}
       </div>
     </div>
@@ -1707,6 +1709,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   onUpdateCooldown={handleUpdateCooldown}
   currentVigos={sheet.vigos ?? 0}
   onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+  characterName={sheet.nome || 'Personagem'}   {/* ← NOVO */}
 />
 </div>
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
