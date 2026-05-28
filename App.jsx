@@ -493,17 +493,11 @@ const handleClose = () => {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {masterMode && (
-            <>
-              <button onClick={() => setShowSelector(o => !o)} style={btnStyle('#E8A020')}>
-  ⚙️ Participantes
-</button>
-              {masterMode && (
   <>
     <button onClick={() => setShowSelector(o => !o)} style={btnStyle('#E8A020')}>
       ⚙️ Participantes
     </button>
 
-    {/* ADICIONE AQUI — só aparece quando não há iniciativa rolada */}
     {initiative.length === 0 && (
       <button
         onClick={() => {
