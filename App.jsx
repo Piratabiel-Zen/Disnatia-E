@@ -303,7 +303,6 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
     const collectionName = combatant.type === 'player' ? 'sheets' : 'enemies';
     const entityId = combatant.id.replace(combatant.type === 'player' ? 'p_' : 'e_', '');
     const ref = doc(db, collectionName, String(entityId));
-    // updateDoc faz escrita parcial — sem precisar ler antes, muito mais rápido
     await updateDoc(ref, { [`status.${statusId}`]: active });
     const s = STATUS_LIST.find(s => s.id === statusId);
     if (s) pushToast(`${combatant.nome}: ${active ? s.label : `Sem ${s.label}`}`, s.icon, active ? s.color : '#888');
@@ -312,27 +311,37 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
 const [selectedPlayers, setSelectedPlayers] = useState(sheets.map(s => s.id));
 const [selectedEnemies, setSelectedEnemies] = useState(enemies.map(e => e.id));
 const [showSelector, setShowSelector] = useState(true);
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
-      if (!snap.exists()) return;
-      const d = snap.data();
-      if (d.initiative) setInitiative(d.initiative);
+const initialLoadDone = useRef(false);
+
+useEffect(() => {
+  const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (!initialLoadDone.current) {
+      if (d.initiative && d.initiative.length > 0) setInitiative(d.initiative);
       if (d.round !== undefined) setRound(d.round);
       if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
       if (d.log) setLog(d.log);
-    });
-    return () => unsub();
-  }, []);
+      initialLoadDone.current = true;
+    } else {
+      if (d.log) setLog(d.log);
+      if (d.initiative) setInitiative(d.initiative);
+      if (d.round !== undefined) setRound(d.round);
+      if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
+    }
+  });
+  return () => unsub();
+}, []);
 
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
-      if (!snap.exists()) return;
-      const d = snap.data();
-      if (!d.ts || Date.now() - d.ts > 8000) return;
-      setDiceResult(d);
-    });
-    return () => unsub();
-  }, []);
+useEffect(() => {
+  const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (!d.ts || Date.now() - d.ts > 8000) return;
+    setDiceResult(d);
+  });
+  return () => unsub();
+}, []);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -488,15 +497,42 @@ const handleClose = () => {
               <button onClick={() => setShowSelector(o => !o)} style={btnStyle('#E8A020')}>
   ⚙️ Participantes
 </button>
-              <button onClick={rollInitiative} disabled={rolling} style={btnStyle('#A855F7')}>{rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}</button>
-              {initiative.length > 0 && (
-                <>
-                  <button onClick={() => setShowSurprisePanel(p => !p)} style={btnStyle('#FF6B35')}>⚡ Oportunidade</button>
-                  <button onClick={nextTurn} style={{ ...btnStyle('#E8193C'), animation: 'combatPulse 2s ease-in-out infinite', fontWeight: 700 }}>Próximo Turno ▶</button>
-                </>
-              )}
-            </>
-          )}
+              {masterMode && (
+  <>
+    <button onClick={() => setShowSelector(o => !o)} style={btnStyle('#E8A020')}>
+      ⚙️ Participantes
+    </button>
+
+    {/* ADICIONE AQUI — só aparece quando não há iniciativa rolada */}
+    {initiative.length === 0 && (
+      <button
+        onClick={() => {
+          setLog([]);
+          setRound(1);
+          setTurnIdx(0);
+          setInitiative([]);
+          setDoc(doc(db, 'config', 'combat_state'), {
+            initiative: [], round: 1, turnIdx: 0, log: []
+          }).catch(() => {});
+        }}
+        style={btnStyle('rgba(255,255,255,0.15)')}
+      >
+        🗑 Limpar Registro
+      </button>
+    )}
+
+    <button onClick={rollInitiative} disabled={rolling} style={btnStyle('#A855F7')}>
+      {rolling ? '🎲 Rolando...' : '🎲 Rolar Iniciativa'}
+    </button>
+
+    {initiative.length > 0 && (
+      <>
+        <button onClick={() => setShowSurprisePanel(p => !p)} style={btnStyle('#FF6B35')}>⚡ Oportunidade</button>
+        <button onClick={nextTurn} style={{ ...btnStyle('#E8193C'), animation: 'combatPulse 2s ease-in-out infinite', fontWeight: 700 }}>Próximo Turno ▶</button>
+      </>
+    )}
+  </>
+)}
           <button onClick={() => setShowDice(p => !p)} style={btnStyle('#4ADE80')}>🎲 {showDice ? 'Fechar Dado' : 'Dado Público'}</button>
           <button onClick={handleClose} style={btnStyle('rgba(255,255,255,0.2)')}>✕ Fechar</button>
         </div>
@@ -2898,7 +2934,7 @@ function PlayerCombatBanner() {
       if (snap.exists()) setCombat(snap.data());
     });
     const u2 = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
-      if (snap.exists() && snap.data().log) setLog(snap.data().log.slice(-6));
+      if (snap.exists() && snap.data().log) setLog(snap.data().log.slice(-8));
     });
     const u3 = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
       if (!snap.exists()) return;
@@ -2912,39 +2948,128 @@ function PlayerCombatBanner() {
 
   const color = combat.currentColor || '#E8193C';
 
-return (
+  return (
     <div style={{
-      position:'fixed', bottom:22, left:'50%', transform:'translateX(-50%)',
-      zIndex:200,
-      background:'rgba(6,8,20,0.97)',
-      border:`1px solid ${color}55`,
-      borderRadius:16,
-      padding:'10px 22px',
-      display:'flex', alignItems:'center', gap:12,
-      backdropFilter:'blur(14px)',
-      boxShadow:`0 4px 24px rgba(0,0,0,0.7), 0 0 20px ${color}22`,
-      animation:'pageTurn 0.4s ease',
-      minWidth:240, maxWidth:'calc(100vw - 180px)',
-      whiteSpace:'nowrap',
+      position: 'fixed', bottom: 22, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 200, maxWidth: 'calc(100vw - 32px)', width: 380,
     }}>
-      <span style={{ animation:'turnArrow 0.6s ease-in-out infinite alternate', fontSize:14, color, flexShrink:0 }}>▶</span>
-      <div style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis' }}>
-        <span style={{ fontSize:10, letterSpacing:'0.2em', color:'rgba(255,255,255,0.28)', fontFamily:'Cinzel,serif' }}>
-          RD {combat.round||1} · {' '}
+      {/* PAINEL EXPANDIDO — aparece acima do banner */}
+      {expanded && (
+        <div style={{
+          background: 'rgba(6,8,20,0.98)', border: `1px solid ${color}44`,
+          borderRadius: 14, padding: '14px 18px', marginBottom: 8,
+          backdropFilter: 'blur(14px)',
+          boxShadow: `0 4px 28px rgba(0,0,0,0.8), 0 0 20px ${color}18`,
+          animation: 'pageTurn 0.3s ease',
+          maxHeight: 280, overflowY: 'auto',
+        }}>
+          <div style={{
+            fontSize: 9, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.22)',
+            fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase',
+          }}>
+            📜 Registro do Combate — Rodada {combat.round || 1}
+          </div>
+
+          {/* Dado mais recente */}
+          {lastDice && (
+            <div style={{
+              marginBottom: 10, padding: '8px 12px', borderRadius: 10,
+              background: lastDice.isCrit ? 'rgba(74,222,128,0.08)' : lastDice.isFail ? 'rgba(232,25,60,0.08)' : 'rgba(168,85,247,0.06)',
+              border: `1px solid ${lastDice.isCrit ? 'rgba(74,222,128,0.3)' : lastDice.isFail ? 'rgba(232,25,60,0.3)' : 'rgba(168,85,247,0.2)'}`,
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{ fontSize: 18 }}>🎲</span>
+              <div>
+                <div style={{
+                  fontFamily: 'Cinzel,serif', fontSize: 20, fontWeight: 900, lineHeight: 1,
+                  color: lastDice.isCrit ? '#4ADE80' : lastDice.isFail ? '#E8193C' : '#C8A8E8',
+                }}>{lastDice.total}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>
+                  D{lastDice.sides}{lastDice.bonus ? ` +${lastDice.bonus}` : ''} · {lastDice.roller}
+                  {lastDice.isCrit && <span style={{ color: '#4ADE80', marginLeft: 6 }}>🌟 CRÍTICO!</span>}
+                  {lastDice.isFail && <span style={{ color: '#E8193C', marginLeft: 6 }}>💀 FALHA!</span>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Log de ações */}
+          {log.length === 0 ? (
+            <div style={{ fontSize: 12, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+              Nenhuma ação registrada ainda.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {[...log].reverse().map((entry, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 8,
+                  padding: '5px 8px', borderRadius: 7,
+                  background: i === 0 ? `${entry.color}14` : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${i === 0 ? entry.color + '33' : 'rgba(255,255,255,0.04)'}`,
+                  opacity: i === 0 ? 1 : Math.max(0.3, 1 - i * 0.12),
+                }}>
+                  <span style={{ fontSize: 12, flexShrink: 0, marginTop: 1 }}>{entry.icon}</span>
+                  <span style={{
+                    fontSize: 12, fontFamily: 'Cinzel,serif', lineHeight: 1.5, flex: 1,
+                    color: i === 0 ? entry.color : 'rgba(200,184,160,0.5)',
+                  }}>{entry.msg}</span>
+                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.15)', flexShrink: 0 }}>R{entry.round}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* BANNER PRINCIPAL — sempre visível */}
+      <div
+        onClick={() => setExpanded(o => !o)}
+        style={{
+          background: 'rgba(6,8,20,0.97)', border: `1px solid ${color}55`,
+          borderRadius: 16, padding: '10px 18px',
+          display: 'flex', alignItems: 'center', gap: 10,
+          backdropFilter: 'blur(14px)', cursor: 'pointer',
+          boxShadow: `0 4px 24px rgba(0,0,0,0.7), 0 0 20px ${color}22`,
+          transition: 'all 0.2s', userSelect: 'none',
+        }}
+      >
+        <span style={{ animation: 'turnArrow 0.6s ease-in-out infinite alternate', fontSize: 14, color, flexShrink: 0 }}>▶</span>
+        <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.28)', fontFamily: 'Cinzel,serif' }}>
+            RD {combat.round || 1} · {' '}
+          </span>
+          <span style={{ fontSize: 13, fontFamily: 'Cinzel,serif', fontWeight: 700, color }}>
+            {combat.currentNome || '...'}
+          </span>
+        </div>
+        <span style={{
+          fontSize: 8, fontFamily: 'Cinzel,serif', letterSpacing: '0.12em',
+          color: combat.currentType === 'enemy' ? '#FF6666' : '#4ADE80',
+          background: combat.currentType === 'enemy' ? 'rgba(255,68,68,0.12)' : 'rgba(74,222,128,0.12)',
+          border: `1px solid ${combat.currentType === 'enemy' ? 'rgba(255,68,68,0.3)' : 'rgba(74,222,128,0.3)'}`,
+          borderRadius: 4, padding: '2px 7px', flexShrink: 0,
+        }}>
+          {combat.currentType === 'enemy' ? 'INIMIGO' : 'ALIADO'}
         </span>
-        <span style={{ fontSize:13, fontFamily:'Cinzel,serif', fontWeight:700, color }}>
-          {combat.currentNome||'...'}
-        </span>
+        {lastDice && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px',
+            borderRadius: 8, flexShrink: 0,
+            background: lastDice.isCrit ? 'rgba(74,222,128,0.1)' : lastDice.isFail ? 'rgba(232,25,60,0.1)' : 'rgba(168,85,247,0.08)',
+            border: `1px solid ${lastDice.isCrit ? 'rgba(74,222,128,0.3)' : lastDice.isFail ? 'rgba(232,25,60,0.3)' : 'rgba(168,85,247,0.2)'}`,
+          }}>
+            <span style={{ fontSize: 11 }}>🎲</span>
+            <span style={{
+              fontFamily: 'Cinzel,serif', fontSize: 14, fontWeight: 900,
+              color: lastDice.isCrit ? '#4ADE80' : lastDice.isFail ? '#E8193C' : '#C8A8E8',
+            }}>{lastDice.total}</span>
+          </div>
+        )}
+        <span style={{
+          fontSize: 11, color: `${color}66`, flexShrink: 0,
+          transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s',
+        }}>▲</span>
       </div>
-      <span style={{
-        fontSize:8, color: combat.currentType==='enemy' ? '#FF6666' : '#4ADE80',
-        fontFamily:'Cinzel,serif', letterSpacing:'0.12em',
-        background: combat.currentType==='enemy' ? 'rgba(255,68,68,0.12)' : 'rgba(74,222,128,0.12)',
-        border: `1px solid ${combat.currentType==='enemy' ? 'rgba(255,68,68,0.3)' : 'rgba(74,222,128,0.3)'}`,
-        borderRadius:4, padding:'2px 7px', flexShrink:0,
-      }}>
-        {combat.currentType==='enemy' ? 'INIMIGO' : 'ALIADO'}
-      </span>
     </div>
   );
 }
