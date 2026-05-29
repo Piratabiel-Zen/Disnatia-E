@@ -285,8 +285,8 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [round, setRound] = useState(1);
   const [turnIdx, setTurnIdx] = useState(0);
   const [initiative, setInitiative] = useState([]);
-  const [rolling, setRolling] = useState(false);
   const [log, setLog] = useState([]);
+  const loadedRef = useRef(false);
   const [diceResult, setDiceResult] = useState(null);
   const [diceRolling, setDiceRolling] = useState(false);
   const [diceSides, setDiceSides] = useState(20);
@@ -317,10 +317,11 @@ useEffect(() => {
   const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
     if (!snap.exists()) return;
     const d = snap.data();
-    if (d.initiative) setInitiative(d.initiative);
+    if (d.initiative !== undefined) setInitiative(d.initiative);
     if (d.round !== undefined) setRound(d.round);
     if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
-    if (d.log) setLog(d.log);
+    if (d.log !== undefined) setLog(d.log);
+    loadedRef.current = true;
   });
   return () => unsub();
 }, []);
@@ -367,6 +368,7 @@ const buildCombatants = () => [
 ];
   
   const persist = async (newInit, newRound, newTurnIdx, newLog) => {
+    if (!loadedRef.current) return;
     try { await setDoc(doc(db, 'config', 'combat_state'), { initiative: newInit ?? initiative, round: newRound ?? round, turnIdx: newTurnIdx ?? turnIdx, log: (newLog ?? log).slice(-60) }); } catch (e) { console.error(e); }
   };
 
@@ -520,6 +522,15 @@ const handleClose = () => {
   </>
 )}
           <button onClick={() => setShowDice(p => !p)} style={btnStyle('#4ADE80')}>🎲 {showDice ? 'Fechar Dado' : 'Dado Público'}</button>
+          {masterMode && (
+            <button onClick={async () => {
+              await setDoc(doc(db, 'config', 'combat'), { active: false });
+              await setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] });
+              onClose();
+            }} style={{ ...btnStyle('#E8193C'), fontWeight: 700, border: '1px solid rgba(232,25,60,0.6)' }}>
+              ⚔️ Fim do Combate
+            </button>
+          )}
           <button onClick={handleClose} style={btnStyle('rgba(255,255,255,0.2)')}>✕ Fechar</button>
         </div>
       </div>
@@ -752,6 +763,13 @@ function AmbientSoundPlayer({ masterMode }) {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
   const iframeRef = useRef(null);
+  const [combatActive, setCombatActive] = useState(false);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+      if (snap.exists()) setCombatActive(snap.data().active || false);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
@@ -798,7 +816,7 @@ function AmbientSoundPlayer({ masterMode }) {
   const volIcon = volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
 
   return (
-    <div style={{ position: 'fixed', bottom: 96, left: 16, zIndex: 100 }}>
+    <div style={{ position: 'fixed', bottom: combatActive ? 96 : 24, left: 16, zIndex: 100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)' }}>
       {playing && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
           <iframe ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
@@ -964,6 +982,13 @@ function DiceWidget() {
   const [bonus, setBonus] = useState(0);
   const [result, setResult] = useState(null);
   const [rolling, setRolling] = useState(false);
+  const [combatActive, setCombatActive] = useState(false);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+      if (snap.exists()) setCombatActive(snap.data().active || false);
+    });
+    return () => unsub();
+  }, []);
 
 const roll = async () => {
   setRolling(true); setResult(null);
@@ -980,7 +1005,7 @@ const roll = async () => {
 };
 
   return (
-    <div className="dice-widget" style={{position:'fixed', bottom:96, right:16, zIndex:100}}>
+    <div className="dice-widget" style={{position:'fixed', bottom: combatActive ? 96 : 24, right:16, zIndex:100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)'}}>
       {!open && <button onClick={()=>setOpen(true)} style={{width:56, height:56, borderRadius:'50%', background:'rgba(168,85,247,0.15)', border:'1px solid rgba(168,85,247,0.4)', color:'#C8A8E8', fontSize:26, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 20px rgba(168,85,247,0.2)', backdropFilter:'blur(5px)', transition:'all 0.3s'}}>🎲</button>}
       {open && (
         <div style={{background:'rgba(10,12,28,0.95)', border:'1px solid rgba(168,85,247,0.4)', borderRadius:16, padding:16, width:260, boxShadow:'0 10px 40px rgba(0,0,0,0.8)', backdropFilter:'blur(10px)'}}>
@@ -3176,7 +3201,7 @@ export default function App(){
       </main>
 
       <AmbientSoundPlayer masterMode={masterMode} />
-      {!masterMode && <PlayerCombatBanner />}
+      <PlayerCombatBanner />
       <DiceWidget />
       <AtmosphereWidget masterMode={masterMode} atmosphere={atmosphere} onSet={handleSetAtmosphere}/>
     </div>
