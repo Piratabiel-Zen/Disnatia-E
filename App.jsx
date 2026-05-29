@@ -317,18 +317,10 @@ useEffect(() => {
   const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
     if (!snap.exists()) return;
     const d = snap.data();
-    if (!initialLoadDone.current) {
-      if (d.initiative && d.initiative.length > 0) setInitiative(d.initiative);
-      if (d.round !== undefined) setRound(d.round);
-      if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
-      if (d.log) setLog(d.log);
-      initialLoadDone.current = true;
-    } else {
-      if (d.log) setLog(d.log);
-      if (d.initiative) setInitiative(d.initiative);
-      if (d.round !== undefined) setRound(d.round);
-      if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
-    }
+    if (d.initiative) setInitiative(d.initiative);
+    if (d.round !== undefined) setRound(d.round);
+    if (d.turnIdx !== undefined) setTurnIdx(d.turnIdx);
+    if (d.log) setLog(d.log);
   });
   return () => unsub();
 }, []);
@@ -806,7 +798,7 @@ function AmbientSoundPlayer({ masterMode }) {
   const volIcon = volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
 
   return (
-    <div style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 100 }}>
+    <div style={{ position: 'fixed', bottom: 96, left: 16, zIndex: 100 }}>
       {playing && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
           <iframe ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
@@ -988,7 +980,7 @@ const roll = async () => {
 };
 
   return (
-    <div className="dice-widget" style={{position:'fixed', bottom:24, right:24, zIndex:100}}>
+    <div className="dice-widget" style={{position:'fixed', bottom:96, right:16, zIndex:100}}>
       {!open && <button onClick={()=>setOpen(true)} style={{width:56, height:56, borderRadius:'50%', background:'rgba(168,85,247,0.15)', border:'1px solid rgba(168,85,247,0.4)', color:'#C8A8E8', fontSize:26, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 20px rgba(168,85,247,0.2)', backdropFilter:'blur(5px)', transition:'all 0.3s'}}>🎲</button>}
       {open && (
         <div style={{background:'rgba(10,12,28,0.95)', border:'1px solid rgba(168,85,247,0.4)', borderRadius:16, padding:16, width:260, boxShadow:'0 10px 40px rgba(0,0,0,0.8)', backdropFilter:'blur(10px)'}}>
