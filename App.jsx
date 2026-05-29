@@ -1904,7 +1904,7 @@ function SheetsSection({masterMode}){
   const revealedArtefatos = ARTEFATOS_DATA.filter(a => artefatosUnlockedState[a.id]);
 
   const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
-  const add=()=>{if(sheets.length>=10)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
+  const add=()=>{if(sheets.length>=15)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
   const upd=(id,data)=>{if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
   const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
 
@@ -1971,7 +1971,7 @@ function SheetsSection({masterMode}){
                 {hasPts&&<span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
               </button>);
             })}
-            {sheets.length<10&&(<button onClick={add} style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>+ Novo Personagem</button>)}
+            {sheets.length<15&&(<button onClick={add} style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>+ Novo Personagem</button>)}
           </div>
           {masterMode && (
             <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{ padding:'8px 14px',borderRadius:10,border:'1px solid rgba(232,25,60,0.35)', background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer', fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0, display:'flex',alignItems:'center',gap:6 }}>⚔️ Combate</button>
