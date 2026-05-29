@@ -285,6 +285,7 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [round, setRound] = useState(1);
   const [turnIdx, setTurnIdx] = useState(0);
   const [initiative, setInitiative] = useState([]);
+  const [rolling, setRolling] = useState(false);
   const [log, setLog] = useState([]);
   const loadedRef = useRef(false);
   const [diceResult, setDiceResult] = useState(null);
