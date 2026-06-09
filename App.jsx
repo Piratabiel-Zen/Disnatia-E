@@ -2677,6 +2677,12 @@ function CronicasSection({masterMode}){
   const[ovasLoaded, setOvasLoaded]=useState(false);
   const saveOvaTimeout=useRef({});                
   const ovaInputRefs=useRef({});
+  const [subTabE, setSubTabE] = useState(false);
+const [ecom, setEcom] = useState([]);
+const [ecomLoaded, setEcomLoaded] = useState(false);
+const [openEcom, setOpenEcom] = useState(null);
+const saveEcomTimeout = useRef({});
+const ecomInputRefs = useRef({});
   useEffect(()=>{const unsub=onSnapshot(collection(db,'cronicas'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setEntries(data);setLoaded(true);});return()=>unsub();},[]);
   useEffect(()=>{
   const unsub = onSnapshot(collection(db,'ovas'), snap=>{
@@ -2686,7 +2692,37 @@ function CronicasSection({masterMode}){
   });
   return()=>unsub();
 },[]);
+useEffect(()=>{
+  const unsub = onSnapshot(collection(db,'ecom'), snap=>{
+    const data = snap.docs.map(d=>({id:d.id,...d.data()}));
+    data.sort((a,b)=>b.id-a.id);
+    setEcom(data); setEcomLoaded(true);
+  });
+  return()=>unsub();
+},[]);
 
+const newEcom = id => ({id, titulo:'', episodio:'', data: new Date().toLocaleDateString('pt-BR'), conteudo:'', imagens:[]});
+const saveEcom = entry => {
+  clearTimeout(saveEcomTimeout.current[entry.id]);
+  saveEcomTimeout.current[entry.id] = setTimeout(async()=>{
+    try { const{imagens,...sem}=entry; await setDoc(doc(db,'ecom',String(entry.id)),sem); if(imagens&&imagens.length>0) await setDoc(doc(db,'ecom',String(entry.id)),entry); }
+    catch(e){ alert('Aviso: Entrada muito grande. Tente menos imagens.'); }
+  }, 800);
+};
+const addEcom = () => { const o = newEcom(Date.now()); setDoc(doc(db,'ecom',String(o.id)),o); setOpenEcom(o.id); };
+const updEcom = (id,data) => { setEcom(prev=>prev.map(o=>o.id===id?data:o)); saveEcom(data); };
+const delEcom = async id => { await deleteDoc(doc(db,'ecom',String(id))); if(openEcom===id) setOpenEcom(null); };
+const addEcomImage = async(entry,file)=>{
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    const compressed = await compressImage(ev.target.result,1000,1000,0.68);
+    const imagens = [...(entry.imagens||[]), compressed];
+    if(imagens.length>6){ alert('Máximo de 6 imagens.'); return; }
+    updEcom(entry.id,{...entry,imagens});
+  };
+  reader.readAsDataURL(file);
+};
+const removeEcomImage = (entry,idx) => { const imagens=(entry.imagens||[]).filter((_,i)=>i!==idx); updEcom(entry.id,{...entry,imagens}); };
 const newOva = id => ({id, titulo:'', episodio:'', data: new Date().toLocaleDateString('pt-BR'), conteudo:'', imagens:[]});
 const saveOva = ova => {
   clearTimeout(saveOvaTimeout.current[ova.id]);
@@ -2727,6 +2763,7 @@ const removeOvaImage = (ova,idx) => { const imagens=(ova.imagens||[]).filter((_,
         {[
           {id:'cronicas', label:'📜 Crônicas'},
           {id:'ovas',     label:'\uD83C\uDFAC OVA(s)'},
+          {id:'ecom',     label:'E \u26A1'},
         ].map(st=>(
           <button key={st.id} onClick={()=>setSubTab(st.id)} style={{
             padding:'7px 22px', borderRadius:20, fontFamily:'Cinzel,serif', fontSize:12,
@@ -2853,6 +2890,81 @@ const removeOvaImage = (ova,idx) => { const imagens=(ova.imagens||[]).filter((_,
                       {(ova.titulo||ova.episodio)&&(<div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(168,85,247,0.1)'}}>{ova.titulo&&<div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#C8A8E8',fontWeight:700,marginBottom:4}}>{ova.titulo}</div>}<div style={{display:'flex',gap:14,flexWrap:'wrap'}}>{ova.episodio&&<span style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Episódio {ova.episodio}</span>}<span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{ova.data}</span></div></div>)}
                       {ova.conteudo?<div style={{fontSize:15,color:'#B0A090',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",marginBottom:16}}>{ova.conteudo}</div>:<div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>Esta OVA ainda não possui narrativa.</div>}
                       {(ova.imagens||[]).length>0&&(<div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}>{ova.imagens.map((img,idx)=>(<div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/></div>))}</div>)}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </>)}
+      </>)}
+      {/* ── ABA ECOM⚡ ── */}
+      {subTab === 'ecom' && (<>
+        <div style={{marginBottom:20,padding:'12px 18px',border:'1px solid rgba(255,107,53,0.2)',borderRadius:10,background:'rgba(255,107,53,0.04)',fontFamily:"'Crimson Text',Georgia,serif",fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>
+          "Mesa spin-off — histórias do universo E que acontecem em uma linha narrativa própria."
+        </div>
+        {!ecomLoaded && <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Carregando...</div>}
+        {ecomLoaded && (<>
+          {masterMode && (
+            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
+              <button onClick={addEcom} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(255,107,53,0.4)',background:'rgba(255,107,53,0.1)',color:'#FF6B35',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>
+                E \u26A1 + Nova Entrada
+              </button>
+            </div>
+          )}
+          {ecom.length===0&&(
+            <div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,107,53,0.2)',borderRadius:12}}>
+              <div style={{fontSize:30,marginBottom:10}}>\u26A1</div>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma história registrada.</div>
+              <div style={{fontSize:12,marginTop:5,color:'#4A4050'}}>{masterMode?'Clique em "+ Nova Entrada" para começar.':'Aguarde o Mestre adicionar histórias.'}</div>
+            </div>
+          )}
+          {ecom.map(entry=>(
+            <div key={entry.id} style={{border:'1px solid rgba(255,107,53,0.22)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(14,8,4,0.9)'}}>
+              <div onClick={()=>setOpenEcom(openEcom===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
+                <span style={{fontSize:15}}>\u26A1</span>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#FF6B35',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div>
+                  <div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>
+                    {entry.episodio&&<span style={{color:'#FF6B35AA',fontFamily:'Cinzel,serif'}}>Ep. {entry.episodio}</span>}
+                    <span>{entry.data}</span>
+                    {entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}
+                    {(entry.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {entry.imagens.length}</span>}
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:7}}>
+                  {masterMode&&<button onClick={e=>{e.stopPropagation();delEcom(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
+                  <span style={{color:'rgba(255,107,53,0.4)',fontSize:11,transform:openEcom===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
+                </div>
+              </div>
+              {openEcom===entry.id&&(
+                <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,107,53,0.15)',animation:'pageTurn 0.3s ease'}}>
+                  <div style={{height:11}}/>
+                  {masterMode ? (
+                    <>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
+                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>updEcom(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta história..." style={{width:'100%'}}/></div>
+                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Ep.</label><input value={entry.episodio||''} onChange={e=>updEcom(entry.id,{...entry,episodio:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
+                      </div>
+                      <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa</label><textarea value={entry.conteudo||''} onChange={e=>updEcom(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
+                      <div style={{marginBottom:10}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
+                          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens</label>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(entry.imagens||[]).length}/6</span>
+                            <button onClick={()=>ecomInputRefs.current[entry.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(255,107,53,0.3)',background:'rgba(255,107,53,0.08)',color:'#FF6B35',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11}}>🖼 Adicionar</button>
+                            <input ref={el=>ecomInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addEcomImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
+                          </div>
+                        </div>
+                        {(entry.imagens||[]).length>0?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeEcomImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>:<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem. (máx 6)</div>}
+                      </div>
+                      <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
+                    </>
+                  ) : (
+                    <>
+                      {(entry.titulo||entry.episodio)&&(<div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(255,107,53,0.15)'}}>{entry.titulo&&<div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#FF6B35',fontWeight:700,marginBottom:4}}>{entry.titulo}</div>}<div style={{display:'flex',gap:14,flexWrap:'wrap'}}>{entry.episodio&&<span style={{fontSize:11,color:'#FF6B35AA',fontFamily:'Cinzel,serif'}}>Episódio {entry.episodio}</span>}<span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{entry.data}</span></div></div>)}
+                      {entry.conteudo?<div style={{fontSize:15,color:'#B0A090',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",marginBottom:16}}>{entry.conteudo}</div>:<div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>Esta história ainda não possui narrativa.</div>}
+                      {(entry.imagens||[]).length>0&&(<div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/></div>))}</div>)}
                     </>
                   )}
                 </div>
