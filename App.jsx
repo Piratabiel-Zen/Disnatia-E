@@ -2763,7 +2763,7 @@ const removeOvaImage = (ova,idx) => { const imagens=(ova.imagens||[]).filter((_,
         {[
           {id:'cronicas', label:'📜 Crônicas'},
           {id:'ovas',     label:'\uD83C\uDFAC OVA(s)'},
-          {id:'ecom',     label:'E \u26A1'},
+          {id:'ecom',     label:'Ecom \u26A1'},
         ].map(st=>(
           <button key={st.id} onClick={()=>setSubTab(st.id)} style={{
             padding:'7px 22px', borderRadius:20, fontFamily:'Cinzel,serif', fontSize:12,
