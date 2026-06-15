@@ -1488,17 +1488,15 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState(newCustomAbility());
   const nivel = Number(sheet?.nivel) || 1;
-  const safeCustomAbilities = customAbilities || {};
-  const customArr = safeCustomAbilities[cls?.id];
-  const classCustom = Array.isArray(customArr) ? customArr.filter(Boolean) : [];
+  const classCustom = Array.isArray(customAbilities) ? customAbilities.filter(Boolean) : [];
 
   const handleSave=()=>{
-    if(!form.nome.trim())return;
-    const updated={...safeCustomAbilities,[cls.id]:[...classCustom,{...form,id:Date.now()}]};
+  if(!form.nome.trim())return;
+    const updated=[...classCustom,{...form,id:Date.now()}];
     onSaveCustomAbilities(updated);setForm(newCustomAbility());
   };
   const handleDelete=(abilityId)=>{
-    const updated={...safeCustomAbilities,[cls.id]:classCustom.filter(a=>a.id!==abilityId)};
+    const updated=classCustom.filter(a=>a.id!==abilityId);
     onSaveCustomAbilities(updated);
   };
 
@@ -1982,8 +1980,8 @@ function SheetsSection({masterMode}){
               sheet={activeSheet}
               onChange={d=>upd(activeSheet.id,d)}
               masterMode={masterMode}
-              customAbilities={customAbilities}
-              onSaveCustomAbilities={saveCustom}
+              customAbilities={customAbilities[activeSheet.id] || []}
+              onSaveCustomAbilities={(novas) => saveCustom({ ...customAbilities, [activeSheet.id]: novas })}
               revealedArtefatos={revealedArtefatos}
               artefatosHabs={artefatosHabsState}
             />
