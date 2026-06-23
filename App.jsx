@@ -69,6 +69,7 @@ select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
 
 @media(max-width:600px){
+  .attrs-personality-row{grid-template-columns:1fr!important;}
   .header-sub{display:none!important;}
   .header-title{font-size:18px!important; margin-left: 20px!important;}
   .attr-dots{flex-wrap:wrap;}
@@ -1053,6 +1054,64 @@ const ATTRS = [
   { key: 'sorte',       label: 'Sorte',        color: '#F0C040' },
 ];
 
+function PersonalityTags({ value, color, onChange }) {
+  const [input, setInput] = useState('');
+  const tags = Array.isArray(value) ? value : [];
+  const maxTags = 4;
+
+  const addTag = () => {
+    const t = input.trim();
+    if (!t || tags.length >= maxTags) return;
+    if (tags.some(x => x.toLowerCase() === t.toLowerCase())) { setInput(''); return; }
+    onChange([...tags, t]);
+    setInput('');
+  };
+  const removeTag = (i) => onChange(tags.filter((_, idx) => idx !== i));
+
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8, minHeight: 26 }}>
+        {tags.length === 0 && (
+          <span style={{ fontSize: 12, color: '#4A4050', fontStyle: 'italic', fontFamily: 'Cinzel,serif' }}>
+            Nenhum traço definido.
+          </span>
+        )}
+        {tags.map((t, i) => (
+          <span key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 20,
+            border: `1px solid ${color}55`, background: `${color}18`, color,
+            fontFamily: 'Cinzel,serif', fontSize: 11, letterSpacing: '0.03em',
+          }}>
+            {t}
+            <button onClick={() => removeTag(i)} style={{ background: 'none', border: 'none', color: `${color}99`, cursor: 'pointer', fontSize: 11, padding: 0, lineHeight: 1 }}>✕</button>
+          </span>
+        ))}
+      </div>
+      {tags.length < maxTags && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addTag()}
+            placeholder="Ex: Bravo, Calmo, Sarcástico..."
+            maxLength={18}
+            style={{ flex: 1, fontSize: 12 }}
+          />
+          <button onClick={addTag} disabled={!input.trim()} style={{
+            padding: '5px 12px', borderRadius: 6, border: `1px solid ${color}55`,
+            background: input.trim() ? `${color}18` : 'rgba(255,255,255,0.02)',
+            color: input.trim() ? color : '#5A5070',
+            cursor: input.trim() ? 'pointer' : 'not-allowed',
+            fontFamily: 'Cinzel,serif', fontSize: 11, whiteSpace: 'nowrap',
+          }}>+ Adicionar</button>
+        </div>
+      )}
+      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.15)', marginTop: 6, fontFamily: 'Cinzel,serif' }}>
+        {tags.length}/{maxTags} traços
+      </div>
+    </div>
+  );
+}
 function AttrDots({ value, color, onChange, masterMode, attrPoints = 0, onSpendPoint }) {
   return (
     <div className="attr-dots" style={{ display: 'flex', gap: 4 }}>
@@ -1612,8 +1671,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   );
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:''});
-
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[]});
 function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities, revealedArtefatos, artefatosHabs}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
@@ -1757,23 +1815,30 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
 
         <StatusPanel sheet={sheet} onChange={onChange} />
 
-        <div style={{marginBottom:15}}>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {ATTRS.map(a=>{
-              const bonus=attrBonus(sheet[a.key]||0);
-              return(
-                <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-                  <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>{ if(masterMode) f(a.key,v); }} masterMode={masterMode} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)}/>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
-                  <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>{bonus>0?`+${bonus}`:'—'}</span>
-                </div>
-              );
-            })}
+<div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:15,alignItems:'start'}}>
+  <div>
+    <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+      {ATTRS.map(a=>{
+        const bonus=attrBonus(sheet[a.key]||0);
+        return(
+          <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
+            <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>{ if(masterMode) f(a.key,v); }} masterMode={masterMode} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)}/>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
+            <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>{bonus>0?`+${bonus}`:'—'}</span>
           </div>
-          <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
-        </div>
+        );
+      })}
+    </div>
+    <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
+  </div>
+
+  <div>
+    <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Personalidade</div>
+    <PersonalityTags value={sheet.personalidade} color={sheetColor} onChange={v=>f('personalidade',v)}/>
+  </div>
+</div>
 
 <div style={{marginBottom:14}}>
   <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
