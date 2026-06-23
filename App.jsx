@@ -1852,17 +1852,14 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
             {masterMode && attrPoints > 0 && <div style={{marginTop:6,fontSize:10,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts pendentes</div>}
           </div>
 
-         <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'10px 12px'}}>
-              <div style={{fontSize:9,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Vigor Cósmico</div>
-              <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
-              <div style={{fontSize:9,color:'rgba(255,255,255,0.18)',marginTop:4}}>+2 por turno</div>
-              {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
-              {sheet.nivel>=18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
-            </div>
+          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'10px 12px'}}>
+            <div style={{fontSize:9,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.18)',marginTop:4}}>+2 por turno</div>
+            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
+            {sheet.nivel>=18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
           </div>
-
-          <div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:SPACING,alignItems:'start'}}>
-          </div>
+        </div>
 
         <StatusPanel sheet={sheet} onChange={onChange} />
 
@@ -1893,41 +1890,6 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         </>)}
 
         {sheetTab==='combate' && (<>
-{sheetTab==='combate' && (<>
-        
-        {/* VIGOR CÓSMICO (Trazido da aba Geral) */}
-        <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'12px 14px', marginBottom: SPACING}}>
-          <div style={{fontSize:10,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Vigor Cósmico</div>
-          <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
-          <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:6}}>+2 por turno</div>
-          {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
-          {sheet.nivel>=18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
-        </div>
-
-        {/* STATUS ATIVOS (Trazidos da aba Geral) */}
-        <StatusPanel sheet={sheet} onChange={onChange} />
-
-        {/* BÔNUS DOS ATRIBUTOS (Visão rápida para combate) */}
-        <div style={{marginBottom: SPACING, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10}}>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Bônus de Ação</div>
-          <div style={{display:'flex', gap:10, flexWrap:'wrap', justifyContent:'space-between'}}>
-            {ATTRS.map(a => {
-              const bonus = attrBonus(sheet[a.key]||0);
-              return (
-                <div key={a.key} style={{display:'flex', flexDirection:'column', alignItems:'center', background: 'rgba(0,0,0,0.2)', padding: '6px 12px', borderRadius: 8, border: `1px solid ${a.color}22`}}>
-                  <span style={{fontSize:9, color:a.color, fontFamily:'Cinzel,serif', textTransform:'uppercase', opacity: 0.8}}>{a.label.substring(0,3)}</span>
-                  <span style={{fontSize:16, fontFamily:'Cinzel,serif', fontWeight:700, color: bonus > 0 ? a.color : 'rgba(255,255,255,0.2)', marginTop: 2}}>
-                    {bonus > 0 ? `+${bonus}` : '0'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{marginBottom:SPACING}}>
-          <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
-          
         <div style={{marginBottom:SPACING}}>
           <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
             {cls.id !== 'personalizado' && (
