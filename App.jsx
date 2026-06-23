@@ -1045,6 +1045,15 @@ function PrologueSection(){return(<div style={{maxWidth:720,margin:'0 auto',padd
 function ClassCard({cls}){const[open,setOpen]=useState(false);return(<div onClick={()=>setOpen(o=>!o)} style={{border:`1px solid ${open?cls.color+'55':'rgba(255,255,255,0.08)'}`,borderRadius:12,background:open?'rgba(10,12,28,0.95)':'rgba(8,10,22,0.8)',marginBottom:13,cursor:'pointer',transition:'all 0.3s',boxShadow:open?`0 0 28px ${cls.glow}`:'none',overflow:'hidden'}}><div style={{padding:'15px 20px',display:'flex',alignItems:'center',gap:13}}><span style={{fontSize:24}}>{cls.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:14,fontWeight:700,color:cls.color,letterSpacing:'0.03em'}}>{cls.name}</div><div style={{fontSize:11,color:'#7B6D8A',marginTop:3,fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>{cls.role}</div></div><div style={{color:'rgba(255,255,255,0.22)',fontSize:12,transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</div></div>{open&&(<div onClick={e=>e.stopPropagation()} style={{padding:'0 20px 20px'}}><div style={{width:'100%',height:1,background:`linear-gradient(90deg,${cls.color}44,transparent)`,marginBottom:16}}/><p style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',margin:'0 0 20px'}}>{cls.lore}</p><div style={{marginBottom:16}}><div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Passiva</div><div style={{background:`${cls.color}0D`,border:`1px solid ${cls.color}28`,borderRadius:8,padding:'10px 13px'}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:cls.color,fontWeight:600,marginBottom:4}}>{cls.passive.name}</div><div style={{fontSize:13,color:'#8A7A6A',lineHeight:1.7}}>{cls.passive.desc}</div></div></div><div style={{marginBottom:16}}><div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div><div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map((a,i)=>(<div key={i} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start'}}><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600,marginBottom:3}}>{a.name}</div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc}</div></div><div style={{flexShrink:0,textAlign:'right'}}><div style={{fontSize:11,color:`${cls.color}BB`,fontFamily:'Cinzel,serif'}}>2 VC</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:2}}>⏱ {a.cooldown}</div></div></div>))}</div></div><div><div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Especiais — 3 VC cada</div><div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map((a,i)=>(<div key={i} style={{background:`${cls.color}09`,border:`1px solid ${cls.color}22`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start'}}><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}><span style={{fontSize:11,color:cls.color}}>✦</span><span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{a.name}</span></div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc}</div></div><div style={{flexShrink:0,textAlign:'right'}}><div style={{fontSize:11,color:`${cls.color}BB`,fontFamily:'Cinzel,serif'}}>3 VC</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:2}}>⏱ {a.cooldown}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.16)',marginTop:2}}>Nív {a.req}+</div></div></div>))}</div></div></div>)}</div>);}
 function ClassesSection(){return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Cinco Linhagens</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Classes</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Clique em cada classe para revelar lore e habilidades</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>{CLASSES.map(cls=><ClassCard key={cls.id} cls={cls}/>)}</div>);}
 
+
+const SHEET_TABS = [
+  { id: 'geral',   label: 'Visão Geral',  icon: '🧙' },
+  { id: 'combate', label: 'Combate',      icon: '⚔️' },
+  { id: 'lore',    label: 'Lore & Itens', icon: '📜' },
+];
+
+const SPACING = 16;
+
 const ATTRS = [
   { key: 'forca',       label: 'Força',        color: '#E8193C' },
   { key: 'agilidade',   label: 'Agilidade',    color: '#E8A020' },
@@ -1385,35 +1394,49 @@ function CharSilhouette({color}){
   return <svg width="66" height="116" viewBox="0 0 66 116" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.32,flexShrink:0}}>{head}{neck}{shoulders}{torso}{belt}{arms}{weapons}{legs}{boots}</svg>;
 }
 
+function CollapsibleSection({ icon, label, color = '#A855F7', badge, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ marginBottom: SPACING, border: `1px solid ${open ? color + '33' : 'rgba(255,255,255,0.07)'}`, borderRadius: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, background: open ? `${color}08` : 'rgba(255,255,255,0.02)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ fontSize: 15, color }}>{icon}</span>
+        <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8B8A0', fontWeight: 600, flex: 1 }}>{label}</span>
+        {badge}
+        <span style={{ color: `${color}88`, fontSize: 11, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }}>▶</span>
+      </button>
+      {open && <div style={{ padding: '0 14px 14px' }}><div style={{ height: 8 }} />{children}</div>}
+    </div>
+  );
+}
+
 function EquipamentoPanel({sheet, onChange, sheetColor}){
   const f=(slot,val)=>onChange({...sheet,[slot]:val});
   return(
-    <div style={{marginBottom:16}}>
-      <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:8}}>
-        <span style={{color:sheetColor}}>⚔</span> Equipamentos
-      </div>
+    <>
       <div className="equip-grid" style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',gap:12,alignItems:'start',justifyContent:'center',marginBottom:10}}>
         <div style={{minWidth:0}}><CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma"/></div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,justifySelf:'center'}}><CharSilhouette color={sheetColor}/><div style={{fontSize:7,color:sheetColor+'55',fontFamily:'Cinzel,serif',letterSpacing:'0.1em',textAlign:'center',textTransform:'uppercase'}}>ESQ · DIR</div></div>
         <div style={{minWidth:0}}><CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma"/></div>
       </div>
       <CompactEquipSlot label="Corpo" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)} placeholder="Armadura / Roupa"/>
-    </div>
+    </>
   );
 }
 
 // ─── 💎 ARTEFATO PANEL (na ficha do personagem) ───────────────────────────────
-function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, artefatosHabs }) {
+function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, artefatosHabs, showHeader = true }) {
   const selectedId = sheet.artefato_id || '';
   const selectedArt = revealedArtefatos.find(a => a.id === selectedId);
   const habs = selectedArt ? (artefatosHabs[selectedId] || []) : [];
   const [showHabs, setShowHabs] = useState(false);
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: '#E8A020' }}>◆</span> Artefato Portado
-      </div>
+    <div style={{ marginBottom: showHeader ? 16 : 0 }}>
+      {showHeader && (
+        <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: '#E8A020' }}>◆</span> Artefato Portado
+        </div>
+      )}
       {revealedArtefatos.length === 0 ? (
         <div style={{ padding: '10px 14px', borderRadius: 8, border: '1px dashed rgba(232,160,32,0.15)', color: '#4A4050', fontFamily: 'Cinzel,serif', fontSize: 12, textAlign: 'center' }}>
           Nenhum artefato revelado ainda.
@@ -1671,7 +1694,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   );
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[]});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}});
 function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities, revealedArtefatos, artefatosHabs}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
@@ -1682,8 +1705,10 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   const attrPoints = sheet.attrPoints || 0;
   const photoInputRef=useRef(null);
   const [levelUpData, setLevelUpData] = useState(null);
-  const [sheetCooldowns, setSheetCooldowns] = useState({});
-  const handleUpdateCooldown = (abilityId, turns) => { setSheetCooldowns(prev => ({ ...prev, [abilityId]: turns })); };
+  const [sheetTab, setSheetTab] = useState('geral');
+  // Cooldowns agora vivem na própria ficha (Firestore) — permite indicador no Modo Mestre
+  const sheetCooldowns = sheet.cooldowns || {};
+  const handleUpdateCooldown = (abilityId, turns) => { f('cooldowns', { ...sheetCooldowns, [abilityId]: turns }); };
   const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
   const attrBonus=val=>Math.floor(val/2);
 
@@ -1712,16 +1737,45 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
       {levelUpData && <LevelUpScreen data={levelUpData} onClose={() => setLevelUpData(null)} />}
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
 
-      <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',minHeight:sheet.foto?0:130}}>
-        {sheet.foto?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px 20px',gap:10}}><div style={{fontSize:40,opacity:0.15}}>📷</div><div style={{fontSize:12,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>Toque para adicionar a foto do personagem</div></div>}
-        {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
-        {sheet.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}><div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel} · {label(sheet.nivel)}</div></div>}
-        <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
+      {/* HEADER STICKY — nome + foto pequena + sub-abas, visível durante toda a rolagem */}
+      <div style={{position:'sticky',top:0,zIndex:40,background:'rgba(8,10,22,0.97)',backdropFilter:'blur(8px)',borderBottom:`1px solid ${sheetColor}33`}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'9px 16px 7px'}}>
+          {sheet.foto
+            ? <img src={sheet.foto} alt="" style={{width:30,height:30,borderRadius:7,objectFit:'cover',border:`1.5px solid ${sheetColor}55`,flexShrink:0}}/>
+            : <div style={{width:30,height:30,borderRadius:7,background:`${sheetColor}15`,border:`1.5px dashed ${sheetColor}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{cls.icon}</div>
+          }
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:13,fontWeight:700,color:sheetColor,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{sheet.nome||'Sem nome'}</div>
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif'}}>Nv {sheet.nivel||1} · {hp}/{hp+hpBonus} HP</div>
+          </div>
+          {attrPoints>0 && <span title={`${attrPoints} ponto(s) de atributo pendente(s)`} style={{width:7,height:7,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite',flexShrink:0}}/>}
+        </div>
+        <div style={{display:'flex',gap:4,padding:'0 10px 8px'}}>
+          {SHEET_TABS.map(t=>(
+            <button key={t.id} onClick={()=>setSheetTab(t.id)} style={{
+              flex:1,padding:'6px 8px',borderRadius:7,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.03em',
+              border:sheetTab===t.id?`1px solid ${sheetColor}66`:'1px solid rgba(255,255,255,0.07)',
+              background:sheetTab===t.id?`${sheetColor}16`:'rgba(255,255,255,0.02)',
+              color:sheetTab===t.id?sheetColor:'#6A5A7A',transition:'all 0.2s',
+            }}>{t.icon} {t.label}</button>
+          ))}
+        </div>
       </div>
 
+      {sheetTab==='geral' && (
+        <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',minHeight:sheet.foto?0:130}}>
+          {sheet.foto?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px 20px',gap:10}}><div style={{fontSize:40,opacity:0.15}}>📷</div><div style={{fontSize:12,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>Toque para adicionar a foto do personagem</div></div>}
+          {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
+          {sheet.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}><div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel} · {label(sheet.nivel)}</div></div>}
+        </div>
+      )}
+      <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
+
       <div style={{padding:'18px'}}>
+
+        {sheetTab==='geral' && (<>
         {attrPoints > 0 && (
-          <div style={{ marginBottom: 16, padding: '14px 18px', border: '1px solid rgba(168,85,247,0.5)', borderRadius: 12, background: 'rgba(168,85,247,0.08)', animation: 'bannerGlow 2s ease-in-out infinite', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ marginBottom: SPACING, padding: '14px 18px', border: '1px solid rgba(168,85,247,0.5)', borderRadius: 12, background: 'rgba(168,85,247,0.08)', animation: 'bannerGlow 2s ease-in-out infinite', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 22 }}>✨</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8A8E8', fontWeight: 700, marginBottom: 2 }}>{attrPoints} Ponto{attrPoints > 1 ? 's' : ''} de Atributo disponíve{attrPoints > 1 ? 'is' : 'l'}!</div>
@@ -1731,169 +1785,165 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           </div>
         )}
 
-        <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
+        <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
           <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
 
-        <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:9,marginBottom:16}}>
-          
+        <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:8,marginBottom:SPACING}}>
+
           <div style={{gridColumn:'1 / -1', background:'rgba(232,25,60,0.06)', border:'1px solid rgba(232,25,60,0.18)', borderRadius:14, padding:'20px 18px'}}>
-  <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:16,textTransform:'uppercase',textAlign:'center'}}>
-    ❤️ Pontos de Vida
-  </div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:16,textTransform:'uppercase',textAlign:'center'}}>
+              ❤️ Pontos de Vida
+            </div>
 
-  {/* Número grande com glow dinâmico */}
-  <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:16}}>
-    <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>−</button>
-    <div style={{textAlign:'center',minWidth:80}}>
-      <div style={{fontFamily:'Cinzel,serif',fontSize:52,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 28px ${hpColor(hp,30)}88, 0 0 6px ${hpColor(hp,30)}44`,transition:'color 0.4s, text-shadow 0.4s'}}>{hp}</div>
-      <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}% de vida</div>
-    </div>
-    <button onClick={()=>f('hp',hp+1)} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
-  </div>
-
-  {/* Barra de vida com gradiente de cor */}
-  <div style={{height:8,background:'rgba(255,255,255,0.06)',borderRadius:6,marginBottom:14,overflow:'hidden'}}>
-    <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
-  </div>
-
-  {/* Botões de dano/cura em massa */}
-  <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
-    {[-15,-10,-5].map(v=>(
-      <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>{v}</button>
-    ))}
-    <div style={{width:10}}/>
-    {[+5,+10,+15].map(v=>(
-      <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
-    ))}
-  </div>
-
-  {/* Vida Bônus */}
-  <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:14,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-    <div style={{fontSize:9,letterSpacing:'0.25em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>🛡 Vida Bônus</div>
-    <div style={{display:'flex',alignItems:'center',gap:10}}>
-      <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
-      <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:28,textAlign:'center'}}>{hpBonus}</span>
-      <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
-    </div>
-  </div>
-</div>
-          
-          <div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Nível · XP</div>
-            {masterMode ? (
-              <div style={{display:'flex',alignItems:'center',gap:6}}>
-                <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>handleNivelChange(+e.target.value)} style={{width:44,textAlign:'center'}}/>
-                <span style={{color:'rgba(255,255,255,0.14)',fontSize:11}}>Nv</span>
-                <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:65,textAlign:'center'}}/>
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.18)'}}>XP</span>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:16}}>
+              <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>−</button>
+              <div style={{textAlign:'center',minWidth:80}}>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:52,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 28px ${hpColor(hp,30)}88, 0 0 6px ${hpColor(hp,30)}44`,transition:'color 0.4s, text-shadow 0.4s'}}>{hp}</div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}% de vida</div>
               </div>
-            ) : (
-              <div>
-                <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:4}}>
-                  <span style={{fontFamily:'Cinzel,serif',fontSize:26,fontWeight:700,color:'#E8A020'}}>{sheet.nivel || 1}</span>
-                  <span style={{fontSize:12,color:'rgba(232,160,32,0.5)',fontFamily:'Cinzel,serif'}}>Nível</span>
-                  <span style={{fontFamily:'Cinzel,serif',fontSize:18,fontWeight:600,color:'rgba(232,160,32,0.7)',marginLeft:8}}>{sheet.xp || 0}</span>
-                  <span style={{fontSize:11,color:'rgba(232,160,32,0.4)',fontFamily:'Cinzel,serif'}}>XP</span>
-                </div>
+              <button onClick={()=>f('hp',hp+1)} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
+            </div>
+
+            <div style={{height:8,background:'rgba(255,255,255,0.06)',borderRadius:6,marginBottom:14,overflow:'hidden'}}>
+              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
+            </div>
+
+            <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
+              {[-15,-10,-5].map(v=>(
+                <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>{v}</button>
+              ))}
+              <div style={{width:10}}/>
+              {[+5,+10,+15].map(v=>(
+                <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
+              ))}
+            </div>
+
+            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:14,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div style={{fontSize:9,letterSpacing:'0.25em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>🛡 Vida Bônus</div>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:28,textAlign:'center'}}>{hpBonus}</span>
+                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
               </div>
-            )}
-            <div style={{fontSize:10,color:'#7A6A5A',marginTop:4,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
-            {masterMode && attrPoints > 0 && <div style={{marginTop:8,fontSize:11,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts de atributo pendentes</div>}
+            </div>
           </div>
 
-          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'12px 14px'}}>
-            <div style={{fontSize:10,letterSpacing:'0.3em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Vigor Cósmico</div>
+          <div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'10px 12px'}}>
+            <div style={{fontSize:9,letterSpacing:'0.25em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Nível · XP</div>
+            {masterMode ? (
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>handleNivelChange(+e.target.value)} style={{width:40,textAlign:'center',fontSize:13}}/>
+                <span style={{color:'rgba(255,255,255,0.14)',fontSize:10}}>Nv</span>
+                <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:58,textAlign:'center',fontSize:13}}/>
+                <span style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>XP</span>
+              </div>
+            ) : (
+              <div style={{display:'flex',alignItems:'baseline',gap:8}}>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8A020'}}>{sheet.nivel || 1}</span>
+                <span style={{fontSize:11,color:'rgba(232,160,32,0.5)',fontFamily:'Cinzel,serif'}}>Nível</span>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:15,fontWeight:600,color:'rgba(232,160,32,0.7)',marginLeft:6}}>{sheet.xp || 0}</span>
+                <span style={{fontSize:10,color:'rgba(232,160,32,0.4)',fontFamily:'Cinzel,serif'}}>XP</span>
+              </div>
+            )}
+            <div style={{fontSize:9,color:'#7A6A5A',marginTop:3,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
+            {masterMode && attrPoints > 0 && <div style={{marginTop:6,fontSize:10,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts pendentes</div>}
+          </div>
+
+          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'10px 12px'}}>
+            <div style={{fontSize:9,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Vigor Cósmico</div>
             <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
-            <div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:5}}>+2 por turno</div>
-            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +1 VC desbloqueado (Nv 8)</div>}
-            {sheet.nivel>=18&&<div style={{fontSize:9,color:'rgba(255,200,0,0.5)',marginTop:3,fontFamily:'Cinzel,serif'}}>✦ +2 VC desbloqueados (Nv 8 e 18)</div>}
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.18)',marginTop:4}}>+2 por turno</div>
+            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
+            {sheet.nivel>=18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
           </div>
         </div>
 
         <StatusPanel sheet={sheet} onChange={onChange} />
 
-<div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:15,alignItems:'start'}}>
-  <div>
-    <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
-    <div style={{display:'flex',flexDirection:'column',gap:8}}>
-      {ATTRS.map(a=>{
-        const bonus=attrBonus(sheet[a.key]||0);
-        return(
-          <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
-            <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
-            <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>{ if(masterMode) f(a.key,v); }} masterMode={masterMode} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)}/>
-            <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
-            <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>{bonus>0?`+${bonus}`:'—'}</span>
+        <div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:SPACING,alignItems:'start'}}>
+          <div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {ATTRS.map(a=>{
+                const bonus=attrBonus(sheet[a.key]||0);
+                return(
+                  <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
+                    <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
+                    <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>{ if(masterMode) f(a.key,v); }} masterMode={masterMode} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)}/>
+                    <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
+                    <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>{bonus>0?`+${bonus}`:'—'}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
           </div>
-        );
-      })}
-    </div>
-    <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
-  </div>
 
-  <div>
-    <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Personalidade</div>
-    <PersonalityTags value={sheet.personalidade} color={sheetColor} onChange={v=>f('personalidade',v)}/>
-  </div>
-</div>
+          <div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Personalidade</div>
+            <PersonalityTags value={sheet.personalidade} color={sheetColor} onChange={v=>f('personalidade',v)}/>
+          </div>
+        </div>
+        </>)}
 
-<div style={{marginBottom:14}}>
-  <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
-    {cls.id !== 'personalizado' && (
-      <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
-        {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
-      </div>
-    )}
-    <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
-      <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
-      <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:sheetColor,fontWeight:700}}>{cls.alcance}</div>
-    </div>
-  </div>
-</div>
-
-        <div style={{marginBottom:14}}>
-<HabilidadesPanel
-  cls={cls}
-  sheet={sheet}
-  customAbilities={customAbilities}
-  masterMode={masterMode}
-  onSaveCustomAbilities={onSaveCustomAbilities}
-  sheetCooldowns={sheetCooldowns}
-  onUpdateCooldown={handleUpdateCooldown}
-  currentVigos={sheet.vigos ?? 0}
-  onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
-  characterName={sheet.nome || 'Personagem'}
-/>
-</div>
-        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
-        <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
-
-        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
-        
-        {/* 💎 ARTEFATO PORTADO */}
-        <ArtefatoFichaPanel
-          sheet={sheet}
-          onChange={onChange}
-          sheetColor={sheetColor}
-          revealedArtefatos={revealedArtefatos || []}
-          artefatosHabs={artefatosHabs || {}}
-        />
-
-        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
-        <div style={{marginBottom:14}}>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Itens & Inventário</div>
-          <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+        {sheetTab==='combate' && (<>
+        <div style={{marginBottom:SPACING}}>
+          <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
+            {cls.id !== 'personalizado' && (
+              <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
+                {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
+              </div>
+            )}
+            <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
+              <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
+              <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:sheetColor,fontWeight:700}}>{cls.alcance}</div>
+            </div>
+          </div>
         </div>
 
-        <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>
-        <div style={{marginBottom:14}}>
-          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{color:sheetColor}}>✦</span> Lore do Personagem
-            {!masterMode && sheet.lore_personagem && <span style={{fontSize:9,color:sheetColor+'66',marginLeft:'auto',letterSpacing:'0.15em'}}>SOMENTE LEITURA</span>}
-          </div>
+        <HabilidadesPanel
+          cls={cls}
+          sheet={sheet}
+          customAbilities={customAbilities}
+          masterMode={masterMode}
+          onSaveCustomAbilities={onSaveCustomAbilities}
+          sheetCooldowns={sheetCooldowns}
+          onUpdateCooldown={handleUpdateCooldown}
+          currentVigos={sheet.vigos ?? 0}
+          onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+          characterName={sheet.nome || 'Personagem'}
+        />
+
+        <CollapsibleSection icon="⚔" label="Equipamentos" color={sheetColor}>
+          <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
+        </CollapsibleSection>
+        </>)}
+
+        {sheetTab==='lore' && (<>
+        <CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
+          <ArtefatoFichaPanel
+            sheet={sheet}
+            onChange={onChange}
+            sheetColor={sheetColor}
+            revealedArtefatos={revealedArtefatos || []}
+            artefatosHabs={artefatosHabs || {}}
+            showHeader={false}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection icon="🎒" label="Itens & Inventário" color={sheetColor}>
+          <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          icon="✦"
+          label="Lore do Personagem"
+          color={sheetColor}
+          badge={!masterMode && sheet.lore_personagem ? <span style={{fontSize:9,color:sheetColor+'66',letterSpacing:'0.1em'}}>SOMENTE LEITURA</span> : null}
+        >
           {masterMode ? (
             <textarea
               value={sheet.lore_personagem||''}
@@ -1924,8 +1974,9 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
               A história deste personagem ainda não foi escrita pelo Mestre.
             </div>
           )}
-        </div>
-        <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+        </CollapsibleSection>
+
+        <div style={{marginTop:SPACING,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
           {masterMode ? (
             <div>
               <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>🔒 Senha da Ficha</div>
@@ -1939,6 +1990,8 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
             sheet.senha ? <div style={{fontSize:11,color:'#4A4050',fontFamily:'Cinzel,serif',textAlign:'center'}}>🔒 Ficha protegida por senha.</div> : null
           )}
         </div>
+        </>)}
+
       </div>
     </div>
   );
@@ -2025,13 +2078,21 @@ function SheetsSection({masterMode}){
               const isActive=String(s.id)===activeId;
               const hasPts=(s.attrPoints||0)>0;
               const locked=!masterMode&&s.senha&&!unlockedIds[String(s.id)];
+              const noSenha = masterMode && !s.senha;
+              const hasCooldown = masterMode && Object.values(s.cooldowns||{}).some(v=>v>0);
               return(<button key={s.id} onClick={()=>handleTabClick(s)} style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:10,border:`1px solid ${isActive?sc+'66':sc+'28'}`,background:isActive?`${sc}15`:'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.2s',flexShrink:0,whiteSpace:'nowrap',position:'relative'}}>
                 {s.foto?<img src={s.foto} alt="" style={{width:30,height:30,borderRadius:6,objectFit:'cover',border:`1.5px solid ${sc}44`,filter:locked?'grayscale(60%)':'none'}}/>:<div style={{width:30,height:30,borderRadius:6,background:`${sc}15`,border:`1.5px dashed ${sc}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{locked?'🔒':cls.icon}</div>}
                 <div style={{textAlign:'left'}}>
                   <div style={{fontFamily:'Cinzel,serif',fontSize:12,fontWeight:700,color:isActive?sc:'#8A7A8A'}}>{s.nome||'Sem nome'}</div>
                   <div style={{fontSize:10,color:'#5A5070',fontFamily:'Cinzel,serif'}}>Nv {s.nivel||1}{locked?' · 🔒':''}</div>
                 </div>
-                {hasPts&&<span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
+                {(hasPts||noSenha||hasCooldown)&&(
+                  <div style={{position:'absolute',top:4,right:4,display:'flex',flexDirection:'column',gap:3}}>
+                    {hasPts&&<span title={`${s.attrPoints} ponto(s) de atributo pendente(s)`} style={{width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
+                    {noSenha&&<span title="Sem senha definida" style={{width:8,height:8,borderRadius:'50%',background:'#E8A020',boxShadow:'0 0 6px #E8A020',animation:'pulse 1.5s ease-in-out infinite'}}/>}
+                    {hasCooldown&&<span title="Habilidade(s) em cooldown" style={{width:8,height:8,borderRadius:'50%',background:'#E86420',boxShadow:'0 0 6px #E86420',animation:'pulse 1.5s ease-in-out infinite'}}/>}
+                  </div>
+                )}
               </button>);
             })}
             {sheets.length<15&&(<button onClick={add} style={{padding:'8px 16px',borderRadius:10,border:'1px dashed rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.01)',color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',flexShrink:0,transition:'border-color 0.2s'}}>+ Novo Personagem</button>)}
