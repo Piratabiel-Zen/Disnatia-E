@@ -1187,6 +1187,23 @@ function StatusPanel({ sheet, onChange }) {
     </div>
   );
 }
+// ─── 📊 BÔNUS DE ATRIBUTOS (compacto, somente leitura — usado na aba Combate) ──
+function AttrBonusStrip({ sheet }) {
+  const attrBonus = val => Math.floor(val / 2);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(82px,1fr))', gap: 7 }}>
+      {ATTRS.map(a => {
+        const bonus = attrBonus(sheet[a.key] || 0);
+        return (
+          <div key={a.key} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: 8, background: `${a.color}0D`, border: `1px solid ${a.color}28` }}>
+            <div style={{ fontSize: 9, fontFamily: 'Cinzel,serif', color: a.color, letterSpacing: '0.04em', marginBottom: 4, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.label}</div>
+            <div style={{ fontSize: 18, fontFamily: 'Cinzel,serif', fontWeight: 700, color: bonus > 0 ? a.color : 'rgba(255,255,255,0.15)' }}>{bonus > 0 ? `+${bonus}` : '—'}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function resolveEquipIcon(tipo=''){
   const t = tipo.toLowerCase();
@@ -1852,17 +1869,6 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
             {masterMode && attrPoints > 0 && <div style={{marginTop:6,fontSize:10,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts pendentes</div>}
           </div>
 
-          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'10px 12px'}}>
-            <div style={{fontSize:9,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Vigor Cósmico</div>
-            <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
-            <div style={{fontSize:9,color:'rgba(255,255,255,0.18)',marginTop:4}}>+2 por turno</div>
-            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
-            {sheet.nivel>=18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
-          </div>
-        </div>
-
-        <StatusPanel sheet={sheet} onChange={onChange} />
-
         <div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:SPACING,alignItems:'start'}}>
           <div>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
@@ -1889,7 +1895,26 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         </div>
         </>)}
 
-        {sheetTab==='combate' && (<>
+                {sheetTab==='combate' && (<>
+        {/* Vigor Cósmico — visível de imediato, sem precisar voltar pra Visão Geral */}
+        <div style={{marginBottom:SPACING}}>
+          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'10px 12px',maxWidth:220}}>
+            <div style={{fontSize:9,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.18)',marginTop:4}}>+2 por turno</div>
+            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
+            {sheet.nivel>=18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
+          </div>
+        </div>
+
+        {/* Status Ativos — pra ver de cara se está envenenado, sangrando, atordoado etc. */}
+        <StatusPanel sheet={sheet} onChange={onChange} />
+
+        {/* Bônus de Atributos — leitura rápida pra rolagens; editar continua em Visão Geral */}
+        <div style={{marginBottom:SPACING}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Bônus de Atributos</div>
+          <AttrBonusStrip sheet={sheet}/>
+        </div>
         <div style={{marginBottom:SPACING}}>
           <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
             {cls.id !== 'personalizado' && (
