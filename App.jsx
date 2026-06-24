@@ -1868,7 +1868,8 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
             <div style={{fontSize:9,color:'#7A6A5A',marginTop:3,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
             {masterMode && attrPoints > 0 && <div style={{marginTop:6,fontSize:10,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts pendentes</div>}
           </div>
-
+        </div>
+          
         <div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:SPACING,alignItems:'start'}}>
           <div>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
