@@ -28,6 +28,10 @@ function compressImage(dataUrl, maxW=900, maxH=900, quality=0.72){
   });
 }
 
+function compressImageSmall(dataUrl){
+  return compressImage(dataUrl, 700, 700, 0.55);
+}
+
 const GLOBAL_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
@@ -2834,7 +2838,20 @@ const [ecomLoaded, setEcomLoaded] = useState(false);
 const [openEcom, setOpenEcom] = useState(null);
 const saveEcomTimeout = useRef({});
 const ecomInputRefs = useRef({});
-  useEffect(()=>{const unsub=onSnapshot(collection(db,'cronicas'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setEntries(data);setLoaded(true);});return()=>unsub();},[]);
+  useEffect(() => {
+  const unsub1 = onSnapshot(collection(db,'cronicas'), snap => {
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data(), imagens: [] }));
+    data.sort((a,b) => b.id - a.id);
+    setEntries(data);
+    setLoaded(true);
+  });
+  const unsub2 = onSnapshot(collection(db,'cronicas_imgs'), snap => {
+    const imgs = {};
+    snap.docs.forEach(d => { imgs[d.id] = d.data().imagens || []; });
+    setEntries(prev => prev.map(e => ({ ...e, imagens: imgs[String(e.id)] || [] })));
+  });
+  return () => { unsub1(); unsub2(); };
+}, []);
   useEffect(()=>{
   const unsub = onSnapshot(collection(db,'ovas'), snap=>{
     const data = snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -2896,12 +2913,49 @@ const addOvaImage = async(ova,file)=>{
   reader.readAsDataURL(file);
 };
 const removeOvaImage = (ova,idx) => { const imagens=(ova.imagens||[]).filter((_,i)=>i!==idx); updOva(ova.id,{...ova,imagens}); };
-  const saveEntry=entry=>{clearTimeout(saveTimeout.current[entry.id]);saveTimeout.current[entry.id]=setTimeout(async()=>{try{const{imagens,...sem}=entry;await setDoc(doc(db,'cronicas',String(entry.id)),sem);if(imagens&&imagens.length>0)await setDoc(doc(db,'cronicas',String(entry.id)),entry);}catch(e){alert('Aviso: Crônica muito grande. Tente usar menos imagens.');}},800);};
-  const add=()=>{const e=newEntry(Date.now());setDoc(doc(db,'cronicas',String(e.id)),e);setOpen(e.id);};
-  const upd=(id,data)=>{setEntries(prev=>prev.map(e=>e.id===id?data:e));saveEntry(data);};
-  const del=async id=>{await deleteDoc(doc(db,'cronicas',String(id)));if(open===id)setOpen(null);};
-  const addImage=async(entry,file)=>{const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,1000,1000,0.68);const imagens=[...(entry.imagens||[]),compressed];if(imagens.length>6){alert('Máximo de 6 imagens por crônica.');return;}upd(entry.id,{...entry,imagens});};reader.readAsDataURL(file);};
-  const removeImage=(entry,idx)=>{const imagens=(entry.imagens||[]).filter((_,i)=>i!==idx);upd(entry.id,{...entry,imagens});};
+  const saveEntry = entry => {
+  clearTimeout(saveTimeout.current[entry.id]);
+  saveTimeout.current[entry.id] = setTimeout(async () => {
+    try {
+      const { imagens, ...sem } = entry;
+      await setDoc(doc(db, 'cronicas', String(entry.id)), sem);
+    } catch(e) { console.error('Erro ao salvar crônica:', e); }
+  }, 800);
+};
+const saveEntryImages = async (entryId, imagens) => {
+  try {
+    await setDoc(doc(db, 'cronicas_imgs', String(entryId)), { imagens: imagens || [] });
+  } catch(e) { console.error('Erro ao salvar imagens:', e); alert('Imagem muito grande mesmo após compressão. Tente uma foto menor.'); }
+};
+const add = () => { const e = newEntry(Date.now()); setDoc(doc(db,'cronicas',String(e.id)),e); setOpen(e.id); };
+const upd = (id, data) => {
+  setEntries(prev => prev.map(e => e.id === id ? data : e));
+  const { imagens, ...sem } = data;
+  saveEntry({ ...sem, id });
+};
+const del = async id => {
+  await deleteDoc(doc(db,'cronicas',String(id)));
+  await deleteDoc(doc(db,'cronicas_imgs',String(id))).catch(()=>{});
+  if(open===id) setOpen(null);
+};
+const addImage = async (entry, file) => {
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const compressed = await compressImageSmall(ev.target.result);
+    const imagens = [...(entry.imagens||[]), compressed];
+    if(imagens.length > 8){ alert('Máximo de 8 imagens por crônica.'); return; }
+    const newEntry2 = { ...entry, imagens };
+    setEntries(prev => prev.map(e => e.id === entry.id ? newEntry2 : e));
+    await saveEntryImages(entry.id, imagens);
+  };
+  reader.readAsDataURL(file);
+};
+const removeImage = async (entry, idx) => {
+  const imagens = (entry.imagens||[]).filter((_,i) => i !== idx);
+  const newEntry2 = { ...entry, imagens };
+  setEntries(prev => prev.map(e => e.id === entry.id ? newEntry2 : e));
+  await saveEntryImages(entry.id, imagens);
+};
   const imgInputRefs=useRef({});
   return(
     <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
