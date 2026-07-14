@@ -763,14 +763,28 @@ function RestrictedAccess({ title, text }) {
   );
 }
 
+const SOUND_CATEGORIES = [
+  { id: 'calmaria', label: 'Calmaria', icon: '🌤️', color: '#4ADE80' },
+  { id: 'dialogos', label: 'Diálogos', icon: '💬', color: '#1EC8FF' },
+  { id: 'ambiente', label: 'Ambiente', icon: '🌫️', color: '#A855F7' },
+  { id: 'enigmas', label: 'Enigmas', icon: '🧩', color: '#E8A020' },
+  { id: 'combate', label: 'Combate', icon: '⚔️', color: '#E8193C' },
+  { id: 'terror', label: 'Terror', icon: '👻', color: '#6E6E80' },
+];
+
 function AmbientSoundPlayer({ masterMode }) {
   const [open, setOpen] = useState(false);
-  const [ytUrl, setYtUrl] = useState('');
-  const [videoId, setVideoId] = useState('');
-  const [playing, setPlaying] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('calmaria');
+  const [playlists, setPlaylists] = useState({});
+  const [current, setCurrent] = useState(null);
+  const [userMuted, setUserMuted] = useState(false);
   const [volume, setVolume] = useState(50);
+  const [novoNome, setNovoNome] = useState('');
+  const [novoLink, setNovoLink] = useState('');
   const iframeRef = useRef(null);
+  const lastTs = useRef(0);
   const [combatActive, setCombatActive] = useState(false);
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
       if (snap.exists()) setCombatActive(snap.data().active || false);
@@ -779,13 +793,20 @@ function AmbientSoundPlayer({ masterMode }) {
   }, []);
 
   useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'ambient_playlists'), snap => {
+      if (snap.exists()) setPlaylists(snap.data() || {});
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
-      if (snap.exists()) {
-        const id = snap.data().videoId || '';
-        setVideoId(prev => {
-          if (id !== prev) setPlaying(false);
-          return id;
-        });
+      if (!snap.exists()) return;
+      const d = snap.data();
+      setCurrent(d);
+      if (d.ts && d.ts !== lastTs.current) {
+        lastTs.current = d.ts;
+        setUserMuted(false);
       }
     });
     return () => unsub();
@@ -804,65 +825,116 @@ function AmbientSoundPlayer({ masterMode }) {
     } catch (_) {}
   };
 
-  const handlePlay = () => { setPlaying(true); setOpen(false); setTimeout(() => sendCmd('setVolume', [volume]), 2000); };
-  const handleStop = () => { setPlaying(false); sendCmd('pauseVideo'); };
   const handleVolumeChange = (e) => { const v = Number(e.target.value); setVolume(v); sendCmd('setVolume', [v]); };
-  const handleSave = async () => {
-    const id = extractId(ytUrl.trim());
-    if (!id) return;
-    await setDoc(doc(db, 'config', 'ambient'), { videoId: id, ts: Date.now() });
-    setYtUrl('');
-    pushToast('Som ambiente atualizado!', '🎵', '#4ADE80');
-  };
-  const handleRemove = async () => {
-    await setDoc(doc(db, 'config', 'ambient'), { videoId: '', ts: Date.now() });
-    setVideoId(''); setPlaying(false);
+
+  const playTrack = async (track, categoria) => {
+    try {
+      await setDoc(doc(db, 'config', 'ambient'), {
+        videoId: track.videoId, nome: track.nome, categoria, playing: true, ts: Date.now(),
+      });
+      const catColor = SOUND_CATEGORIES.find(c => c.id === categoria)?.color || '#4ADE80';
+      pushToast(`🎵 Tocando agora: ${track.nome}`, '🎵', catColor);
+    } catch (e) { console.error(e); }
   };
 
-  const embedSrc = videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&controls=0` : '';
-  const volIcon = volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
+  const stopAll = async () => {
+    try { await setDoc(doc(db, 'config', 'ambient'), { videoId: '', nome: '', categoria: '', playing: false, ts: Date.now() }); } catch (e) {}
+  };
+
+  const addTrack = async () => {
+    const id = extractId(novoLink.trim());
+    if (!id || !novoNome.trim()) return;
+    const atuais = playlists[activeCategory] || [];
+    const nova = { id: Date.now(), nome: novoNome.trim(), videoId: id };
+    const updated = { ...playlists, [activeCategory]: [...atuais, nova] };
+    await setDoc(doc(db, 'config', 'ambient_playlists'), updated);
+    setNovoNome(''); setNovoLink('');
+  };
+
+  const deleteTrack = async (categoria, trackId) => {
+    const atuais = playlists[categoria] || [];
+    const updated = { ...playlists, [categoria]: atuais.filter(t => t.id !== trackId) };
+    await setDoc(doc(db, 'config', 'ambient_playlists'), updated);
+  };
+
+  const isPlaying = current?.playing && current?.videoId && !userMuted;
+  const embedSrc = current?.videoId ? `https://www.youtube.com/embed/${current.videoId}?autoplay=1&loop=1&playlist=${current.videoId}&enablejsapi=1&controls=0` : '';
+  const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
+  const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
 
   return (
     <div style={{ position: 'fixed', bottom: combatActive ? 96 : 24, left: 16, zIndex: 100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)' }}>
-      {playing && embedSrc && (
+      {isPlaying && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
           <iframe ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
         </div>
       )}
       {!open && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {videoId && (
-            <button onClick={playing ? handleStop : handlePlay} title={playing ? 'Parar música' : 'Ouvir som ambiente'} style={{ width: 48, height: 48, borderRadius: '50%', background: playing ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${playing ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.14)'}`, color: playing ? '#4ADE80' : '#7A6A8A', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(6px)', boxShadow: playing ? '0 0 18px rgba(74,222,128,0.28)' : 'none', transition: 'all 0.3s', animation: playing ? 'pulse 2.5s ease-in-out infinite' : 'none' }}>{playing ? '🔊' : '🎵'}</button>
+          {current?.videoId && (
+            <button onClick={() => setUserMuted(m => !m)} title={userMuted ? 'Ativar som' : 'Silenciar para mim'} style={{ width: 48, height: 48, borderRadius: '50%', background: isPlaying ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isPlaying ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.14)'}`, color: isPlaying ? '#4ADE80' : '#7A6A8A', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(6px)', boxShadow: isPlaying ? '0 0 18px rgba(74,222,128,0.28)' : 'none', transition: 'all 0.3s', animation: isPlaying ? 'pulse 2.5s ease-in-out infinite' : 'none' }}>{volIcon}</button>
           )}
-          {playing && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(10,12,28,0.92)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 24, padding: '6px 14px', backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
-              <span style={{ fontSize: 14 }}>{volIcon}</span>
-              <input type="range" min={0} max={100} step={5} value={volume} onChange={handleVolumeChange} style={{ width: 80, accentColor: '#4ADE80', cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }} />
-              <span style={{ fontSize: 10, color: '#4ADE80', fontFamily: 'Cinzel,serif', minWidth: 28 }}>{volume}%</span>
+          {current?.videoId && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(10,12,28,0.92)', border: `1px solid ${catInfo ? catInfo.color+'44' : 'rgba(74,222,128,0.25)'}`, borderRadius: 24, padding: '6px 14px', backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', maxWidth: 220 }}>
+              <span style={{ fontSize: 13 }}>{catInfo?.icon || '🎵'}</span>
+              <span style={{ fontSize: 11, color: catInfo?.color || '#4ADE80', fontFamily: 'Cinzel,serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.nome || 'Som ambiente'}</span>
+              {isPlaying && (
+                <input type="range" min={0} max={100} step={5} value={volume} onChange={handleVolumeChange} style={{ width: 60, accentColor: catInfo?.color || '#4ADE80', cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }} />
+              )}
             </div>
           )}
           {masterMode && (
-            <button onClick={() => setOpen(true)} title="Gerenciar som ambiente" style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#5A5070', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(5px)', transition: 'all 0.2s' }}>⚙️</button>
+            <button onClick={() => setOpen(true)} title="Playlists de ambiente" style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#5A5070', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(5px)', transition: 'all 0.2s' }}>🎼</button>
           )}
         </div>
       )}
       {open && masterMode && (
-        <div style={{ background: 'rgba(8,10,24,0.97)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 16, padding: 16, width: 290, boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#4ADE80', letterSpacing: '0.1em' }}>🎵 Som Ambiente</div>
+        <div style={{ background: 'rgba(8,10,24,0.98)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 16, padding: 16, width: 320, maxHeight: 460, display:'flex', flexDirection:'column', boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink:0 }}>
+            <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#4ADE80', letterSpacing: '0.1em' }}>🎼 Playlists de Ambiente</div>
             <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
-          <label style={{ fontSize: 9, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.65)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Link do YouTube</label>
-          <input value={ytUrl} onChange={e => setYtUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave()} placeholder="https://youtube.com/watch?v=..." style={{ width: '100%', fontSize: 12, marginBottom: 10 }} />
-          <button onClick={handleSave} disabled={!ytUrl.trim()} style={{ width: '100%', padding: '9px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: ytUrl.trim() ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: ytUrl.trim() ? 1 : 0.4, marginBottom: videoId ? 8 : 0 }}>✦ Definir Música</button>
-          {videoId && (<>
-            <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(74,222,128,0.07)', border: '1px solid rgba(74,222,128,0.18)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12 }}>🎵</span>
-              <span style={{ fontSize: 11, color: 'rgba(74,222,128,0.8)', fontFamily: 'Cinzel,serif', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>ID: {videoId}</span>
-            </div>
-            <button onClick={handleRemove} style={{ width: '100%', padding: '6px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#6A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✕ Remover música</button>
-          </>)}
-          <div style={{ marginTop: 12, fontSize: 10, color: '#4A4050', fontFamily: 'Cinzel,serif', lineHeight: 1.6 }}>Todos os jogadores verão o botão 🎵 e poderão clicar para ouvir.</div>
+
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12, flexShrink:0 }}>
+            {SOUND_CATEGORIES.map(c => (
+              <button key={c.id} onClick={() => setActiveCategory(c.id)} style={{
+                padding: '5px 10px', borderRadius: 16, fontFamily: 'Cinzel,serif', fontSize: 10.5, letterSpacing:'0.03em',
+                border: `1px solid ${activeCategory === c.id ? c.color + '77' : 'rgba(255,255,255,0.09)'}`,
+                background: activeCategory === c.id ? `${c.color}18` : 'rgba(255,255,255,0.02)',
+                color: activeCategory === c.id ? c.color : '#6A5A7A', cursor: 'pointer', transition:'all 0.15s',
+              }}>{c.icon} {c.label}</button>
+            ))}
+          </div>
+
+          <div style={{ overflowY: 'auto', flex:1, marginBottom: 10, display:'flex', flexDirection:'column', gap:6 }}>
+            {(playlists[activeCategory] || []).length === 0 && (
+              <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center', padding: '14px 0', fontStyle:'italic' }}>Nenhuma música nesta categoria ainda.</div>
+            )}
+            {(playlists[activeCategory] || []).map(track => {
+              const isCurrent = current?.videoId === track.videoId && current?.playing;
+              const catColor = SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.color || '#4ADE80';
+              return (
+                <div key={track.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, background: isCurrent ? `${catColor}18` : 'rgba(255,255,255,0.02)', border:`1px solid ${isCurrent ? catColor+'55' : 'rgba(255,255,255,0.06)'}` }}>
+                  <button onClick={() => playTrack(track, activeCategory)} title="Tocar para todos" style={{ background:'none', border:'none', color: isCurrent ? catColor : '#8A7A6A', cursor:'pointer', fontSize:15, flexShrink:0 }}>{isCurrent ? '▶' : '▷'}</button>
+                  <span style={{ flex:1, fontSize:12, color: isCurrent ? catColor : '#C8B8A0', fontFamily:'Cinzel,serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{track.nome}</span>
+                  <button onClick={() => deleteTrack(activeCategory, track.id)} style={{ background:'none', border:'none', color:'rgba(232,25,60,0.5)', cursor:'pointer', fontSize:11, flexShrink:0 }}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, flexShrink:0 }}>
+            <label style={{ fontSize: 9, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.65)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Adicionar Música — {SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.label}</label>
+            <input value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder="Nome da música/tema..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
+            <input value={novoLink} onChange={e => setNovoLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTrack()} placeholder="Link do YouTube..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
+            <button onClick={addTrack} disabled={!novoNome.trim() || !novoLink.trim()} style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: (novoNome.trim()&&novoLink.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: (novoNome.trim()&&novoLink.trim()) ? 1 : 0.4 }}>✦ Adicionar à Playlist</button>
+          </div>
+
+          {current?.videoId && (
+            <button onClick={stopAll} style={{ marginTop: 10, width: '100%', padding: '7px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, flexShrink:0 }}>⏹ Parar música para todos</button>
+          )}
+
+          <div style={{ marginTop: 10, fontSize: 9, color: '#4A4050', fontFamily: 'Cinzel,serif', lineHeight: 1.6, flexShrink:0 }}>Ao tocar, todos ouvem automaticamente. Cada jogador pode silenciar só pra si no botão de volume.</div>
         </div>
       )}
     </div>
@@ -1716,7 +1788,108 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   );
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}});
+const newSummon = id => ({ id, nome: '', hp: 10, hp_bonus: 0, ataques: [] });
+const newSummonAttack = () => ({ id: Date.now() + Math.random(), nome: '', dano: '', desc: '' });
+
+function SummonCard({ summon, onChange, onDelete, masterMode, color }) {
+  const f = (k, v) => onChange({ ...summon, [k]: v });
+  const hp = summon.hp || 0;
+  const hpBonus = summon.hp_bonus || 0;
+  const [formAtk, setFormAtk] = useState(newSummonAttack());
+
+  const addAtk = () => {
+    if (!formAtk.nome.trim()) return;
+    f('ataques', [...(summon.ataques || []), { ...formAtk, id: Date.now() }]);
+    setFormAtk(newSummonAttack());
+  };
+  const delAtk = (id) => f('ataques', (summon.ataques || []).filter(a => a.id !== id));
+
+  return (
+    <div style={{ border: `1px solid ${color}44`, borderRadius: 12, background: `${color}08`, padding: '14px 16px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 9, letterSpacing: '0.25em', color: `${color}AA`, fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>Nome da Invocação</label>
+          {masterMode
+            ? <input value={summon.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Esqueleto Guerreiro" style={{ width: '100%' }} />
+            : <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color, fontWeight: 700 }}>{summon.nome || 'Sem nome'}</div>}
+        </div>
+        {masterMode && <button onClick={onDelete} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.3)', color: '#E8193C', borderRadius: 6, cursor: 'pointer', padding: '6px 10px', fontSize: 11 }}>✕</button>}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 12px' }}>
+        <button onClick={() => f('hp', Math.max(0, hp - 1))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.15)', color: '#E8193C', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>−</button>
+        <div style={{ textAlign: 'center', minWidth: 60 }}>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 22, fontWeight: 900, color: hpColor(hp, hp + hpBonus || 1) }}>{hp}</div>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)' }}>HP {hpBonus > 0 ? `(+${hpBonus})` : ''}</div>
+        </div>
+        <button onClick={() => f('hp', hp + 1)} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>+</button>
+        {masterMode && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+            <span style={{ fontSize: 9, color: 'rgba(74,222,128,0.6)', fontFamily: 'Cinzel,serif' }}>Bônus</span>
+            <button onClick={() => f('hp_bonus', Math.max(0, hpBonus - 1))} style={{ width: 20, height: 20, borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontSize: 12, padding: 0 }}>−</button>
+            <span style={{ fontSize: 12, color: '#4ADE80', minWidth: 16, textAlign: 'center' }}>{hpBonus}</span>
+            <button onClick={() => f('hp_bonus', hpBonus + 1)} style={{ width: 20, height: 20, borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontSize: 12, padding: 0 }}>+</button>
+          </div>
+        )}
+      </div>
+
+      <div style={{ fontSize: 9, letterSpacing: '0.25em', color: `${color}AA`, fontFamily: 'Cinzel,serif', marginBottom: 7, textTransform: 'uppercase' }}>Ataques</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: masterMode ? 10 : 0 }}>
+        {(summon.ataques || []).length === 0 && (
+          <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>Nenhum ataque cadastrado.</div>
+        )}
+        {(summon.ataques || []).map(a => (
+          <div key={a.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, padding: '7px 10px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
+                <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#C8B8A0', fontWeight: 600 }}>{a.nome}</span>
+                {a.dano && <span style={{ fontSize: 10, color: 'rgba(255,200,80,0.85)', fontFamily: 'Cinzel,serif', background: 'rgba(255,200,80,0.08)', border: '1px solid rgba(255,200,80,0.22)', borderRadius: 4, padding: '1px 6px' }}>⚔ {a.dano}</span>}
+              </div>
+              {a.desc && <div style={{ fontSize: 12, color: '#7A6A5A', lineHeight: 1.6 }}>{a.desc}</div>}
+            </div>
+            {masterMode && <button onClick={() => delAtk(a.id)} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.25)', color: '#E8193C', borderRadius: 4, cursor: 'pointer', padding: '1px 6px', fontSize: 10, flexShrink: 0 }}>✕</button>}
+          </div>
+        ))}
+      </div>
+
+      {masterMode && (
+        <div style={{ border: `1px solid ${color}30`, borderRadius: 8, padding: 10, background: `${color}06` }}>
+          <input value={formAtk.nome} onChange={e => setFormAtk(f2 => ({ ...f2, nome: e.target.value }))} placeholder="Nome do ataque..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
+          <input value={formAtk.dano} onChange={e => setFormAtk(f2 => ({ ...f2, dano: e.target.value }))} placeholder="Dano (ex: 1D6+2)" style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
+          <textarea value={formAtk.desc} onChange={e => setFormAtk(f2 => ({ ...f2, desc: e.target.value }))} placeholder="Descrição do ataque..." rows={2} style={{ width: '100%', fontSize: 12, resize: 'vertical', marginBottom: 6 }} />
+          <button onClick={addAtk} disabled={!formAtk.nome.trim()} style={{ width: '100%', padding: '6px', borderRadius: 6, border: `1px solid ${color}55`, background: formAtk.nome.trim() ? `${color}20` : 'rgba(255,255,255,0.03)', color: formAtk.nome.trim() ? color : '#5A5070', cursor: formAtk.nome.trim() ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Adicionar Ataque</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InvocacoesPanel({ sheet, onChange, sheetColor, masterMode }) {
+  const invocacoes = sheet.invocacoes || [];
+  const f = (novas) => onChange({ ...sheet, invocacoes: novas });
+  const addSummon = () => { if (invocacoes.length >= 2) return; f([...invocacoes, newSummon(Date.now())]); };
+  const updSummon = (id, data) => f(invocacoes.map(s => s.id === id ? data : s));
+  const delSummon = (id) => f(invocacoes.filter(s => s.id !== id));
+
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: '#7A6A8A', fontFamily: 'Cinzel,serif', marginBottom: 14, textAlign: 'center', fontStyle: 'italic' }}>
+        Até 2 invocações simultâneas. {masterMode ? 'Cadastre nome, vida e ataques de cada uma.' : 'Fichas definidas pelo Mestre.'}
+      </div>
+      {invocacoes.map(s => (
+        <SummonCard key={s.id} summon={s} onChange={d => updSummon(s.id, d)} onDelete={() => delSummon(s.id)} masterMode={masterMode} color={sheetColor} />
+      ))}
+      {invocacoes.length < 2 && masterMode && (
+        <button onClick={addSummon} style={{ width: '100%', padding: 12, borderRadius: 10, border: `1px dashed ${sheetColor}44`, background: 'rgba(255,255,255,0.01)', color: sheetColor, cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.06em' }}>+ Adicionar Invocação ({invocacoes.length}/2)</button>
+      )}
+      {invocacoes.length === 0 && !masterMode && (
+        <div style={{ textAlign: 'center', padding: 30, border: '1px dashed rgba(255,255,255,0.06)', borderRadius: 12, color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 12 }}>Nenhuma invocação definida ainda.</div>
+      )}
+    </div>
+  );
+}
+
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[]});
 function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities, revealedArtefatos, artefatosHabs}){
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
@@ -1731,6 +1904,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   // Cooldowns agora vivem na própria ficha (Firestore) — permite indicador no Modo Mestre
   const sheetCooldowns = sheet.cooldowns || {};
   const handleUpdateCooldown = (abilityId, turns) => { f('cooldowns', { ...sheetCooldowns, [abilityId]: turns }); };
+  const sheetTabsList = cls.id==='necromante' ? [...SHEET_TABS,{id:'invocacoes',label:'Invocações',icon:'💀'}] : SHEET_TABS;
   const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
   const attrBonus=val=>Math.floor(val/2);
 
@@ -1773,7 +1947,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           {attrPoints>0 && <span title={`${attrPoints} ponto(s) de atributo pendente(s)`} style={{width:7,height:7,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite',flexShrink:0}}/>}
         </div>
         <div style={{display:'flex',gap:4,padding:'0 10px 8px'}}>
-          {SHEET_TABS.map(t=>(
+          {sheetTabsList.map(t=>(
             <button key={t.id} onClick={()=>setSheetTab(t.id)} style={{
               flex:1,padding:'6px 8px',borderRadius:7,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.03em',
               border:sheetTab===t.id?`1px solid ${sheetColor}66`:'1px solid rgba(255,255,255,0.07)',
@@ -2022,6 +2196,10 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           )}
         </div>
         </>)}
+
+        {sheetTab==='invocacoes' && cls.id==='necromante' && (
+          <InvocacoesPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor} masterMode={masterMode}/>
+        )}
 
       </div>
     </div>
