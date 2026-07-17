@@ -67,6 +67,24 @@ html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
   75% { transform: rotate(-15deg) scale(1.05); }
   100% { transform: rotate(0deg) scale(1); }
 }
+@keyframes diceTumble{
+  0%{transform:rotate(0deg) scale(1);}
+  20%{transform:rotate(140deg) scale(1.1);}
+  45%{transform:rotate(230deg) scale(0.92);}
+  70%{transform:rotate(320deg) scale(1.06);}
+  100%{transform:rotate(420deg) scale(1);}
+}
+@keyframes diceSettle{
+  0%{transform:translateY(-14px) scale(1.18);}
+  55%{transform:translateY(3px) scale(0.95);}
+  75%{transform:translateY(-2px) scale(1.03);}
+  100%{transform:translateY(0) scale(1);}
+}
+@keyframes trayShake{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-2px);}
+  75%{transform:translateX(2px);}
+}
 @keyframes shimmer{0%,100%{opacity:0.4}50%{opacity:1}}
 @keyframes revealCoord{from{opacity:0;letter-spacing:0.6em}to{opacity:1;letter-spacing:0.25em}}
 @keyframes pulse{0%,100%{opacity:0.6}50%{opacity:1}}
@@ -118,8 +136,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
 }
 `;
 
-const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80',necromante:'#6E6E80',personalizado:'#C0C0C0'};
-const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)',necromante:'rgba(110,110,128,0.18)',personalizado:'rgba(192,192,192,0.16)'};
+const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80',necromante:'#6E6E80',bardo:'#FFD86B',arcanjo:'#5B2C8C',personalizado:'#C0C0C0'};
+const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)',necromante:'rgba(110,110,128,0.18)',bardo:'rgba(255,216,107,0.18)',arcanjo:'rgba(91,44,140,0.2)',personalizado:'rgba(192,192,192,0.16)'};
 const MASTER_PIN='dinastia';
 
 // ─── 🌦️ ATMOSPHERE SYSTEM ────────────────────────────────────────────────────
@@ -709,12 +727,14 @@ const STATUS_LIST = [
 
 const CLASSES=[
   {id:'personalizado',alcance:'—',name:'Personalizado',icon:'⚙️',color:'#C0C0C0',glow:'rgba(192,192,192,0.16)',role:'Classe Personalizada · Definida pelo Mestre',lore:`Esta ficha possui uma classe personalizada, criada exclusivamente pelo Mestre para este personagem. Suas habilidades, origem e poderes são únicos e revelados ao longo da campanha.`,passive:{name:'—',desc:'Habilidades definidas pelo Mestre.'},normal:[],specials:[]},
-  {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas', dano: '1D8 + Agilidade' ,desc:'Embui um objeto com chamas de plasma e efetua uma estocada veloz que atravessa o alvo, fazendo-o sangrar (caso não tenha um objeto, usa suas proprias mãos): −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'Over Hit',cost:2,cooldown:'4 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Ao expirar, −3 nesses mesmos atributos por 2 rodadas.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20, causando 3x o dano).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +2 dano e precisão, +1 dano em área/rodada. Ao inicio da 3° rodada que estivar com a habilidade ativa concecutivamente, fazendo com que seu corpo fique com o calor muito elevado o usuário superaquece — fica 1 rodada completamente incapaz de agir.',req:7}]},
-  {id:'escarlate',alcance:'1m',name:'Cavaleiros Escarlate',icon:'🛡️',color:'#E8193C',glow:'rgba(232,25,60,0.16)',role:'Tanque · Protetor',lore:`A sua linhagem remonta a eras esquecidas, a povos que realizavam trabalhos braçais extremos nas profundezas da terra. Durante escavações, descobriram um minério enigmático: um rubi de cor escarlate incrivelmente denso. A exposição contínua e o suor derramado sobre o rubi criaram uma osmose biológica e mágica. O mineral fundiu-se com a genética destes trabalhadores, fazendo com que a sua própria pele se tornasse espessa, rígida e quase tão impenetrável quanto a rocha que outrora mineravam.`,passive:{name:'Pele de Rubi',desc:'Quando sem o escudo escarlate, a pele endurece. Ganha atributos bônus de defesa de acordo com a quantidade de inimigos ao redor (+1 de defesa por inimigo).'},normal:[{name:'Reflexo Escarlate',cost:2,cooldown:'3 rodadas',desc:'Se posiciona em frente a um ataque de disparo e reflete 0,5× o dano recebido utilizando um escudo.'},{name:'Lança Defensiva',cost:2,cooldown:'1 rodada', dano : '1D6 + Força' , desc:'Arremessa o escudo no inimigo. Com resultado D18–20, pode atingir múltiplos inimigos. O escudo retorna à mão automaticamente.'},{name:'Investida Ágil',cost:2,cooldown:'2 rodadas', dano: '+4 de Dano ou Chance de Esquiva',desc:'Troca resistência por velocidade: você avança até 3 passos em 1 ação. Esse impulso súbito pode ser focado em um ataque ou em evasão. Ofensiva: O peso da investida garante +4 de Dano no seu ataque durante este avanço. Evasão: Tenta escapar de um ataque inimigo no último segundo. O inimigo rola 1d10; se tirar 1, 2 ou 3 (30% de chance), ele erra o golpe. O esforço extremo desestabiliza sua base. Independentemente da escolha, você sofre -3 de Defesa por 3 rodadas imediatamente após o uso.'}],specials:[{name:'Provocação Extrema',cost:3,cooldown:'4 rodadas',desc:'Todos os inimigos ao redor focam em você na proxima rodada. Todo dano recebido é reduzido em 50% enquanto o efeito durar (2 rodadas).',req:3},{name:'Modo Berserker',cost:3,cooldown:'4 rodadas',desc:'Troca toda a resistência por dano, força e alcance massivos. Fica imparável — mas exausto, sem poder usar habilidades por 4 rodadas.',req:7}]},
+  {id:'fogo',alcance:'1m',name:'Assassinos do Fogo Azul',icon:'🔥',color:'#1EC8FF',glow:'rgba(30,200,255,0.16)',role:'Assassino · DPS Furtivo',lore:`Nos antigos e brutais campos de batalha, onde a morte era constante, alguns guerreiros descobriram como sobreviver canalizando a energia vital que emanava dos corpos caídos. Eles absorviam não apenas a vida esvaída, mas a pura vontade de lutar e a fúria dos mortos. Esta energia manifestou-se como uma chama azul incandescente que queima dentro deles, fortalecendo músculos e reflexos a níveis sobre-humanos, permitindo-lhes mover-se com velocidade letal e desferir ataques devastadores antes mesmo de serem notados.`,passive:{name:'Energia Vital',desc:'A cada 3 rodadas ganha 2 pontos para incluir em quaisquer bônus de ação. +1 ponto armazenado por inimigo abatido (acumulativo), podendo ser usado a qualquer momento.'},normal:[{name:'Esquiva da Catedral',cost:2,cooldown:'4 rodadas',desc:'Esquiva de qualquer ataque ficando translúcido e completamente intangível, mesmo fora do seu turno. Não pode ser usada novamente por 4 rodadas.'},{name:'Golpe Cintilante',cost:2,cooldown:'3 rodadas', dano: '1D8 + Agilidade' ,desc:'Embui um objeto com chamas de plasma e efetua uma estocada veloz que atravessa o alvo, fazendo-o sangrar (caso não tenha um objeto, usa suas proprias mãos): −2 de vida por rodada por 3 rodadas consecutivas.'},{name:'Over Hit',cost:2,cooldown:'3 rodadas',desc:'+3 em quaisquer atributos por 2 rodadas. Sua proxima utilização apenas pode ser utilizada em um atributo diferente do anterior até o final do combate.'}],specials:[{name:'Olho da Mente',cost:3,cooldown:'4 rodadas',desc:'Vê os pontos fracos do oponente por membros do corpo, causando 2× o dano em uma parte específica escolhida (acertos na cabeça só acertam caso a precisão seja de 18-20, causando 3x o dano).',req:3},{name:'Fúria Flamejante',cost:3,cooldown:'5 rodadas',desc:'Envolve-se em chamas azuis: +1 alcance, +3 dano e precisão, +3 dano em área/rodada. Ao inicio da 3° rodada que estivar com a habilidade ativa concecutivamente, fazendo com que seu corpo fique com o calor muito elevado o usuário superaquece, desativando a habilidade.',req:7}]},
+  {id:'escarlate',alcance:'1m',name:'Cavaleiros Escarlate',icon:'🛡️',color:'#E8193C',glow:'rgba(232,25,60,0.16)',role:'Tanque · Protetor',lore:`A sua linhagem remonta a eras esquecidas, a povos que realizavam trabalhos braçais extremos nas profundezas da terra. Durante escavações, descobriram um minério enigmático: um rubi de cor escarlate incrivelmente denso. A exposição contínua e o suor derramado sobre o rubi criaram uma osmose biológica e mágica. O mineral fundiu-se com a genética destes trabalhadores, fazendo com que a sua própria pele se tornasse espessa, rígida e quase tão impenetrável quanto a rocha que outrora mineravam.`,passive:{name:'Pele de Rubi',desc:'Quando sem o escudo escarlate, a pele endurece. Ganha atributos bônus de defesa de acordo com a quantidade de inimigos ao redor (+1 de defesa por inimigo).'},normal:[{name:'Reflexo Escarlate',cost:2,cooldown:'3 rodadas',desc:'Se posiciona em frente a um ataque de disparo e reflete 0,5× o dano recebido utilizando um escudo.'},{name:'Lança Defensiva',cost:2,cooldown:'1 rodada', dano : '1D6 + Força' , desc:'Arremessa o escudo no inimigo. Com resultado D18–20, pode atingir múltiplos inimigos. O escudo retorna à mão automaticamente.'},{name:'Investida Ágil',cost:2,cooldown:'2 rodadas', dano: '+4 de Dano ou Chance de Esquiva',desc:'Troca resistência por velocidade: você avança até 3 passos em 1 ação. Esse impulso súbito pode ser focado em um ataque ou em evasão. Ofensiva: O peso da investida garante +4 de Dano no seu ataque durante este avanço. Evasão: Tenta escapar de um ataque inimigo no último segundo. O inimigo rola 1d10; se tirar 1, 2 ou 3 (30% de chance), ele erra o golpe. O esforço extremo desestabiliza sua base. Independentemente da escolha, você sofre -3 de Defesa por 3 rodadas imediatamente após o uso.'}],specials:[{name:'Provocação Extrema',cost:3,cooldown:'4 rodadas',desc:'Todos os inimigos ao redor focam em você na proxima rodada. Todo dano recebido é reduzido em 50% enquanto o efeito durar (2 rodadas).',req:3},{name:'Modo Berserker',cost:3,cooldown:'4 rodadas', dano: '+3 de Força + Pontos de Durabilidade', desc:'Troca toda a resistência por dano, força e alcance massivos. Fica imparável — mas exausto, gastando mais 1VC para realizar ações na proxima rodada.',req:7}]},
   {id:'corvos',alcance:'5m',name:'Corvos do Horizonte',icon:'🐦‍⬛',color:'#E8A020',glow:'rgba(232,160,32,0.16)',role:'Atirador · Precisão Absoluta',lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes corvos e gaviões. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,passive:{name:'Visão do Gavião',desc:'Nunca sofre penalidade por distância. Ataques à longa distância ganham +2 no dado de precisão automaticamente. Além disso, a cada 2 ataques, seu próximo terá um acerto garantido.'},normal:[{name:'Sniper Americano',cost:2,cooldown:'—',desc:'Garante acerto em alvos de 5–10 metros sempre. Custo: causa apenas 0,50× do dano normal.'},{name:'Saque Rápido',cost:2,cooldown:'2 rodadas',desc:'Realiza um ataque a qualquer momento, mesmo fora do turno. Precisão reduzida em 3 pontos neste disparo.'},{name:'Foco Absoluto',cost:2,cooldown:'2 rodadas',desc:'Fica 1 rodada inteira sem atacar, apenas focando em um alvo. Garante acerto crítico automático na próxima rodada caso acerte.'}],specials:[{name:'Precisão Celestial',cost:3,cooldown:'4 rodadas',desc:'Disparo crítico perfurante no primeiro alvo e nos demais que estejam na mesma trajetória. O(s) inimigo(s) atingido(s) perde −2 de vida por rodada pelos 3 turnos seguintes.',req:3},{name:'Chuva Mortal',cost:3,cooldown:'5 rodadas', dano: '3D8',desc:'Canaliza calmamente sua arma atual com uma precisão fora do comum, disparando múltiplos acertos simultâneos em uma área de 10–13 metros ao redor. Não atinge aliados.',req:7}]},
   {id:'magos',alcance:'5m',name:'Magos do Prólogo do Céu',icon:'☄️',color:'#A855F7',glow:'rgba(168,85,247,0.16)',role:'Vidente · Mago Cósmico',lore:`Outrora humanos comuns, o seu destino mudou quando uma pena celestial caiu dos céus. O primeiro a tocá-la teve a sua mente expandida além da compreensão mortal, despertando o dom absoluto da clarividência. Ele não controlava o tempo, mas conseguia observá-lo. Ao ver os fragmentos do futuro da humanidade, fundou esta ordem mágica e escreveu as suas visões no lendário Livro da Mandíbula. Transmitem o conhecimento cósmico através de diagramas sagrados, cânticos e uma profunda ligação com as anomalias do universo.`,passive:{name:'Visão Profética',desc:'Podem ver brevemente acontecimentos futuros ou preverem eventos por pistas do cenário, concedendo pontos bônus de combate ao grupo (+2 no atributo escolhido até o final do combate).'},normal:[{name:'Fortitude Ígnia',cost:2,cooldown:'1× por combate',desc:'Um personagem aliado recebe +3 de defesa por 2 rodadas. 1 uso por combate por jogador.'},{name:'Fluxo de Magia',cost:2,cooldown:'4 rodadas',desc:'Distribui parte da sua magia entre aliados em até 2m ao redor, buffando o dano deles em +2 por 4 rodadas.'},{name:'Telecinese',cost:2,cooldown:'variável', dano : '1D4|1D6|1D8|1D12|1D20 + Inteligência',desc:'Controla objetos ao redor e os arremessa contra inimigos. Tempo varia conforme o objeto. Pessoas só com consentimento.'}],specials:[{name:'Recuperação Divina',cost:3,cooldown:'7 rodadas',desc:'Remove todos os efeitos negativos de todos os aliados e cura em +8 pontos de vida.',req:3},{name:'Flecha do Último Guardião',cost:3,cooldown:'5 rodadas', dano : '2D12 + Inteligência', desc:'Invoca um arco gigante que dispara uma flecha com atributos de qualquer elemento escolhido, causando dano massivo em área (1d12).',req:7}]},
   {id:'marfim',alcance:'1m',name:'Cientistas de Marfim',icon:'🧪',color:'#4ADE80',glow:'rgba(212,197,169,0.16)',role:'Inventor · Gênio Adaptável',lore:`A origem desta linhagem começou com o primeiro grande alquimista da história. Através de anos de experimentação, ele sintetizou a "Pedra de Marfim" — o que as lendas chamam de Pedra Filosofal. Este objeto concedeu-lhe o conhecimento absoluto sobre física, química e tudo ainda por descobrir. Esta iluminação alterou o seu DNA. Todos os descendentes nascem com QI astronômico — um deles foi Nikola Tesla — criando maravilhas tecnológicas com sucata e compostos simples.`,passive:{name:'Percepção Elevada',desc:'Tem percepção acima do comum: pode revelar objetos escondidos no cenário e seus itens são utilizados das formas mais eficazes possiveis, ganhando +1 em qualquer atributo.'},normal:[{name:'Material de Pesquisa',cost:2,cooldown:'2 rodadas',desc:'Sempre carregado. Permite juntar 2 a 3 itens do cenário e combiná-los em um novo item.'},{name:'Seringa da Juventude',cost:2,cooldown:'3 rodadas',desc:'Aplica uma seringa que cura 2 de vida ao alvo e concede +2 Vigor Cósmico a ele e restaura o tempo de recarga de uma das suas habilidades em 2 rodadas. Caso o Cientista use a seringa em si mesmo, ele ira se curar 3 de vida, ganhará 3 de Vigo Cósmico e tera uma de suas habilidades resturada em 3 rodadas exceto "Seringa da Juventude".'},{name:'QI Distorcido',cost:2,cooldown:'1× por arma',desc:'Melhora qualquer arma concedendo mais alcance, dano ou precisão. 1 uso por arma por combate.'}],specials:[{name:'O 1° Alquimista',cost:3,cooldown:'4 rodadas', dano: '1D6 + Inteligência',desc:'Combina 4 a 5 itens criando algo novo e poderoso. Pode também disparar 1 tiro de tesla caso tenha algum objeto metalico ou condutor de energia, atordoando o alvo por 1 rodada.',req:3},{name:'Anti-Matéria',cost:3,cooldown:'6 rodadas', dano: '2D10 + Inteligência', desc:'Transcende, invocando 1mg de antimatéria: dano crítico garantido + efeitos negativos (lentidão, tontura, lepra degenerativa - demora 4 rounds para a lepra fazer efeito, degenerando uma parte do corpo do oponente).',req:7}]},
-  {id:'necromante',alcance:'2m',name:'Necromantes das Cinzas Eternas',icon:'💀',color:'#6E6E80',glow:'rgba(110,110,128,0.18)',role:'Necromante · Controlador Sombrio',lore:`O nascimento de dois descentens das grandes familias dos Assassinos do fogo azul e dos Magos do prologo do céu trouxeram uma nova fonte de magia a este mundo.... Nascidos à sombra de campos de batalha esquecidos, os Necromantes aprenderam a ouvir o silêncio que resta após a morte. Não dominam a vida — dominam o que fica depois dela. Cada osso, cada última respiração, cada eco de dor guardado num campo de batalha é, para eles, uma ferramenta. Dizem que o primeiro Necromante não escolheu seu dom: ele apenas parou de temer os mortos, e os mortos, em troca, pararam de temê-lo.`,passive:{name:'Passos dos que já Se Foram',desc:'Sempre que anda ou se movimenta, o Necromante não faz nenhum barulho — uma névoa negra envolve a sola de seus pés, amortecendo sempre sua passada.'},normal:[{name:'Metamorfose Negra',cost:2,cooldown:'3 rodadas',dano:'+4 de Dano + Inteligência',desc:' Imbui magia negra em um item — seja em si mesmo ou em um objeto —. Ao causar dano em um inimigo ganha dano bonus e cura todo o dano causado, podendo direcionar a cura para si mesmo ou para outra pessoa. Caso o inimigo esteja sangrando no local atingido, o valor da cura é dobrado.'},{name:'Animar os Mortos',cost:2,cooldown:'4 rodadas',desc:'Conjura monstros ou seres de ameaça baixa ou média que foram mortos por ele, ou que morreram naquele local, para se juntarem à batalha ao seu lado — porém com sua energia (vida) reduzida pela metade.'},{name:'Corte do Silêncio',cost:2,cooldown:'3 rodadas',dano:'3 de dano por rodada + Inteligência',desc:'Desfere um corte que marca o alvo com uma runa negra. Caso acerte, o membro atingido fica inutilizado por 2 rodadas, e durante esse mesmo período o alvo sofre 3 de dano por rodada.'}],specials:[{name:'Grito das Lamentações',cost:3,cooldown:'5 rodadas', dano: '2D10 + Inteligência', desc:'Invoca as almas dos que foram mortos naquele local, criando gritos avassaladores que danificam todos os alvos atingidos, deixando-os com −3 de precisão por 2 rodadas.',req:3},{name:'Invocação dos Lordes',cost:3,cooldown:'5 rodadas',desc:'Conjura um inimigo de classe alta, ainda com metade da vida, para lutar ao seu lado. Se o Necromante rolar 1D20 e tirar 17 ou mais (escalando com sua Inteligência), ganha uma segunda invocação gratuita de classe média.',req:7}]},
+  {id:'necromante',alcance:'2m',name:'Necromantes das Cinzas Eternas',icon:'💀',color:'#6E6E80',glow:'rgba(110,110,128,0.18)',role:'Necromante · Controlador Sombrio',lore:`Nascidos à sombra de campos de batalha esquecidos, os Necromantes aprenderam a ouvir o silêncio que resta após a morte. Não dominam a vida — dominam o que fica depois dela. Cada osso, cada última respiração, cada eco de dor guardado num campo de batalha é, para eles, uma ferramenta. Dizem que o primeiro Necromante não escolheu seu dom: ele apenas parou de temer os mortos, e os mortos, em troca, pararam de temê-lo.`,passive:{name:'Passos dos que já Se Foram',desc:'Sempre que anda ou se movimenta, o Necromante não faz nenhum barulho — uma névoa negra envolve a sola de seus pés, amortecendo sempre sua passada.'},normal:[{name:'Metamorfose Negra',cost:2,cooldown:'3 rodadas',dano:'+4 de Dano',desc:'Ao causar dano em um inimigo, imbui magia negra em um item — seja em si mesmo ou em um objeto — causando +4 de dano e curando todo esse dano causado, podendo direcionar a cura para si mesmo ou para outra pessoa. Caso o inimigo esteja sangrando no local atingido, o valor da cura é dobrado.'},{name:'Animar os Mortos',cost:2,cooldown:'4 rodadas',desc:'Conjura monstros ou seres de ameaça baixa ou média que foram mortos por ele, ou que morreram naquele local, para se juntarem à batalha ao seu lado — porém com sua energia (vida e atributos) reduzida pela metade.'},{name:'Corte do Silêncio',cost:2,cooldown:'3 rodadas',dano:'3 de dano por rodada',desc:'Desfere um corte que marca o alvo com uma runa negra. Caso acerte, o membro atingido fica inutilizado por 2 rodadas, e durante esse mesmo período o alvo sofre 3 de dano por rodada.'}],specials:[{name:'Grito das Lamentações',cost:3,cooldown:'5 rodadas',desc:'Invoca as almas dos que foram mortos naquele local, criando gritos avassaladores que danificam todos os alvos atingidos, deixando-os com −3 de precisão por 2 rodadas.',req:3},{name:'Invocação dos Lordes',cost:3,cooldown:'6 rodadas',desc:'Conjura um inimigo de classe alta, ainda com metade da vida, para lutar ao seu lado. Se o Necromante rolar 1D20 e tirar 17 ou mais (escalando com sua Inteligência), ganha uma segunda invocação gratuita de classe média.',req:7}]},
+  {id:'bardo',alcance:'4m',name:'Bardos da Luz',icon:'🎶',color:'#FFD86B',glow:'rgba(255,216,107,0.18)',role:'Bardo · Suporte Encantador',lore:`No passado, estes bardos aprenderam a extrair a vontade e o poder mágico guardados em canções antigas, canalizando-os em magias poderosas — feitas, acima de tudo, para erguer seus companheiros. Não costumavam ser os mais fortes em combate direto, e sim os que mantinham o grupo de pé, de corpo e de espírito. Alegres por natureza, tornaram-se indispensáveis em qualquer jornada: onde a esperança faltava, uma canção deles sempre encontrava um jeito de acender de novo.`,passive:{name:'Canção que Cura',desc:'A cada rodada, caso cante uma frase em voz alta, cura um aliado escolhido em 2 pontos de vida.'},normal:[{name:'Inspiração Bárdica',cost:2,cooldown:'2 rodadas',dano:'+2 a +5 (bônus)',desc:'O Bardo usa uma palavra inspiradora — que deve ser dita em voz alta no momento do uso — para conceder um bônus de +2, +3, +4 ou +5 a um aliado, escolhido entre Dano, Precisão ou Inteligência.'},{name:'Charme Natural',cost:2,cooldown:'3 rodadas',dano: '1D20 + Sorte',desc:'Encanta um NPC, fazendo com que ele aja a favor do que o Bardo deseja com mais facilidade. Role 2D20 — é preciso tirar 12 ou mais em ao menos um dos dados.'},{name:'Palavras Cortantes',cost:2,cooldown:'2 rodadas',dano:'2D4 de dano -3 (Precisão ou Durabilidade)',desc:'Zomba e xinga um inimigo, fazendo sua magia entrar na mente do adversário: causa dano e retira 3 pontos de Precisão ou Durabilidade, à escolha do Bardo.'}],specials:[{name:'Contra-Canção',cost:3,cooldown:'4 rodadas',desc:'Devolve por completo um ataque ou dano que um inimigo tenha causado. Pode ser usado a qualquer momento, mesmo fora do próprio turno, desde que haja Vigor Cósmico disponível — inclusive redirecionando danos causados a um aliado no momento.',req:3},{name:'Double Chance',cost:3,cooldown:'3 rodadas',desc:'Caso erre um ataque ou tire um resultado baixo no dado de dano, rola mais dois dados extras e usa sempre o maior resultado entre eles. Pode ser usado para si mesmo ou para um aliado, no momento da ação dele.',req:7}]},
+  {id:'arcanjo',alcance:'3m',name:'Arcanjos da Escuridão',icon:'🪽',color:'#5B2C8C',glow:'rgba(91,44,140,0.2)',role:'Arcanjo Caído · Guerreiro Alado',lore:`Certo dia, uma pena celestial caiu dos céus — mas não era uma pena comum. Era negra, como de um anjo caído ou de uma criatura desconhecida pelos homens. Ao entrar em contato com uma criança pequena, fez com ela uma simbiose quase instantânea: asas transparentes e negras começaram a brotar de seu corpo. A partir daí, ela passou a voar pelos céus, provocando ventanias absurdas — fenômenos que os homens daquela época confundiram com desastres naturais, e que muitos passaram a temer, e venerar, como sinal de uma divindade.`,passive:{name:'Asas do Vazio',desc:'Pode conjurar asas negras e translúcidas que permitem voar até 7 metros de distância por 6 segundos. Após conjuradas, não podem ser invocadas novamente por 1 minuto.'},normal:[{name:'Lanças da Dor',cost:2,cooldown:'2 rodadas',dano:'1D6 + Força',desc:'Lança penas negras que cravam no corpo do alvo, causando dano e deixando penas encravadas no local atingido.'},{name:'Ventos do Livro',cost:2,cooldown:'3 rodadas',dano:'1D8 + Força',desc:'Cria uma rajada de vento com as asas, que empurra e desestabiliza os inimigos atingidos, deixando-os com −2 de Precisão na rodada seguinte.'},{name:'Correntes do Silêncio',cost:2,cooldown:'2 rodadas',dano:'2D4 + Inteligência',desc:'Prende correntes invisíveis em um aliado ou inimigo, podendo puxá-lo até si ou se puxar até ele, dependendo do teste de Força realizado. Causa um pequeno dano no processo.'}],specials:[{name:'Radiante dos Deuses',cost:3,cooldown:'4 rodadas',dano:'2D8 + Agilidade',desc:'Abre as asas e voa rapidamente por entre todos os inimigos em seu caminho, cortando cada um deles e se deslocando em até 10 metros.',req:3},{name:'Furacão da Divindade',cost:3,cooldown:'5 rodadas',dano:'2D6 + Agilidade',desc:'Cria um pequeno tornado brilhante que puxa tudo ao redor, reduzindo em 4 a Durabilidade do inimigo. Em um teste de 1D10, resultado 8, 9 ou 10 desarma o inimigo — exceto se ele estiver usando um artefato.',req:7}]},
 ];
 
 const PROLOGUE=[{type:'intro',text:'No início, não existia nada.'},{type:'pause',text:'E do nada ele surgiu — quem o nomeou? Ele mesmo.'},{type:'title',text:'*$!6;^@$+6~=´} (JhonKenteiker)'},{type:'body',text:'Jhon viu diante de si um universo vasto, lindo, porém vazio. E assim decidiu criar o sistema solar, e dele o mundo mais belo — nomeando-o Cosmum, a Terra dos mortais.'},{type:'body',text:'Nisso, ele criou as primeiras criaturas: já fortes, ágeis, adaptáveis, sobreviventes em qualquer cenário. Os dinossauros. Porém viu que dar-lhes tantas vantagens foi um erro.'},{type:'highlight',text:'E nisso ele criou o primeiro conceito de Reinício.'},{type:'body',text:'Uma grande bola de fogo atingiu o planeta, criando eventos irreversíveis e mudanças eternas. Do silêncio das cinzas surgiram os primeiros seres. Eles evoluíram. E a partir disso, o ser humano surgiu — não tão forte quanto os dinossauros, porém com uma capacidade cognitiva incomparável.'},{type:'divider',text:'— — —'},{type:'body',text:'Mas Jhon pensa novamente em reciclar o mundo. Pois viu que, ao passar dos anos, nenhum avanço significativo ocorreu. Fazendo-o questionar: devo começar tudo de novo?'},{type:'warning',text:'E além disso... uma catástrofe se aproxima.'},{type:'body',text:'Ninguém sabe o que. Só sabe que está chegando. Pois o Livro da Mandíbula — como o calendário maia — a previa. Dizendo que quatro estrelas ficariam brilhantes sobre os céus, tanto de dia quanto de noite, e se aproximariam a cada dia.'},{type:'finale',text:'O objetivo dos personagens não é apenas sobreviver. É provar seu valor para continuarem existindo. É parar. É compreender. É decifrar a profecia antes que o Reinício seja decretado novamente — desta vez, para sempre.'}];
@@ -1097,57 +1117,79 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
         {sheet.foto
-          ? <img src={sheet.foto} alt="" style={{ width: 40, height: 40, borderRadius: 9, objectFit: 'cover', border: `1.5px solid ${sheetColor}55`, flexShrink: 0 }} />
-          : <div style={{ width: 40, height: 40, borderRadius: 9, background: `${sheetColor}15`, border: `1.5px dashed ${sheetColor}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{cls.icon}</div>}
-        <div>
-          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, fontWeight: 700, color: sheetColor }}>{sheet.nome || 'Sem nome'}</div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>{cls.icon} {cls.name} · Nv {sheet.nivel || 1}</div>
+          ? <img src={sheet.foto} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: `1.5px solid ${sheetColor}55`, flexShrink: 0 }} />
+          : <div style={{ width: 36, height: 36, borderRadius: 8, background: `${sheetColor}15`, border: `1.5px dashed ${sheetColor}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cls.icon}</div>}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, fontWeight: 700, color: sheetColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sheet.nome || 'Sem nome'}</div>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>{cls.icon} {cls.name} · Nv {sheet.nivel || 1}</div>
         </div>
       </div>
 
-      <div style={{ background: 'rgba(232,25,60,0.06)', border: '1px solid rgba(232,25,60,0.18)', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+      <div style={{ background: 'rgba(232,25,60,0.06)', border: '1px solid rgba(232,25,60,0.18)', borderRadius: 12, padding: '11px 12px', marginBottom: 12 }}>
         <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#E8193C', fontFamily: 'Cinzel,serif', marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' }}>❤️ Vida</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 8 }}>
-          <button onClick={() => f('hp', Math.max(0, hp - 1))} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.15)', color: '#E8193C', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}>−</button>
-          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 30, fontWeight: 900, color: hpColor(hp, hp + hpBonus || 1), minWidth: 50, textAlign: 'center' }}>{hp}</div>
-          <button onClick={() => f('hp', hp + 1)} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}>+</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
+          <button onClick={() => f('hp', Math.max(0, hp - 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.15)', color: '#E8193C', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 0 }}>−</button>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 27, fontWeight: 900, color: hpColor(hp, hp + hpBonus || 1), minWidth: 44, textAlign: 'center' }}>{hp}</div>
+          <button onClick={() => f('hp', hp + 1)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 0 }}>+</button>
         </div>
-        <div style={{ display: 'flex', gap: 5, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {[-10, -5].map(v => <button key={v} onClick={() => f('hp', Math.max(0, hp + v))} style={{ padding: '3px 9px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontSize: 11 }}>{v}</button>)}
-          {[5, 10].map(v => <button key={v} onClick={() => f('hp', hp + v)} style={{ padding: '3px 9px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontSize: 11 }}>+{v}</button>)}
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {[-10, -5].map(v => <button key={v} onClick={() => f('hp', Math.max(0, hp + v))} style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontSize: 10 }}>{v}</button>)}
+          {[5, 10].map(v => <button key={v} onClick={() => f('hp', hp + v)} style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontSize: 10 }}>+{v}</button>)}
         </div>
       </div>
 
-      {attrPoints > 0 && (
-        <div style={{ marginBottom: 14, padding: '10px 12px', border: '1px solid rgba(168,85,247,0.5)', borderRadius: 10, background: 'rgba(168,85,247,0.08)', animation: 'bannerGlow 2s ease-in-out infinite', fontSize: 12, color: '#C8A8E8', fontFamily: 'Cinzel,serif' }}>
-          ✨ {attrPoints} ponto{attrPoints > 1 ? 's' : ''} de atributo disponíve{attrPoints > 1 ? 'is' : 'l'}!
-        </div>
-      )}
-
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 9, letterSpacing: '0.25em', color: sheetColor, fontFamily: 'Cinzel,serif', marginBottom: 6, textTransform: 'uppercase' }}>Vigor Cósmico</div>
         <VigosWithLocked value={sheet.vigos || 0} nivel={sheet.nivel || 1} color={sheetColor} onChange={v => f('vigos', v)} />
       </div>
 
       <StatusPanel sheet={sheet} onChange={onChangeSheet} />
 
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 8, textTransform: 'uppercase' }}>Atributos</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {attrPoints > 0 && (
+        <div style={{ marginBottom: 12, padding: '9px 10px', border: '1px solid rgba(168,85,247,0.5)', borderRadius: 9, background: 'rgba(168,85,247,0.08)', animation: 'bannerGlow 2s ease-in-out infinite', fontSize: 11, color: '#C8A8E8', fontFamily: 'Cinzel,serif', lineHeight: 1.5 }}>
+          ✨ {attrPoints} ponto{attrPoints > 1 ? 's' : ''} de atributo disponíve{attrPoints > 1 ? 'is' : 'l'}! Use na aba "Fichas" para distribuir.
+        </div>
+      )}
+
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 7, textTransform: 'uppercase' }}>Bônus de Atributos</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
           {ATTRS.map(a => {
             const bonus = Math.floor((sheet[a.key] || 0) / 2);
             return (
-              <div key={a.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: a.color, minWidth: 74 }}>{a.label}</span>
-                <AttrDots value={sheet[a.key] || 0} color={a.color} onChange={() => {}} masterMode={false} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)} />
-                <span style={{ fontSize: 10, fontFamily: 'Cinzel,serif', fontWeight: 700, color: bonus > 0 ? a.color : 'rgba(255,255,255,0.12)', minWidth: 22, textAlign: 'center' }}>{bonus > 0 ? `+${bonus}` : '—'}</span>
+              <div key={a.key} style={{ textAlign: 'center', padding: '7px 4px', borderRadius: 8, background: `${a.color}0D`, border: `1px solid ${a.color}28` }}>
+                <div style={{ fontSize: 8, fontFamily: 'Cinzel,serif', color: a.color, letterSpacing: '0.03em', marginBottom: 3, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.label}</div>
+                <div style={{ fontSize: 15, fontFamily: 'Cinzel,serif', fontWeight: 700, color: bonus > 0 ? a.color : 'rgba(255,255,255,0.15)' }}>{bonus > 0 ? `+${bonus}` : '—'}</div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {cls.id !== 'personalizado' && (
+        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {cls.specials.map((sp, i) => {
+            const key = i === 0 ? 'especial1' : 'especial2';
+            const unlocked = sheet[key];
+            const canUnlock = i === 0 ? sheet.nivel >= 3 : sheet.nivel >= 7;
+            return (
+              <button key={i} onClick={() => f(key, !unlocked)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', borderRadius: 7, border: `1px solid ${unlocked ? sheetColor + '55' : 'rgba(255,255,255,0.09)'}`, background: unlocked ? `${sheetColor}14` : 'rgba(255,255,255,0.02)', cursor: canUnlock ? 'pointer' : 'not-allowed', opacity: canUnlock ? 1 : 0.5, transition: 'all 0.2s', textAlign: 'left' }}>
+                <span style={{ fontSize: 11 }}>{unlocked ? '✦' : '○'}</span>
+                <div>
+                  <div style={{ fontSize: 10.5, color: unlocked ? sheetColor : '#6A5A6A', fontFamily: 'Cinzel,serif' }}>{sp.name}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)' }}>Nível {sp.req}+</div>
+                </div>
+              </button>
+            );
+          })}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: 7, border: `1px solid ${sheetColor}33`, background: `${sheetColor}0A` }}>
+            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: 'Cinzel,serif', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Alcance</span>
+            <span style={{ fontSize: 13, fontFamily: 'Cinzel,serif', color: sheetColor, fontWeight: 700 }}>{cls.alcance}</span>
+          </div>
+        </div>
+      )}
 
       <HabilidadesPanel
         cls={cls}
@@ -1161,6 +1203,10 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
         onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
         characterName={sheet.nome || 'Personagem'}
       />
+
+      <CollapsibleSection icon="⚔" label="Equipamentos" color={sheetColor}>
+        <EquipamentoPanel sheet={sheet} onChange={onChangeSheet} sheetColor={sheetColor} />
+      </CollapsibleSection>
     </div>
   );
 }
@@ -1362,7 +1408,7 @@ function BattleMapSection({ masterMode }) {
   const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
-    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '40px 16px 80px' }}>
+    <div style={{ maxWidth: 1500, margin: '0 auto', padding: '40px 16px 80px' }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Campo de Batalha</div>
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa de Batalha</h2>
@@ -1393,7 +1439,7 @@ function BattleMapSection({ masterMode }) {
       {loaded && (
         <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          <div className="battlemap-sidebar" style={{ width: 270, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 14, position: 'sticky', top: 12 }}>
+          <div className="battlemap-sidebar" style={{ width: 220, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 12, position: 'sticky', top: 12 }}>
             {!selectedSheet ? (<>
               <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
               {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
@@ -1530,14 +1576,14 @@ function BattleMapSection({ masterMode }) {
                         touchAction: 'none',
                       }}
                     >
-                      <div style={{
-                        width: token.size || 70, height: token.size || 70, borderRadius: '50%',
-                        border: `2px solid ${isSelected ? '#fff' : info.ring}`,
-                        boxShadow: isSelected ? `0 0 14px ${info.color}` : '0 2px 10px rgba(0,0,0,0.5)',
-                        background: `${info.color}12`, overflow: 'hidden',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: draggingId === token.id ? 'none' : 'box-shadow 0.2s',
-                      }}>
+                     <div style={{
+                      width: token.size || 70, height: token.size || 70, borderRadius: '50%',
+                      border: draggingId === token.id ? `2px solid ${info.ring}` : isSelected ? '2px solid #fff' : '2px solid transparent',
+                      boxShadow: draggingId === token.id ? `0 0 14px ${info.color}` : isSelected ? `0 0 14px ${info.color}` : '0 2px 8px rgba(0,0,0,0.4)',
+                      background: 'transparent', overflow: 'hidden',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: draggingId === token.id ? 'none' : 'box-shadow 0.2s, border-color 0.2s',
+                     }}>
                         {token.foto
                           ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
                           : <span style={{ fontSize: (token.size || 70) * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
@@ -1581,12 +1627,61 @@ function BattleMapSection({ masterMode }) {
   );
 }
 
+function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
+  const [display, setDisplay] = useState(finalValue);
+  const [phase, setPhase] = useState('idle');
+  const lastTs = useRef(0);
+
+  useEffect(() => {
+    if (!rollTs || rollTs === lastTs.current) return;
+    lastTs.current = rollTs;
+    setPhase('rolling');
+    let ticks = 0;
+    const iv = setInterval(() => {
+      setDisplay(1 + Math.floor(Math.random() * sides));
+      ticks++;
+      if (ticks >= 14) {
+        clearInterval(iv);
+        setDisplay(finalValue);
+        setPhase('settled');
+        if (onSettled) onSettled();
+      }
+    }, 55);
+    return () => clearInterval(iv);
+  }, [rollTs, sides, finalValue]);
+
+  const shapeStyle = (() => {
+    switch (sides) {
+      case 4: return { clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' };
+      case 8: return { transform: 'rotate(45deg)' };
+      case 10: return { clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' };
+      case 12: return { clipPath: 'polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)' };
+      case 20: return { borderRadius: '50%' };
+      default: return { borderRadius: 9 };
+    }
+  })();
+
+  return (
+    <div style={{ width: 82, height: 62, borderRadius: 10, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.55)', animation: phase === 'rolling' ? 'trayShake 0.35s ease-in-out infinite' : 'none', margin: '0 auto' }}>
+      <div style={{
+        width: 38, height: sides === 8 ? 38 : 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: `linear-gradient(145deg, ${color}33, ${color}11)`, border: `1.5px solid ${color}88`,
+        color, fontFamily: 'Cinzel,serif', fontWeight: 900, fontSize: 15,
+        animation: phase === 'rolling' ? 'diceTumble 0.5s linear infinite' : phase === 'settled' ? 'diceSettle 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+        ...shapeStyle,
+      }}>
+        <span style={{ transform: sides === 8 ? 'rotate(-45deg)' : 'none' }}>{display}</span>
+      </div>
+    </div>
+  );
+}
+
 function DiceWidget() {
   const [open, setOpen] = useState(false);
   const [dice, setDice] = useState(20);
   const [bonus, setBonus] = useState(0);
   const [result, setResult] = useState(null);
-  const [rolling, setRolling] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const [combatActive, setCombatActive] = useState(false);
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
@@ -1595,19 +1690,16 @@ function DiceWidget() {
     return () => unsub();
   }, []);
 
-const roll = async () => {
-  setRolling(true); setResult(null);
-  setTimeout(async () => {
+  const roll = async () => {
     const base = Math.floor(Math.random() * dice) + 1;
     const total = base + Number(bonus);
     const isCrit = dice === 20 && base === 20;
     const isFail = dice === 20 && base === 1;
     const res = { base, total, sides: dice, bonus: Number(bonus), isCrit, isFail, ts: Date.now(), roller: 'Jogador' };
     setResult(res);
-    setRolling(false);
-    try { await setDoc(doc(db, 'config', 'combat_dice'), res); } catch(e) {}
-  }, 600);
-};
+    setRevealed(false);
+    try { await setDoc(doc(db, 'config', 'combat_dice'), res); } catch (e) {}
+  };
 
   return (
     <div className="dice-widget" style={{position:'fixed', bottom: combatActive ? 96 : 24, right:16, zIndex:100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)'}}>
@@ -1625,15 +1717,16 @@ const roll = async () => {
             <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Bônus</label>
             <input type="number" value={bonus} onChange={e=>setBonus(Number(e.target.value))} style={{flex:1, textAlign:'center', padding:'4px', fontSize:14}} />
           </div>
-          <button onClick={roll} disabled={rolling} style={{width:'100%', padding:'10px', borderRadius:8, border:'1px solid rgba(168,85,247,0.5)', background:'rgba(168,85,247,0.15)', color:'#fff', fontFamily:'Cinzel,serif', fontSize:14, fontWeight:600, cursor:rolling?'not-allowed':'pointer', transition:'all 0.2s', display:'flex', justifyContent:'center', alignItems:'center', gap:8}}>
-            <span style={{animation: rolling ? 'diceRollAnim 0.5s infinite' : 'none'}}>🎲</span> {rolling ? 'Rolando...' : 'Rolar D' + dice}
+          <button onClick={roll} style={{width:'100%', padding:'10px', borderRadius:8, border:'1px solid rgba(168,85,247,0.5)', background:'rgba(168,85,247,0.15)', color:'#fff', fontFamily:'Cinzel,serif', fontSize:14, fontWeight:600, cursor:'pointer', transition:'all 0.2s', display:'flex', justifyContent:'center', alignItems:'center', gap:8}}>
+            🎲 Rolar D{dice}
           </button>
           {result && (
             <div style={{marginTop:16, paddingTop:16, borderTop:'1px dashed rgba(255,255,255,0.1)', textAlign:'center'}}>
-              <div style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif', marginBottom:4}}>Resultado (D{dice} + {bonus})</div>
-              <div style={{display:'flex', justifyContent:'center', alignItems:'baseline', gap:8}}>
-                <span style={{fontSize:32, fontFamily:'Cinzel,serif', color:result.base===20&&dice===20?'#4ADE80':result.base===1&&dice===20?'#E8193C':'#C8A8E8', fontWeight:700}}>{result.total}</span>
-                {bonus !== 0 && <span style={{fontSize:12, color:'#5A5070'}}>({result.base} {bonus>=0?'+':''} {bonus})</span>}
+              <DiceTrayVisual sides={result.sides} finalValue={result.base} rollTs={result.ts} color={result.isCrit?'#4ADE80':result.isFail?'#E8193C':'#C8A8E8'} onSettled={()=>setRevealed(true)} />
+              <div style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif', margin:'10px 0 4px'}}>Resultado (D{result.sides} {result.bonus?`+ ${result.bonus}`:''})</div>
+              <div style={{minHeight:38, display:'flex', justifyContent:'center', alignItems:'baseline', gap:8, opacity: revealed?1:0, transition:'opacity 0.25s'}}>
+                <span style={{fontSize:32, fontFamily:'Cinzel,serif', color:result.isCrit?'#4ADE80':result.isFail?'#E8193C':'#C8A8E8', fontWeight:700}}>{result.total}</span>
+                {result.bonus !== 0 && <span style={{fontSize:12, color:'#5A5070'}}>({result.base} {result.bonus>=0?'+':''} {result.bonus})</span>}
               </div>
             </div>
           )}
@@ -4110,17 +4203,19 @@ function PlayerCombatBanner() {
 function PublicDiceOverlay() {
   const [result, setResult] = useState(null);
   const [visible, setVisible] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const hideTimer = useRef(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
       if (!snap.exists()) return;
       const d = snap.data();
-      if (!d.ts || Date.now() - d.ts > 12000) return; // ignora resultados velhos
+      if (!d.ts || Date.now() - d.ts > 12000) return;
       setResult(d);
       setVisible(true);
+      setRevealed(false);
       clearTimeout(hideTimer.current);
-      hideTimer.current = setTimeout(() => setVisible(false), 7000);
+      hideTimer.current = setTimeout(() => setVisible(false), 7500);
     });
     return () => unsub();
   }, []);
@@ -4135,21 +4230,22 @@ function PublicDiceOverlay() {
     <div style={{
       position:'fixed', bottom: 80, right: 24, zIndex: 9995,
       background:'rgba(8,10,24,0.97)', border:`1px solid ${color}55`,
-      borderRadius:16, padding:'16px 20px', minWidth:200,
+      borderRadius:16, padding:'16px 20px', minWidth:210,
       boxShadow:`0 6px 32px rgba(0,0,0,0.8), 0 0 24px ${color}33`,
       animation:'pageTurn 0.35s cubic-bezier(0.2,0.8,0.2,1) forwards',
-      backdropFilter:'blur(12px)',
+      backdropFilter:'blur(12px)', textAlign:'center',
     }}>
-      <div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>
-        🎲 {result.roller || 'Alguém'} rolou
+      <div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>
+        🎲 {result.roller || 'Alguém'} rolou D{result.sides}
       </div>
-      <div style={{display:'flex',alignItems:'baseline',gap:10}}>
-        <span style={{fontFamily:'Cinzel Decorative,serif',fontSize:42,fontWeight:900,color,textShadow:`0 0 20px ${color}88`,lineHeight:1}}>{result.total}</span>
-        <div>
-          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',fontFamily:'Cinzel,serif'}}>D{result.sides}{result.bonus ? ` + ${result.bonus}` : ''}</div>
+      <DiceTrayVisual sides={result.sides} finalValue={result.base} rollTs={result.ts} color={color} onSettled={()=>setRevealed(true)} />
+      <div style={{minHeight:44, display:'flex',alignItems:'baseline',justifyContent:'center',gap:10, marginTop:10, opacity:revealed?1:0, transition:'opacity 0.25s'}}>
+        <span style={{fontFamily:'Cinzel Decorative,serif',fontSize:36,fontWeight:900,color,textShadow:`0 0 20px ${color}88`,lineHeight:1}}>{result.total}</span>
+        <div style={{textAlign:'left'}}>
+          <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontFamily:'Cinzel,serif'}}>{result.bonus ? `${result.base} + ${result.bonus}` : `base ${result.base}`}</div>
           {(isCrit || isFail) && (
-            <div style={{fontSize:11,fontFamily:'Cinzel,serif',color,fontWeight:700,letterSpacing:'0.08em'}}>
-              {isCrit ? '🌟 CRÍTICO!' : '💀 FALHA CRÍTICA!'}
+            <div style={{fontSize:10,fontFamily:'Cinzel,serif',color,fontWeight:700,letterSpacing:'0.06em'}}>
+              {isCrit ? '🌟 CRÍTICO!' : '💀 FALHA!'}
             </div>
           )}
         </div>
@@ -4158,6 +4254,7 @@ function PublicDiceOverlay() {
     </div>
   );
 }
+
 export default function App(){
   const[tab,setTab]=useState('prologo');
   const[masterMode,setMasterMode]=useState(false);
