@@ -108,6 +108,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .equip-grid{grid-template-columns:1fr!important; gap: 16px!important;}
   .equip-slot-inputs { flex-direction: column !important; gap: 6px !important; }
   .equip-slot-inputs input { width: 100% !important; flex: none !important; }
+  .battlemap-layout{flex-direction:column!important;}
+  .battlemap-sidebar{width:100%!important; position:static!important;}
 }
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
@@ -781,11 +783,11 @@ function RestrictedAccess({ title, text }) {
 
 const SOUND_CATEGORIES = [
   { id: 'calmaria', label: 'Calmaria', icon: '🌤️', color: '#4ADE80' },
-  { id: 'dialogos', label: 'Diálogos', icon: '💬', color: '#1EC8FF' },
+  { id: 'dialogos', label: 'Tristeza', icon: '🌧️', color: '#1EC8FF' },
   { id: 'ambiente', label: 'Ambiente', icon: '🌫️', color: '#A855F7' },
   { id: 'enigmas', label: 'Enigmas', icon: '🧩', color: '#E8A020' },
   { id: 'combate', label: 'Combate', icon: '⚔️', color: '#E8193C' },
-  { id: 'terror', label: 'Terror', icon: '👻', color: '#6E6E80' },
+  { id: 'terror', label: 'Terror', icon: '💀', color: '#6E6E80' },
 ];
 
 function AmbientSoundPlayer({ masterMode }) {
@@ -1071,57 +1073,191 @@ function MapaMundiSection({ masterMode }) {
   );
 }
 
-// ─── 🗡️ MAPA DE BATALHA — tokens arrastáveis sincronizados ──────────────────
+// ─── 🗡️ MAPA DE BATALHA — múltiplos mapas pré-salvos + tokens arrastáveis ────
 const TOKEN_TYPES = {
   jogador: { label: 'Jogador', color: '#4ADE80', ring: 'rgba(74,222,128,0.6)' },
   inimigo: { label: 'Inimigo', color: '#E8193C', ring: 'rgba(232,25,60,0.6)' },
 };
 const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false });
+const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', tokens: [] });
+
+function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onChangeSheet }) {
+  const cls = CLASSES.find(c => c.id === sheet.classe) || CLASSES[0];
+  const sheetColor = SHEET_COLORS[sheet.classe] || cls.color;
+  const f = (k, v) => onChangeSheet({ ...sheet, [k]: v });
+  const hp = sheet.hp || 0;
+  const hpBonus = sheet.hp_bonus || 0;
+  const attrPoints = sheet.attrPoints || 0;
+  const sheetCooldowns = sheet.cooldowns || {};
+  const handleUpdateCooldown = (abilityId, turns) => f('cooldowns', { ...sheetCooldowns, [abilityId]: turns });
+  const handleSpendPoint = (attrKey, newVal) => {
+    if (attrPoints <= 0) return;
+    onChangeSheet({ ...sheet, [attrKey]: newVal, attrPoints: attrPoints - 1 });
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        {sheet.foto
+          ? <img src={sheet.foto} alt="" style={{ width: 40, height: 40, borderRadius: 9, objectFit: 'cover', border: `1.5px solid ${sheetColor}55`, flexShrink: 0 }} />
+          : <div style={{ width: 40, height: 40, borderRadius: 9, background: `${sheetColor}15`, border: `1.5px dashed ${sheetColor}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{cls.icon}</div>}
+        <div>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, fontWeight: 700, color: sheetColor }}>{sheet.nome || 'Sem nome'}</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>{cls.icon} {cls.name} · Nv {sheet.nivel || 1}</div>
+        </div>
+      </div>
+
+      <div style={{ background: 'rgba(232,25,60,0.06)', border: '1px solid rgba(232,25,60,0.18)', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+        <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#E8193C', fontFamily: 'Cinzel,serif', marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' }}>❤️ Vida</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 8 }}>
+          <button onClick={() => f('hp', Math.max(0, hp - 1))} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.15)', color: '#E8193C', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}>−</button>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 30, fontWeight: 900, color: hpColor(hp, hp + hpBonus || 1), minWidth: 50, textAlign: 'center' }}>{hp}</div>
+          <button onClick={() => f('hp', hp + 1)} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}>+</button>
+        </div>
+        <div style={{ display: 'flex', gap: 5, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {[-10, -5].map(v => <button key={v} onClick={() => f('hp', Math.max(0, hp + v))} style={{ padding: '3px 9px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontSize: 11 }}>{v}</button>)}
+          {[5, 10].map(v => <button key={v} onClick={() => f('hp', hp + v)} style={{ padding: '3px 9px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontSize: 11 }}>+{v}</button>)}
+        </div>
+      </div>
+
+      {attrPoints > 0 && (
+        <div style={{ marginBottom: 14, padding: '10px 12px', border: '1px solid rgba(168,85,247,0.5)', borderRadius: 10, background: 'rgba(168,85,247,0.08)', animation: 'bannerGlow 2s ease-in-out infinite', fontSize: 12, color: '#C8A8E8', fontFamily: 'Cinzel,serif' }}>
+          ✨ {attrPoints} ponto{attrPoints > 1 ? 's' : ''} de atributo disponíve{attrPoints > 1 ? 'is' : 'l'}!
+        </div>
+      )}
+
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 9, letterSpacing: '0.25em', color: sheetColor, fontFamily: 'Cinzel,serif', marginBottom: 6, textTransform: 'uppercase' }}>Vigor Cósmico</div>
+        <VigosWithLocked value={sheet.vigos || 0} nivel={sheet.nivel || 1} color={sheetColor} onChange={v => f('vigos', v)} />
+      </div>
+
+      <StatusPanel sheet={sheet} onChange={onChangeSheet} />
+
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 8, textTransform: 'uppercase' }}>Atributos</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {ATTRS.map(a => {
+            const bonus = Math.floor((sheet[a.key] || 0) / 2);
+            return (
+              <div key={a.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: a.color, minWidth: 74 }}>{a.label}</span>
+                <AttrDots value={sheet[a.key] || 0} color={a.color} onChange={() => {}} masterMode={false} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)} />
+                <span style={{ fontSize: 10, fontFamily: 'Cinzel,serif', fontWeight: 700, color: bonus > 0 ? a.color : 'rgba(255,255,255,0.12)', minWidth: 22, textAlign: 'center' }}>{bonus > 0 ? `+${bonus}` : '—'}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <HabilidadesPanel
+        cls={cls}
+        sheet={sheet}
+        customAbilities={customAbilities || []}
+        masterMode={false}
+        onSaveCustomAbilities={onSaveCustomAbilities}
+        sheetCooldowns={sheetCooldowns}
+        onUpdateCooldown={handleUpdateCooldown}
+        currentVigos={sheet.vigos ?? 0}
+        onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+        characterName={sheet.nome || 'Personagem'}
+      />
+    </div>
+  );
+}
 
 function BattleMapSection({ masterMode }) {
-  const [mapImg, setMapImg] = useState('');
-  const [tokens, setTokens] = useState([]);
+  const [maps, setMaps] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [activeId, setActiveId] = useState('');
+  const [editingId, setEditingId] = useState('');
   const [draggingId, setDraggingId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formNome, setFormNome] = useState('');
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
+  const [showMapNameEdit, setShowMapNameEdit] = useState(false);
   const mapRef = useRef(null);
   const fileRef = useRef(null);
   const tokenFileRef = useRef(null);
   const moved = useRef(false);
-  const tokensRef = useRef([]);
-  const saveTimeout = useRef(null);
+  const mapsRef = useRef([]);
+  const saveTimeout = useRef({});
 
-  useEffect(() => { tokensRef.current = tokens; }, [tokens]);
+  const [sheets, setSheets] = useState([]);
+  const [customAbilities, setCustomAbilities] = useState({});
+  const [selectedSheetId, setSelectedSheetId] = useState(null);
+  const [unlockedIds, setUnlockedIds] = useState({});
+  const [pwTarget, setPwTarget] = useState(null);
+  const [pwInput, setPwInput] = useState('');
+  const [pwError, setPwError] = useState(false);
+
+  useEffect(() => { mapsRef.current = maps; }, [maps]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'battlemap'), snap => {
-      if (snap.exists()) {
-        const d = snap.data();
-        setMapImg(d.img || '');
-        setTokens(d.tokens || []);
-      }
-      setLoaded(true);
+    const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setMaps(data); setLoaded(true);
     });
-    return () => unsub();
+    const u2 = onSnapshot(doc(db, 'config', 'battlemap_active'), snap => {
+      if (snap.exists()) setActiveId(snap.data().activeId || '');
+    });
+    const u3 = onSnapshot(collection(db, 'sheets'), snap => {
+      setSheets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    const u4 = onSnapshot(doc(db, 'config', 'customAbilities'), snap => {
+      if (snap.exists()) setCustomAbilities(snap.data() || {});
+    });
+    return () => { u1(); u2(); u3(); u4(); };
   }, []);
 
-  const persist = (newImg, newTokens) => {
-    clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(async () => {
-      try { await setDoc(doc(db, 'config', 'battlemap'), { img: newImg, tokens: newTokens }); } catch (e) { console.error(e); }
+  useEffect(() => {
+    if (!masterMode) return;
+    if (!editingId && activeId) setEditingId(activeId);
+    if (!editingId && !activeId && maps.length > 0) setEditingId(maps[0].id);
+  }, [masterMode, activeId, maps, editingId]);
+
+  const currentMapId = masterMode ? (editingId || activeId) : activeId;
+  const currentMap = maps.find(m => String(m.id) === String(currentMapId));
+
+  const persistMap = (mapId, data) => {
+    clearTimeout(saveTimeout.current[mapId]);
+    saveTimeout.current[mapId] = setTimeout(async () => {
+      try { await setDoc(doc(db, 'battlemaps', String(mapId)), data); } catch (e) { console.error(e); }
     }, 450);
   };
 
+  const updCurrentMap = (patch) => {
+    if (!currentMap) return;
+    const updated = { ...currentMap, ...patch };
+    setMaps(prev => prev.map(m => m.id === currentMap.id ? updated : m));
+    persistMap(currentMap.id, updated);
+  };
+
+  const addMap = () => {
+    const m = newBattleMap(Date.now());
+    setDoc(doc(db, 'battlemaps', String(m.id)), m);
+    setEditingId(String(m.id));
+  };
+  const deleteMap = async (id) => {
+    await deleteDoc(doc(db, 'battlemaps', String(id)));
+    if (activeId === String(id)) await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '' });
+    if (editingId === String(id)) setEditingId('');
+  };
+  const activateMap = async (id) => {
+    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: String(id) });
+    pushToast('Mapa liberado para os jogadores!', '🗡️', '#E8193C');
+  };
+  const deactivateMap = async () => {
+    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '' });
+  };
+
   const handleMapUpload = e => {
-    const file = e.target.files[0]; if (!file) return;
+    const file = e.target.files[0]; if (!file || !currentMap) return;
     const reader = new FileReader();
     reader.onload = async ev => {
       const compressed = await compressImage(ev.target.result, 1400, 1400, 0.78);
-      setMapImg(compressed); persist(compressed, tokens);
+      updCurrentMap({ img: compressed });
     };
     reader.readAsDataURL(file); e.target.value = '';
   };
@@ -1137,20 +1273,19 @@ function BattleMapSection({ masterMode }) {
   };
 
   const addToken = () => {
-    if (!formNome.trim() || !formFoto) return;
+    if (!formNome.trim() || !formFoto || !currentMap) return;
     const nt = { ...newToken(Date.now()), nome: formNome.trim(), tipo: formTipo, foto: formFoto };
-    const newTokens = [...tokens, nt];
-    setTokens(newTokens); persist(mapImg, newTokens);
+    updCurrentMap({ tokens: [...(currentMap.tokens || []), nt] });
     setFormNome(''); setFormFoto(''); setShowAddForm(false);
   };
 
   const updateToken = (id, data) => {
-    const newTokens = tokens.map(t => t.id === id ? { ...t, ...data } : t);
-    setTokens(newTokens); persist(mapImg, newTokens);
+    if (!currentMap) return;
+    updCurrentMap({ tokens: (currentMap.tokens || []).map(t => t.id === id ? { ...t, ...data } : t) });
   };
   const deleteToken = id => {
-    const newTokens = tokens.filter(t => t.id !== id);
-    setTokens(newTokens); persist(mapImg, newTokens);
+    if (!currentMap) return;
+    updCurrentMap({ tokens: (currentMap.tokens || []).filter(t => t.id !== id) });
     if (selectedId === id) setSelectedId(null);
   };
 
@@ -1162,7 +1297,8 @@ function BattleMapSection({ masterMode }) {
   };
 
   useEffect(() => {
-    if (!draggingId) return;
+    if (!draggingId || !currentMap) return;
+    const mapIdAtDragStart = currentMap.id;
     const move = (e) => {
       if (!mapRef.current) return;
       moved.current = true;
@@ -1173,10 +1309,11 @@ function BattleMapSection({ masterMode }) {
       let y = ((clientY - rect.top) / rect.height) * 100;
       x = Math.min(100, Math.max(0, x));
       y = Math.min(100, Math.max(0, y));
-      setTokens(prev => prev.map(t => t.id === draggingId ? { ...t, x, y } : t));
+      setMaps(prev => prev.map(m => m.id === mapIdAtDragStart ? { ...m, tokens: (m.tokens || []).map(t => t.id === draggingId ? { ...t, x, y } : t) } : m));
     };
     const up = () => {
-      persist(mapImg, tokensRef.current);
+      const latest = mapsRef.current.find(m => m.id === mapIdAtDragStart);
+      if (latest) persistMap(mapIdAtDragStart, latest);
       if (!moved.current) setSelectedId(prevSel => prevSel === draggingId ? null : draggingId);
       setDraggingId(null);
     };
@@ -1190,12 +1327,42 @@ function BattleMapSection({ masterMode }) {
       window.removeEventListener('touchmove', move);
       window.removeEventListener('touchend', up);
     };
-  }, [draggingId, mapImg]);
+  }, [draggingId, currentMap]);
 
-  const selectedToken = tokens.find(t => t.id === selectedId);
+  const selectedToken = (currentMap?.tokens || []).find(t => t.id === selectedId);
+
+  const saveSheet = sheet => {
+    clearTimeout(saveTimeout.current['sheet_' + sheet.id]);
+    saveTimeout.current['sheet_' + sheet.id] = setTimeout(async () => {
+      try { await setDoc(doc(db, 'sheets', String(sheet.id)), sheet); } catch (e) { console.error(e); }
+    }, 700);
+  };
+  const updSheet = (id, data) => { setSheets(prev => prev.map(s => s.id === id ? data : s)); saveSheet(data); };
+  const saveCustomAb = async (sheetId, novas) => {
+    const updated = { ...customAbilities, [sheetId]: novas };
+    try { await setDoc(doc(db, 'config', 'customAbilities'), updated); setCustomAbilities(updated); } catch (e) { console.error(e); }
+  };
+
+  const handleSelectSheet = (s) => {
+    const sid = String(s.id);
+    if (masterMode || !s.senha || unlockedIds[sid]) { setSelectedSheetId(sid); return; }
+    setPwTarget(sid); setPwInput(''); setPwError(false);
+  };
+  const tryPassword = () => {
+    const s = sheets.find(x => String(x.id) === pwTarget);
+    if (s && pwInput === s.senha) {
+      setUnlockedIds(prev => ({ ...prev, [pwTarget]: true }));
+      setSelectedSheetId(pwTarget);
+      setPwTarget(null); setPwInput('');
+    } else {
+      setPwError(true); setPwInput('');
+      setTimeout(() => setPwError(false), 600);
+    }
+  };
+  const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 16px 80px' }}>
+    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '40px 16px 80px' }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Campo de Batalha</div>
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa de Batalha</h2>
@@ -1205,114 +1372,209 @@ function BattleMapSection({ masterMode }) {
         <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(232,25,60,0.5),transparent)', margin: '16px auto 0' }} />
       </div>
 
-      {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o campo de batalha...</div>}
-
-      {loaded && !mapImg && (
-        <div style={{ textAlign: 'center', padding: 60, border: '1px dashed rgba(232,25,60,0.25)', borderRadius: 14 }}>
-          <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🗺️</div>
-          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>{masterMode ? 'Envie a imagem do mapa de combate para começar.' : 'O Mestre ainda não enviou o mapa de batalha.'}</div>
-          {masterMode && <button onClick={() => fileRef.current?.click()} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>📁 Enviar Mapa</button>}
-          <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
+      {pwTarget && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9980, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)' }} onClick={() => setPwTarget(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(10,12,28,0.98)', border: '1px solid rgba(168,85,247,0.4)', borderRadius: 16, padding: 28, width: 300, textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.8)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+            <div style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 16, color: '#C8A8E8', marginBottom: 6 }}>Ficha Protegida</div>
+            <div style={{ fontSize: 12, color: '#5A5070', fontFamily: 'Cinzel,serif', marginBottom: 18 }}>Digite a senha para acessar esta ficha.</div>
+            <input type="password" value={pwInput} onChange={e => setPwInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && tryPassword()} placeholder="Senha..." autoFocus style={{ width: '100%', textAlign: 'center', marginBottom: 12, fontSize: 16, border: `1px solid ${pwError ? 'rgba(232,25,60,0.7)' : 'rgba(168,85,247,0.4)'}`, transition: 'border-color 0.3s' }} />
+            {pwError && <div style={{ fontSize: 12, color: '#E8193C', fontFamily: 'Cinzel,serif', marginBottom: 10 }}>Senha incorreta.</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setPwTarget(null)} style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>Cancelar</button>
+              <button onClick={tryPassword} style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid rgba(168,85,247,0.5)', background: 'rgba(168,85,247,0.12)', color: '#C8A8E8', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12, fontWeight: 600 }}>Entrar</button>
+            </div>
+          </div>
         </div>
       )}
 
-      {loaded && mapImg && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {masterMode && (
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button onClick={() => fileRef.current?.click()} style={{ padding: '7px 16px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗺 Trocar Mapa</button>
-              <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
-              <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '7px 16px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Novo Token</button>
-            </div>
-          )}
+      {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o campo de batalha...</div>}
 
-          {showAddForm && masterMode && (
-            <div style={{ border: '1px solid rgba(74,222,128,0.3)', borderRadius: 12, background: 'rgba(74,222,128,0.05)', padding: 16 }}>
-              <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#4ADE80', fontFamily: 'Cinzel,serif', marginBottom: 12, textTransform: 'uppercase' }}>Novo Token</div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                <div onClick={() => tokenFileRef.current?.click()} style={{ width: 70, height: 70, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', background: formFoto ? `url(${formFoto}) center/contain no-repeat` : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  {!formFoto && <span style={{ fontSize: 22, opacity: 0.3 }}>🖼️</span>}
-                </div>
-                <input ref={tokenFileRef} type="file" accept="image/png" onChange={handleTokenPhoto} style={{ display: 'none' }} />
-                <div style={{ flex: 1, minWidth: 180 }}>
-                  <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Nome do token..." style={{ width: '100%', fontSize: 13, marginBottom: 8 }} />
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {Object.entries(TOKEN_TYPES).map(([key, t]) => (
-                      <button key={key} onClick={() => setFormTipo(key)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: `1px solid ${formTipo === key ? t.color + '77' : 'rgba(255,255,255,0.1)'}`, background: formTipo === key ? `${t.color}18` : 'rgba(255,255,255,0.02)', color: formTipo === key ? t.color : '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{t.label}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div style={{ fontSize: 10, color: '#4A4050', marginTop: 8, fontFamily: 'Cinzel,serif' }}>Use uma imagem PNG com fundo transparente, vista de cima (top-down).</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✦ Adicionar ao Mapa</button>
-                <button onClick={() => { setShowAddForm(false); setFormNome(''); setFormFoto(''); }} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>Cancelar</button>
-              </div>
-            </div>
-          )}
+      {loaded && (
+        <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          <div ref={mapRef} style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', userSelect: 'none', touchAction: 'none' }}>
-            <img src={mapImg} alt="mapa de batalha" draggable={false} style={{ width: '100%', display: 'block', maxHeight: 640, objectFit: 'contain', background: '#04060F', pointerEvents: 'none' }} />
-            {tokens.map(token => {
-              const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
-              const isSelected = selectedId === token.id;
-              const canDrag = masterMode || !token.locked;
-              return (
-                <div
-                  key={token.id}
-                  onPointerDown={e => canDrag && onTokenPointerDown(e, token)}
-                  onTouchStart={e => canDrag && onTokenPointerDown(e, token)}
-                  style={{
-                    position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
-                    transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                    zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
-                    touchAction: 'none',
-                  }}
-                >
-                  <div style={{
-                    width: token.size || 70, height: token.size || 70, borderRadius: '50%',
-                    border: `2px solid ${isSelected ? '#fff' : info.ring}`,
-                    boxShadow: isSelected ? `0 0 14px ${info.color}` : '0 2px 10px rgba(0,0,0,0.5)',
-                    background: `${info.color}12`, overflow: 'hidden',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: draggingId === token.id ? 'none' : 'box-shadow 0.2s',
-                  }}>
-                    {token.foto
-                      ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
-                      : <span style={{ fontSize: (token.size || 70) * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
-                  </div>
-                  <div style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5, padding: '1px 7px', whiteSpace: 'nowrap', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {token.nome}{token.locked && ' 🔒'}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="battlemap-sidebar" style={{ width: 270, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 14, position: 'sticky', top: 12 }}>
+            {!selectedSheet ? (<>
+              <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
+              {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {sheets.map(s => {
+                  const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+                  const sc = SHEET_COLORS[s.classe] || cls.color;
+                  const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
+                  return (
+                    <button key={s.id} onClick={() => handleSelectSheet(s)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 8, border: `1px solid ${sc}28`, background: 'rgba(255,255,255,0.02)', cursor: 'pointer', textAlign: 'left' }}>
+                      {s.foto ? <img src={s.foto} alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', filter: locked ? 'grayscale(60%)' : 'none' }} /> : <div style={{ width: 26, height: 26, borderRadius: 6, background: `${sc}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{locked ? '🔒' : cls.icon}</div>}
+                      <div>
+                        <div style={{ fontFamily: 'Cinzel,serif', fontSize: 11.5, color: sc, fontWeight: 700 }}>{s.nome || 'Sem nome'}</div>
+                        <div style={{ fontSize: 9, color: '#5A5070' }}>Nv {s.nivel || 1}{locked ? ' · 🔒' : ''}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>) : (<>
+              <button onClick={() => setSelectedSheetId(null)} style={{ marginBottom: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#7B6D8A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>← Voltar à lista</button>
+              <div style={{ maxHeight: 680, overflowY: 'auto', paddingRight: 4 }}>
+                <BattleMapCharPanel
+                  sheet={selectedSheet}
+                  customAbilities={customAbilities[selectedSheet.id] || []}
+                  onSaveCustomAbilities={(novas) => saveCustomAb(selectedSheet.id, novas)}
+                  onChangeSheet={(d) => updSheet(selectedSheet.id, d)}
+                />
+              </div>
+            </>)}
           </div>
 
-          {selectedToken && masterMode && (
-            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
-                  {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-                </div>
-                <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 13 }} />
-                <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho</span>
-                  <input type="range" min={40} max={120} step={5} value={selectedToken.size || 70} onChange={e => updateToken(selectedToken.id, { size: Number(e.target.value) })} style={{ width: 100 }} />
-                </div>
-                <button onClick={() => updateToken(selectedToken.id, { locked: !selectedToken.locked })} style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${selectedToken.locked ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`, background: selectedToken.locked ? 'rgba(232,160,32,0.1)' : 'rgba(255,255,255,0.02)', color: selectedToken.locked ? '#E8A020' : '#8A7A6A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{selectedToken.locked ? '🔒 Travado' : '🔓 Livre'}</button>
-                <button onClick={() => deleteToken(selectedToken.id)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, marginLeft: 'auto' }}>🗑 Remover Token</button>
-              </div>
-            </div>
-          )}
+          <div style={{ flex: 1, minWidth: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {tokens.length > 0 && (
-            <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center' }}>{tokens.length} token{tokens.length !== 1 ? 's' : ''} no campo</div>
-          )}
+            {masterMode && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                {maps.map(m => {
+                  const isEditing = String(m.id) === String(editingId || activeId);
+                  const isActive = String(m.id) === String(activeId);
+                  return (
+                    <button key={m.id} onClick={() => setEditingId(String(m.id))} style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
+                      border: `1px solid ${isEditing ? 'rgba(232,25,60,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                      background: isEditing ? 'rgba(232,25,60,0.1)' : 'rgba(255,255,255,0.02)',
+                      color: isEditing ? '#E8193C' : '#7A6A8A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                    }}>
+                      {isActive && <span title="Visível para jogadores" style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 5px #4ADE80', flexShrink: 0 }} />}
+                      {m.nome || 'Mapa'}
+                    </button>
+                  );
+                })}
+                <button onClick={addMap} style={{ padding: '6px 12px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Novo Mapa</button>
+              </div>
+            )}
+
+            {masterMode && currentMap && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                {showMapNameEdit ? (
+                  <input value={currentMap.nome} onChange={e => updCurrentMap({ nome: e.target.value })} onBlur={() => setShowMapNameEdit(false)} onKeyDown={e => e.key === 'Enter' && setShowMapNameEdit(false)} autoFocus style={{ fontSize: 13, fontFamily: 'Cinzel,serif', flex: 1, minWidth: 120 }} />
+                ) : (
+                  <div onClick={() => setShowMapNameEdit(true)} style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8B8A0', cursor: 'pointer', flex: 1, minWidth: 120 }}>✎ {currentMap.nome || 'Mapa'}</div>
+                )}
+                <button onClick={() => fileRef.current?.click()} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗺 {currentMap.img ? 'Trocar' : 'Enviar'} Imagem</button>
+                <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
+                <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Token</button>
+                {String(activeId) === String(currentMap.id)
+                  ? <button onClick={deactivateMap} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(232,160,32,0.35)', background: 'rgba(232,160,32,0.08)', color: '#E8A020', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🙈 Ocultar dos Jogadores</button>
+                  : <button onClick={() => activateMap(currentMap.id)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, fontWeight: 700 }}>👁 Revelar para Jogadores</button>
+                }
+                <button onClick={() => deleteMap(currentMap.id)} style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#7A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗑</button>
+              </div>
+            )}
+
+            {loaded && !currentMap && (
+              <div style={{ textAlign: 'center', padding: 60, border: '1px dashed rgba(232,25,60,0.25)', borderRadius: 14 }}>
+                <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🗺️</div>
+                <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>
+                  {masterMode ? 'Crie um novo mapa para começar.' : 'O Mestre ainda não revelou nenhum mapa de batalha.'}
+                </div>
+                {masterMode && maps.length === 0 && <button onClick={addMap} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>+ Criar Primeiro Mapa</button>}
+              </div>
+            )}
+
+            {currentMap && !currentMap.img && (
+              <div style={{ textAlign: 'center', padding: 60, border: '1px dashed rgba(232,25,60,0.25)', borderRadius: 14 }}>
+                <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🖼️</div>
+                <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>{masterMode ? 'Envie a imagem deste mapa.' : 'Este mapa ainda não possui uma imagem.'}</div>
+                {masterMode && <button onClick={() => fileRef.current?.click()} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>📁 Enviar Imagem</button>}
+              </div>
+            )}
+
+            {currentMap && currentMap.img && (<>
+              {showAddForm && masterMode && (
+                <div style={{ border: '1px solid rgba(74,222,128,0.3)', borderRadius: 12, background: 'rgba(74,222,128,0.05)', padding: 16 }}>
+                  <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#4ADE80', fontFamily: 'Cinzel,serif', marginBottom: 12, textTransform: 'uppercase' }}>Novo Token</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                    <div onClick={() => tokenFileRef.current?.click()} style={{ width: 70, height: 70, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', background: formFoto ? `url(${formFoto}) center/contain no-repeat` : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                      {!formFoto && <span style={{ fontSize: 22, opacity: 0.3 }}>🖼️</span>}
+                    </div>
+                    <input ref={tokenFileRef} type="file" accept="image/png" onChange={handleTokenPhoto} style={{ display: 'none' }} />
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                      <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Nome do token..." style={{ width: '100%', fontSize: 13, marginBottom: 8 }} />
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {Object.entries(TOKEN_TYPES).map(([key, t]) => (
+                          <button key={key} onClick={() => setFormTipo(key)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: `1px solid ${formTipo === key ? t.color + '77' : 'rgba(255,255,255,0.1)'}`, background: formTipo === key ? `${t.color}18` : 'rgba(255,255,255,0.02)', color: formTipo === key ? t.color : '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{t.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#4A4050', marginTop: 8, fontFamily: 'Cinzel,serif' }}>Use uma imagem PNG com fundo transparente, vista de cima (top-down).</div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✦ Adicionar ao Mapa</button>
+                    <button onClick={() => { setShowAddForm(false); setFormNome(''); setFormFoto(''); }} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              <div ref={mapRef} style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', userSelect: 'none', touchAction: 'none' }}>
+                <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', display: 'block', maxHeight: 640, objectFit: 'contain', background: '#04060F', pointerEvents: 'none' }} />
+                {(currentMap.tokens || []).map(token => {
+                  const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
+                  const isSelected = selectedId === token.id;
+                  const canDrag = masterMode || !token.locked;
+                  return (
+                    <div
+                      key={token.id}
+                      onPointerDown={e => canDrag && onTokenPointerDown(e, token)}
+                      onTouchStart={e => canDrag && onTokenPointerDown(e, token)}
+                      style={{
+                        position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
+                        transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                        zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
+                        touchAction: 'none',
+                      }}
+                    >
+                      <div style={{
+                        width: token.size || 70, height: token.size || 70, borderRadius: '50%',
+                        border: `2px solid ${isSelected ? '#fff' : info.ring}`,
+                        boxShadow: isSelected ? `0 0 14px ${info.color}` : '0 2px 10px rgba(0,0,0,0.5)',
+                        background: `${info.color}12`, overflow: 'hidden',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: draggingId === token.id ? 'none' : 'box-shadow 0.2s',
+                      }}>
+                        {token.foto
+                          ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
+                          : <span style={{ fontSize: (token.size || 70) * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
+                      </div>
+                      <div style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5, padding: '1px 7px', whiteSpace: 'nowrap', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {token.nome}{token.locked && ' 🔒'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {selectedToken && masterMode && (
+                <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
+                      {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                    </div>
+                    <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 13 }} />
+                    <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho</span>
+                      <input type="range" min={40} max={120} step={5} value={selectedToken.size || 70} onChange={e => updateToken(selectedToken.id, { size: Number(e.target.value) })} style={{ width: 100 }} />
+                    </div>
+                    <button onClick={() => updateToken(selectedToken.id, { locked: !selectedToken.locked })} style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${selectedToken.locked ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`, background: selectedToken.locked ? 'rgba(232,160,32,0.1)' : 'rgba(255,255,255,0.02)', color: selectedToken.locked ? '#E8A020' : '#8A7A6A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{selectedToken.locked ? '🔒 Travado' : '🔓 Livre'}</button>
+                    <button onClick={() => deleteToken(selectedToken.id)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, marginLeft: 'auto' }}>🗑 Remover Token</button>
+                  </div>
+                </div>
+              )}
+
+              {(currentMap.tokens || []).length > 0 && (
+                <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center' }}>{(currentMap.tokens || []).length} token{(currentMap.tokens || []).length !== 1 ? 's' : ''} no campo</div>
+              )}
+            </>)}
+          </div>
         </div>
       )}
     </div>
@@ -3683,7 +3945,6 @@ const TABS=[
   {id:'regras',     label:'Regras',             icon:'📖'},
   {id:'livro',      label:'Livro da Mandíbula', icon:'✦'},
   {id:'cronicas',   label:'Crônicas',           icon:'🗒️'},
-  {id:'cenarios',   label:'Cenários',           icon:'🗺️'},
   {id:'mapamundi',  label:'Mapa Múndi',         icon:'🌍'},
   {id:'mapabatalha',label:'Mapa de Batalha',    icon:'🗡️'},
 ];
@@ -3956,7 +4217,6 @@ export default function App(){
           {tab==='regras'&&<RulesSection/>}
           {tab==='livro'&&<LibroSection masterMode={masterMode}/>}
           {tab==='cronicas'&&<CronicasSection masterMode={masterMode}/>}
-          {tab==='cenarios'&&<CenariosSection masterMode={masterMode}/>}
           {tab==='mapamundi'&&<MapaMundiSection masterMode={masterMode}/>}
           {tab==='mapabatalha'&&<BattleMapSection masterMode={masterMode}/>}
         </div>
