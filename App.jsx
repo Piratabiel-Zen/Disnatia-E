@@ -1408,7 +1408,7 @@ function BattleMapSection({ masterMode }) {
   const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
-    <div style={{ maxWidth: 1500, margin: '0 auto', padding: '40px 16px 80px' }}>
+    <div style={{ maxWidth: 1500, margin: '0 auto', padding: '40px 8px 80px' }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Campo de Batalha</div>
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa de Batalha</h2>
@@ -1439,7 +1439,7 @@ function BattleMapSection({ masterMode }) {
       {loaded && (
         <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          <div className="battlemap-sidebar" style={{ width: 220, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 12, position: 'sticky', top: 12 }}>
+          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12 }}>
             {!selectedSheet ? (<>
               <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
               {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
