@@ -1285,7 +1285,7 @@ function BattleMapSection({ masterMode }) {
     const t = setTimeout(measureBaseSize, 150);
     window.addEventListener('resize', measureBaseSize);
     return () => { clearTimeout(t); window.removeEventListener('resize', measureBaseSize); };
-  }, [currentMapId]);
+  }, [editingId, activeId, masterMode]);
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
