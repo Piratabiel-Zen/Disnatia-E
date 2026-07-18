@@ -106,7 +106,7 @@ input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
 input[type=number]::-webkit-inner-spin-button{opacity:1;}
 select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
-.battlemap-frame{height:calc(100vh - 230px);}
+.battlemap-frame{height:calc(100vh - 230px);background:transparent;}
 .battlemap-img{max-width:calc(100vw - 340px);max-height:calc(100vh - 250px);}
 
 @media(max-width:600px){
@@ -132,7 +132,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .equip-slot-inputs input { width: 100% !important; flex: none !important; }
   .battlemap-layout{flex-direction:column!important;}
   .battlemap-sidebar{width:100%!important; position:static!important; max-height:none!important;}
-  .battlemap-frame{height:56vh!important;}
+  .battlemap-frame{height:56vh!important;background:transparent!important;}
   .battlemap-img{max-width:92vw!important;max-height:56vh!important;}
 }
 @media(max-width:400px){
@@ -1253,6 +1253,15 @@ function BattleMapSection({ masterMode }) {
   const [formFoto, setFormFoto] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
+  const measureImgRef = useRef(null);
+  const measureBaseSize = () => {
+    const el = measureImgRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) setBaseSize({ w: rect.width, h: rect.height });
+    }
+  };
   const mapRef = useRef(null);
   const fileRef = useRef(null);
   const tokenFileRef = useRef(null);
@@ -1269,6 +1278,14 @@ function BattleMapSection({ masterMode }) {
   const [pwError, setPwError] = useState(false);
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
+
+  useEffect(() => {
+    setZoom(1);
+    measureBaseSize();
+    const t = setTimeout(measureBaseSize, 150);
+    window.addEventListener('resize', measureBaseSize);
+    return () => { clearTimeout(t); window.removeEventListener('resize', measureBaseSize); };
+  }, [currentMapId]);
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
@@ -1585,22 +1602,30 @@ function BattleMapSection({ masterMode }) {
                 </div>
               )}
 
-              <div className="battlemap-frame" style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#000' }}>
-                <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
+              <img ref={measureImgRef} src={currentMap.img} alt="" className="battlemap-img" onLoad={measureBaseSize} style={{ position: 'fixed', top: -9999, left: -9999, visibility: 'hidden', pointerEvents: 'none' }} />
+              <div className="battlemap-frame" style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
+                <div style={{ position: 'sticky', float: 'right', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
                   <span style={{ fontSize: 13 }}>🔍</span>
                   <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
                   <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 34, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
                   <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>+</button>
                   {zoom !== 1 && <button onClick={() => setZoom(1)} style={{ fontSize: 9, color: '#8A7A6A', fontFamily: 'Cinzel,serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 2 }}>reset</button>}
                 </div>
-                <div style={{ position: 'relative', minWidth: '100%', minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                  <div ref={mapRef} style={{ position: 'relative', display: 'inline-block', transform: `scale(${zoom})`, transformOrigin: 'center center', transition: draggingId ? 'none' : 'transform 0.15s ease', userSelect: 'none', touchAction: 'none' }}>
-                    <img src={currentMap.img} alt="mapa de batalha" draggable={false} className="battlemap-img" style={{ display: 'block', objectFit: 'contain', background: '#04060F', pointerEvents: 'none' }} />
-                    {(currentMap.tokens || []).map(token => {
+                <div
+                  ref={mapRef}
+                  style={{
+                    position: 'relative',
+                    width: baseSize.w ? baseSize.w * zoom : '100%',
+                    height: baseSize.h ? baseSize.h * zoom : 'auto',
+                    userSelect: 'none', touchAction: 'none',
+                  }}
+                >
+                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                  {(currentMap.tokens || []).map(token => {
                     const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                     const isSelected = selectedId === token.id;
                     const canDrag = masterMode || !token.locked;
-                    const dispSize = token.size || 70;
+                    const dispSize = (token.size || 70) * zoom;
                     return (
                       <div
                         key={token.id}
@@ -1609,7 +1634,7 @@ function BattleMapSection({ masterMode }) {
                         style={{
                           position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
                           transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * zoom,
                           zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
                           touchAction: 'none',
                         }}
@@ -1626,13 +1651,12 @@ function BattleMapSection({ masterMode }) {
                             ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
                             : <span style={{ fontSize: dispSize * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                         </div>
-                        <div style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5, padding: '1px 7px', whiteSpace: 'nowrap', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {token.nome}{token.locked && ' 🔒'}
                         </div>
                       </div>
                     );
                   })}
-                  </div>
                 </div>
               </div>
 
