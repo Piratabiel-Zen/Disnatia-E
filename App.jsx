@@ -1434,14 +1434,12 @@ function BattleMapSection({ masterMode }) {
   const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
-    <div style={{ maxWidth: 1800, margin: '0 auto', padding: '40px 8px 80px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Campo de Batalha</div>
-        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa de Batalha</h2>
-        <div style={{ fontSize: 12, color: '#4A4050', marginTop: 9, fontFamily: 'Cinzel,serif' }}>
-          {masterMode ? '🗡 Arraste os tokens · Clique para editar · Sincronizado em tempo real' : '🗡 Arraste seu token pelo mapa'}
+    <div style={{ maxWidth: 1800, margin: '0 auto', padding: '14px 8px 24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 10 }}>
+        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 18, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>🗡️ Mapa de Batalha</h2>
+        <div style={{ fontSize: 11, color: '#4A4050', marginTop: 4, fontFamily: 'Cinzel,serif' }}>
+          {masterMode ? 'Arraste os tokens · Clique para editar' : 'Arraste seu token pelo mapa'}
         </div>
-        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(232,25,60,0.5),transparent)', margin: '16px auto 0' }} />
       </div>
 
       {pwTarget && (
@@ -1465,7 +1463,7 @@ function BattleMapSection({ masterMode }) {
       {loaded && (
         <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12, maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12, maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
             {!selectedSheet ? (<>
               <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
               {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
@@ -1583,7 +1581,7 @@ function BattleMapSection({ masterMode }) {
                 </div>
               )}
 
-              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', maxHeight: 'calc(100vh - 300px)' }}>
+              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', maxHeight: 'calc(100vh - 170px)' }}>
                 <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
                   <span style={{ fontSize: 13 }}>🔍</span>
                   <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
@@ -1597,6 +1595,7 @@ function BattleMapSection({ masterMode }) {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const isSelected = selectedId === token.id;
                   const canDrag = masterMode || !token.locked;
+                  const dispSize = (token.size || 70) * zoom;
                   return (
                     <div
                       key={token.id}
@@ -1605,13 +1604,13 @@ function BattleMapSection({ masterMode }) {
                       style={{
                         position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
                         transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * zoom,
                         zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
                         touchAction: 'none',
                       }}
                     >
                      <div style={{
-                      width: token.size || 70, height: token.size || 70, borderRadius: '50%',
+                      width: dispSize, height: dispSize, borderRadius: '50%',
                       border: draggingId === token.id ? `2px solid ${info.ring}` : isSelected ? '2px solid #fff' : '2px solid transparent',
                       boxShadow: draggingId === token.id ? `0 0 14px ${info.color}` : isSelected ? `0 0 14px ${info.color}` : '0 2px 8px rgba(0,0,0,0.4)',
                       background: 'transparent', overflow: 'hidden',
@@ -1620,16 +1619,14 @@ function BattleMapSection({ masterMode }) {
                      }}>
                         {token.foto
                           ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
-                          : <span style={{ fontSize: (token.size || 70) * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
+                          : <span style={{ fontSize: dispSize * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                       </div>
-                      <div style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5, padding: '1px 7px', whiteSpace: 'nowrap', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
                     </div>
                   );
                 })}
-              </div>
-            </div>
 
               {selectedToken && masterMode && (
                 <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
