@@ -1250,9 +1250,6 @@ function BattleMapSection({ masterMode }) {
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
   const [zoom, setZoom] = useState(1);
   const mapRef = useRef(null);
-  const viewportRef = useRef(null);
-  const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
-  const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
   const fileRef = useRef(null);
   const tokenFileRef = useRef(null);
   const moved = useRef(false);
@@ -1268,18 +1265,6 @@ function BattleMapSection({ masterMode }) {
   const [pwError, setPwError] = useState(false);
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
-
-  useEffect(() => {
-    if (!viewportRef.current) return;
-    const el = viewportRef.current;
-    const update = () => setViewportSize({ w: el.clientWidth, h: el.clientHeight });
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [editingId, activeId, masterMode]);
-
-  useEffect(() => { setNaturalSize({ w: 0, h: 0 }); }, [editingId, activeId]);
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
@@ -1449,12 +1434,14 @@ function BattleMapSection({ masterMode }) {
   const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
-    <div style={{ maxWidth: 1800, margin: '0 auto', padding: '10px 8px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ textAlign: 'center', marginBottom: 8, flexShrink: 0 }}>
-        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 16, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>🗡️ Mapa de Batalha</h2>
-        <div style={{ fontSize: 10, color: '#4A4050', marginTop: 3, fontFamily: 'Cinzel,serif' }}>
-          {masterMode ? 'Arraste os tokens · Clique para editar' : 'Arraste seu token pelo mapa'}
+    <div style={{ maxWidth: 1800, margin: '0 auto', padding: '40px 8px 80px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Campo de Batalha</div>
+        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa de Batalha</h2>
+        <div style={{ fontSize: 12, color: '#4A4050', marginTop: 9, fontFamily: 'Cinzel,serif' }}>
+          {masterMode ? '🗡 Arraste os tokens · Clique para editar · Sincronizado em tempo real' : '🗡 Arraste seu token pelo mapa'}
         </div>
+        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(232,25,60,0.5),transparent)', margin: '16px auto 0' }} />
       </div>
 
       {pwTarget && (
@@ -1476,10 +1463,9 @@ function BattleMapSection({ masterMode }) {
       {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o campo de batalha...</div>}
 
       {loaded && (
-        {loaded && (
-        <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
+        <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, overflowY: 'auto', height: '100%' }}>
+          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12, maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
             {!selectedSheet ? (<>
               <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
               {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
@@ -1512,7 +1498,7 @@ function BattleMapSection({ masterMode }) {
             </>)}
           </div>
 
-          <div style={{ flex: 1, minWidth: 300, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {masterMode && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1597,7 +1583,7 @@ function BattleMapSection({ masterMode }) {
                 </div>
               )}
 
-             <div ref={viewportRef} style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#04060F' }}>
+              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', maxHeight: 'calc(100vh - 300px)' }}>
                 <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
                   <span style={{ fontSize: 13 }}>🔍</span>
                   <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
@@ -1605,30 +1591,12 @@ function BattleMapSection({ masterMode }) {
                   <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>+</button>
                   {zoom !== 1 && <button onClick={() => setZoom(1)} style={{ fontSize: 9, color: '#8A7A6A', fontFamily: 'Cinzel,serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 2 }}>reset</button>}
                 </div>
-                {(() => {
-                  const baseScale = (naturalSize.w && naturalSize.h && viewportSize.w && viewportSize.h)
-                    ? Math.min(viewportSize.w / naturalSize.w, viewportSize.h / naturalSize.h)
-                    : 0;
-                  const renderedW = naturalSize.w * baseScale * zoom;
-                  const renderedH = naturalSize.h * baseScale * zoom;
-                  return (
-                <div ref={mapRef} style={{ position: 'relative', display: 'inline-block', userSelect: 'none', touchAction: 'none', flexShrink: 0 }}>
-                  <img
-                    src={currentMap.img}
-                    alt="mapa de batalha"
-                    draggable={false}
-                    onLoad={e => setNaturalSize({ w: e.target.naturalWidth, h: e.target.naturalHeight })}
-                    style={{
-                      display: 'block', background: '#04060F', pointerEvents: 'none',
-                      width: renderedW ? `${renderedW}px` : '100%',
-                      height: renderedH ? `${renderedH}px` : 'auto',
-                    }}
-                  />
+                <div ref={mapRef} style={{ position: 'relative', width: `${zoom * 100}%`, userSelect: 'none', touchAction: 'none' }}>
+                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', display: 'block', background: '#04060F', pointerEvents: 'none' }} />
                   {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const isSelected = selectedId === token.id;
                   const canDrag = masterMode || !token.locked;
-                  const dispSize = (token.size || 70) * zoom;
                   return (
                     <div
                       key={token.id}
@@ -1637,13 +1605,13 @@ function BattleMapSection({ masterMode }) {
                       style={{
                         position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
                         transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * zoom,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                         zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
                         touchAction: 'none',
                       }}
                     >
                      <div style={{
-                      width: dispSize, height: dispSize, borderRadius: '50%',
+                      width: token.size || 70, height: token.size || 70, borderRadius: '50%',
                       border: draggingId === token.id ? `2px solid ${info.ring}` : isSelected ? '2px solid #fff' : '2px solid transparent',
                       boxShadow: draggingId === token.id ? `0 0 14px ${info.color}` : isSelected ? `0 0 14px ${info.color}` : '0 2px 8px rgba(0,0,0,0.4)',
                       background: 'transparent', overflow: 'hidden',
@@ -1652,21 +1620,19 @@ function BattleMapSection({ masterMode }) {
                      }}>
                         {token.foto
                           ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
-                          : <span style={{ fontSize: dispSize * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
+                          : <span style={{ fontSize: (token.size || 70) * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                       </div>
-                      <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 10, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5, padding: '1px 7px', whiteSpace: 'nowrap', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
                     </div>
                   );
                 })}
-                </div>
-                  );
-                })()}
               </div>
+            </div>
 
               {selectedToken && masterMode && (
-                <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease', flexShrink: 0 }}>
+                <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                     <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
                       {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
@@ -1686,7 +1652,7 @@ function BattleMapSection({ masterMode }) {
               )}
 
               {(currentMap.tokens || []).length > 0 && (
-                <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center', flexShrink: 0 }}>{(currentMap.tokens || []).length} token{(currentMap.tokens || []).length !== 1 ? 's' : ''} no campo</div>
+                <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center' }}>{(currentMap.tokens || []).length} token{(currentMap.tokens || []).length !== 1 ? 's' : ''} no campo</div>
               )}
             </>)}
           </div>
@@ -4345,7 +4311,7 @@ export default function App(){
   };
 
   const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
-  const lockPageScroll = tab === 'mapabatalha';
+  const lockPageScroll = tab === 'mapabatalha' && !masterMode;
 
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
@@ -4373,8 +4339,8 @@ export default function App(){
           </button>
         ))}
       </nav>
-      <main className={lockPageScroll ? 'main-locked' : ''} style={{flex:1,overflowY: lockPageScroll ? 'hidden' : 'auto',position:'relative',zIndex:10,scrollBehavior:'smooth', display: lockPageScroll ? 'flex' : 'block', flexDirection: 'column'}}>
-        <div key={tab} style={lockPageScroll ? {animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)', flex:1, minHeight:0, display:'flex', flexDirection:'column'} : {animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
+      <main className={lockPageScroll ? 'main-locked' : ''} style={{flex:1,overflowY:'auto',position:'relative',zIndex:10,scrollBehavior:'smooth'}}>
+        <div key={tab} style={{animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
           {tab==='prologo'&&<PrologueSection/>}
           {tab==='classes'&&<ClassesSection/>}
           {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
