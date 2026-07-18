@@ -52,6 +52,7 @@ const GLOBAL_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
 *{box-sizing:border-box;}
+.main-locked{overflow-y:hidden!important;}
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(155,89,182,0.4);border-radius:3px;}
@@ -107,6 +108,7 @@ select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
 
 @media(max-width:600px){
+  .main-locked{overflow-y:auto!important;}
   .attrs-personality-row{grid-template-columns:1fr!important;}
   .header-sub{display:none!important;}
   .header-title{font-size:18px!important; margin-left: 20px!important;}
@@ -1101,6 +1103,30 @@ const TOKEN_TYPES = {
 const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false });
 const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', tokens: [] });
 
+function EquipMiniList({ sheet, color }) {
+  const slots = [
+    { key: 'equip_mao_esq', label: 'Mão Esq.' },
+    { key: 'equip_mao_dir', label: 'Mão Dir.' },
+    { key: 'equip_corpo',   label: 'Corpo' },
+  ];
+  return (
+    <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {slots.map(s => {
+        const d = sheet[s.key] || {};
+        const icon = resolveEquipIcon(d.tipo || '');
+        return (
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', borderRadius: 7, background: `${color}08`, border: `1px solid ${color}20` }}>
+            <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
+            <span style={{ fontSize: 9, color: `${color}99`, fontFamily: 'Cinzel,serif', letterSpacing: '0.04em', flexShrink: 0, minWidth: 46 }}>{s.label}</span>
+            <span style={{ fontSize: 11, color: '#C8B8A0', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome || '—'}</span>
+            {d.dano && <span style={{ fontSize: 10, color: 'rgba(255,200,80,0.85)', fontFamily: 'Cinzel,serif', background: 'rgba(255,200,80,0.08)', border: '1px solid rgba(255,200,80,0.22)', borderRadius: 4, padding: '1px 6px', flexShrink: 0 }}>⚔ {d.dano}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onChangeSheet }) {
   const cls = CLASSES.find(c => c.id === sheet.classe) || CLASSES[0];
   const sheetColor = SHEET_COLORS[sheet.classe] || cls.color;
@@ -1126,6 +1152,8 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
           <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'Cinzel,serif' }}>{cls.icon} {cls.name} · Nv {sheet.nivel || 1}</div>
         </div>
       </div>
+
+      <EquipMiniList sheet={sheet} color={sheetColor} />
 
       <div style={{ background: 'rgba(232,25,60,0.06)', border: '1px solid rgba(232,25,60,0.18)', borderRadius: 12, padding: '11px 12px', marginBottom: 12 }}>
         <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#E8193C', fontFamily: 'Cinzel,serif', marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' }}>❤️ Vida</div>
@@ -1204,10 +1232,7 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
         characterName={sheet.nome || 'Personagem'}
       />
 
-      <CollapsibleSection icon="⚔" label="Equipamentos" color={sheetColor}>
-        <EquipamentoPanel sheet={sheet} onChange={onChangeSheet} sheetColor={sheetColor} />
-      </CollapsibleSection>
-    </div>
+      </div>
   );
 }
 
@@ -1223,6 +1248,7 @@ function BattleMapSection({ masterMode }) {
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const mapRef = useRef(null);
   const fileRef = useRef(null);
   const tokenFileRef = useRef(null);
@@ -1408,7 +1434,7 @@ function BattleMapSection({ masterMode }) {
   const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
-    <div style={{ maxWidth: 1500, margin: '0 auto', padding: '40px 8px 80px' }}>
+    <div style={{ maxWidth: 1800, margin: '0 auto', padding: '40px 8px 80px' }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>O Campo de Batalha</div>
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Mapa de Batalha</h2>
@@ -1439,7 +1465,7 @@ function BattleMapSection({ masterMode }) {
       {loaded && (
         <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12 }}>
+          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12, maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
             {!selectedSheet ? (<>
               <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
               {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
@@ -1557,9 +1583,17 @@ function BattleMapSection({ masterMode }) {
                 </div>
               )}
 
-              <div ref={mapRef} style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', userSelect: 'none', touchAction: 'none' }}>
-                <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', display: 'block', maxHeight: 640, objectFit: 'contain', background: '#04060F', pointerEvents: 'none' }} />
-                {(currentMap.tokens || []).map(token => {
+              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', maxHeight: 'calc(100vh - 300px)' }}>
+                <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
+                  <span style={{ fontSize: 13 }}>🔍</span>
+                  <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
+                  <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 34, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+                  <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>+</button>
+                  {zoom !== 1 && <button onClick={() => setZoom(1)} style={{ fontSize: 9, color: '#8A7A6A', fontFamily: 'Cinzel,serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 2 }}>reset</button>}
+                </div>
+                <div ref={mapRef} style={{ position: 'relative', width: `${zoom * 100}%`, userSelect: 'none', touchAction: 'none' }}>
+                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', display: 'block', background: '#04060F', pointerEvents: 'none' }} />
+                  {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const isSelected = selectedId === token.id;
                   const canDrag = masterMode || !token.locked;
@@ -1595,6 +1629,7 @@ function BattleMapSection({ masterMode }) {
                   );
                 })}
               </div>
+            </div>
 
               {selectedToken && masterMode && (
                 <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
@@ -4276,6 +4311,7 @@ export default function App(){
   };
 
   const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
+  const lockPageScroll = tab === 'mapabatalha' && !masterMode;
 
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
@@ -4303,7 +4339,7 @@ export default function App(){
           </button>
         ))}
       </nav>
-      <main style={{flex:1,overflowY:'auto',position:'relative',zIndex:10,scrollBehavior:'smooth'}}>
+      <main className={lockPageScroll ? 'main-locked' : ''} style={{flex:1,overflowY:'auto',position:'relative',zIndex:10,scrollBehavior:'smooth'}}>
         <div key={tab} style={{animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
           {tab==='prologo'&&<PrologueSection/>}
           {tab==='classes'&&<ClassesSection/>}
