@@ -1627,6 +1627,8 @@ function BattleMapSection({ masterMode }) {
                     </div>
                   );
                 })}
+                </div>
+              </div>
 
               {selectedToken && masterMode && (
                 <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
