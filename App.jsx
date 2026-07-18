@@ -1581,7 +1581,7 @@ function BattleMapSection({ masterMode }) {
                 </div>
               )}
 
-             <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', height: 'calc(100vh - 170px)' }}>
+             <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', maxHeight: 'calc(100vh - 190px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: '#04060F' }}>
                 <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
                   <span style={{ fontSize: 13 }}>🔍</span>
                   <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
@@ -1589,8 +1589,8 @@ function BattleMapSection({ masterMode }) {
                   <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>+</button>
                   {zoom !== 1 && <button onClick={() => setZoom(1)} style={{ fontSize: 9, color: '#8A7A6A', fontFamily: 'Cinzel,serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 2 }}>reset</button>}
                 </div>
-                <div ref={mapRef} style={{ position: 'relative', width: `${zoom * 100}%`, height: '100%', userSelect: 'none', touchAction: 'none' }}>
-                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', height: '100%', display: 'block', background: '#04060F', pointerEvents: 'none', objectFit: 'cover' }} />
+                <div ref={mapRef} style={{ position: 'relative', width: `${zoom * 100}%`, userSelect: 'none', touchAction: 'none', flexShrink: 0 }}>
+                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', display: 'block', background: '#04060F', pointerEvents: 'none' }} />
                   {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const isSelected = selectedId === token.id;
