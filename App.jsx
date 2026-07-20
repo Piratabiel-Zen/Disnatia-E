@@ -107,7 +107,6 @@ input[type=number]::-webkit-inner-spin-button{opacity:1;}
 select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
 .battlemap-frame{height:calc(100vh - 230px);background:transparent;}
-.battlemap-img{max-width:calc(100vw - 340px);max-height:calc(100vh - 250px);}
 
 @media(max-width:600px){
   .main-locked{overflow-y:auto!important;}
@@ -133,7 +132,6 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .battlemap-layout{flex-direction:column!important;}
   .battlemap-sidebar{width:100%!important; position:static!important; max-height:none!important;}
   .battlemap-frame{height:56vh!important;background:transparent!important;}
-  .battlemap-img{max-width:92vw!important;max-height:56vh!important;}
 }
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
@@ -933,8 +931,7 @@ function AmbientSoundPlayer({ masterMode }) {
         </div>
       )}
       {open && masterMode && (
-        <div style={{ background: 'rgba(8,10,24,0.98)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 16, padding: 16, width: 320, maxHeight: 460, display:'flex', flexDirection:'column', boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink:0 }}>
+        <div style={{ position: 'fixed', top: 20, bottom: 20, left: 16, width: 'min(380px, calc(100vw - 32px))', background: 'rgba(8,10,24,0.98)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 16, padding: 16, display:'flex', flexDirection:'column', boxShadow: '0 10px 40px rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 150 }}>          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink:0 }}>
             <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#4ADE80', letterSpacing: '0.1em' }}>🎼 Playlists de Ambiente</div>
             <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
@@ -950,7 +947,7 @@ function AmbientSoundPlayer({ masterMode }) {
             ))}
           </div>
 
-          <div style={{ overflowY: 'auto', flex:1, marginBottom: 10, display:'flex', flexDirection:'column', gap:6 }}>
+          <div style={{ overflowY: 'auto', flex:1, marginBottom: 10, display:'flex', flexDirection:'column', gap:9 }}>
             {(playlists[activeCategory] || []).length === 0 && (
               <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center', padding: '14px 0', fontStyle:'italic' }}>Nenhuma música nesta categoria ainda.</div>
             )}
@@ -958,10 +955,10 @@ function AmbientSoundPlayer({ masterMode }) {
               const isCurrent = current?.videoId === track.videoId && current?.playing;
               const catColor = SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.color || '#4ADE80';
               return (
-                <div key={track.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, background: isCurrent ? `${catColor}18` : 'rgba(255,255,255,0.02)', border:`1px solid ${isCurrent ? catColor+'55' : 'rgba(255,255,255,0.06)'}` }}>
-                  <button onClick={() => playTrack(track, activeCategory)} title="Tocar para todos" style={{ background:'none', border:'none', color: isCurrent ? catColor : '#8A7A6A', cursor:'pointer', fontSize:15, flexShrink:0 }}>{isCurrent ? '▶' : '▷'}</button>
-                  <span style={{ flex:1, fontSize:12, color: isCurrent ? catColor : '#C8B8A0', fontFamily:'Cinzel,serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{track.nome}</span>
-                  <button onClick={() => deleteTrack(activeCategory, track.id)} style={{ background:'none', border:'none', color:'rgba(232,25,60,0.5)', cursor:'pointer', fontSize:11, flexShrink:0 }}>✕</button>
+                <div key={track.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderRadius:9, background: isCurrent ? `${catColor}18` : 'rgba(255,255,255,0.03)', border:`1px solid ${isCurrent ? catColor+'55' : 'rgba(255,255,255,0.07)'}` }}>
+                  <button onClick={() => playTrack(track, activeCategory)} title="Tocar para todos" style={{ background:'none', border:'none', color: isCurrent ? catColor : '#8A7A6A', cursor:'pointer', fontSize:17, flexShrink:0 }}>{isCurrent ? '▶' : '▷'}</button>
+                  <span style={{ flex:1, fontSize:13, color: isCurrent ? catColor : '#C8B8A0', fontFamily:'Cinzel,serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{track.nome}</span>
+                  <button onClick={() => deleteTrack(activeCategory, track.id)} style={{ background:'none', border:'none', color:'rgba(232,25,60,0.5)', cursor:'pointer', fontSize:13, flexShrink:0, padding:4 }}>✕</button>
                 </div>
               );
             })}
@@ -1254,13 +1251,21 @@ function BattleMapSection({ masterMode }) {
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
-  const measureImgRef = useRef(null);
-  const measureBaseSize = () => {
-    const el = measureImgRef.current;
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) setBaseSize({ w: rect.width, h: rect.height });
-    }
+  const frameRef = useRef(null);
+  const naturalSizeRef = useRef({ w: 0, h: 0 });
+  const recomputeFit = () => {
+    const frame = frameRef.current;
+    const nat = naturalSizeRef.current;
+    if (!frame || !nat.w || !nat.h) return;
+    const frameW = frame.clientWidth;
+    const frameH = frame.clientHeight;
+    if (!frameW || !frameH) return;
+    const scale = Math.min(frameW / nat.w, frameH / nat.h);
+    setBaseSize({ w: nat.w * scale, h: nat.h * scale });
+  };
+  const handleMapImgLoad = (e) => {
+    naturalSizeRef.current = { w: e.target.naturalWidth, h: e.target.naturalHeight };
+    recomputeFit();
   };
   const mapRef = useRef(null);
   const fileRef = useRef(null);
@@ -1281,10 +1286,10 @@ function BattleMapSection({ masterMode }) {
 
   useEffect(() => {
     setZoom(1);
-    measureBaseSize();
-    const t = setTimeout(measureBaseSize, 150);
-    window.addEventListener('resize', measureBaseSize);
-    return () => { clearTimeout(t); window.removeEventListener('resize', measureBaseSize); };
+    recomputeFit();
+    const t = setTimeout(recomputeFit, 150);
+    window.addEventListener('resize', recomputeFit);
+    return () => { clearTimeout(t); window.removeEventListener('resize', recomputeFit); };
   }, [editingId, activeId, masterMode]);
 
   useEffect(() => {
@@ -1602,8 +1607,7 @@ function BattleMapSection({ masterMode }) {
                 </div>
               )}
 
-              <img ref={measureImgRef} src={currentMap.img} alt="" className="battlemap-img" onLoad={measureBaseSize} style={{ position: 'fixed', top: -9999, left: -9999, visibility: 'hidden', pointerEvents: 'none' }} />
-              <div className="battlemap-frame" style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'auto', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
+              <div className="battlemap-frame" ref={frameRef} style={{ position: 'relative', width: '100%', borderRadius: 12, display: zoom > 1 ? 'block' : 'flex', alignItems: zoom > 1 ? undefined : 'center', justifyContent: zoom > 1 ? undefined : 'center', overflow: zoom > 1 ? 'auto' : 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
                 <div style={{ position: 'sticky', float: 'right', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
                   <span style={{ fontSize: 13 }}>🔍</span>
                   <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
@@ -1615,12 +1619,13 @@ function BattleMapSection({ masterMode }) {
                   ref={mapRef}
                   style={{
                     position: 'relative',
+                    flexShrink: 0,
                     width: baseSize.w ? baseSize.w * zoom : '100%',
-                    height: baseSize.h ? baseSize.h * zoom : 'auto',
+                    height: baseSize.h ? baseSize.h * zoom : '100%',
                     userSelect: 'none', touchAction: 'none',
                   }}
                 >
-                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
                   {(currentMap.tokens || []).map(token => {
                     const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                     const isSelected = selectedId === token.id;
