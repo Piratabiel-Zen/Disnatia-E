@@ -1972,15 +1972,20 @@ function PrologueSection({ masterMode }) {
   }, []);
 
   const handleUpload = e => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async ev => {
-      const compressed = await compressImage(ev.target.result, 1000, 1400, 0.78);
-      setCapa(compressed);
-      try { await setDoc(doc(db, 'config', 'prologue_cover'), { img: compressed }); } catch (e) {}
-    };
-    reader.readAsDataURL(file); e.target.value = '';
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
+    setCovers(prev => ({ ...prev, [cls.id]: compressed }));
+    try {
+      await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
+    } catch (err) {
+      alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
+      console.error(err);
+    }
   };
+  reader.readAsDataURL(file); e.target.value = '';
+};
 
   return (
     <div style={{maxWidth:1040,margin:'0 auto',padding:'40px 24px 80px'}}>
@@ -2037,26 +2042,32 @@ function ClassesSection({ masterMode }) {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'class_covers'), snap => {
-      if (snap.exists()) setCovers(snap.data() || {});
-    });
-    return () => unsub();
-  }, []);
+  const unsub = onSnapshot(collection(db, 'class_covers'), snap => {
+    const data = {};
+    snap.docs.forEach(d => { data[d.id] = d.data().img || ''; });
+    setCovers(data);
+  });
+  return () => unsub();
+}, []);
 
   const cls = CLASSES.find(c => c.id === activeId) || CLASSES[0];
   const cover = covers[cls.id] || '';
 
   const handleUpload = e => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async ev => {
-      const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
-      const updated = { ...covers, [cls.id]: compressed };
-      setCovers(updated);
-      try { await setDoc(doc(db, 'config', 'class_covers'), updated); } catch (e) {}
-    };
-    reader.readAsDataURL(file); e.target.value = '';
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
+    setCovers(prev => ({ ...prev, [cls.id]: compressed }));
+    try {
+      await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
+    } catch (err) {
+      alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
+      console.error(err);
+    }
   };
+  reader.readAsDataURL(file); e.target.value = '';
+};
 
   const habilidades = [
     cls.passive?.name,
