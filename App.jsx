@@ -132,6 +132,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .battlemap-layout{flex-direction:column!important;}
   .battlemap-sidebar{width:100%!important; position:static!important; max-height:none!important;}
   .battlemap-frame{height:56vh!important;background:transparent!important;}
+  .floating-sheet{left:8px!important; top:8px!important; width:calc(100vw - 16px)!important; max-height:calc(100vh - 16px)!important;}
 }
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
@@ -812,6 +813,7 @@ const SOUND_CATEGORIES = [
   { id: 'enigmas', label: 'Enigmas', icon: '🧩', color: '#E8A020' },
   { id: 'combate', label: 'Combate', icon: '⚔️', color: '#E8193C' },
   { id: 'terror', label: 'Terror', icon: '💀', color: '#6E6E80' },
+  { id: 'sfx', label: 'Sound Effects', icon: '🔊', color: '#FF6B9D' },
 ];
 
 function AmbientSoundPlayer({ masterMode }) {
@@ -1276,7 +1278,8 @@ function BattleMapSection({ masterMode }) {
 
   const [sheets, setSheets] = useState([]);
   const [customAbilities, setCustomAbilities] = useState({});
-  const [selectedSheetId, setSelectedSheetId] = useState(null);
+  const [floatingSheets, setFloatingSheets] = useState([]); // {sheetId, x, y, z}
+  const zTopRef = useRef(60);
   const [unlockedIds, setUnlockedIds] = useState({});
   const [pwTarget, setPwTarget] = useState(null);
   const [pwInput, setPwInput] = useState('');
@@ -1441,23 +1444,44 @@ function BattleMapSection({ masterMode }) {
     try { await setDoc(doc(db, 'config', 'customAbilities'), updated); setCustomAbilities(updated); } catch (e) { console.error(e); }
   };
 
+  const toggleFloatingSheet = (sid) => {
+    setFloatingSheets(prev => {
+      const exists = prev.find(p => p.sheetId === sid);
+      if (exists) return prev.filter(p => p.sheetId !== sid);
+      zTopRef.current += 1;
+      const idx = prev.length;
+      const baseX = 90 + (idx % 4) * 40;
+      const baseY = 90 + (idx % 4) * 40;
+      return [...prev, { sheetId: sid, x: baseX, y: baseY, z: zTopRef.current }];
+    });
+  };
+  const bringFloatingToFront = (sid) => {
+    zTopRef.current += 1;
+    const z = zTopRef.current;
+    setFloatingSheets(prev => prev.map(p => p.sheetId === sid ? { ...p, z } : p));
+  };
+  const moveFloatingSheet = (sid, x, y) => {
+    setFloatingSheets(prev => prev.map(p => p.sheetId === sid ? { ...p, x, y } : p));
+  };
+  const closeFloatingSheet = (sid) => {
+    setFloatingSheets(prev => prev.filter(p => p.sheetId !== sid));
+  };
   const handleSelectSheet = (s) => {
     const sid = String(s.id);
-    if (masterMode || !s.senha || unlockedIds[sid]) { setSelectedSheetId(sid); return; }
+    if (masterMode || !s.senha || unlockedIds[sid]) { toggleFloatingSheet(sid); return; }
     setPwTarget(sid); setPwInput(''); setPwError(false);
   };
   const tryPassword = () => {
     const s = sheets.find(x => String(x.id) === pwTarget);
     if (s && pwInput === s.senha) {
       setUnlockedIds(prev => ({ ...prev, [pwTarget]: true }));
-      setSelectedSheetId(pwTarget);
+      toggleFloatingSheet(pwTarget);
       setPwTarget(null); setPwInput('');
     } else {
       setPwError(true); setPwInput('');
       setTimeout(() => setPwError(false), 600);
     }
   };
-  const selectedSheet = sheets.find(s => String(s.id) === selectedSheetId);
 
   return (
     <div style={{ maxWidth: 1800, margin: '0 auto', padding: '14px 8px 24px' }}>
@@ -1490,36 +1514,25 @@ function BattleMapSection({ masterMode }) {
         <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
           <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12, maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
-            {!selectedSheet ? (<>
-              <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
-              {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {sheets.map(s => {
-                  const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
-                  const sc = SHEET_COLORS[s.classe] || cls.color;
-                  const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
-                  return (
-                    <button key={s.id} onClick={() => handleSelectSheet(s)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 8, border: `1px solid ${sc}28`, background: 'rgba(255,255,255,0.02)', cursor: 'pointer', textAlign: 'left' }}>
-                      {s.foto ? <img src={s.foto} alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', filter: locked ? 'grayscale(60%)' : 'none' }} /> : <div style={{ width: 26, height: 26, borderRadius: 6, background: `${sc}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{locked ? '🔒' : cls.icon}</div>}
-                      <div>
-                        <div style={{ fontFamily: 'Cinzel,serif', fontSize: 11.5, color: sc, fontWeight: 700 }}>{s.nome || 'Sem nome'}</div>
-                        <div style={{ fontSize: 9, color: '#5A5070' }}>Nv {s.nivel || 1}{locked ? ' · 🔒' : ''}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </>) : (<>
-              <button onClick={() => setSelectedSheetId(null)} style={{ marginBottom: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#7B6D8A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>← Voltar à lista</button>
-              <div style={{ maxHeight: 680, overflowY: 'auto', paddingRight: 4 }}>
-                <BattleMapCharPanel
-                  sheet={selectedSheet}
-                  customAbilities={customAbilities[selectedSheet.id] || []}
-                  onSaveCustomAbilities={(novas) => saveCustomAb(selectedSheet.id, novas)}
-                  onChangeSheet={(d) => updSheet(selectedSheet.id, d)}
-                />
-              </div>
-            </>)}
+            <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
+            {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {sheets.map(s => {
+                const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+                const sc = SHEET_COLORS[s.classe] || cls.color;
+                const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
+                const isOpenFloating = floatingSheets.some(p => p.sheetId === String(s.id));
+                return (
+                  <button key={s.id} onClick={() => handleSelectSheet(s)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 8, border: `1px solid ${isOpenFloating ? sc + '77' : sc + '28'}`, background: isOpenFloating ? `${sc}14` : 'rgba(255,255,255,0.02)', cursor: 'pointer', textAlign: 'left' }}>
+                    {s.foto ? <img src={s.foto} alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', filter: locked ? 'grayscale(60%)' : 'none' }} /> : <div style={{ width: 26, height: 26, borderRadius: 6, background: `${sc}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{locked ? '🔒' : cls.icon}</div>}
+                    <div>
+                      <div style={{ fontFamily: 'Cinzel,serif', fontSize: 11.5, color: sc, fontWeight: 700 }}>{s.nome || 'Sem nome'}</div>
+                      <div style={{ fontSize: 9, color: '#5A5070' }}>Nv {s.nivel || 1}{locked ? ' · 🔒' : isOpenFloating ? ' · aberta' : ''}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div style={{ flex: 1, minWidth: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1692,6 +1705,91 @@ function BattleMapSection({ masterMode }) {
           </div>
         </div>
       )}
+
+      {floatingSheets.map(p => {
+        const sheet = sheets.find(s => String(s.id) === p.sheetId);
+        if (!sheet) return null;
+        const cls = CLASSES.find(c => c.id === sheet.classe) || CLASSES[0];
+        const sc = SHEET_COLORS[sheet.classe] || cls.color;
+        return (
+          <FloatingSheetPanel
+            key={p.sheetId}
+            sheet={sheet}
+            color={sc}
+            pos={p}
+            zIndex={p.z}
+            customAbilities={customAbilities[sheet.id] || []}
+            onSaveCustomAbilities={(novas) => saveCustomAb(sheet.id, novas)}
+            onChangeSheet={(d) => updSheet(sheet.id, d)}
+            onDrag={(x, y) => moveFloatingSheet(p.sheetId, x, y)}
+            onFocus={() => bringFloatingToFront(p.sheetId)}
+            onClose={() => closeFloatingSheet(p.sheetId)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function FloatingSheetPanel({ sheet, color, pos, zIndex, customAbilities, onSaveCustomAbilities, onChangeSheet, onDrag, onFocus, onClose }) {
+  const draggingRef = useRef(false);
+  const movedRef = useRef(false);
+  const startRef = useRef({ x: 0, y: 0, px: 0, py: 0 });
+
+  const onHeaderDown = (e) => {
+    onFocus();
+    draggingRef.current = true;
+    movedRef.current = false;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    startRef.current = { x: pos.x, y: pos.y, px: clientX, py: clientY };
+  };
+
+  useEffect(() => {
+    const move = (e) => {
+      if (!draggingRef.current) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const dx = clientX - startRef.current.px;
+      const dy = clientY - startRef.current.py;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) movedRef.current = true;
+      onDrag(startRef.current.x + dx, startRef.current.y + dy);
+    };
+    const up = () => {
+      if (draggingRef.current && !movedRef.current) onClose();
+      draggingRef.current = false;
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('touchend', up);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('touchmove', move);
+      window.removeEventListener('touchend', up);
+    };
+  }, [onDrag, onClose]);
+
+  return (
+    <div className="floating-sheet" onPointerDown={onFocus} style={{ position: 'fixed', left: pos.x, top: pos.y, width: 320, maxHeight: '68vh', zIndex, background: 'rgba(8,10,22,0.98)', border: `1px solid ${color}55`, borderRadius: 12, boxShadow: '0 14px 44px rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div
+        onPointerDown={onHeaderDown}
+        onTouchStart={onHeaderDown}
+        style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8, background: `${color}14`, borderBottom: `1px solid ${color}33`, cursor: 'grab', userSelect: 'none', flexShrink: 0 }}
+      >
+        <span style={{ fontSize: 13, color }}>⠿</span>
+        <span style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 12.5, color, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sheet.nome || 'Sem nome'}</span>
+        <button onClick={onClose} onPointerDown={e => e.stopPropagation()} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', color: '#8A7A6A', cursor: 'pointer', fontSize: 11, padding: '2px 7px', borderRadius: 5 }}>✕</button>
+      </div>
+      <div style={{ overflowY: 'auto', padding: 13, flex: 1 }}>
+        <BattleMapCharPanel
+          sheet={sheet}
+          customAbilities={customAbilities}
+          onSaveCustomAbilities={onSaveCustomAbilities}
+          onChangeSheet={onChangeSheet}
+        />
+      </div>
     </div>
   );
 }
