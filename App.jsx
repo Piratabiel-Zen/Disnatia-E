@@ -106,7 +106,6 @@ input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
 input[type=number]::-webkit-inner-spin-button{opacity:1;}
 select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
-.battlemap-frame{height:calc(100vh - 230px);background:transparent;}
 
 @media(max-width:600px){
   .main-locked{overflow-y:auto!important;}
@@ -129,10 +128,9 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .equip-grid{grid-template-columns:1fr!important; gap: 16px!important;}
   .equip-slot-inputs { flex-direction: column !important; gap: 6px !important; }
   .equip-slot-inputs input { width: 100% !important; flex: none !important; }
-  .battlemap-layout{flex-direction:column!important;}
-  .battlemap-sidebar{width:100%!important; position:static!important; max-height:none!important;}
-  .battlemap-frame{height:56vh!important;background:transparent!important;}
   .floating-sheet{left:8px!important; top:8px!important; width:calc(100vw - 16px)!important; max-height:calc(100vh - 16px)!important;}
+  .battlemap-bottombar{left:8px!important; max-width:calc(100vw - 16px)!important;}
+  .battlemap-zoom-controls{right:8px!important;}
 }
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
@@ -1251,6 +1249,7 @@ function BattleMapSection({ masterMode }) {
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
+  const [barOpen, setBarOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
   const frameRef = useRef(null);
@@ -1451,7 +1450,7 @@ function BattleMapSection({ masterMode }) {
       zTopRef.current += 1;
       const idx = prev.length;
       const baseX = 90 + (idx % 4) * 40;
-      const baseY = 90 + (idx % 4) * 40;
+      const baseY = 70 + (idx % 4) * 40;
       return [...prev, { sheetId: sid, x: baseX, y: baseY, z: zTopRef.current }];
     });
   };
@@ -1483,13 +1482,23 @@ function BattleMapSection({ masterMode }) {
     }
   };
 
+  const quickAddSheet = () => {
+    if (sheets.length >= 15) return;
+    const s = newSheet(Date.now());
+    setDoc(doc(db, 'sheets', String(s.id)), s);
+    toggleFloatingSheet(String(s.id));
+  };
+
+  const zoomBtnStyle = { width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 13, lineHeight: 1, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
   return (
-    <div style={{ maxWidth: 1800, margin: '0 auto', padding: '14px 8px 24px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 10 }}>
-        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 18, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>🗡️ Mapa de Batalha</h2>
-        <div style={{ fontSize: 11, color: '#4A4050', marginTop: 4, fontFamily: 'Cinzel,serif' }}>
-          {masterMode ? 'Arraste os tokens · Clique para editar' : 'Arraste seu token pelo mapa'}
-        </div>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 8px 8px' }}>
+
+      {/* CABEÇALHO COMPACTO */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', flexShrink: 0 }}>
+        <span style={{ fontSize: 14 }}>🗡️</span>
+        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 14, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>Mapa de Batalha</h2>
+        {currentMap?.nome && <span style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif' }}>· {currentMap.nome}</span>}
       </div>
 
       {pwTarget && (
@@ -1511,222 +1520,250 @@ function BattleMapSection({ masterMode }) {
       {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o campo de batalha...</div>}
 
       {loaded && (
-        <div className="battlemap-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#04060F' }}>
 
-          <div className="battlemap-sidebar" style={{ width: 268, flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(8,10,22,0.9)', padding: 13, position: 'sticky', top: 12, maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
-            <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Fichas dos Personagens</div>
-            {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>Nenhuma ficha criada ainda.</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {sheets.map(s => {
-                const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
-                const sc = SHEET_COLORS[s.classe] || cls.color;
-                const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
-                const isOpenFloating = floatingSheets.some(p => p.sheetId === String(s.id));
-                return (
-                  <button key={s.id} onClick={() => handleSelectSheet(s)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 8, border: `1px solid ${isOpenFloating ? sc + '77' : sc + '28'}`, background: isOpenFloating ? `${sc}14` : 'rgba(255,255,255,0.02)', cursor: 'pointer', textAlign: 'left' }}>
-                    {s.foto ? <img src={s.foto} alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', filter: locked ? 'grayscale(60%)' : 'none' }} /> : <div style={{ width: 26, height: 26, borderRadius: 6, background: `${sc}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{locked ? '🔒' : cls.icon}</div>}
-                    <div>
-                      <div style={{ fontFamily: 'Cinzel,serif', fontSize: 11.5, color: sc, fontWeight: 700 }}>{s.nome || 'Sem nome'}</div>
-                      <div style={{ fontSize: 9, color: '#5A5070' }}>Nv {s.nivel || 1}{locked ? ' · 🔒' : isOpenFloating ? ' · aberta' : ''}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ flex: 1, minWidth: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            {masterMode && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* BARRA FLUTUANTE DO MESTRE — não empurra o mapa */}
+          {masterMode && (
+            <div style={{ position: 'absolute', top: 10, left: 10, right: 10, zIndex: 40, display: 'flex', flexDirection: 'column', gap: 6, pointerEvents: 'none' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', pointerEvents: 'auto' }}>
                 {maps.map(m => {
                   const isEditing = String(m.id) === String(editingId || activeId);
                   const isActive = String(m.id) === String(activeId);
                   return (
                     <button key={m.id} onClick={() => setEditingId(String(m.id))} style={{
-                      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
-                      border: `1px solid ${isEditing ? 'rgba(232,25,60,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                      background: isEditing ? 'rgba(232,25,60,0.1)' : 'rgba(255,255,255,0.02)',
-                      color: isEditing ? '#E8193C' : '#7A6A8A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8,
+                      border: `1px solid ${isEditing ? 'rgba(232,25,60,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                      background: isEditing ? 'rgba(232,25,60,0.15)' : 'rgba(4,6,15,0.7)',
+                      color: isEditing ? '#E8193C' : '#C8B8A0', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10,
+                      backdropFilter: 'blur(6px)',
                     }}>
                       {isActive && <span title="Visível para jogadores" style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 5px #4ADE80', flexShrink: 0 }} />}
                       {m.nome || 'Mapa'}
                     </button>
                   );
                 })}
-                <button onClick={addMap} style={{ padding: '6px 12px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Novo Mapa</button>
+                <button onClick={addMap} style={{ padding: '5px 10px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.2)', background: 'rgba(4,6,15,0.7)', color: '#8A7A9A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>+ Novo Mapa</button>
               </div>
-            )}
 
-            {masterMode && currentMap && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                {showMapNameEdit ? (
-                  <input value={currentMap.nome} onChange={e => updCurrentMap({ nome: e.target.value })} onBlur={() => setShowMapNameEdit(false)} onKeyDown={e => e.key === 'Enter' && setShowMapNameEdit(false)} autoFocus style={{ fontSize: 13, fontFamily: 'Cinzel,serif', flex: 1, minWidth: 120 }} />
-                ) : (
-                  <div onClick={() => setShowMapNameEdit(true)} style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8B8A0', cursor: 'pointer', flex: 1, minWidth: 120 }}>✎ {currentMap.nome || 'Mapa'}</div>
+              {currentMap && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', pointerEvents: 'auto' }}>
+                  {showMapNameEdit ? (
+                    <input value={currentMap.nome} onChange={e => updCurrentMap({ nome: e.target.value })} onBlur={() => setShowMapNameEdit(false)} onKeyDown={e => e.key === 'Enter' && setShowMapNameEdit(false)} autoFocus style={{ fontSize: 11, fontFamily: 'Cinzel,serif', width: 140 }} />
+                  ) : (
+                    <button onClick={() => setShowMapNameEdit(true)} style={{ ...zoomBtnStyle, width: 'auto', padding: '5px 9px', background: 'rgba(4,6,15,0.7)', backdropFilter: 'blur(6px)' }}>✎ Renomear</button>
+                  )}
+                  <button onClick={() => fileRef.current?.click()} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.12)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🗺 {currentMap.img ? 'Trocar' : 'Enviar'} Imagem</button>
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
+                  <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>+ Token</button>
+                  {String(activeId) === String(currentMap.id)
+                    ? <button onClick={deactivateMap} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,160,32,0.35)', background: 'rgba(232,160,32,0.12)', color: '#E8A020', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🙈 Ocultar</button>
+                    : <button onClick={() => activateMap(currentMap.id)} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, fontWeight: 700, backdropFilter: 'blur(6px)' }}>👁 Revelar</button>
+                  }
+                  <button onClick={() => deleteMap(currentMap.id)} style={{ padding: '5px 8px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'rgba(4,6,15,0.7)', color: '#7A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🗑</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FORM DE NOVO TOKEN — flutuante */}
+          {showAddForm && masterMode && currentMap && (
+            <div style={{ position: 'absolute', top: 70, left: 10, zIndex: 41, width: 300, border: '1px solid rgba(74,222,128,0.3)', borderRadius: 12, background: 'rgba(8,10,20,0.96)', backdropFilter: 'blur(10px)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
+              <div style={{ fontSize: 9, letterSpacing: '0.3em', color: '#4ADE80', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Novo Token</div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div onClick={() => tokenFileRef.current?.click()} style={{ width: 60, height: 60, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', background: formFoto ? `url(${formFoto}) center/contain no-repeat` : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  {!formFoto && <span style={{ fontSize: 20, opacity: 0.3 }}>🖼️</span>}
+                </div>
+                <input ref={tokenFileRef} type="file" accept="image/png" onChange={handleTokenPhoto} style={{ display: 'none' }} />
+                <div style={{ flex: 1 }}>
+                  <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Nome do token..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {Object.entries(TOKEN_TYPES).map(([key, t]) => (
+                      <button key={key} onClick={() => setFormTipo(key)} style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: `1px solid ${formTipo === key ? t.color + '77' : 'rgba(255,255,255,0.1)'}`, background: formTipo === key ? `${t.color}18` : 'rgba(255,255,255,0.02)', color: formTipo === key ? t.color : '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10 }}>{t.label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
+                <button onClick={() => { setShowAddForm(false); setFormNome(''); setFormFoto(''); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>Cancelar</button>
+              </div>
+            </div>
+          )}
+
+          {/* ESTADOS VAZIOS — centralizados dentro do mapa */}
+          {!currentMap && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 40 }}>
+              <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🗺️</div>
+              <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>
+                {masterMode ? 'Crie um novo mapa para começar.' : 'O Mestre ainda não revelou nenhum mapa de batalha.'}
+              </div>
+              {masterMode && maps.length === 0 && <button onClick={addMap} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>+ Criar Primeiro Mapa</button>}
+            </div>
+          )}
+
+          {currentMap && !currentMap.img && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 40 }}>
+              <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🖼️</div>
+              <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>{masterMode ? 'Envie a imagem deste mapa.' : 'Este mapa ainda não possui uma imagem.'}</div>
+              {masterMode && <button onClick={() => fileRef.current?.click()} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>📁 Enviar Imagem</button>}
+            </div>
+          )}
+
+          {/* MAPA — ocupa 100% da área disponível */}
+          {currentMap && currentMap.img && (
+            <div ref={frameRef} style={{ position: 'absolute', inset: 0, display: zoom > 1 ? 'block' : 'flex', alignItems: zoom > 1 ? undefined : 'center', justifyContent: zoom > 1 ? undefined : 'center', overflow: zoom > 1 ? 'auto' : 'hidden' }}>
+              <div
+                ref={mapRef}
+                style={{
+                  position: 'relative',
+                  flexShrink: 0,
+                  width: baseSize.w ? baseSize.w * zoom : '100%',
+                  height: baseSize.h ? baseSize.h * zoom : '100%',
+                  userSelect: 'none', touchAction: 'none',
+                }}
+              >
+                <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                {(currentMap.tokens || []).map(token => {
+                  const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
+                  const isSelected = selectedId === token.id;
+                  const canDrag = masterMode || !token.locked;
+                  const dispSize = (token.size || 70) * zoom;
+                  return (
+                    <div
+                      key={token.id}
+                      onPointerDown={e => canDrag && onTokenPointerDown(e, token)}
+                      onTouchStart={e => canDrag && onTokenPointerDown(e, token)}
+                      style={{
+                        position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
+                        transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * zoom,
+                        zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
+                        touchAction: 'none',
+                      }}
+                    >
+                     <div style={{
+                      width: dispSize, height: dispSize, borderRadius: '50%',
+                      border: draggingId === token.id ? `2px solid ${info.ring}` : isSelected ? '2px solid #fff' : '2px solid transparent',
+                      boxShadow: draggingId === token.id ? `0 0 14px ${info.color}` : isSelected ? `0 0 14px ${info.color}` : '0 2px 8px rgba(0,0,0,0.4)',
+                      background: 'transparent', overflow: 'hidden',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: draggingId === token.id ? 'none' : 'box-shadow 0.2s, border-color 0.2s',
+                     }}>
+                        {token.foto
+                          ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
+                          : <span style={{ fontSize: dispSize * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
+                      </div>
+                      <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {token.nome}{token.locked && ' 🔒'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}
+          {selectedToken && masterMode && (
+            <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 41, width: 280, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
+                  {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                </div>
+                <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 12 }} />
+                <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho</span>
+                <input type="range" min={40} max={120} step={5} value={selectedToken.size || 70} onChange={e => updateToken(selectedToken.id, { size: Number(e.target.value) })} style={{ flex: 1 }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => updateToken(selectedToken.id, { locked: !selectedToken.locked })} style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${selectedToken.locked ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`, background: selectedToken.locked ? 'rgba(232,160,32,0.1)' : 'rgba(255,255,255,0.02)', color: selectedToken.locked ? '#E8A020' : '#8A7A6A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{selectedToken.locked ? '🔒 Travado' : '🔓 Livre'}</button>
+                <button onClick={() => deleteToken(selectedToken.id)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗑</button>
+              </div>
+            </div>
+          )}
+
+          {/* CONTROLE DE ZOOM — canto inferior direito, compacto */}
+          {currentMap?.img && (
+            <div className="battlemap-zoom-controls" style={{ position: 'absolute', right: 16, bottom: barOpen ? 96 : 20, transition: 'bottom .25s ease', zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,8,18,0.82)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '6px 8px', backdropFilter: 'blur(8px)', boxShadow: '0 6px 20px rgba(0,0,0,0.5)' }}>
+              <span style={{ fontSize: 12 }}>🔍</span>
+              <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={zoomBtnStyle}>−</button>
+              <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 36, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={zoomBtnStyle}>+</button>
+              <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)' }} />
+              <button onClick={() => setZoom(1)} title="Ajustar à tela" style={zoomBtnStyle}>⤢</button>
+            </div>
+          )}
+
+          {/* FICHAS FLUTUANTES */}
+          {floatingSheets.map(p => {
+            const sheet = sheets.find(s => String(s.id) === p.sheetId);
+            if (!sheet) return null;
+            const cls = CLASSES.find(c => c.id === sheet.classe) || CLASSES[0];
+            const sc = SHEET_COLORS[sheet.classe] || cls.color;
+            return (
+              <FloatingSheetPanel
+                key={p.sheetId}
+                sheet={sheet}
+                color={sc}
+                pos={p}
+                zIndex={p.z}
+                customAbilities={customAbilities[sheet.id] || []}
+                onSaveCustomAbilities={(novas) => saveCustomAb(sheet.id, novas)}
+                onChangeSheet={(d) => updSheet(sheet.id, d)}
+                onDrag={(x, y) => moveFloatingSheet(p.sheetId, x, y)}
+                onFocus={() => bringFloatingToFront(p.sheetId)}
+                onClose={() => closeFloatingSheet(p.sheetId)}
+              />
+            );
+          })}
+
+          {/* BARRA INFERIOR DE FICHAS */}
+          <div className="battlemap-bottombar" style={{
+            position: 'absolute', left: 16, bottom: 16, zIndex: 45, maxWidth: 'calc(100% - 32px)',
+            background: 'rgba(6,8,18,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+          }}>
+            <button onClick={() => setBarOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#C8A8E8', fontFamily: 'Cinzel,serif', fontSize: 11, letterSpacing: '0.1em', cursor: 'pointer', padding: '4px 6px', flexShrink: 0 }}>
+              <span style={{ fontSize: 11 }}>{barOpen ? '▾' : '▸'}</span> FICHAS
+            </button>
+            {barOpen && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', maxWidth: '75vw', paddingBottom: 2 }}>
+                {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic', padding: '0 8px' }}>Nenhuma ficha criada.</div>}
+                {sheets.map(s => {
+                  const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+                  const sc = SHEET_COLORS[s.classe] || cls.color;
+                  const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
+                  const isOpen = floatingSheets.some(p => p.sheetId === String(s.id));
+                  return (
+                    <button key={s.id} onClick={() => handleSelectSheet(s)} style={{
+                      display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, padding: '4px 10px 4px 4px',
+                      borderRadius: 20, border: `1px solid ${isOpen ? sc + 'AA' : sc + '33'}`,
+                      background: isOpen ? `${sc}22` : 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                      boxShadow: isOpen ? `0 0 10px ${sc}55` : 'none',
+                    }}>
+                      {s.foto
+                        ? <img src={s.foto} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid ${sc}88`, filter: locked ? 'grayscale(70%)' : 'none' }} />
+                        : <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${sc}20`, border: `1.5px solid ${sc}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{locked ? '🔒' : cls.icon}</div>}
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontFamily: 'Cinzel,serif', fontSize: 11, fontWeight: 700, color: isOpen ? sc : '#C8B8A0', whiteSpace: 'nowrap' }}>{s.nome || 'Sem nome'}</div>
+                        <div style={{ fontSize: 9, color: '#5A5070' }}>NV {s.nivel || 1}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+                {masterMode && sheets.length < 15 && (
+                  <button onClick={quickAddSheet} title="Adicionar Ficha" style={{ flexShrink: 0, width: 30, height: 30, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.02)', color: '#8A7A9A', cursor: 'pointer', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 )}
-                <button onClick={() => fileRef.current?.click()} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗺 {currentMap.img ? 'Trocar' : 'Enviar'} Imagem</button>
-                <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
-                <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Token</button>
-                {String(activeId) === String(currentMap.id)
-                  ? <button onClick={deactivateMap} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(232,160,32,0.35)', background: 'rgba(232,160,32,0.08)', color: '#E8A020', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🙈 Ocultar dos Jogadores</button>
-                  : <button onClick={() => activateMap(currentMap.id)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, fontWeight: 700 }}>👁 Revelar para Jogadores</button>
-                }
-                <button onClick={() => deleteMap(currentMap.id)} style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'transparent', color: '#7A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗑</button>
               </div>
             )}
-
-            {loaded && !currentMap && (
-              <div style={{ textAlign: 'center', padding: 60, border: '1px dashed rgba(232,25,60,0.25)', borderRadius: 14 }}>
-                <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🗺️</div>
-                <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>
-                  {masterMode ? 'Crie um novo mapa para começar.' : 'O Mestre ainda não revelou nenhum mapa de batalha.'}
-                </div>
-                {masterMode && maps.length === 0 && <button onClick={addMap} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>+ Criar Primeiro Mapa</button>}
-              </div>
-            )}
-
-            {currentMap && !currentMap.img && (
-              <div style={{ textAlign: 'center', padding: 60, border: '1px dashed rgba(232,25,60,0.25)', borderRadius: 14 }}>
-                <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>🖼️</div>
-                <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color: '#6A5A7A', marginBottom: 16 }}>{masterMode ? 'Envie a imagem deste mapa.' : 'Este mapa ainda não possui uma imagem.'}</div>
-                {masterMode && <button onClick={() => fileRef.current?.click()} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 13, letterSpacing: '0.08em' }}>📁 Enviar Imagem</button>}
-              </div>
-            )}
-
-            {currentMap && currentMap.img && (<>
-              {showAddForm && masterMode && (
-                <div style={{ border: '1px solid rgba(74,222,128,0.3)', borderRadius: 12, background: 'rgba(74,222,128,0.05)', padding: 16 }}>
-                  <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#4ADE80', fontFamily: 'Cinzel,serif', marginBottom: 12, textTransform: 'uppercase' }}>Novo Token</div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                    <div onClick={() => tokenFileRef.current?.click()} style={{ width: 70, height: 70, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', background: formFoto ? `url(${formFoto}) center/contain no-repeat` : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                      {!formFoto && <span style={{ fontSize: 22, opacity: 0.3 }}>🖼️</span>}
-                    </div>
-                    <input ref={tokenFileRef} type="file" accept="image/png" onChange={handleTokenPhoto} style={{ display: 'none' }} />
-                    <div style={{ flex: 1, minWidth: 180 }}>
-                      <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Nome do token..." style={{ width: '100%', fontSize: 13, marginBottom: 8 }} />
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {Object.entries(TOKEN_TYPES).map(([key, t]) => (
-                          <button key={key} onClick={() => setFormTipo(key)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: `1px solid ${formTipo === key ? t.color + '77' : 'rgba(255,255,255,0.1)'}`, background: formTipo === key ? `${t.color}18` : 'rgba(255,255,255,0.02)', color: formTipo === key ? t.color : '#6A5A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{t.label}</button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#4A4050', marginTop: 8, fontFamily: 'Cinzel,serif' }}>Use uma imagem PNG com fundo transparente, vista de cima (top-down).</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12 }}>✦ Adicionar ao Mapa</button>
-                    <button onClick={() => { setShowAddForm(false); setFormNome(''); setFormFoto(''); }} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12 }}>Cancelar</button>
-                  </div>
-                </div>
-              )}
-
-              <div className="battlemap-frame" ref={frameRef} style={{ position: 'relative', width: '100%', borderRadius: 12, display: zoom > 1 ? 'block' : 'flex', alignItems: zoom > 1 ? undefined : 'center', justifyContent: zoom > 1 ? undefined : 'center', overflow: zoom > 1 ? 'auto' : 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
-                <div style={{ position: 'sticky', float: 'right', top: 10, right: 10, zIndex: 30, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(4,6,15,0.75)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 8px', backdropFilter: 'blur(6px)' }}>
-                  <span style={{ fontSize: 13 }}>🔍</span>
-                  <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>−</button>
-                  <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 34, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
-                  <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>+</button>
-                  {zoom !== 1 && <button onClick={() => setZoom(1)} style={{ fontSize: 9, color: '#8A7A6A', fontFamily: 'Cinzel,serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 2 }}>reset</button>}
-                </div>
-                <div
-                  ref={mapRef}
-                  style={{
-                    position: 'relative',
-                    flexShrink: 0,
-                    width: baseSize.w ? baseSize.w * zoom : '100%',
-                    height: baseSize.h ? baseSize.h * zoom : '100%',
-                    userSelect: 'none', touchAction: 'none',
-                  }}
-                >
-                  <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
-                  {(currentMap.tokens || []).map(token => {
-                    const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
-                    const isSelected = selectedId === token.id;
-                    const canDrag = masterMode || !token.locked;
-                    const dispSize = (token.size || 70) * zoom;
-                    return (
-                      <div
-                        key={token.id}
-                        onPointerDown={e => canDrag && onTokenPointerDown(e, token)}
-                        onTouchStart={e => canDrag && onTokenPointerDown(e, token)}
-                        style={{
-                          position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
-                          transform: 'translate(-50%, -50%)', cursor: canDrag ? 'grab' : 'not-allowed',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * zoom,
-                          zIndex: draggingId === token.id ? 20 : isSelected ? 15 : 5,
-                          touchAction: 'none',
-                        }}
-                      >
-                       <div style={{
-                        width: dispSize, height: dispSize, borderRadius: '50%',
-                        border: draggingId === token.id ? `2px solid ${info.ring}` : isSelected ? '2px solid #fff' : '2px solid transparent',
-                        boxShadow: draggingId === token.id ? `0 0 14px ${info.color}` : isSelected ? `0 0 14px ${info.color}` : '0 2px 8px rgba(0,0,0,0.4)',
-                        background: 'transparent', overflow: 'hidden',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: draggingId === token.id ? 'none' : 'box-shadow 0.2s, border-color 0.2s',
-                       }}>
-                          {token.foto
-                            ? <img src={token.foto} alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain', pointerEvents: 'none' }} />
-                            : <span style={{ fontSize: dispSize * 0.4 }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
-                        </div>
-                        <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {token.nome}{token.locked && ' 🔒'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {selectedToken && masterMode && (
-                <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(10,12,28,0.95)', padding: 16, animation: 'pageTurn 0.3s ease' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
-                      {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-                    </div>
-                    <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 13 }} />
-                    <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho</span>
-                      <input type="range" min={40} max={120} step={5} value={selectedToken.size || 70} onChange={e => updateToken(selectedToken.id, { size: Number(e.target.value) })} style={{ width: 100 }} />
-                    </div>
-                    <button onClick={() => updateToken(selectedToken.id, { locked: !selectedToken.locked })} style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${selectedToken.locked ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`, background: selectedToken.locked ? 'rgba(232,160,32,0.1)' : 'rgba(255,255,255,0.02)', color: selectedToken.locked ? '#E8A020' : '#8A7A6A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{selectedToken.locked ? '🔒 Travado' : '🔓 Livre'}</button>
-                    <button onClick={() => deleteToken(selectedToken.id)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, marginLeft: 'auto' }}>🗑 Remover Token</button>
-                  </div>
-                </div>
-              )}
-
-              {(currentMap.tokens || []).length > 0 && (
-                <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center' }}>{(currentMap.tokens || []).length} token{(currentMap.tokens || []).length !== 1 ? 's' : ''} no campo</div>
-              )}
-            </>)}
           </div>
+
         </div>
       )}
-
-      {floatingSheets.map(p => {
-        const sheet = sheets.find(s => String(s.id) === p.sheetId);
-        if (!sheet) return null;
-        const cls = CLASSES.find(c => c.id === sheet.classe) || CLASSES[0];
-        const sc = SHEET_COLORS[sheet.classe] || cls.color;
-        return (
-          <FloatingSheetPanel
-            key={p.sheetId}
-            sheet={sheet}
-            color={sc}
-            pos={p}
-            zIndex={p.z}
-            customAbilities={customAbilities[sheet.id] || []}
-            onSaveCustomAbilities={(novas) => saveCustomAb(sheet.id, novas)}
-            onChangeSheet={(d) => updSheet(sheet.id, d)}
-            onDrag={(x, y) => moveFloatingSheet(p.sheetId, x, y)}
-            onFocus={() => bringFloatingToFront(p.sheetId)}
-            onClose={() => closeFloatingSheet(p.sheetId)}
-          />
-        );
-      })}
     </div>
   );
 }
@@ -1753,7 +1790,11 @@ function FloatingSheetPanel({ sheet, color, pos, zIndex, customAbilities, onSave
       const dx = clientX - startRef.current.px;
       const dy = clientY - startRef.current.py;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) movedRef.current = true;
-      onDrag(startRef.current.x + dx, startRef.current.y + dy);
+      let nx = startRef.current.x + dx;
+      let ny = startRef.current.y + dy;
+      nx = Math.min(window.innerWidth - 60, Math.max(-260, nx));
+      ny = Math.min(window.innerHeight - 40, Math.max(0, ny));
+      onDrag(nx, ny);
     };
     const up = () => {
       if (draggingRef.current && !movedRef.current) onClose();
@@ -4443,7 +4484,7 @@ export default function App(){
   };
 
   const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
-  const lockPageScroll = tab === 'mapabatalha' && !masterMode;
+  const lockPageScroll = tab === 'mapabatalha';
 
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
@@ -4471,8 +4512,8 @@ export default function App(){
           </button>
         ))}
       </nav>
-      <main className={lockPageScroll ? 'main-locked' : ''} style={{flex:1,overflowY:'auto',position:'relative',zIndex:10,scrollBehavior:'smooth'}}>
-        <div key={tab} style={{animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
+      <main className={lockPageScroll ? 'main-locked' : ''} style={{flex:1,overflowY: lockPageScroll ? 'hidden' : 'auto',position:'relative',zIndex:10,scrollBehavior:'smooth', display: lockPageScroll ? 'flex' : 'block', flexDirection:'column'}}>
+        <div key={tab} style={lockPageScroll ? {animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)', flex:1, minHeight:0, display:'flex', flexDirection:'column'} : {animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
           {tab==='prologo'&&<PrologueSection/>}
           {tab==='classes'&&<ClassesSection/>}
           {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
