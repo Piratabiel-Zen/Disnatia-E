@@ -106,8 +106,22 @@ input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
 input[type=number]::-webkit-inner-spin-button{opacity:1;}
 select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
+.prologue-grid{display:grid;grid-template-columns:360px 1fr;gap:28px;align-items:start;}
+.prologue-cover{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(168,85,247,0.25);background:radial-gradient(circle at 30% 20%,rgba(168,85,247,0.18),transparent 60%),#04060F;min-height:420px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 40px rgba(168,85,247,0.12);flex-shrink:0;}
+.prologue-cover img{width:100%;height:100%;object-fit:cover;display:block;}
+.prologue-cover-placeholder{display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px;text-align:center;}
+.prologue-title-card{margin-bottom:20px;}
+.classes-grid{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;}
+.classes-list{display:flex;flex-direction:column;gap:7px;}
+.classes-list-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:all 0.2s;text-align:left;}
+.class-detail-grid{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
+.class-illustration{position:relative;border-radius:16px;overflow:hidden;min-height:380px;display:flex;align-items:center;justify-content:center;background:#04060F;cursor:pointer;flex-shrink:0;}
+.class-illustration img{width:100%;height:100%;object-fit:cover;display:block;}
 
 @media(max-width:600px){
+  .classes-grid{grid-template-columns:1fr!important;}
+  .class-detail-grid{grid-template-columns:1fr!important;}
+  .class-illustration{min-height:220px!important;}
   .main-locked{overflow-y:auto!important;}
   .attrs-personality-row{grid-template-columns:1fr!important;}
   .header-sub{display:none!important;}
@@ -128,6 +142,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .equip-grid{grid-template-columns:1fr!important; gap: 16px!important;}
   .equip-slot-inputs { flex-direction: column !important; gap: 6px !important; }
   .equip-slot-inputs input { width: 100% !important; flex: none !important; }
+  .prologue-grid{grid-template-columns:1fr!important;}
+  .prologue-cover{min-height:220px!important;}
   .floating-sheet{left:8px!important; top:8px!important; width:calc(100vw - 16px)!important; max-height:calc(100vh - 16px)!important;}
   .battlemap-bottombar{left:8px!important; max-width:calc(100vw - 16px)!important;}
   .battlemap-zoom-controls{right:8px!important;}
@@ -1944,11 +1960,193 @@ function DiceWidget() {
   );
 }
 
-function PrologueSection(){return(<div style={{maxWidth:720,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:44}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:14,textTransform:'uppercase'}}>O Começo de Tudo</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:27,color:'#E8D8C0',fontWeight:700,margin:0,textShadow:'0 0 40px rgba(168,85,247,0.4)'}}>Prólogo</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'18px auto 0'}}/></div><div style={{lineHeight:1.9,fontSize:16}}>{PROLOGUE.map((p,i)=>{if(p.type==='title')return <div key={i} style={{textAlign:'center',margin:'30px 0',fontFamily:'Cinzel,serif',fontSize:19,color:'#E8D8C0',fontWeight:700,letterSpacing:'0.05em',textShadow:'0 0 30px rgba(168,85,247,0.5)'}}>{p.text}</div>;if(p.type==='highlight')return <div key={i} style={{margin:'26px 0',padding:'15px 22px',borderLeft:'2px solid #A855F7',background:'rgba(168,85,247,0.08)',borderRadius:'0 8px 8px 0',fontFamily:'Cinzel,serif',color:'#C8A8E8',fontSize:15}}>{p.text}</div>;if(p.type==='warning')return <div key={i} style={{margin:'26px 0',padding:'15px 22px',borderLeft:'2px solid #E8193C',background:'rgba(232,25,60,0.08)',borderRadius:'0 8px 8px 0',fontFamily:'Cinzel,serif',color:'#F09090',fontSize:15}}>{p.text}</div>;if(p.type==='finale')return <div key={i} style={{margin:'36px 0 0',padding:'22px',border:'1px solid rgba(168,85,247,0.25)',borderRadius:12,background:'rgba(168,85,247,0.05)',fontFamily:'Cinzel,serif',color:'#C0A8D8',fontSize:15,lineHeight:1.9,textAlign:'center'}}>{p.text}</div>;if(p.type==='divider')return <div key={i} style={{textAlign:'center',margin:'28px 0',color:'rgba(255,255,255,0.14)',letterSpacing:'0.4em',fontSize:12}}>{p.text}</div>;if(p.type==='intro'||p.type==='pause')return <p key={i} style={{margin:'0 0 18px',color:'#B0A090',fontStyle:p.type==='pause'?'italic':'normal',fontSize:p.type==='intro'?17:15}}>{p.text}</p>;return <p key={i} style={{margin:'0 0 18px',color:'#9A8A7A'}}>{p.text}</p>;})}</div></div>);}
+function PrologueSection({ masterMode }) {
+  const [capa, setCapa] = useState('');
+  const fileRef = useRef(null);
 
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'prologue_cover'), snap => {
+      if (snap.exists()) setCapa(snap.data().img || '');
+    });
+    return () => unsub();
+  }, []);
+
+  const handleUpload = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const compressed = await compressImage(ev.target.result, 1000, 1400, 0.78);
+      setCapa(compressed);
+      try { await setDoc(doc(db, 'config', 'prologue_cover'), { img: compressed }); } catch (e) {}
+    };
+    reader.readAsDataURL(file); e.target.value = '';
+  };
+
+  return (
+    <div style={{maxWidth:1040,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:36}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:14,textTransform:'uppercase'}}>O Começo de Tudo</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:27,color:'#E8D8C0',fontWeight:700,margin:0,textShadow:'0 0 40px rgba(168,85,247,0.4)'}}>Prólogo</h2>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'18px auto 0'}}/>
+      </div>
+
+      <div className="prologue-grid">
+        {/* CAPA / ILUSTRAÇÃO */}
+        <div className="prologue-cover" onClick={() => masterMode && fileRef.current?.click()}>
+          {capa ? (
+            <img src={capa} alt="capa do prólogo" />
+          ) : (
+            <div className="prologue-cover-placeholder">
+              <div style={{fontSize:44,opacity:0.25}}>📖</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
+                {masterMode ? 'Toque para enviar a ilustração do prólogo' : 'Nenhuma ilustração enviada ainda'}
+              </div>
+            </div>
+          )}
+          {masterMode && capa && (
+            <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:'1px solid rgba(168,85,247,0.3)',color:'#C8A8E8',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🖼 Trocar imagem</div>
+          )}
+          {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
+        </div>
+
+        {/* NARRATIVA */}
+        <div>
+          <div className="prologue-title-card">
+            <h3 style={{fontFamily:'Cinzel Decorative,serif',fontSize:19,color:'#E8D8C0',fontWeight:700,margin:0,letterSpacing:'0.03em'}}>O Despertar do Cosmum</h3>
+          </div>
+          <div style={{lineHeight:1.9,fontSize:16}}>
+            {PROLOGUE.map((p, i) => {
+              if (p.type === 'title') return <div key={i} style={{textAlign:'center',margin:'30px 0',fontFamily:'Cinzel,serif',fontSize:19,color:'#E8D8C0',fontWeight:700,letterSpacing:'0.05em',textShadow:'0 0 30px rgba(168,85,247,0.5)'}}>{p.text}</div>;
+              if (p.type === 'highlight') return <div key={i} style={{margin:'26px 0',padding:'15px 22px',borderLeft:'2px solid #A855F7',background:'rgba(168,85,247,0.08)',borderRadius:'0 8px 8px 0',fontFamily:'Cinzel,serif',color:'#C8A8E8',fontSize:15}}>{p.text}</div>;
+              if (p.type === 'warning') return <div key={i} style={{margin:'26px 0',padding:'15px 22px',borderLeft:'2px solid #E8193C',background:'rgba(232,25,60,0.08)',borderRadius:'0 8px 8px 0',fontFamily:'Cinzel,serif',color:'#F09090',fontSize:15}}>{p.text}</div>;
+              if (p.type === 'finale') return <div key={i} style={{margin:'36px 0 0',padding:'22px',border:'1px solid rgba(168,85,247,0.25)',borderRadius:12,background:'rgba(168,85,247,0.05)',fontFamily:'Cinzel,serif',color:'#C0A8D8',fontSize:15,lineHeight:1.9,textAlign:'center'}}>{p.text}</div>;
+              if (p.type === 'divider') return <div key={i} style={{textAlign:'center',margin:'28px 0',color:'rgba(255,255,255,0.14)',letterSpacing:'0.4em',fontSize:12}}>{p.text}</div>;
+              if (p.type === 'intro' || p.type === 'pause') return <p key={i} style={{margin:'0 0 18px',color:'#B0A090',fontStyle:p.type==='pause'?'italic':'normal',fontSize:p.type==='intro'?17:15}}>{p.text}</p>;
+              return <p key={i} style={{margin:'0 0 18px',color:'#9A8A7A'}}>{p.text}</p>;
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 function ClassCard({cls}){const[open,setOpen]=useState(false);return(<div onClick={()=>setOpen(o=>!o)} style={{border:`1px solid ${open?cls.color+'55':'rgba(255,255,255,0.08)'}`,borderRadius:12,background:open?'rgba(10,12,28,0.95)':'rgba(8,10,22,0.8)',marginBottom:13,cursor:'pointer',transition:'all 0.3s',boxShadow:open?`0 0 28px ${cls.glow}`:'none',overflow:'hidden'}}><div style={{padding:'15px 20px',display:'flex',alignItems:'center',gap:13}}><span style={{fontSize:24}}>{cls.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:14,fontWeight:700,color:cls.color,letterSpacing:'0.03em'}}>{cls.name}</div><div style={{fontSize:11,color:'#7B6D8A',marginTop:3,fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>{cls.role}</div></div><div style={{color:'rgba(255,255,255,0.22)',fontSize:12,transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</div></div>{open&&(<div onClick={e=>e.stopPropagation()} style={{padding:'0 20px 20px'}}><div style={{width:'100%',height:1,background:`linear-gradient(90deg,${cls.color}44,transparent)`,marginBottom:16}}/><p style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',margin:'0 0 20px'}}>{cls.lore}</p><div style={{marginBottom:16}}><div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Passiva</div><div style={{background:`${cls.color}0D`,border:`1px solid ${cls.color}28`,borderRadius:8,padding:'10px 13px'}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:cls.color,fontWeight:600,marginBottom:4}}>{cls.passive.name}</div><div style={{fontSize:13,color:'#8A7A6A',lineHeight:1.7}}>{cls.passive.desc}</div></div></div><div style={{marginBottom:16}}><div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Ataques Normais — 2 VC cada</div><div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.normal.map((a,i)=>(<div key={i} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start'}}><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600,marginBottom:3}}>{a.name}</div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc}</div></div><div style={{flexShrink:0,textAlign:'right'}}><div style={{fontSize:11,color:`${cls.color}BB`,fontFamily:'Cinzel,serif'}}>2 VC</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:2}}>⏱ {a.cooldown}</div></div></div>))}</div></div><div><div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Especiais — 3 VC cada</div><div style={{display:'flex',flexDirection:'column',gap:6}}>{cls.specials.map((a,i)=>(<div key={i} style={{background:`${cls.color}09`,border:`1px solid ${cls.color}22`,borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start'}}><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}><span style={{fontSize:11,color:cls.color}}>✦</span><span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{a.name}</span></div><div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{a.desc}</div></div><div style={{flexShrink:0,textAlign:'right'}}><div style={{fontSize:11,color:`${cls.color}BB`,fontFamily:'Cinzel,serif'}}>3 VC</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)',marginTop:2}}>⏱ {a.cooldown}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.16)',marginTop:2}}>Nív {a.req}+</div></div></div>))}</div></div></div>)}</div>);}
-function ClassesSection(){return(<div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Cinco Linhagens</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Classes</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Clique em cada classe para revelar lore e habilidades</div><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>{CLASSES.map(cls=><ClassCard key={cls.id} cls={cls}/>)}</div>);}
+function ClassesSection({ masterMode }) {
+  const [activeId, setActiveId] = useState(CLASSES[0].id);
+  const [covers, setCovers] = useState({});
+  const fileRef = useRef(null);
 
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'class_covers'), snap => {
+      if (snap.exists()) setCovers(snap.data() || {});
+    });
+    return () => unsub();
+  }, []);
+
+  const cls = CLASSES.find(c => c.id === activeId) || CLASSES[0];
+  const cover = covers[cls.id] || '';
+
+  const handleUpload = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
+      const updated = { ...covers, [cls.id]: compressed };
+      setCovers(updated);
+      try { await setDoc(doc(db, 'config', 'class_covers'), updated); } catch (e) {}
+    };
+    reader.readAsDataURL(file); e.target.value = '';
+  };
+
+  const habilidades = [
+    cls.passive?.name,
+    ...(cls.normal || []).map(a => a.name),
+    ...(cls.specials || []).map(a => a.name),
+  ].filter(Boolean);
+
+  return (
+    <div style={{maxWidth:1040,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:32}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Cinco Linhagens</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Classes</h2>
+        <div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Selecione uma classe para ver detalhes e habilidades</div>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/>
+      </div>
+
+      <div className="classes-grid">
+        {/* LISTA DE CLASSES */}
+        <div className="classes-list">
+          {CLASSES.map(c => {
+            const active = c.id === activeId;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setActiveId(c.id)}
+                className="classes-list-item"
+                style={{
+                  border: `1px solid ${active ? c.color + '55' : 'rgba(255,255,255,0.07)'}`,
+                  background: active ? `${c.color}14` : 'rgba(255,255,255,0.02)',
+                  boxShadow: active ? `0 0 16px ${c.glow}` : 'none',
+                }}
+              >
+                <span style={{fontSize:18,flexShrink:0}}>{c.icon}</span>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:12.5,fontWeight:700,color:active?c.color:'#8A7A8A',lineHeight:1.3}}>{c.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* DETALHE DA CLASSE */}
+        <div className="class-detail-grid">
+          {/* ILUSTRAÇÃO */}
+          <div className="class-illustration" onClick={() => masterMode && fileRef.current?.click()} style={{border:`1px solid ${cls.color}33`,boxShadow:`0 10px 40px ${cls.glow}`}}>
+            {cover ? (
+              <img src={cover} alt={cls.name} />
+            ) : (
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:24,textAlign:'center'}}>
+                <span style={{fontSize:40,opacity:0.3}}>{cls.icon}</span>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
+                  {masterMode ? 'Toque para enviar a ilustração' : 'Nenhuma ilustração enviada'}
+                </div>
+              </div>
+            )}
+            {masterMode && cover && (
+              <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:`1px solid ${cls.color}44`,color:cls.color,fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🖼 Trocar</div>
+            )}
+            {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
+          </div>
+
+          {/* INFO */}
+          <div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:19,color:cls.color,fontWeight:700,letterSpacing:'0.02em',marginBottom:6,textShadow:`0 0 24px ${cls.glow}`}}>{cls.name}</div>
+              <div style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>{cls.role}</div>
+            </div>
+
+            <p style={{fontSize:13.5,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',margin:'0 0 22px'}}>{cls.lore}</p>
+
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Habilidades</div>
+              <div style={{display:'flex',flexDirection:'column',gap:7}}>
+                {habilidades.map((nome, i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:9}}>
+                    <span style={{fontSize:10,color:cls.color}}>◆</span>
+                    <span style={{fontSize:13,color:'#C8B8A0',fontFamily:'Cinzel,serif'}}>{nome}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{border:`1px solid ${cls.color}28`,borderRadius:10,background:`${cls.color}09`,padding:'14px 16px'}}>
+              <div style={{fontSize:10,letterSpacing:'0.3em',color:cls.color,fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características</div>
+              <div style={{fontSize:13,color:'#8A7A6A',lineHeight:1.75}}>{cls.passive?.desc}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const SHEET_TABS = [
   { id: 'geral',   label: 'Visão Geral',  icon: '🧙' },
@@ -4514,8 +4712,8 @@ export default function App(){
       </nav>
       <main className={lockPageScroll ? 'main-locked' : ''} style={{flex:1,overflowY: lockPageScroll ? 'hidden' : 'auto',position:'relative',zIndex:10,scrollBehavior:'smooth', display: lockPageScroll ? 'flex' : 'block', flexDirection:'column'}}>
         <div key={tab} style={lockPageScroll ? {animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)', flex:1, minHeight:0, display:'flex', flexDirection:'column'} : {animation:'pageTurn 0.5s cubic-bezier(0.2,0.8,0.2,1)'}}>
-          {tab==='prologo'&&<PrologueSection/>}
-          {tab==='classes'&&<ClassesSection/>}
+          {tab==='prologo'&&<PrologueSection masterMode={masterMode}/>}
+          {tab==='classes'&&<ClassesSection masterMode={masterMode}/>}
           {tab==='fichas'&&<SheetsSection masterMode={masterMode}/>}
           {tab==='personagens'&&<PersonagensSection masterMode={masterMode}/>}
           {tab==='inimigos'&&<EnemiesSection masterMode={masterMode}/>}
