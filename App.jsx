@@ -107,9 +107,10 @@ input[type=number]::-webkit-inner-spin-button{opacity:1;}
 select option{background:#0E1020;}
 button{font-family:'Crimson Text',Georgia,serif;}
 .prologue-grid{display:grid;grid-template-columns:360px 1fr;gap:28px;align-items:start;}
-.prologue-cover{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(168,85,247,0.25);background:radial-gradient(circle at 30% 20%,rgba(168,85,247,0.18),transparent 60%),#04060F;min-height:420px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 40px rgba(168,85,247,0.12);flex-shrink:0;}
-.prologue-cover img{width:100%;height:100%;object-fit:cover;display:block;}
-.prologue-cover-placeholder{display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px;text-align:center;}
+.prologue-cover{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(168,85,247,0.25);background:radial-gradient(circle at 30% 20%,rgba(168,85,247,0.18),transparent 60%),#04060F;height:420px;cursor:pointer;box-shadow:0 10px 40px rgba(168,85,247,0.12);flex-shrink:0;}
+.prologue-image-wrapper{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:inherit;}
+.prologue-image-wrapper img{width:100%;height:100%;display:block;object-fit:cover;object-position:center;}
+.prologue-cover-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px;text-align:center;}
 .prologue-title-card{margin-bottom:20px;}
 .classes-grid{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;}
 .classes-list{display:flex;flex-direction:column;gap:7px;}
@@ -145,7 +146,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .equip-slot-inputs { flex-direction: column !important; gap: 6px !important; }
   .equip-slot-inputs input { width: 100% !important; flex: none !important; }
   .prologue-grid{grid-template-columns:1fr!important;}
-  .prologue-cover{min-height:220px!important;}
+  .prologue-cover{height:220px!important;}
   .floating-sheet{left:8px!important; top:8px!important; width:calc(100vw - 16px)!important; max-height:calc(100vh - 16px)!important;}
   .battlemap-bottombar{left:8px!important; max-width:calc(100vw - 16px)!important;}
   .battlemap-zoom-controls{right:8px!important;}
@@ -2000,21 +2001,23 @@ function PrologueSection({ masterMode }) {
       <div className="prologue-grid">
         {/* CAPA / ILUSTRAÇÃO */}
         <div className="prologue-cover" onClick={() => masterMode && fileRef.current?.click()}>
-          {capa ? (
-            <img src={capa} alt="capa do prólogo" />
-          ) : (
-            <div className="prologue-cover-placeholder">
-              <div style={{fontSize:44,opacity:0.25}}>📖</div>
-              <div style={{fontSize:12,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
-                {masterMode ? 'Toque para enviar a ilustração do prólogo' : 'Nenhuma ilustração enviada ainda'}
-              </div>
-            </div>
-          )}
-          {masterMode && capa && (
-            <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:'1px solid rgba(168,85,247,0.3)',color:'#C8A8E8',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🖼 Trocar imagem</div>
-          )}
-          {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
-        </div>
+  {capa ? (
+    <div className="prologue-image-wrapper">
+      <img src={capa} alt="capa do prólogo" style={{ objectPosition: 'center' }} />
+    </div>
+  ) : (
+    <div className="prologue-cover-placeholder">
+      <div style={{fontSize:44,opacity:0.25}}>📖</div>
+      <div style={{fontSize:12,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
+        {masterMode ? 'Toque para enviar a ilustração do prólogo' : 'Nenhuma ilustração enviada ainda'}
+      </div>
+    </div>
+  )}
+  {masterMode && capa && (
+    <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:'1px solid rgba(168,85,247,0.3)',color:'#C8A8E8',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',zIndex:2}}>🖼 Trocar imagem</div>
+  )}
+  {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
+</div>
 
         {/* NARRATIVA */}
         <div>
