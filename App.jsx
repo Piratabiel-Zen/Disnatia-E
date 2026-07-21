@@ -115,13 +115,15 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .classes-list{display:flex;flex-direction:column;gap:7px;}
 .classes-list-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:all 0.2s;text-align:left;}
 .class-detail-grid{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
-.class-illustration{position:relative;border-radius:16px;overflow:hidden;min-height:380px;display:flex;align-items:center;justify-content:center;background:#04060F;cursor:pointer;flex-shrink:0;}
-.class-illustration img{width:100%;height:100%;object-fit:cover;display:block;}
+.class-illustration{position:relative;border-radius:16px;overflow:hidden;height:380px;background:#04060F;cursor:pointer;flex-shrink:0;}
+.class-image-wrapper{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:inherit;}
+.class-image-wrapper img{width:100%;height:100%;display:block;object-fit:cover;object-position:center;}
+.class-illustration-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;}
 
 @media(max-width:600px){
   .classes-grid{grid-template-columns:1fr!important;}
   .class-detail-grid{grid-template-columns:1fr!important;}
-  .class-illustration{min-height:220px!important;}
+  .class-illustration{height:220px!important;}
   .main-locked{overflow-y:auto!important;}
   .attrs-personality-row{grid-template-columns:1fr!important;}
   .header-sub{display:none!important;}
@@ -2111,21 +2113,23 @@ function ClassesSection({ masterMode }) {
         <div className="class-detail-grid">
           {/* ILUSTRAÇÃO */}
           <div className="class-illustration" onClick={() => masterMode && fileRef.current?.click()} style={{border:`1px solid ${cls.color}33`,boxShadow:`0 10px 40px ${cls.glow}`}}>
-            {cover ? (
-              <img src={cover} alt={cls.name} />
-            ) : (
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:24,textAlign:'center'}}>
-                <span style={{fontSize:40,opacity:0.3}}>{cls.icon}</span>
-                <div style={{fontSize:11,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
-                  {masterMode ? 'Toque para enviar a ilustração' : 'Nenhuma ilustração enviada'}
-                </div>
-              </div>
-            )}
-            {masterMode && cover && (
-              <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:`1px solid ${cls.color}44`,color:cls.color,fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🖼 Trocar</div>
-            )}
-            {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
-          </div>
+  {cover ? (
+    <div className="class-image-wrapper">
+      <img src={cover} alt={cls.name} style={{ objectPosition: cls.objectPosition || 'center' }} />
+    </div>
+  ) : (
+    <div className="class-illustration-placeholder">
+      <span style={{fontSize:40,opacity:0.3}}>{cls.icon}</span>
+      <div style={{fontSize:11,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
+        {masterMode ? 'Toque para enviar a ilustração' : 'Nenhuma ilustração enviada'}
+      </div>
+    </div>
+  )}
+  {masterMode && cover && (
+    <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:`1px solid ${cls.color}44`,color:cls.color,fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',zIndex:2}}>🖼 Trocar</div>
+  )}
+  {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
+</div>
 
           {/* INFO */}
           <div>
