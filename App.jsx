@@ -924,7 +924,7 @@ function AmbientSoundPlayer({ masterMode }) {
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
 
   return (
-    <div style={{ position: 'fixed', top: 90, left: 16, zIndex: 100 }}>
+    <div style={{ position: 'fixed', top: 14, left: 16, zIndex: 100 }}>
       {isPlaying && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
           <iframe ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
@@ -1268,7 +1268,6 @@ function BattleMapSection({ masterMode }) {
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
-  const [barOpen, setBarOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
   const frameRef = useRef(null);
@@ -1280,7 +1279,7 @@ function BattleMapSection({ masterMode }) {
     const frameW = frame.clientWidth;
     const frameH = frame.clientHeight;
     if (!frameW || !frameH) return;
-    const scale = Math.min(frameW / nat.w, frameH / nat.h);
+    const scale = Math.max(frameW / nat.w, frameH / nat.h);
     setBaseSize({ w: nat.w * scale, h: nat.h * scale });
   };
   const handleMapImgLoad = (e) => {
@@ -1730,9 +1729,9 @@ function BattleMapSection({ masterMode }) {
             </div>
           )}
 
-          {/* CONTROLE DE ZOOM — canto inferior direito, compacto */}
+         {/* CONTROLE DE ZOOM — canto inferior direito, compacto */}
           {currentMap?.img && (
-            <div className="battlemap-zoom-controls" style={{ position: 'absolute', right: 16, bottom: barOpen ? 96 : 20, transition: 'bottom .25s ease', zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,8,18,0.82)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '6px 8px', backdropFilter: 'blur(8px)', boxShadow: '0 6px 20px rgba(0,0,0,0.5)' }}>
+            <div className="battlemap-zoom-controls" style={{ position: 'absolute', right: 16, bottom: 16, zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,8,18,0.82)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '6px 8px', backdropFilter: 'blur(8px)', boxShadow: '0 6px 20px rgba(0,0,0,0.5)' }}>
               <span style={{ fontSize: 12 }}>🔍</span>
               <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={zoomBtnStyle}>−</button>
               <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 36, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
@@ -1765,58 +1764,35 @@ function BattleMapSection({ masterMode }) {
             );
           })}
 
-          {/* BARRA INFERIOR DE FICHAS */}
-          {/* BOTÃO DE FICHAS — apenas ícone; ao clicar, expande a barra */}
-          {!barOpen && (
-            <button onClick={() => setBarOpen(true)} title="Fichas" className="battlemap-bottombar" style={{
-              position: 'absolute', left: 16, bottom: 16, zIndex: 45,
-              width: 44, height: 44, borderRadius: '50%',
-              background: 'rgba(6,8,18,0.85)', border: '1px solid rgba(255,255,255,0.14)',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18, cursor: 'pointer', color: '#C8A8E8',
-            }}>👥</button>
-          )}
-
-          {barOpen && (
-            <div className="battlemap-bottombar" style={{
-              position: 'absolute', left: 16, bottom: 16, zIndex: 45, maxWidth: 'calc(100% - 32px)',
-              background: 'rgba(6,8,18,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-              display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-            }}>
-              <button onClick={() => setBarOpen(false)} title="Recolher" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: '#C8A8E8', fontSize: 15, cursor: 'pointer', padding: '4px 6px', flexShrink: 0 }}>👥</button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', maxWidth: '75vw', paddingBottom: 2 }}>
-                {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic', padding: '0 8px' }}>Nenhuma ficha criada.</div>}
-                {sheets.map(s => {
-                  const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
-                  const sc = SHEET_COLORS[s.classe] || cls.color;
-                  const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
-                  const isOpen = floatingSheets.some(p => p.sheetId === String(s.id));
-                  return (
-                    <button key={s.id} onClick={() => handleSelectSheet(s)} style={{
-                      display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, padding: '4px 10px 4px 4px',
-                      borderRadius: 20, border: `1px solid ${isOpen ? sc + 'AA' : sc + '33'}`,
-                      background: isOpen ? `${sc}22` : 'rgba(255,255,255,0.03)',
-                      cursor: 'pointer', transition: 'all 0.2s',
-                      boxShadow: isOpen ? `0 0 10px ${sc}55` : 'none',
-                    }}>
-                      {s.foto
-                        ? <img src={s.foto} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid ${sc}88`, filter: locked ? 'grayscale(70%)' : 'none' }} />
-                        : <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${sc}20`, border: `1.5px solid ${sc}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{locked ? '🔒' : cls.icon}</div>}
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontFamily: 'Cinzel,serif', fontSize: 11, fontWeight: 700, color: isOpen ? sc : '#C8B8A0', whiteSpace: 'nowrap' }}>{s.nome || 'Sem nome'}</div>
-                        <div style={{ fontSize: 9, color: '#5A5070' }}>NV {s.nivel || 1}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-                {masterMode && sheets.length < 15 && (
-                  <button onClick={quickAddSheet} title="Adicionar Ficha" style={{ flexShrink: 0, width: 30, height: 30, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.02)', color: '#8A7A9A', cursor: 'pointer', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                )}
-              </div>
-            </div>
-          )}
+          {/* BARRA INFERIOR DE FICHAS — apenas bolinhas com a foto, sem nome */}
+          <div className="battlemap-bottombar" style={{
+            position: 'absolute', left: 16, bottom: 16, zIndex: 45, maxWidth: 'calc(100% - 32px)',
+            display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', padding: 2,
+          }}>
+            {sheets.map(s => {
+              const cls = CLASSES.find(c => c.id === s.classe) || CLASSES[0];
+              const sc = SHEET_COLORS[s.classe] || cls.color;
+              const locked = !masterMode && s.senha && !unlockedIds[String(s.id)];
+              const isOpen = floatingSheets.some(p => p.sheetId === String(s.id));
+              return (
+                <button key={s.id} onClick={() => handleSelectSheet(s)} title={s.nome || 'Ficha'} style={{
+                  flexShrink: 0, width: 42, height: 42, borderRadius: '50%', padding: 0,
+                  border: `2px solid ${isOpen ? sc : sc + '55'}`,
+                  background: 'rgba(6,8,18,0.85)', backdropFilter: 'blur(6px)',
+                  boxShadow: isOpen ? `0 0 12px ${sc}88` : '0 4px 14px rgba(0,0,0,0.5)',
+                  cursor: 'pointer', overflow: 'hidden', transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {s.foto
+                    ? <img src={s.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: locked ? 'grayscale(70%)' : 'none' }} />
+                    : <span style={{ fontSize: 17 }}>{locked ? '🔒' : cls.icon}</span>}
+                </button>
+              );
+            })}
+            {masterMode && sheets.length < 15 && (
+              <button onClick={quickAddSheet} title="Adicionar Ficha" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.25)', background: 'rgba(6,8,18,0.7)', color: '#8A7A9A', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)' }}>+</button>
+            )}
+          </div>
 
         </div>
       )}
@@ -4736,12 +4712,12 @@ export default function App(){
     try { await setDoc(doc(db,'config','atmosphere'),{key}); } catch(e){}
   };
 
-  const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
+  const atm = ATMOSPHERES.neutro;
   const lockPageScroll = tab === 'mapabatalha';
 
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
-      <StarField atmosphere={atmosphere}/>
+      <StarField atmosphere="neutro"/>
       <ToastContainer/>
       <PublicDiceOverlay />
       <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
