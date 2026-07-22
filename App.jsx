@@ -3915,7 +3915,8 @@ function EnemiesSection({masterMode}){
     </div>
   );
 }
-const newBestiary = id => ({ id, nome: '', foto: '', descricao: '', nivelAmeaca: 'Médio' });
+const BESTIARIO_AMEACA_CORES = {"Baixo":"#4ADE80","Médio":"#E8A020","Alto":"#E8193C","Supremo":"#A855F7","Catastrófico":"#1EC8FF"};
+const newBestiary = id => ({ id, nome: '', tipo: '', nivel: 1, foto: '', descricao: '', nivelAmeaca: 'Médio' });
 
 function BestiarioCard({ item, onChange, onDelete, masterMode }) {
   const f = (k,v) => onChange({...item, [k]:v});
@@ -3926,8 +3927,7 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
     reader.onload = async ev => { const c = await compressImage(ev.target.result, 800, 800, 0.72); f('foto', c); };
     reader.readAsDataURL(file);
   };
-  const ameacaCores = {"Baixo":"#4ADE80","Médio":"#E8A020","Alto":"#E8193C","Supremo":"#A855F7","Catastrófico":"#1EC8FF"};
-  const corBase = ameacaCores[item.nivelAmeaca] || "#E8A020";
+  const corBase = BESTIARIO_AMEACA_CORES[item.nivelAmeaca] || "#E8A020";
   return (
     <div style={{border:`1px solid ${corBase}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18}}>
       <div style={{height:3,background:`linear-gradient(90deg,${corBase},transparent)`}}/>
@@ -3942,6 +3942,14 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
           <div style={{flex:1,minWidth:130}}>
             <label style={{fontSize:10,letterSpacing:'0.3em',color:corBase,fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome da Criatura</label>
             {masterMode?<input value={item.nome} onChange={e=>f('nome',e.target.value)} placeholder="Ex: Besta das Sombras..." style={{width:'100%'}}/>:<div style={{fontSize:15,color:'#E8D8C0',fontFamily:'Cinzel,serif',fontWeight:600}}>{item.nome||'Desconhecida'}</div>}
+          </div>
+          <div style={{flex:1,minWidth:110}}>
+            <label style={{fontSize:10,letterSpacing:'0.3em',color:corBase,fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Categoria</label>
+            {masterMode?<input value={item.tipo||''} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Aberração, Vampiro..." style={{width:'100%'}}/>:<div style={{fontSize:14,color:'#C8B8A0',fontFamily:'Cinzel,serif'}}>{item.tipo||'—'}</div>}
+          </div>
+          <div style={{width:80}}>
+            <label style={{fontSize:10,letterSpacing:'0.3em',color:corBase,fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nível</label>
+            {masterMode?<input type="number" value={item.nivel||1} onChange={e=>f('nivel',Number(e.target.value))} style={{width:'100%'}}/>:<div style={{fontSize:14,color:'#C8B8A0',fontFamily:'Cinzel,serif'}}>{item.nivel||1}</div>}
           </div>
           <div style={{width:140}}>
             <label style={{fontSize:10,letterSpacing:'0.3em',color:corBase,fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Ameaça</label>
@@ -3958,12 +3966,37 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
   );
 }
 
+function BestiarioGridCard({ item, onClick }) {
+  const ameaca = item.nivelAmeaca || 'Médio';
+  const corBase = BESTIARIO_AMEACA_CORES[ameaca] || '#E8A020';
+  return (
+    <div onClick={onClick} style={{ cursor:'pointer', borderRadius:14, overflow:'hidden', border:`1px solid ${corBase}33`, background:'rgba(12,6,6,0.95)', boxShadow:`0 4px 20px ${corBase}22`, transition:'transform 0.15s, box-shadow 0.15s' }}>
+      <div style={{ position:'relative', width:'100%', aspectRatio:'4/3', background:'#04060F', overflow:'hidden' }}>
+        {item.foto
+          ? <img src={item.foto} alt={item.nome} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+          : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, opacity:0.15 }}>🐉</div>}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 45%, rgba(12,6,6,0.95))' }}/>
+        <div style={{ position:'absolute', bottom:10, left:12, right:12 }}>
+          <div style={{ fontFamily:'Cinzel,serif', fontSize:15, fontWeight:700, color:'#E8D8C0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome || 'Sem nome'}</div>
+          <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.4)', fontFamily:'Cinzel,serif', marginTop:2 }}>Nível {item.nivel || 1}{item.tipo ? ` · ${item.tipo}` : ''}</div>
+        </div>
+      </div>
+      <div style={{ padding:'9px 12px', display:'flex', justifyContent:'flex-end' }}>
+        <span style={{ fontSize:10, fontFamily:'Cinzel,serif', letterSpacing:'0.08em', color:corBase, fontWeight:700, textTransform:'uppercase' }}>Perigo {ameaca}</span>
+      </div>
+    </div>
+  );
+}
+
 function BestiarioSection({ masterMode }) {
   const [bestiario, setBestiario] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipo, setFilterTipo] = useState('');
   const [filterAmeaca, setFilterAmeaca] = useState('Todas');
+  const [sortBy, setSortBy] = useState('nome');
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
@@ -3979,32 +4012,72 @@ function BestiarioSection({ masterMode }) {
     }, 800);
   };
 
-  const add = () => { const item = newBestiary(Date.now()); setDoc(doc(db,'bestiario',String(item.id)),item); };
+  const add = () => { const item = newBestiary(Date.now()); setDoc(doc(db,'bestiario',String(item.id)),item); setExpandedId(String(item.id)); };
   const upd = (id, data) => { setBestiario(prev => prev.map(b => b.id===id?data:b)); saveItem(data); };
-  const del = async id => { await deleteDoc(doc(db,'bestiario',String(id))); };
+  const del = async id => { await deleteDoc(doc(db,'bestiario',String(id))); if(String(id)===expandedId)setExpandedId(null); };
 
   const pesosAmeaca = {"Baixo":1,"Médio":2,"Alto":3,"Supremo":4,"Catastrófico":5};
-  const filtered = bestiario.filter(item => {
-    return (item.nome||'').toLowerCase().includes(searchTerm.toLowerCase()) && (filterAmeaca==='Todas'||item.nivelAmeaca===filterAmeaca);
-  }).sort((a,b) => (pesosAmeaca[a.nivelAmeaca]||0)-(pesosAmeaca[b.nivelAmeaca]||0));
+  const tiposDisponiveis = [...new Set(bestiario.map(b=>b.tipo).filter(Boolean))];
+
+  const filtered = bestiario
+    .filter(item => (item.nome||'').toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(item => filterAmeaca==='Todas' || item.nivelAmeaca===filterAmeaca)
+    .filter(item => !filterTipo || item.tipo===filterTipo)
+    .sort((a,b) => {
+      if (sortBy==='nivel') return (b.nivel||1)-(a.nivel||1);
+      if (sortBy==='ameaca') return (pesosAmeaca[b.nivelAmeaca]||0)-(pesosAmeaca[a.nivelAmeaca]||0);
+      return (a.nome||'').localeCompare(b.nome||'');
+    });
+
+  const expandedItem = bestiario.find(b=>String(b.id)===expandedId);
 
   return (
-    <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
-      <div style={{textAlign:'center',marginBottom:32}}>
+    <div style={{maxWidth:1100,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:26}}>
         <div style={{fontSize:11,letterSpacing:'0.4em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Compêndio das Aberrações</div>
         <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Bestiário</h2>
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'14px auto 0'}}/>
       </div>
-      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Abrindo o tomo...</div>}
-      {loaded&&masterMode&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(232,160,32,0.4)',background:'rgba(232,160,32,0.1)',color:'#E8D8C0',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12}}>+ Catalogar Criatura</button></div>}
+
+      {loaded&&masterMode&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:14}}><button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(232,160,32,0.4)',background:'rgba(232,160,32,0.1)',color:'#E8D8C0',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12}}>+ Catalogar Criatura</button></div>}
+
       {loaded&&bestiario.length>0&&(
-        <div style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap',background:'rgba(255,255,255,0.02)',padding:'14px',borderRadius:'12px',border:'1px solid rgba(232,160,32,0.15)'}}>
-          <div style={{flex:1,minWidth:200}}><input type="text" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Nome da criatura..." style={{width:'100%',background:'rgba(0,0,0,0.4)'}}/></div>
-          <div style={{width:160,flexShrink:0}}><select value={filterAmeaca} onChange={e=>setFilterAmeaca(e.target.value)} style={{width:'100%',background:'rgba(0,0,0,0.4)'}}><option value="Todas">Todas as Ameaças</option><option value="Baixo">Baixo</option><option value="Médio">Médio</option><option value="Alto">Alto</option><option value="Supremo">Supremo</option><option value="Catastrófico">Catastrófico</option></select></div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:24,alignItems:'center'}}>
+          <input value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="🔍 Buscar criatura..." style={{flex:2,minWidth:180}}/>
+          <select value={filterTipo} onChange={e=>setFilterTipo(e.target.value)} style={{flex:1,minWidth:140}}>
+            <option value="">Todas as Categorias</option>
+            {tiposDisponiveis.map(t=><option key={t} value={t}>{t}</option>)}
+          </select>
+          <select value={filterAmeaca} onChange={e=>setFilterAmeaca(e.target.value)} style={{flex:1,minWidth:140}}>
+            <option value="Todas">Todas as Ameaças</option>
+            <option value="Baixo">Baixo</option><option value="Médio">Médio</option><option value="Alto">Alto</option><option value="Supremo">Supremo</option><option value="Catastrófico">Catastrófico</option>
+          </select>
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{flex:1,minWidth:140}}>
+            <option value="nome">Ordenar: Nome</option>
+            <option value="nivel">Ordenar: Nível</option>
+            <option value="ameaca">Ordenar: Ameaça</option>
+          </select>
         </div>
       )}
+
+      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Abrindo o tomo...</div>}
       {loaded&&bestiario.length===0&&<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,160,32,0.2)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>🐉</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#8A7A6A'}}>Nenhuma criatura catalogada.</div></div>}
-      {filtered.map(item=><BestiarioCard key={item.id} item={item} onChange={d=>upd(item.id,d)} onDelete={()=>del(item.id)} masterMode={masterMode}/>)}
+      {loaded&&bestiario.length>0&&filtered.length===0&&<div style={{textAlign:'center',padding:30,color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:12}}>Nenhuma criatura encontrada com esses filtros.</div>}
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:16}}>
+        {filtered.map(item=>
+          <BestiarioGridCard key={item.id} item={item} onClick={()=>setExpandedId(String(item.id))}/>
+        )}
+      </div>
+
+      {expandedItem && (
+        <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.88)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'40px 16px',overflowY:'auto',backdropFilter:'blur(6px)'}} onClick={()=>setExpandedId(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:640,position:'relative'}}>
+            <button onClick={()=>setExpandedId(null)} style={{position:'absolute',top:-14,right:-14,zIndex:10,width:32,height:32,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(20,10,10,0.95)',color:'#E8D8C0',cursor:'pointer',fontSize:15}}>✕</button>
+            <BestiarioCard item={expandedItem} onChange={d=>upd(expandedItem.id,d)} onDelete={()=>del(expandedItem.id)} masterMode={masterMode}/>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
