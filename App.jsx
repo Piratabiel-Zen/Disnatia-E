@@ -924,7 +924,7 @@ function AmbientSoundPlayer({ masterMode }) {
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
 
   return (
-    <div style={{ position: 'fixed', bottom: combatActive ? 96 : 24, left: 16, zIndex: 100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)' }}>
+    <div style={{ position: 'fixed', top: 90, left: 16, zIndex: 100 }}>
       {isPlaying && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
           <iframe ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
@@ -1268,7 +1268,7 @@ function BattleMapSection({ masterMode }) {
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
-  const [barOpen, setBarOpen] = useState(true);
+  const [barOpen, setBarOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
   const frameRef = useRef(null);
@@ -1293,6 +1293,7 @@ function BattleMapSection({ masterMode }) {
   const moved = useRef(false);
   const mapsRef = useRef([]);
   const saveTimeout = useRef({});
+  const lastTokenWriteRef = useRef({});
 
   const [sheets, setSheets] = useState([]);
   const [customAbilities, setCustomAbilities] = useState({});
@@ -1418,6 +1419,23 @@ function BattleMapSection({ masterMode }) {
   useEffect(() => {
     if (!draggingId || !currentMap) return;
     const mapIdAtDragStart = currentMap.id;
+    const TOKEN_THROTTLE_MS = 100;
+
+    const throttledTokenWrite = (mapObj) => {
+      const now = Date.now();
+      const last = lastTokenWriteRef.current[mapIdAtDragStart] || 0;
+      clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
+      if (now - last >= TOKEN_THROTTLE_MS) {
+        lastTokenWriteRef.current[mapIdAtDragStart] = now;
+        setDoc(doc(db, 'battlemaps', String(mapIdAtDragStart)), mapObj).catch(e => console.error(e));
+      } else {
+        saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
+          lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
+          setDoc(doc(db, 'battlemaps', String(mapIdAtDragStart)), mapObj).catch(e => console.error(e));
+        }, TOKEN_THROTTLE_MS - (now - last));
+      }
+    };
+
     const move = (e) => {
       if (!mapRef.current) return;
       moved.current = true;
@@ -1428,11 +1446,20 @@ function BattleMapSection({ masterMode }) {
       let y = ((clientY - rect.top) / rect.height) * 100;
       x = Math.min(100, Math.max(0, x));
       y = Math.min(100, Math.max(0, y));
-      setMaps(prev => prev.map(m => m.id === mapIdAtDragStart ? { ...m, tokens: (m.tokens || []).map(t => t.id === draggingId ? { ...t, x, y } : t) } : m));
+      setMaps(prev => {
+        const updated = prev.map(m => m.id === mapIdAtDragStart ? { ...m, tokens: (m.tokens || []).map(t => t.id === draggingId ? { ...t, x, y } : t) } : m);
+        const changedMap = updated.find(m => m.id === mapIdAtDragStart);
+        if (changedMap) throttledTokenWrite(changedMap);
+        return updated;
+      });
     };
     const up = () => {
+      clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
       const latest = mapsRef.current.find(m => m.id === mapIdAtDragStart);
-      if (latest) persistMap(mapIdAtDragStart, latest);
+      if (latest) {
+        lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
+        setDoc(doc(db, 'battlemaps', String(mapIdAtDragStart)), latest).catch(e => console.error(e));
+      }
       if (!moved.current) setSelectedId(prevSel => prevSel === draggingId ? null : draggingId);
       setDraggingId(null);
     };
@@ -1739,16 +1766,26 @@ function BattleMapSection({ masterMode }) {
           })}
 
           {/* BARRA INFERIOR DE FICHAS */}
-          <div className="battlemap-bottombar" style={{
-            position: 'absolute', left: 16, bottom: 16, zIndex: 45, maxWidth: 'calc(100% - 32px)',
-            background: 'rgba(6,8,18,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-          }}>
-            <button onClick={() => setBarOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#C8A8E8', fontFamily: 'Cinzel,serif', fontSize: 11, letterSpacing: '0.1em', cursor: 'pointer', padding: '4px 6px', flexShrink: 0 }}>
-              <span style={{ fontSize: 11 }}>{barOpen ? '▾' : '▸'}</span> FICHAS
-            </button>
-            {barOpen && (
+          {/* BOTÃO DE FICHAS — apenas ícone; ao clicar, expande a barra */}
+          {!barOpen && (
+            <button onClick={() => setBarOpen(true)} title="Fichas" className="battlemap-bottombar" style={{
+              position: 'absolute', left: 16, bottom: 16, zIndex: 45,
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(6,8,18,0.85)', border: '1px solid rgba(255,255,255,0.14)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, cursor: 'pointer', color: '#C8A8E8',
+            }}>👥</button>
+          )}
+
+          {barOpen && (
+            <div className="battlemap-bottombar" style={{
+              position: 'absolute', left: 16, bottom: 16, zIndex: 45, maxWidth: 'calc(100% - 32px)',
+              background: 'rgba(6,8,18,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+            }}>
+              <button onClick={() => setBarOpen(false)} title="Recolher" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: '#C8A8E8', fontSize: 15, cursor: 'pointer', padding: '4px 6px', flexShrink: 0 }}>👥</button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', maxWidth: '75vw', paddingBottom: 2 }}>
                 {sheets.length === 0 && <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic', padding: '0 8px' }}>Nenhuma ficha criada.</div>}
                 {sheets.map(s => {
@@ -1778,8 +1815,8 @@ function BattleMapSection({ masterMode }) {
                   <button onClick={quickAddSheet} title="Adicionar Ficha" style={{ flexShrink: 0, width: 30, height: 30, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.02)', color: '#8A7A9A', cursor: 'pointer', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
         </div>
       )}
@@ -4747,7 +4784,6 @@ export default function App(){
       <AmbientSoundPlayer masterMode={masterMode} />
       <PlayerCombatBanner />
       <DiceWidget />
-      <AtmosphereWidget masterMode={masterMode} atmosphere={atmosphere} onSet={handleSetAtmosphere}/>
     </div>
   );
 }
