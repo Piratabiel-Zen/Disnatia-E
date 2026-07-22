@@ -1304,6 +1304,8 @@ function BattleMapSection({ masterMode }) {
   const [pwError, setPwError] = useState(false);
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
+  const mapTokensRef = useRef({});
+  useEffect(() => { mapTokensRef.current = mapTokens; }, [mapTokens]);
 
   useEffect(() => {
     setZoom(1);
@@ -1313,10 +1315,17 @@ function BattleMapSection({ masterMode }) {
     return () => { clearTimeout(t); window.removeEventListener('resize', recomputeFit); };
   }, [editingId, activeId, masterMode]);
 
+  const [mapTokens, setMapTokens] = useState({}); // { [mapId]: tokens[] }
+
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMaps(data); setLoaded(true);
+    });
+    const u1b = onSnapshot(collection(db, 'battlemap_tokens'), snap => {
+      const tk = {};
+      snap.docs.forEach(d => { tk[d.id] = (d.data() && d.data().tokens) || []; });
+      setMapTokens(tk);
     });
     const u2 = onSnapshot(doc(db, 'config', 'battlemap_active'), snap => {
       if (snap.exists()) setActiveId(snap.data().activeId || '');
@@ -1327,7 +1336,7 @@ function BattleMapSection({ masterMode }) {
     const u4 = onSnapshot(doc(db, 'config', 'customAbilities'), snap => {
       if (snap.exists()) setCustomAbilities(snap.data() || {});
     });
-    return () => { u1(); u2(); u3(); u4(); };
+    return () => { u1(); u1b(); u2(); u3(); u4(); };
   }, []);
 
   useEffect(() => {
@@ -1337,32 +1346,53 @@ function BattleMapSection({ masterMode }) {
   }, [masterMode, activeId, maps, editingId]);
 
   const currentMapId = masterMode ? (editingId || activeId) : activeId;
-  const currentMap = maps.find(m => String(m.id) === String(currentMapId));
+  const currentMapRaw = maps.find(m => String(m.id) === String(currentMapId));
+  const currentMap = currentMapRaw ? { ...currentMapRaw, tokens: mapTokens[String(currentMapRaw.id)] || [] } : null;
 
   const persistMap = (mapId, data) => {
+    const { tokens, ...meta } = data;
     clearTimeout(saveTimeout.current[mapId]);
     saveTimeout.current[mapId] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'battlemaps', String(mapId)), data); } catch (e) { console.error(e); }
+      try { await setDoc(doc(db, 'battlemaps', String(mapId)), meta); } catch (e) { console.error(e); }
     }, 450);
+  };
+
+  // Tokens ficam em documento à parte (leve) — grava quase instantaneamente, sem carregar a imagem junto
+  const persistTokens = (mapId, tokens) => {
+    clearTimeout(saveTimeout.current['tk_' + mapId]);
+    saveTimeout.current['tk_' + mapId] = setTimeout(async () => {
+      try { await setDoc(doc(db, 'battlemap_tokens', String(mapId)), { tokens }); } catch (e) { console.error(e); }
+    }, 60);
   };
 
   const updCurrentMap = (patch) => {
     if (!currentMap) return;
     const updated = { ...currentMap, ...patch };
-    setMaps(prev => prev.map(m => m.id === currentMap.id ? updated : m));
-    persistMap(currentMap.id, updated);
+    if ('tokens' in patch) {
+      setMapTokens(prev => ({ ...prev, [String(currentMap.id)]: updated.tokens }));
+      persistTokens(currentMap.id, updated.tokens);
+    }
+    const { tokens, ...metaPatch } = patch;
+    if (Object.keys(metaPatch).length > 0) {
+      setMaps(prev => prev.map(m => m.id === currentMap.id ? { ...m, ...metaPatch } : m));
+      persistMap(currentMap.id, { ...currentMap, ...metaPatch });
+    }
   };
 
   const addMap = () => {
     const m = newBattleMap(Date.now());
-    setDoc(doc(db, 'battlemaps', String(m.id)), m);
+    const { tokens, ...meta } = m;
+    setDoc(doc(db, 'battlemaps', String(m.id)), meta);
+    setDoc(doc(db, 'battlemap_tokens', String(m.id)), { tokens: tokens || [] });
     setEditingId(String(m.id));
   };
   const deleteMap = async (id) => {
     await deleteDoc(doc(db, 'battlemaps', String(id)));
+    await deleteDoc(doc(db, 'battlemap_tokens', String(id))).catch(() => {});
     if (activeId === String(id)) await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '' });
     if (editingId === String(id)) setEditingId('');
   };
+  
   const activateMap = async (id) => {
     await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: String(id) });
     pushToast('Mapa liberado para os jogadores!', '🗡️', '#E8193C');
@@ -1415,22 +1445,22 @@ function BattleMapSection({ masterMode }) {
     setDraggingId(token.id);
   };
 
-  useEffect(() => {
+ useEffect(() => {
     if (!draggingId || !currentMap) return;
     const mapIdAtDragStart = currentMap.id;
     const TOKEN_THROTTLE_MS = 100;
 
-    const throttledTokenWrite = (mapObj) => {
+    const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
       const last = lastTokenWriteRef.current[mapIdAtDragStart] || 0;
       clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
       if (now - last >= TOKEN_THROTTLE_MS) {
         lastTokenWriteRef.current[mapIdAtDragStart] = now;
-        setDoc(doc(db, 'battlemaps', String(mapIdAtDragStart)), mapObj).catch(e => console.error(e));
+        setDoc(doc(db, 'battlemap_tokens', String(mapIdAtDragStart)), { tokens: tokensArr }).catch(e => console.error(e));
       } else {
         saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
           lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-          setDoc(doc(db, 'battlemaps', String(mapIdAtDragStart)), mapObj).catch(e => console.error(e));
+          setDoc(doc(db, 'battlemap_tokens', String(mapIdAtDragStart)), { tokens: tokensArr }).catch(e => console.error(e));
         }, TOKEN_THROTTLE_MS - (now - last));
       }
     };
@@ -1445,19 +1475,19 @@ function BattleMapSection({ masterMode }) {
       let y = ((clientY - rect.top) / rect.height) * 100;
       x = Math.min(100, Math.max(0, x));
       y = Math.min(100, Math.max(0, y));
-      setMaps(prev => {
-        const updated = prev.map(m => m.id === mapIdAtDragStart ? { ...m, tokens: (m.tokens || []).map(t => t.id === draggingId ? { ...t, x, y } : t) } : m);
-        const changedMap = updated.find(m => m.id === mapIdAtDragStart);
-        if (changedMap) throttledTokenWrite(changedMap);
-        return updated;
+      setMapTokens(prev => {
+        const currentTokens = prev[String(mapIdAtDragStart)] || [];
+        const updatedTokens = currentTokens.map(t => t.id === draggingId ? { ...t, x, y } : t);
+        throttledTokenWrite(updatedTokens);
+        return { ...prev, [String(mapIdAtDragStart)]: updatedTokens };
       });
     };
     const up = () => {
       clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
-      const latest = mapsRef.current.find(m => m.id === mapIdAtDragStart);
-      if (latest) {
+      const latestTokens = mapTokensRef.current[String(mapIdAtDragStart)];
+      if (latestTokens) {
         lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-        setDoc(doc(db, 'battlemaps', String(mapIdAtDragStart)), latest).catch(e => console.error(e));
+        setDoc(doc(db, 'battlemap_tokens', String(mapIdAtDragStart)), { tokens: latestTokens }).catch(e => console.error(e));
       }
       if (!moved.current) setSelectedId(prevSel => prevSel === draggingId ? null : draggingId);
       setDraggingId(null);
@@ -1731,7 +1761,7 @@ function BattleMapSection({ masterMode }) {
 
          {/* CONTROLE DE ZOOM — canto inferior direito, compacto */}
           {currentMap?.img && (
-            <div className="battlemap-zoom-controls" style={{ position: 'absolute', right: 16, bottom: 16, zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,8,18,0.82)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '6px 8px', backdropFilter: 'blur(8px)', boxShadow: '0 6px 20px rgba(0,0,0,0.5)' }}>
+            <div className="battlemap-zoom-controls" style={{ position: 'absolute', right: 92, bottom: 16, zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,8,18,0.82)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '6px 8px', backdropFilter: 'blur(8px)', boxShadow: '0 6px 20px rgba(0,0,0,0.5)' }}>
               <span style={{ fontSize: 12 }}>🔍</span>
               <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={zoomBtnStyle}>−</button>
               <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 36, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
@@ -3386,7 +3416,9 @@ function SheetsSection({masterMode}){
 const ENEMY_COLOR='#FF4444';
 const ENEMY_GLOW='rgba(255,68,68,0.18)';
 const newEnemySkill=()=>({id:Date.now()+Math.random(),nome:'',descricao:'',dano:'',custo:0,cooldown:'—',tipoHab:'normal'});
-const newEnemy=id=>({id,nome:'',tipo:'',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,foto:'',habilidades:[newEnemySkill()],notas:'',status:{}});
+const ENEMY_PERIGO_LEVELS=['Baixo','Médio','Alto','Extremo'];
+const ENEMY_PERIGO_COLORS={'Baixo':'#4ADE80','Médio':'#E8A020','Alto':'#FF6B35','Extremo':'#E8193C'};
+const newEnemy=id=>({id,nome:'',tipo:'',nivel:1,perigo:'Médio',hp:10,hp_bonus:0,vigos:10,alcance:'',forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,foto:'',habilidades:[newEnemySkill()],notas:'',status:{}});
 
 function EnemyHabilidadesPanel({ enemy, onChange }) {
   const habilidades = enemy.habilidades || [];
@@ -3512,6 +3544,8 @@ function EnemyCard({enemy,onChange,onDelete,masterMode,revealedArtefatos,artefat
         <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:16,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:130}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome do Inimigo</label><input value={enemy.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do inimigo..." style={{width:'100%'}}/></div>
           <div style={{flex:1,minWidth:110}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Tipo / Origem</label><input value={enemy.tipo} onChange={e=>f('tipo',e.target.value)} placeholder="Ex: Humano, Entidade..." style={{width:'100%'}}/></div>
+          <div style={{width:80}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nível</label><input type="number" value={enemy.nivel||1} onChange={e=>f('nivel',Number(e.target.value))} style={{width:'100%'}}/></div>
+          <div style={{width:140}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#7A4040',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Perigo</label><select value={enemy.perigo||'Médio'} onChange={e=>f('perigo',e.target.value)} style={{width:'100%',color:ENEMY_PERIGO_COLORS[enemy.perigo||'Médio'],fontWeight:'bold'}}>{ENEMY_PERIGO_LEVELS.map(p=><option key={p} value={p}>{p}</option>)}</select></div>
           {masterMode&&<button onClick={onDelete} style={{background:'rgba(232,25,60,0.1)',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕</button>}
         </div>
         <div className="enemy-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:9,marginBottom:16}}>
@@ -3741,12 +3775,39 @@ function PersonagensSection({ masterMode }) {
     </div>
   );
 }
+function EnemyGridCard({ enemy, onClick }) {
+  const perigo = enemy.perigo || 'Médio';
+  const corPerigo = ENEMY_PERIGO_COLORS[perigo] || '#E8A020';
+  return (
+    <div onClick={onClick} style={{ cursor:'pointer', borderRadius:14, overflow:'hidden', border:`1px solid ${ENEMY_COLOR}33`, background:'rgba(12,6,6,0.95)', boxShadow:`0 4px 20px ${ENEMY_GLOW}`, transition:'transform 0.15s, box-shadow 0.15s' }}>
+      <div style={{ position:'relative', width:'100%', aspectRatio:'4/3', background:'#04060F', overflow:'hidden' }}>
+        {enemy.foto
+          ? <img src={enemy.foto} alt={enemy.nome} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+          : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, opacity:0.15 }}>💀</div>}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 45%, rgba(12,6,6,0.95))' }}/>
+        <div style={{ position:'absolute', bottom:10, left:12, right:12 }}>
+          <div style={{ fontFamily:'Cinzel,serif', fontSize:15, fontWeight:700, color:'#E8D8C0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{enemy.nome || 'Sem nome'}</div>
+          <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.4)', fontFamily:'Cinzel,serif', marginTop:2 }}>Nível {enemy.nivel || 1}{enemy.tipo ? ` · ${enemy.tipo}` : ''}</div>
+        </div>
+      </div>
+      <div style={{ padding:'9px 12px', display:'flex', justifyContent:'flex-end' }}>
+        <span style={{ fontSize:10, fontFamily:'Cinzel,serif', letterSpacing:'0.08em', color:corPerigo, fontWeight:700, textTransform:'uppercase' }}>Perigo {perigo}</span>
+      </div>
+    </div>
+  );
+}
+
 function EnemiesSection({masterMode}){
   if(!masterMode) return <RestrictedAccess title="Acesso Restrito ao Mestre" text="As fichas dos inimigos estão ocultas nas sombras. Apenas o mestre possui este conhecimento." />;
   const[enemies,setEnemies]=useState([]);
   const[loaded,setLoaded]=useState(false);
   const[artefatosUnlockedState,setArtefatosUnlockedState]=useState({});
   const[artefatosHabsState,setArtefatosHabsState]=useState({});
+  const[search,setSearch]=useState('');
+  const[filterTipo,setFilterTipo]=useState('');
+  const[filterNivel,setFilterNivel]=useState('');
+  const[sortBy,setSortBy]=useState('nome');
+  const[expandedId,setExpandedId]=useState(null);
   const saveTimeout=useRef({});
 
   useEffect(()=>{
@@ -3766,17 +3827,53 @@ function EnemiesSection({masterMode}){
   const revealedArtefatos = ARTEFATOS_DATA.filter(a => artefatosUnlockedState[a.id]);
 
   const saveEnemy=enemy=>{clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(async()=>{try{await setDoc(doc(db,'enemies',String(enemy.id)),enemy);}catch(e){console.error(e);}},900);};
-  const add=()=>{if(enemies.length>=6)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);};
+  const add=()=>{if(enemies.length>=6)return;const e=newEnemy(Date.now());setDoc(doc(db,'enemies',String(e.id)),e);setExpandedId(String(e.id));};
   const upd=(id,data)=>{setEnemies(prev=>prev.map(e=>e.id===id?data:e));saveEnemy(data);};
-  const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));};
+  const del=async id=>{await deleteDoc(doc(db,'enemies',String(id)));if(String(id)===expandedId)setExpandedId(null);};
+
+  const tiposDisponiveis = [...new Set(enemies.map(e=>e.tipo).filter(Boolean))];
+  const niveisDisponiveis = [...new Set(enemies.map(e=>e.nivel||1))].sort((a,b)=>a-b);
+
+  const filteredEnemies = enemies
+    .filter(e => !search.trim() || (e.nome||'').toLowerCase().includes(search.trim().toLowerCase()))
+    .filter(e => !filterTipo || e.tipo === filterTipo)
+    .filter(e => !filterNivel || String(e.nivel||1) === filterNivel)
+    .sort((a,b) => {
+      if (sortBy==='nivel') return (b.nivel||1)-(a.nivel||1);
+      if (sortBy==='perigo') {
+        const ordem=['Baixo','Médio','Alto','Extremo'];
+        return ordem.indexOf(b.perigo||'Médio') - ordem.indexOf(a.perigo||'Médio');
+      }
+      return (a.nome||'').localeCompare(b.nome||'');
+    });
+
+  const expandedEnemy = enemies.find(e=>String(e.id)===expandedId);
 
   return(
-    <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
-      <div style={{textAlign:'center',marginBottom:32}}>
+    <div style={{maxWidth:1100,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:26}}>
         <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7A4040',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Forças das Trevas</div>
         <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Fichas dos Inimigos</h2>
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,68,68,0.6),transparent)',margin:'14px auto 0'}}/>
       </div>
+
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:24,alignItems:'center'}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Buscar inimigo..." style={{flex:2,minWidth:180}}/>
+        <select value={filterTipo} onChange={e=>setFilterTipo(e.target.value)} style={{flex:1,minWidth:140}}>
+          <option value="">Todos os Tipos</option>
+          {tiposDisponiveis.map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={filterNivel} onChange={e=>setFilterNivel(e.target.value)} style={{flex:1,minWidth:140}}>
+          <option value="">Todos os Níveis</option>
+          {niveisDisponiveis.map(n=><option key={n} value={String(n)}>Nível {n}</option>)}
+        </select>
+        <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{flex:1,minWidth:140}}>
+          <option value="nome">Ordenar: Nome</option>
+          <option value="nivel">Ordenar: Nível</option>
+          <option value="perigo">Ordenar: Perigo</option>
+        </select>
+      </div>
+
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
       {loaded&&enemies.length===0&&(
         <div style={{textAlign:'center',padding:38,border:'1px dashed rgba(232,68,68,0.15)',borderRadius:12}}>
@@ -3784,21 +3881,36 @@ function EnemiesSection({masterMode}){
           <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A4A4A'}}>Nenhum inimigo registrado.</div>
         </div>
       )}
-      {enemies.map(e=>
-        <EnemyCard
-          key={e.id}
-          enemy={e}
-          onChange={d=>upd(e.id,d)}
-          onDelete={()=>del(e.id)}
-          masterMode={masterMode}
-          revealedArtefatos={revealedArtefatos}
-          artefatosHabs={artefatosHabsState}
-        />
+      {loaded&&enemies.length>0&&filteredEnemies.length===0&&(
+        <div style={{textAlign:'center',padding:30,color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:12}}>Nenhum inimigo encontrado com esses filtros.</div>
       )}
-      {loaded&&enemies.length<6&&masterMode&&(
-        <button onClick={add} style={{width:'100%',padding:13,borderRadius:10,border:'1px dashed rgba(232,68,68,0.15)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>
-          + Adicionar Inimigo ({enemies.length}/6)
-        </button>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:16}}>
+        {filteredEnemies.map(e=>
+          <EnemyGridCard key={e.id} enemy={e} onClick={()=>setExpandedId(String(e.id))}/>
+        )}
+        {loaded&&enemies.length<6&&masterMode&&(
+          <button onClick={add} style={{minHeight:180,borderRadius:14,border:'1px dashed rgba(232,68,68,0.25)',background:'rgba(255,255,255,0.01)',color:'#7A4040',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:13,letterSpacing:'0.06em',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8}}>
+            <span style={{fontSize:26}}>+</span>
+            Adicionar Inimigo ({enemies.length}/6)
+          </button>
+        )}
+      </div>
+
+      {expandedEnemy && (
+        <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.88)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'40px 16px',overflowY:'auto',backdropFilter:'blur(6px)'}} onClick={()=>setExpandedId(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:640,position:'relative'}}>
+            <button onClick={()=>setExpandedId(null)} style={{position:'absolute',top:-14,right:-14,zIndex:10,width:32,height:32,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(20,10,10,0.95)',color:'#E8D8C0',cursor:'pointer',fontSize:15}}>✕</button>
+            <EnemyCard
+              enemy={expandedEnemy}
+              onChange={d=>upd(expandedEnemy.id,d)}
+              onDelete={()=>del(expandedEnemy.id)}
+              masterMode={masterMode}
+              revealedArtefatos={revealedArtefatos}
+              artefatosHabs={artefatosHabsState}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
