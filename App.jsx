@@ -799,7 +799,7 @@ const RULES_DATA=[
   {
     cat:'Status',
     icon:'❤️',
-    title:'Cores e Estado de Vida (HP)',,
+    title:'Cores e Estado de Vida (HP)',
     body:`A interface do combate indica visualmente a saúde atual do combatente através das cores da barra de vida:\n\n🟢 Verde (Saudável): Acima de 60% de HP.\n🟡 Amarelo (Ferido): Entre 30% e 60% de HP.\n🔴 Vermelho (Crítico): Abaixo de 30% de HP.\n⚫ Cinza e foto escura (Abatido): 0 HP (Morto).`
   },
   {
@@ -1326,7 +1326,6 @@ function BattleMapSection({ masterMode }) {
     window.addEventListener('resize', recomputeFit);
     return () => { clearTimeout(t); window.removeEventListener('resize', recomputeFit); };
   }, [editingId, activeId, masterMode]);
-  const [mapTokens, setMapTokens] = useState({}); // { [mapId]: tokens[] }
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
