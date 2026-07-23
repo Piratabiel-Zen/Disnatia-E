@@ -1290,7 +1290,7 @@ function BattleMapSection({ masterMode }) {
     const frameW = frame.clientWidth;
     const frameH = frame.clientHeight;
     if (!frameW || !frameH) return;
-    const scale = Math.min(frameW / nat.w, frameH / nat.h);
+    const scale = Math.max(frameW / nat.w, frameH / nat.h);
     setBaseSize({ w: nat.w * scale, h: nat.h * scale });
   };
   const handleMapImgLoad = (e) => {
