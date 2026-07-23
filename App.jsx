@@ -150,6 +150,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .floating-sheet{left:8px!important; top:8px!important; width:calc(100vw - 16px)!important; max-height:calc(100vh - 16px)!important;}
   .battlemap-bottombar{left:8px!important; max-width:calc(100vw - 16px)!important;}
   .battlemap-zoom-controls{right:8px!important;}
+  .rules-grid{grid-template-columns:1fr!important;}
+  .rules-cards-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
@@ -765,46 +767,55 @@ const ENTITIES_DATA=[{id:'homem-agua',name:'Homem Água',icon:'💧',revealed:tr
 const ARTEFATOS_DATA=[{id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💎',lore:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha.... (o livro não descreve)`,fisico:`Localização: Desconhecida\nOrigem: Corpo do Homem Água`},{id:'artefato-2',name:'Sandaliers Six',icon:'👟',lore:`Quem possui esse artefato pode estar onde bem entender, espaço e tempo não o param, podendo se movimentar de forma livre em qualquer momento, um teleporte instantâneo.`,fisico:`Localização: Desconhecida\nOrigem: Desconhecida`},{id:'artefato-3',name:'Artefato III',icon:'◆',lore:'',fisico:''},{id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},{id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},{id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}];
 const RULES_DATA=[
   {
+    cat:'sistema',
     icon:'⚔️',
     title:'Estrutura do Turno & Iniciativa',
     body:`O combate em Dinastia E é por turnos. A ordem de iniciativa agora é dinâmica e definida rolando 1D20 + Bônus de Agilidade.\n\nDesempates de Iniciativa:\nCaso dois combatentes tirem o mesmo valor, o desempate é feito pelo atributo Percepção. Se o empate persistir, o Jogador tem prioridade sobre o Inimigo.\n\nO Mestre também pode definir ou alterar a ordem manualmente. A fila de turnos fica sempre visível no lado esquerdo da tela durante o combate.`
   },
   {
+    cat:'Combate',
     icon:'⚡',
     title:'Ataques de Oportunidade (Surpresa)',
     body:`O posicionamento é vital em Dinastia E. Caso um personagem ou inimigo dê as costas para um oponente ou tente fugir de um combate corpo-a-corpo de forma imprudente, ele sofrerá um Ataque de Oportunidade.\n\nEsse ataque é uma reação imediata e gratuita do atacante contra quem deu as costas, ocorrendo fora do seu turno normal. O Mestre pode acionar esse ataque diretamente no painel de combate.`
   },
   {
+    cat:'Mecânicas',
     icon:'🎲',
     title:'Os Dados e Rolagens Públicas',
     body:`Agora as rolagens de dados podem ser feitas diretamente pelo site no painel de "Dado Público". O resultado, incluindo bônus, acertos críticos e falhas, aparece na tela de todos que estiverem na sala.\n\n1D20 — Dado de Precisão:\n• 1–5 → Falha Crítica. A ação falha com consequências.\n• 6–10 → Falha. A ação não surte efeito.\n• 11–15 → Sucesso Parcial. Funciona, mas não perfeitamente.\n• 16–19 → Sucesso. A ação ocorre como planejado.\n• 20 → Sucesso Crítico. Role o dado de dano duas vezes.\n\n1D4 / 1D6 / 1D8 / 1D12 / 1D20 — Dado de Dano:\nUsado após um ataque bem-sucedido.`
   },
   {
+    cat:'sistema',
     icon:'🎯',
     title:'Tipos de Ação e Custos',
     body:`Em seu turno, cada personagem possui 5 Vigor Cósmico (VC). A cada turno, ele recupera automaticamente +2 Vigor Cósmico.\n\nAções possíveis em combate:\n\n⚔️ Ataque Normal — 2 VC\nExecuta um dos ataques normais da classe.\n\n✨ Ataque Especial — 3 VC\nExecuta um dos ataques especiais (só podem ser usados a partir da 2° rodada, ou quando o personagem estiver com 5 de vida).\n\n🏃 Movimento — 1 VC\nMove-se para nova posição no campo de batalha.\n\n🛡️ Esquiva — 1 VC\nTenta esquivar de um ataque. Role 1D20 — se ≥11, esquiva com sucesso.\n\n💬 Ação de Campo — 1 VC\nQualquer ação de esforço: carregar aliado, empurrar objeto, etc.\n\n🔍 Percepção — 0 VC\nObservar ambiente ou inimigo. Sem custo.`
   },
   {
+    cat:'Mecânicas',
     icon:'📊',
     title:'Bônus de Atributos',
     body:`A cada 2 pontos em um atributo, o personagem ganha +1 de ponto bônus na ação correspondente:\n\n⚔️ Força: +1 Bônus em Dano físico e Ataques corpo-a-corpo.\n🛡️ Durabilidade: +1 Bônus em Resistência e Defesas.\n⚡ Agilidade: +1 Bônus em Esquivas, Ataques a Distância e +1 Bônus na Iniciativa.\n🧠 Inteligência: +1 Bônus em Ataques Mágicos e Científicos.\n🏹 Percepção: +1 Bônus em Ataques Surpresa e usado como critério de desempate na Iniciativa.`
   },
   {
+    cat:'Status',
     icon:'❤️',
-    title:'Cores e Estado de Vida (HP)',
+    title:'Cores e Estado de Vida (HP)',,
     body:`A interface do combate indica visualmente a saúde atual do combatente através das cores da barra de vida:\n\n🟢 Verde (Saudável): Acima de 60% de HP.\n🟡 Amarelo (Ferido): Entre 30% e 60% de HP.\n🔴 Vermelho (Crítico): Abaixo de 30% de HP.\n⚫ Cinza e foto escura (Abatido): 0 HP (Morto).`
   },
   {
+    cat:'Combate',
     icon:'🔄',
     title:'Teste de Reflexo',
     body:`Quando um personagem possui pelo menos 1 Vigor Cósmico disponível, ele pode realizar um Teste de Reflexo ao ser alvo de um ataque.\n\n🛡️ Custo: 1 VC\n🎲 Role 1D20 — se o resultado for 16 ou mais, o personagem esquiva completamente do ataque.\n\n⚠️ Limitação: O Teste de Reflexo só pode ser utilizado 1 vez por combate por personagem.`
   },
   {
+    cat:'Mecânicas',
     icon:'💎',
     title:'Crítico de Itens',
     body:`Quando um item (arma, artefato, equipamento) acerta um golpe crítico (resultado 20 no D20), o dano não é rolado normalmente.\n\n✦ Regra: O item causa automaticamente o dano máximo garantido do seu dado de dano.\n\nExemplos:\n• Item com 1D6 de dano → Crítico = 6 de dano garantido\n• Item com 1D8 + 2 de dano → Crítico = 8 + 2 = 10 de dano garantido\n• Item com 2D6 de dano → Crítico = 12 de dano garantido\n\nEssa regra se aplica exclusivamente a itens e equipamentos. Habilidades de classe seguem suas próprias regras de crítico.`
   },
   {
+    cat:'Status',
     icon:'✦',
     title:'Progressão & XP',
     body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado no Nível 3\n• Especial II — desbloqueado no Nível 7\n\nAo alcançar os níveis 4, 10, 15, 20, 25 e 30, o personagem desbloqueia uma habilidade nova, definida em conjunto com o Mestre.`
@@ -1279,7 +1290,7 @@ function BattleMapSection({ masterMode }) {
     const frameW = frame.clientWidth;
     const frameH = frame.clientHeight;
     if (!frameW || !frameH) return;
-    const scale = Math.max(frameW / nat.w, frameH / nat.h);
+    const scale = Math.min(frameW / nat.w, frameH / nat.h);
     setBaseSize({ w: nat.w * scale, h: nat.h * scale });
   };
   const handleMapImgLoad = (e) => {
@@ -1302,6 +1313,7 @@ function BattleMapSection({ masterMode }) {
   const [pwTarget, setPwTarget] = useState(null);
   const [pwInput, setPwInput] = useState('');
   const [pwError, setPwError] = useState(false);
+  const [mapTokens, setMapTokens] = useState({}); // { [mapId]: tokens[] }
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
@@ -1314,7 +1326,6 @@ function BattleMapSection({ masterMode }) {
     window.addEventListener('resize', recomputeFit);
     return () => { clearTimeout(t); window.removeEventListener('resize', recomputeFit); };
   }, [editingId, activeId, masterMode]);
-
   const [mapTokens, setMapTokens] = useState({}); // { [mapId]: tokens[] }
 
   useEffect(() => {
@@ -4081,7 +4092,139 @@ function BestiarioSection({ masterMode }) {
     </div>
   );
 }
-function RulesSection(){const[open,setOpen]=useState(0);return(<div style={{maxWidth:720,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:32}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Leis do Cosmos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Manual de Regras</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/></div>{RULES_DATA.map((r,i)=>(<div key={i} style={{marginBottom:9,border:'1px solid rgba(255,255,255,0.07)',borderRadius:11,overflow:'hidden',background:'rgba(8,10,22,0.8)'}}><button onClick={()=>setOpen(open===i?-1:i)} style={{width:'100%',padding:'14px 18px',display:'flex',alignItems:'center',gap:12,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}><span style={{fontSize:16}}>{r.icon}</span><span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>{r.title}</span><span style={{color:'rgba(255,255,255,0.2)',transform:open===i?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span></button>{open===i&&(<div style={{padding:'0 18px 16px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'pageTurn 0.3s ease'}}><div style={{height:10}}/>{r.body.split('\n').map((line,j)=>{if(!line.trim())return <div key={j} style={{height:6}}/>;const isBullet=line.startsWith('•');const isHead=!isBullet&&line.length<60&&!line.includes('→')&&line.endsWith(':');return <p key={j} style={{margin:'0 0 5px',fontSize:14,lineHeight:1.8,color:isHead?'#C8B8A0':isBullet?'#9A8A7A':'#8A7A6A',fontFamily:isHead?'Cinzel,serif':'inherit',fontWeight:isHead?600:400,paddingLeft:isBullet?12:0}}>{line}</p>;})}</div>)}</div>))}</div>);}
+function RuleBody({ text }) {
+  return text.split('\n').map((line, j) => {
+    if (!line.trim()) return <div key={j} style={{ height: 8 }} />;
+    const isBullet = line.startsWith('•');
+    const isHead = !isBullet && line.length < 60 && !line.includes('→') && line.endsWith(':');
+    return (
+      <p key={j} style={{ margin: '0 0 6px', fontSize: 14, lineHeight: 1.8, color: isHead ? '#E8D8C0' : isBullet ? '#B8A890' : '#9A8A7A', fontFamily: isHead ? 'Cinzel,serif' : 'inherit', fontWeight: isHead ? 600 : 400, paddingLeft: isBullet ? 12 : 0 }}>
+        {line}
+      </p>
+    );
+  });
+}
+
+function RulesSection() {
+  const sistemaTopics = RULES_DATA.filter(r => r.cat === 'sistema');
+  const combateGroups = ['Combate', 'Mecânicas', 'Status'];
+
+  const [sistemaSearch, setSistemaSearch] = useState('');
+  const [combateSearch, setCombateSearch] = useState('');
+  const [selSistema, setSelSistema] = useState(0);
+  const [modalRule, setModalRule] = useState(null);
+
+  const filteredSistema = sistemaTopics.filter(r =>
+    !sistemaSearch.trim() || r.title.toLowerCase().includes(sistemaSearch.toLowerCase()) || r.body.toLowerCase().includes(sistemaSearch.toLowerCase())
+  );
+  const activeSistema = filteredSistema[selSistema] || filteredSistema[0] || null;
+
+  const searchMatch = (r) => !combateSearch.trim() || r.title.toLowerCase().includes(combateSearch.toLowerCase()) || r.body.toLowerCase().includes(combateSearch.toLowerCase());
+
+  const searchInputStyle = { fontSize: 12, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#C8B8A0', width: 140 };
+  const colHeaderStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16, flexWrap: 'wrap' };
+  const colTitleStyle = { fontFamily: 'Cinzel Decorative,serif', fontSize: 16, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.03em' };
+
+  return (
+    <div style={{ maxWidth: 1240, margin: '0 auto', padding: '40px 20px 80px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>As Leis do Cosmos</div>
+        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Manual de Regras</h2>
+        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)', margin: '16px auto 0' }} />
+      </div>
+
+      <div className="rules-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 24, alignItems: 'start' }}>
+
+        {/* COLUNA ESQUERDA — SISTEMA DE JOGO */}
+        <div style={{ border: '1px solid rgba(232,160,32,0.18)', borderRadius: 14, background: 'linear-gradient(180deg, rgba(20,14,30,0.9), rgba(8,10,22,0.9))', padding: 18, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+          <div style={colHeaderStyle}>
+            <h3 style={colTitleStyle}>📜 Sistema de Jogo</h3>
+            <input value={sistemaSearch} onChange={e => { setSistemaSearch(e.target.value); setSelSistema(0); }} placeholder="Buscar..." style={searchInputStyle} />
+          </div>
+
+          {filteredSistema.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+              {filteredSistema.map((r, i) => (
+                <button key={r.title} onClick={() => setSelSistema(i)} style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 11px', borderRadius: 8,
+                  border: `1px solid ${activeSistema === r ? 'rgba(232,160,32,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  background: activeSistema === r ? 'rgba(232,160,32,0.14)' : 'rgba(255,255,255,0.02)',
+                  color: activeSistema === r ? '#E8A020' : '#9A8A7A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11,
+                }}>
+                  <span>{r.icon}</span>{r.title}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeSistema ? (
+            <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, background: 'rgba(4,6,15,0.6)', padding: '20px 20px 22px', animation: 'pageTurn 0.3s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 24 }}>{activeSistema.icon}</span>
+                <h4 style={{ fontFamily: 'Cinzel,serif', fontSize: 15, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>{activeSistema.title}</h4>
+              </div>
+              <RuleBody text={activeSistema.body} />
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', color: '#4A4050', fontFamily: 'Cinzel,serif', fontSize: 12, padding: '30px 0' }}>Nenhum resultado encontrado.</div>
+          )}
+        </div>
+
+        {/* COLUNA DIREITA — COMBATE / MECÂNICAS / STATUS */}
+        <div>
+          <div style={colHeaderStyle}>
+            <h3 style={colTitleStyle}>⚔️ Combate</h3>
+            <input value={combateSearch} onChange={e => setCombateSearch(e.target.value)} placeholder="Buscar..." style={searchInputStyle} />
+          </div>
+
+          {combateGroups.map(group => {
+            const items = RULES_DATA.filter(r => r.cat === group && searchMatch(r));
+            if (items.length === 0) return null;
+            return (
+              <div key={group} style={{ marginBottom: 22 }}>
+                <div style={{ fontSize: 11, letterSpacing: '0.15em', color: '#7B6D8A', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>{group}:</div>
+                <div className="rules-cards-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {items.map(r => (
+                    <button key={r.title} onClick={() => setModalRule(r)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(10,12,26,0.75)',
+                      cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.2s, background 0.2s',
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,160,32,0.4)'; e.currentTarget.style.background = 'rgba(232,160,32,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.background = 'rgba(10,12,26,0.75)'; }}
+                    >
+                      <span style={{ fontSize: 20, flexShrink: 0 }}>{r.icon}</span>
+                      <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#C8B8A0', fontWeight: 600, lineHeight: 1.35 }}>{r.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {combateSearch.trim() && RULES_DATA.filter(r => r.cat !== 'sistema' && searchMatch(r)).length === 0 && (
+            <div style={{ textAlign: 'center', color: '#4A4050', fontFamily: 'Cinzel,serif', fontSize: 12, padding: '30px 0' }}>Nenhum resultado encontrado.</div>
+          )}
+        </div>
+      </div>
+
+      {/* MODAL — abre a regra clicada */}
+      {modalRule && (
+        <div onClick={() => setModalRule(null)} style={{ position: 'fixed', inset: 0, zIndex: 9970, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ maxWidth: 520, width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid rgba(232,160,32,0.3)', borderRadius: 14, background: 'linear-gradient(180deg, rgba(20,14,30,0.98), rgba(8,10,22,0.98))', padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.7)', animation: 'pageTurn 0.25s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 26 }}>{modalRule.icon}</span>
+              <h4 style={{ fontFamily: 'Cinzel,serif', fontSize: 16, color: '#E8D8C0', fontWeight: 700, margin: 0, flex: 1 }}>{modalRule.title}</h4>
+              <button onClick={() => setModalRule(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 6, cursor: 'pointer', padding: '4px 9px', fontSize: 12 }}>✕</button>
+            </div>
+            <RuleBody text={modalRule.body} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const newMasterPage=id=>({id,titulo:'',dataAquisicao:new Date().toLocaleDateString('pt-BR'),descricao:''});
 // ─── PÁGINAS DO MESTRE NO LIVRO DA MANDÍBULA ─────────────────────────────────
 function MasterPagesBook({masterMode}){
