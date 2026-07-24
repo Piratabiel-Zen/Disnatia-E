@@ -50,7 +50,7 @@ function compressImageSmall(dataUrl){
 
 const GLOBAL_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-html,body,#root{margin:0;padding:0;height:100%;background:#04060F;}
+html,body,#root{margin:0;padding:0;height:100%;background:#05020D;}
 *{box-sizing:border-box;}
 .main-locked{overflow-y:hidden!important;}
 ::-webkit-scrollbar{width:5px;}
@@ -122,14 +122,13 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .class-illustration-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;}
 
 
-.sheet-column-scroll{scrollbar-width:thin;scrollbar-color:rgba(168,85,247,0.62) rgba(255,255,255,0.03);overscroll-behavior:contain;}
-.sheet-column-scroll::-webkit-scrollbar{width:8px;}
+.sheet-column-scroll{overflow-y:auto!important;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,0.68) rgba(255,255,255,0.025);overscroll-behavior:contain;min-height:0;padding-bottom:42px!important;}
+.sheet-column-scroll::-webkit-scrollbar{width:9px;}
 .sheet-column-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,0.025);border-radius:8px;}
-.sheet-column-scroll::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.55);border-radius:8px;border:2px solid rgba(8,10,22,0.95);}
-.sheet-inner-scroll{max-height:46vh;overflow-y:auto;overscroll-behavior:contain;padding-right:5px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,0.55) rgba(255,255,255,0.025);}
-.sheet-inner-scroll::-webkit-scrollbar{width:7px;}
-.sheet-inner-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,0.025);border-radius:8px;}
-.sheet-inner-scroll::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.48);border-radius:8px;}
+.sheet-column-scroll::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(126,34,206,0.88),rgba(168,85,247,0.58));border-radius:8px;border:2px solid rgba(7,3,16,0.96);}
+/* Os painéis se expandem por inteiro. O único scroll fica na coluna, evitando conteúdo cortado. */
+.sheet-inner-scroll{max-height:none!important;height:auto!important;overflow:visible!important;padding-right:0;}
+.sheet-inner-scroll::-webkit-scrollbar{display:none;}
 .sheet-photo-main{height:clamp(190px,27vh,270px);min-height:190px;display:flex;align-items:center;justify-content:center;}
 .sheet-photo-main img{width:100%;height:100%;object-fit:contain;object-position:center top;display:block;}
 
@@ -165,7 +164,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .rules-grid{grid-template-columns:1fr!important;}
   .rules-cards-grid{grid-template-columns:1fr!important;}
   .sheet-photo-main{height:220px!important;min-height:220px!important;}
-  .sheet-inner-scroll{max-height:55vh!important;}
+  .sheet-inner-scroll{max-height:none!important;overflow:visible!important;}
 }
 
 @media(max-width:400px){
@@ -181,12 +180,12 @@ const MASTER_PIN='dinastia';
 
 // ─── 🌦️ ATMOSPHERE SYSTEM ────────────────────────────────────────────────────
 const ATMOSPHERES = {
-  neutro:    { label: 'Neutro',      icon: '🌌', accent: '#A855F7', bg: '#04060F', starColor: null },
-  combate:   { label: 'Combate',     icon: '⚔️',  accent: '#E8193C', bg: '#0F0408', starColor: '#FF4444' },
-  misterio:  { label: 'Mistério',    icon: '🌫️',  accent: '#6A5AF7', bg: '#040812', starColor: '#6A8AFF' },
-  exploracao:{ label: 'Exploração',  icon: '🌿',  accent: '#4ADE80', bg: '#040F08', starColor: '#4ADE80' },
-  descanso:  { label: 'Descanso',    icon: '🌙',  accent: '#E8A020', bg: '#080604', starColor: '#FFD070' },
-  tensao:    { label: 'Tensão',      icon: '⚡',  accent: '#FF6B35', bg: '#0F0600', starColor: '#FF8C42' },
+  neutro:    { label: 'Neutro',      icon: '🌌', accent: '#A855F7', bg: 'radial-gradient(circle at 50% -15%,#1A0730 0%,#090313 38%,#040208 100%)', starColor: '#B56CFF' },
+  combate:   { label: 'Combate',     icon: '⚔️', accent: '#C026D3', bg: 'radial-gradient(circle at 50% -15%,#26072E 0%,#100316 42%,#050208 100%)', starColor: '#E879F9' },
+  misterio:  { label: 'Mistério',    icon: '🌫️', accent: '#8B5CF6', bg: 'radial-gradient(circle at 50% -15%,#170936 0%,#09051A 42%,#040208 100%)', starColor: '#A78BFA' },
+  exploracao:{ label: 'Exploração',  icon: '🌿', accent: '#7C3AED', bg: 'radial-gradient(circle at 50% -15%,#102333 0%,#09051A 42%,#040208 100%)', starColor: '#8B5CF6' },
+  descanso:  { label: 'Descanso',    icon: '🌙', accent: '#9333EA', bg: 'radial-gradient(circle at 50% -15%,#21103A 0%,#0C0518 42%,#040208 100%)', starColor: '#C084FC' },
+  tensao:    { label: 'Tensão',      icon: '⚡', accent: '#D946EF', bg: 'radial-gradient(circle at 50% -15%,#300A36 0%,#120318 42%,#050208 100%)', starColor: '#E879F9' },
 };
 
 function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
@@ -2612,8 +2611,8 @@ function CharSilhouette({color}){
 function CollapsibleSection({ icon, label, color = '#A855F7', badge, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ marginBottom: SPACING, border: `1px solid ${open ? color + '33' : 'rgba(255,255,255,0.07)'}`, borderRadius: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, background: open ? `${color}08` : 'rgba(255,255,255,0.02)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+    <div style={{ marginBottom: SPACING, border: `1px solid ${open ? color + '33' : 'rgba(255,255,255,0.07)'}`, borderRadius: 10, overflow: 'visible', transition: 'border-color 0.2s', flexShrink: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, background: open ? `${color}08` : 'rgba(255,255,255,0.02)', border: 'none', borderRadius: open ? '10px 10px 0 0' : 10, cursor: 'pointer', textAlign: 'left' }}>
         <span style={{ fontSize: 15, color }}>{icon}</span>
         <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8B8A0', fontWeight: 600, flex: 1 }}>{label}</span>
         {badge}
@@ -3052,13 +3051,13 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   );
 
   return(
-    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`}}>
+    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(7,3,16,0.97)',boxShadow:`0 8px 38px rgba(77,20,120,0.28), 0 6px 32px ${sheetGlow}`}}>
       {levelUpData&&<LevelUpScreen data={levelUpData} onClose={()=>setLevelUpData(null)}/>}
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
       <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
 
       {/* HEADER COMPACTO */}
-      <div style={{background:'rgba(8,10,22,0.97)',backdropFilter:'blur(8px)',borderBottom:`1px solid ${sheetColor}33`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',flexShrink:0}}>
+      <div style={{background:'rgba(7,3,16,0.98)',backdropFilter:'blur(8px)',borderBottom:`1px solid ${sheetColor}33`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',flexShrink:0}}>
         <div onClick={()=>photoInputRef.current?.click()} style={{cursor:'pointer',flexShrink:0}}>
           {sheet.foto
             ?<img src={sheet.foto} alt="" style={{width:38,height:38,borderRadius:9,objectFit:'cover',border:`2px solid ${sheetColor}55`}}/>
@@ -3077,7 +3076,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
       </div>
 
       {/* 3 COLUNAS */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',height:'74vh',overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',height:'calc(100vh - 178px)',minHeight:560,maxHeight:'calc(100vh - 128px)',overflow:'hidden'}}>
 
         {/* ══ COL 1: PERSONAGEM ═══════════════════════ */}
         <div className="sheet-column-scroll" style={col}>
@@ -3520,8 +3519,8 @@ function EnemyHabilidadesPanel({ enemy, onChange }) {
   };
 
   return (
-    <div style={{ marginBottom: 14, border: `1px solid ${open ? color + '33' : 'rgba(255,100,100,0.1)'}`, borderRadius: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, background: open ? `${color}08` : 'rgba(255,255,255,0.02)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+    <div style={{ marginBottom: 14, border: `1px solid ${open ? color + '33' : 'rgba(255,100,100,0.1)'}`, borderRadius: 10, overflow: 'visible', transition: 'border-color 0.2s', flexShrink: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, background: open ? `${color}08` : 'rgba(255,255,255,0.02)', border: 'none', borderRadius: open ? '10px 10px 0 0' : 10, cursor: 'pointer', textAlign: 'left' }}>
         <span style={{ fontSize: 15, color }}>⚔️</span>
         <span style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8B8A0', fontWeight: 600, flex: 1 }}>Habilidades & Ataques</span>
         <span style={{ fontSize: 10, color: `${color}66`, fontFamily: 'Cinzel,serif' }}>{habilidades.length > 0 ? `${habilidades.length} habilidade${habilidades.length > 1 ? 's' : ''}` : ''}</span>
@@ -5071,10 +5070,10 @@ export default function App(){
 
   return(
     <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
-      <StarField atmosphere="neutro"/>
+      <StarField atmosphere={atmosphere}/>
       <ToastContainer/>
       <PublicDiceOverlay />
-      <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(4,6,15,0.98),rgba(4,6,15,0.92))',backdropFilter:'blur(8px)'}}>
+      <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(8,3,18,0.99),rgba(5,2,12,0.95))',backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
           {/* Espaçador para o widget no desktop/mobile não sobrepor o título */}
           <div style={{width:80}}/>
@@ -5088,7 +5087,7 @@ export default function App(){
           </div>
         </div>
       </header>
-      <nav style={{position:'relative',zIndex:10,display:'flex',justifyContent:'center',gap:3,padding:'9px 14px',background:'rgba(4,6,15,0.9)',borderBottom:'1px solid rgba(255,255,255,0.04)',flexWrap:'wrap'}}>
+      <nav style={{position:'relative',zIndex:10,display:'flex',justifyContent:'center',gap:3,padding:'9px 14px',background:'rgba(6,2,14,0.94)',borderBottom:'1px solid rgba(255,255,255,0.04)',flexWrap:'wrap'}}>
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'6px 12px',borderRadius:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.06em',border:tab===t.id?`1px solid ${atm.accent}66`:'1px solid transparent',background:tab===t.id?`${atm.accent}14`:'transparent',color:tab===t.id?atm.accent:'#5A4A6A',transition:'all 0.3s'}}>
             {t.icon} {t.label}
