@@ -1585,9 +1585,46 @@ function BattleMapSection({ masterMode }) {
     const frameW = frame.clientWidth;
     const frameH = frame.clientHeight;
     if (!frameW || !frameH) return;
-    const scale = Math.max(frameW / nat.w, frameH / nat.h);
+    // Ajusta a imagem inteira dentro da área disponível, sem cortar as bordas.
+    const scale = Math.min(frameW / nat.w, frameH / nat.h);
     setBaseSize({ w: nat.w * scale, h: nat.h * scale });
   };
+  const handleBattleMapWheel = (e) => {
+    if (!currentMap?.img) return;
+    e.preventDefault();
+
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    const oldZoom = zoom;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const step = 0.18;
+    const nextZoom = Math.max(1, Math.min(4, Number((oldZoom + direction * step).toFixed(2))));
+    if (nextZoom === oldZoom) return;
+
+    const rect = frame.getBoundingClientRect();
+    const cursorX = e.clientX - rect.left;
+    const cursorY = e.clientY - rect.top;
+    const contentX = frame.scrollLeft + cursorX;
+    const contentY = frame.scrollTop + cursorY;
+    const ratio = nextZoom / oldZoom;
+
+    setZoom(nextZoom);
+
+    // Mantém o ponto sob o cursor praticamente no mesmo lugar durante o zoom.
+    requestAnimationFrame(() => {
+      const updatedFrame = frameRef.current;
+      if (!updatedFrame) return;
+      if (nextZoom <= 1) {
+        updatedFrame.scrollLeft = 0;
+        updatedFrame.scrollTop = 0;
+        return;
+      }
+      updatedFrame.scrollLeft = contentX * ratio - cursorX;
+      updatedFrame.scrollTop = contentY * ratio - cursorY;
+    });
+  };
+
   const handleMapImgLoad = (e) => {
     naturalSizeRef.current = { w: e.target.naturalWidth, h: e.target.naturalHeight };
     recomputeFit();
@@ -1991,7 +2028,20 @@ function BattleMapSection({ masterMode }) {
 
           {/* MAPA — ocupa 100% da área disponível */}
           {currentMap && currentMap.img && (
-            <div ref={frameRef} style={{ position: 'absolute', inset: 0, display: zoom > 1 ? 'block' : 'flex', alignItems: zoom > 1 ? undefined : 'center', justifyContent: zoom > 1 ? undefined : 'center', overflow: zoom > 1 ? 'auto' : 'hidden' }}>
+            <div
+              ref={frameRef}
+              onWheel={handleBattleMapWheel}
+              title="Use a roda do mouse para aproximar ou afastar"
+              style={{
+                position: 'absolute', inset: 0,
+                display: zoom > 1 ? 'block' : 'flex',
+                alignItems: zoom > 1 ? undefined : 'center',
+                justifyContent: zoom > 1 ? undefined : 'center',
+                overflow: zoom > 1 ? 'auto' : 'hidden',
+                overscrollBehavior: 'contain',
+                scrollbarGutter: zoom > 1 ? 'stable' : undefined,
+              }}
+            >
               <div
                 ref={mapRef}
                 style={{
@@ -2070,9 +2120,10 @@ function BattleMapSection({ masterMode }) {
               <span style={{ fontSize: 12 }}>🔍</span>
               <button onClick={() => setZoom(z => Math.max(1, +(z - 0.25).toFixed(2)))} style={zoomBtnStyle}>−</button>
               <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', minWidth: 36, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
-              <button onClick={() => setZoom(z => Math.min(3, +(z + 0.25).toFixed(2)))} style={zoomBtnStyle}>+</button>
+              <button onClick={() => setZoom(z => Math.min(4, +(z + 0.25).toFixed(2)))} style={zoomBtnStyle}>+</button>
               <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)' }} />
               <button onClick={() => setZoom(1)} title="Ajustar à tela" style={zoomBtnStyle}>⤢</button>
+              <span title="A roda do mouse também controla o zoom" style={{ fontSize: 9, color: '#655B72', fontFamily: 'Cinzel,serif', whiteSpace: 'nowrap', marginLeft: 2 }}>RODA DO MOUSE</span>
             </div>
           )}
 
