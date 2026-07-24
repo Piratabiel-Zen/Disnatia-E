@@ -1429,6 +1429,16 @@ function MapaMundiSection({ masterMode }) {
   );
 }
 
+// ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
+// Estas constantes precisam existir antes de BattleMapSection. A ausência delas
+// causava ReferenceError ao abrir a aba e deixava a aplicação totalmente branca.
+const TOKEN_TYPES = {
+  jogador: { label: 'Jogador', color: '#4ADE80', ring: 'rgba(74,222,128,0.6)' },
+  inimigo: { label: 'Inimigo', color: '#E8193C', ring: 'rgba(232,25,60,0.6)' },
+};
+const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false });
+const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', tokens: [] });
+
 function EquipMiniList({ sheet, color }) {
   const slots = [
     { key: 'equip_mao_esq', label: 'Mão Esq.' },
@@ -1589,42 +1599,6 @@ function BattleMapSection({ masterMode }) {
     const scale = Math.min(frameW / nat.w, frameH / nat.h);
     setBaseSize({ w: nat.w * scale, h: nat.h * scale });
   };
-  const handleBattleMapWheel = (e) => {
-    if (!currentMap?.img) return;
-    e.preventDefault();
-
-    const frame = frameRef.current;
-    if (!frame) return;
-
-    const oldZoom = zoom;
-    const direction = e.deltaY < 0 ? 1 : -1;
-    const step = 0.18;
-    const nextZoom = Math.max(1, Math.min(4, Number((oldZoom + direction * step).toFixed(2))));
-    if (nextZoom === oldZoom) return;
-
-    const rect = frame.getBoundingClientRect();
-    const cursorX = e.clientX - rect.left;
-    const cursorY = e.clientY - rect.top;
-    const contentX = frame.scrollLeft + cursorX;
-    const contentY = frame.scrollTop + cursorY;
-    const ratio = nextZoom / oldZoom;
-
-    setZoom(nextZoom);
-
-    // Mantém o ponto sob o cursor praticamente no mesmo lugar durante o zoom.
-    requestAnimationFrame(() => {
-      const updatedFrame = frameRef.current;
-      if (!updatedFrame) return;
-      if (nextZoom <= 1) {
-        updatedFrame.scrollLeft = 0;
-        updatedFrame.scrollTop = 0;
-        return;
-      }
-      updatedFrame.scrollLeft = contentX * ratio - cursorX;
-      updatedFrame.scrollTop = contentY * ratio - cursorY;
-    });
-  };
-
   const handleMapImgLoad = (e) => {
     naturalSizeRef.current = { w: e.target.naturalWidth, h: e.target.naturalHeight };
     recomputeFit();
@@ -1667,7 +1641,15 @@ function BattleMapSection({ masterMode }) {
     const u1b = onSnapshot(collection(db, 'battlemap_tokens'), snap => {
       const tk = {};
       snap.docs.forEach(d => { tk[d.id] = (d.data() && d.data().tokens) || []; });
-      setMapTokens(tk);
+      setMapTokens(prev => ({ ...prev, ...tk }));
+    });
+    // Canal leve de sincronização ao vivo. O documento contém apenas o mapa ativo
+    // e as posições dos tokens, sem carregar novamente a imagem do mapa.
+    const uLive = onSnapshot(doc(db, 'config', 'battlemap_live_tokens'), snap => {
+      if (!snap.exists()) return;
+      const data = snap.data() || {};
+      if (!data.mapId || !Array.isArray(data.tokens)) return;
+      setMapTokens(prev => ({ ...prev, [String(data.mapId)]: data.tokens }));
     });
     const u2 = onSnapshot(doc(db, 'config', 'battlemap_active'), snap => {
       if (snap.exists()) setActiveId(snap.data().activeId || '');
@@ -1678,7 +1660,7 @@ function BattleMapSection({ masterMode }) {
     const u4 = onSnapshot(doc(db, 'config', 'customAbilities'), snap => {
       if (snap.exists()) setCustomAbilities(snap.data() || {});
     });
-    return () => { u1(); u1b(); u2(); u3(); u4(); };
+    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); };
   }, []);
 
   useEffect(() => {
@@ -1691,6 +1673,56 @@ function BattleMapSection({ masterMode }) {
   const currentMapRaw = maps.find(m => String(m.id) === String(currentMapId));
   const currentMap = currentMapRaw ? { ...currentMapRaw, tokens: mapTokens[String(currentMapRaw.id)] || [] } : null;
 
+  // Referências estáveis evitam que o listener da roda seja recriado a cada mudança de zoom.
+  const zoomRef = useRef(1);
+  const currentMapRef = useRef(null);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { currentMapRef.current = currentMap; }, [currentMap]);
+
+  // Listener nativo e explicitamente não passivo. Isso evita erros de preventDefault
+  // em alguns navegadores e impede que a aba do mapa derrube toda a aplicação.
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame || !currentMap?.img) return;
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      const map = currentMapRef.current;
+      if (!map?.img) return;
+
+      const oldZoom = zoomRef.current;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const step = 0.18;
+      const nextZoom = Math.max(1, Math.min(4, Number((oldZoom + direction * step).toFixed(2))));
+      if (nextZoom === oldZoom) return;
+
+      const rect = frame.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+      const contentX = frame.scrollLeft + cursorX;
+      const contentY = frame.scrollTop + cursorY;
+      const ratio = nextZoom / oldZoom;
+
+      zoomRef.current = nextZoom;
+      setZoom(nextZoom);
+
+      requestAnimationFrame(() => {
+        const updatedFrame = frameRef.current;
+        if (!updatedFrame) return;
+        if (nextZoom <= 1) {
+          updatedFrame.scrollLeft = 0;
+          updatedFrame.scrollTop = 0;
+          return;
+        }
+        updatedFrame.scrollLeft = contentX * ratio - cursorX;
+        updatedFrame.scrollTop = contentY * ratio - cursorY;
+      });
+    };
+
+    frame.addEventListener('wheel', onWheel, { passive: false });
+    return () => frame.removeEventListener('wheel', onWheel);
+  }, [currentMapId, currentMap?.img]);
+
   const persistMap = (mapId, data) => {
     const { tokens, ...meta } = data;
     clearTimeout(saveTimeout.current[mapId]);
@@ -1700,11 +1732,20 @@ function BattleMapSection({ masterMode }) {
   };
 
   // Tokens ficam em documento à parte (leve) — grava quase instantaneamente, sem carregar a imagem junto
+  const writeLiveTokens = async (mapId, tokens) => {
+    const payload = { mapId: String(mapId), tokens, updatedAt: Date.now() };
+    // O estado ao vivo é o canal prioritário; a coleção mantém a persistência histórica.
+    await Promise.allSettled([
+      setDoc(doc(db, 'config', 'battlemap_live_tokens'), payload),
+      setDoc(doc(db, 'battlemap_tokens', String(mapId)), { tokens, updatedAt: payload.updatedAt }),
+    ]);
+  };
+
   const persistTokens = (mapId, tokens) => {
     clearTimeout(saveTimeout.current['tk_' + mapId]);
-    saveTimeout.current['tk_' + mapId] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'battlemap_tokens', String(mapId)), { tokens }); } catch (e) { console.error(e); }
-    }, 60);
+    saveTimeout.current['tk_' + mapId] = setTimeout(() => {
+      writeLiveTokens(mapId, tokens).catch(e => console.error('Erro ao sincronizar tokens:', e));
+    }, 35);
   };
 
   const updCurrentMap = (patch) => {
@@ -1737,6 +1778,8 @@ function BattleMapSection({ masterMode }) {
   
   const activateMap = async (id) => {
     await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: String(id) });
+    const tokens = mapTokensRef.current[String(id)] || [];
+    await setDoc(doc(db, 'config', 'battlemap_live_tokens'), { mapId: String(id), tokens, updatedAt: Date.now() }).catch(console.error);
     pushToast('Mapa liberado para os jogadores!', '🗡️', '#E8193C');
   };
   const deactivateMap = async () => {
@@ -1790,7 +1833,7 @@ function BattleMapSection({ masterMode }) {
  useEffect(() => {
     if (!draggingId || !currentMap) return;
     const mapIdAtDragStart = currentMap.id;
-    const TOKEN_THROTTLE_MS = 100;
+    const TOKEN_THROTTLE_MS = 50;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
@@ -1798,11 +1841,11 @@ function BattleMapSection({ masterMode }) {
       clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
       if (now - last >= TOKEN_THROTTLE_MS) {
         lastTokenWriteRef.current[mapIdAtDragStart] = now;
-        setDoc(doc(db, 'battlemap_tokens', String(mapIdAtDragStart)), { tokens: tokensArr }).catch(e => console.error(e));
+        writeLiveTokens(mapIdAtDragStart, tokensArr).catch(e => console.error(e));
       } else {
         saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
           lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-          setDoc(doc(db, 'battlemap_tokens', String(mapIdAtDragStart)), { tokens: tokensArr }).catch(e => console.error(e));
+          writeLiveTokens(mapIdAtDragStart, tokensArr).catch(e => console.error(e));
         }, TOKEN_THROTTLE_MS - (now - last));
       }
     };
@@ -1829,7 +1872,7 @@ function BattleMapSection({ masterMode }) {
       const latestTokens = mapTokensRef.current[String(mapIdAtDragStart)];
       if (latestTokens) {
         lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-        setDoc(doc(db, 'battlemap_tokens', String(mapIdAtDragStart)), { tokens: latestTokens }).catch(e => console.error(e));
+        writeLiveTokens(mapIdAtDragStart, latestTokens).catch(e => console.error(e));
       }
       if (!moved.current) setSelectedId(prevSel => prevSel === draggingId ? null : draggingId);
       setDraggingId(null);
@@ -2030,7 +2073,6 @@ function BattleMapSection({ masterMode }) {
           {currentMap && currentMap.img && (
             <div
               ref={frameRef}
-              onWheel={handleBattleMapWheel}
               title="Use a roda do mouse para aproximar ou afastar"
               style={{
                 position: 'absolute', inset: 0,
