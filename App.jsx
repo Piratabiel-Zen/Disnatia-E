@@ -50,7 +50,7 @@ function compressImageSmall(dataUrl){
 
 const GLOBAL_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-html,body,#root{margin:0;padding:0;height:100%;background:#05020D;}
+html,body,#root{margin:0;padding:0;height:100%;background:#010006;}
 *{box-sizing:border-box;}
 .main-locked{overflow-y:hidden!important;}
 ::-webkit-scrollbar{width:5px;}
@@ -129,6 +129,10 @@ button{font-family:'Crimson Text',Georgia,serif;}
 /* Os painéis se expandem por inteiro. O único scroll fica na coluna, evitando conteúdo cortado. */
 .sheet-inner-scroll{max-height:none!important;height:auto!important;overflow:visible!important;padding-right:0;}
 .sheet-inner-scroll::-webkit-scrollbar{display:none;}
+/* Painéis da coluna direita nunca podem encolher e cortar o conteúdo. */
+.abilities-panel,.sheet-column-scroll>div{min-width:0;}
+.abilities-panel{flex:0 0 auto!important;height:auto!important;max-height:none!important;}
+.abilities-panel>.sheet-inner-scroll{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important;}
 .sheet-photo-main{height:clamp(190px,27vh,270px);min-height:190px;display:flex;align-items:center;justify-content:center;}
 .sheet-photo-main img{width:100%;height:100%;object-fit:contain;object-position:center top;display:block;}
 
@@ -180,12 +184,12 @@ const MASTER_PIN='dinastia';
 
 // ─── 🌦️ ATMOSPHERE SYSTEM ────────────────────────────────────────────────────
 const ATMOSPHERES = {
-  neutro:    { label: 'Neutro',      icon: '🌌', accent: '#A855F7', bg: 'radial-gradient(circle at 50% -15%,#1A0730 0%,#090313 38%,#040208 100%)', starColor: '#B56CFF' },
-  combate:   { label: 'Combate',     icon: '⚔️', accent: '#C026D3', bg: 'radial-gradient(circle at 50% -15%,#26072E 0%,#100316 42%,#050208 100%)', starColor: '#E879F9' },
-  misterio:  { label: 'Mistério',    icon: '🌫️', accent: '#8B5CF6', bg: 'radial-gradient(circle at 50% -15%,#170936 0%,#09051A 42%,#040208 100%)', starColor: '#A78BFA' },
-  exploracao:{ label: 'Exploração',  icon: '🌿', accent: '#7C3AED', bg: 'radial-gradient(circle at 50% -15%,#102333 0%,#09051A 42%,#040208 100%)', starColor: '#8B5CF6' },
-  descanso:  { label: 'Descanso',    icon: '🌙', accent: '#9333EA', bg: 'radial-gradient(circle at 50% -15%,#21103A 0%,#0C0518 42%,#040208 100%)', starColor: '#C084FC' },
-  tensao:    { label: 'Tensão',      icon: '⚡', accent: '#D946EF', bg: 'radial-gradient(circle at 50% -15%,#300A36 0%,#120318 42%,#050208 100%)', starColor: '#E879F9' },
+  neutro:    { label: 'Neutro',      icon: '🌌', accent: '#8B5CF6', bg: 'radial-gradient(circle at 50% -18%,#0B0217 0%,#030008 42%,#010004 100%)', starColor: '#6D28D9' },
+  combate:   { label: 'Combate',     icon: '⚔️', accent: '#B91C8C', bg: 'radial-gradient(circle at 50% -18%,#120218 0%,#040008 44%,#010004 100%)', starColor: '#86198F' },
+  misterio:  { label: 'Mistério',    icon: '🌫️', accent: '#7C3AED', bg: 'radial-gradient(circle at 50% -18%,#09031A 0%,#020008 44%,#010004 100%)', starColor: '#5B21B6' },
+  exploracao:{ label: 'Exploração',  icon: '🌿', accent: '#6D28D9', bg: 'radial-gradient(circle at 50% -18%,#050A16 0%,#020008 44%,#010004 100%)', starColor: '#4C1D95' },
+  descanso:  { label: 'Descanso',    icon: '🌙', accent: '#7E22CE', bg: 'radial-gradient(circle at 50% -18%,#0C0418 0%,#030008 44%,#010004 100%)', starColor: '#581C87' },
+  tensao:    { label: 'Tensão',      icon: '⚡', accent: '#A21CAF', bg: 'radial-gradient(circle at 50% -18%,#140219 0%,#040007 44%,#010004 100%)', starColor: '#701A75' },
 };
 
 function AtmosphereWidget({ masterMode, atmosphere, onSet }) {
@@ -2846,7 +2850,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const TipoBtn=({val,label:l})=>(<button onClick={()=>setForm(f=>({...f,tipoHab:val}))} style={{flex:1,padding:'5px 4px',borderRadius:5,border:`1px solid ${form.tipoHab===val?color+'66':'rgba(255,255,255,0.1)'}`,background:form.tipoHab===val?`${color}18`:'rgba(255,255,255,0.02)',color:form.tipoHab===val?color:'#6A5A7A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.06em',transition:'all 0.15s'}}>{l}</button>);
 
   return(
-    <div style={{marginBottom:14,border:`1px solid ${open?color+'33':'rgba(255,255,255,0.07)'}`,borderRadius:10,overflow:'hidden',transition:'border-color 0.2s'}}>
+    <div className="abilities-panel" style={{marginBottom:14,border:`1px solid ${open?color+'33':'rgba(255,255,255,0.07)'}`,borderRadius:10,overflow:'hidden',transition:'border-color 0.2s',flexShrink:0,minHeight:'max-content'}}>
       <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',padding:'12px 16px',display:'flex',alignItems:'center',gap:10,background:open?`${color}08`:'rgba(255,255,255,0.02)',border:'none',cursor:'pointer',textAlign:'left'}}>
         <span style={{fontSize:15,color}}>{cls.icon}</span>
         <span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>Habilidades — {cls.name}</span>
@@ -3051,13 +3055,13 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   );
 
   return(
-    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(7,3,16,0.97)',boxShadow:`0 8px 38px rgba(77,20,120,0.28), 0 6px 32px ${sheetGlow}`}}>
+    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(2,0,9,0.985)',boxShadow:`0 8px 38px rgba(77,20,120,0.28), 0 6px 32px ${sheetGlow}`}}>
       {levelUpData&&<LevelUpScreen data={levelUpData} onClose={()=>setLevelUpData(null)}/>}
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
       <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
 
       {/* HEADER COMPACTO */}
-      <div style={{background:'rgba(7,3,16,0.98)',backdropFilter:'blur(8px)',borderBottom:`1px solid ${sheetColor}33`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',flexShrink:0}}>
+      <div style={{background:'rgba(2,0,9,0.99)',backdropFilter:'blur(8px)',borderBottom:`1px solid ${sheetColor}33`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',flexShrink:0}}>
         <div onClick={()=>photoInputRef.current?.click()} style={{cursor:'pointer',flexShrink:0}}>
           {sheet.foto
             ?<img src={sheet.foto} alt="" style={{width:38,height:38,borderRadius:9,objectFit:'cover',border:`2px solid ${sheetColor}55`}}/>
