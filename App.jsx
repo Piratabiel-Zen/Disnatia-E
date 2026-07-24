@@ -2028,20 +2028,25 @@ function PrologueSection({ masterMode }) {
   }, []);
 
   const handleUpload = e => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
-    setCovers(prev => ({ ...prev, [cls.id]: compressed }));
-    try {
-      await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
-    } catch (err) {
-      alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
-      console.error(err);
-    }
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
+      setCapa(compressed);
+
+      try {
+        await setDoc(doc(db, 'config', 'prologue_cover'), { img: compressed });
+      } catch (err) {
+        alert('Erro ao salvar a imagem do prólogo. Tente uma imagem menor.');
+        console.error(err);
+      }
+    };
+
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
-  reader.readAsDataURL(file); e.target.value = '';
-};
 
   return (
     <div style={{maxWidth:1040,margin:'0 auto',padding:'40px 24px 80px'}}>
@@ -2112,20 +2117,25 @@ function ClassesSection({ masterMode }) {
   const cover = covers[cls.id] || '';
 
   const handleUpload = e => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
-    setCovers(prev => ({ ...prev, [cls.id]: compressed }));
-    try {
-      await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
-    } catch (err) {
-      alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
-      console.error(err);
-    }
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
+      setCovers(prev => ({ ...prev, [cls.id]: compressed }));
+
+      try {
+        await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
+      } catch (err) {
+        alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
+        console.error(err);
+      }
+    };
+
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
-  reader.readAsDataURL(file); e.target.value = '';
-};
 
   const habilidades = [
     cls.passive?.name,
@@ -3052,7 +3062,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
       </div>
 
       {/* 3 COLUNAS */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',maxHeight:'74vh',overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',height:'74vh',overflow:'hidden'}}>
 
         {/* ══ COL 1: PERSONAGEM ═══════════════════════ */}
         <div style={col}>
@@ -3208,19 +3218,6 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
               </div>
             </div>
           )}
-
-          <HabilidadesPanel
-            cls={cls} sheet={sheet} customAbilities={customAbilities}
-            masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities}
-            sheetCooldowns={sheetCooldowns} onUpdateCooldown={handleUpdateCooldown}
-            currentVigos={sheet.vigos??0}
-            onSpendVC={(cost)=>f('vigos',Math.max(0,(sheet.vigos??0)-cost))}
-            characterName={sheet.nome||'Personagem'}
-          />
-
-          <CollapsibleSection icon="⚔" label="Equipamentos" color={sheetColor}>
-            <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
-          </CollapsibleSection>
         </div>
 
         {/* divider */}
@@ -3230,57 +3227,79 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         <div style={col}>
           {colHead('Lore & Itens','📜')}
 
-          <CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
-            <ArtefatoFichaPanel
-              sheet={sheet} onChange={onChange} sheetColor={sheetColor}
-              revealedArtefatos={revealedArtefatos||[]}
-              artefatosHabs={artefatosHabs||{}} showHeader={false}
-            />
-          </CollapsibleSection>
+{/* Habilidades — movidas da col 2 */}
+<HabilidadesPanel
+  cls={cls} sheet={sheet} customAbilities={customAbilities}
+  masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities}
+  sheetCooldowns={sheetCooldowns} onUpdateCooldown={handleUpdateCooldown}
+  currentVigos={sheet.vigos??0}
+  onSpendVC={(cost)=>f('vigos',Math.max(0,(sheet.vigos??0)-cost))}
+  characterName={sheet.nome||'Personagem'}
+/>
 
-          <CollapsibleSection icon="🎒" label="Itens & Inventário" color={sheetColor}>
-            <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
-          </CollapsibleSection>
+{/* Equipamentos — movidos da col 2 */}
+<CollapsibleSection icon="⚔" label="Equipamentos" color={sheetColor}>
+  <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
+</CollapsibleSection>
 
-          <CollapsibleSection
-            icon="✦" label="Lore do Personagem" color={sheetColor}
-            badge={!masterMode&&sheet.lore_personagem?<span style={{fontSize:9,color:sheetColor+'66',letterSpacing:'0.1em'}}>SOMENTE LEITURA</span>:null}
-          >
-            {masterMode?(
-              <textarea value={sheet.lore_personagem||''} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos..." rows={7} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
-            ):sheet.lore_personagem?(
-              <div style={{fontSize:14,color:'#B8A898',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",padding:'14px 16px',background:`${sheetColor}06`,borderRadius:10,border:`1px solid ${sheetColor}22`,borderLeft:`3px solid ${sheetColor}55`}}>
-                {sheet.lore_personagem}
-              </div>
-            ):(
-              <div style={{fontSize:12,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',textAlign:'center',padding:'20px 0',border:'1px dashed rgba(255,255,255,0.05)',borderRadius:10}}>
-                A história deste personagem ainda não foi escrita pelo Mestre.
-              </div>
-            )}
-          </CollapsibleSection>
+{/* Artefato */}
+<CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
+  <ArtefatoFichaPanel
+    sheet={sheet} onChange={onChange} sheetColor={sheetColor}
+    revealedArtefatos={revealedArtefatos||[]}
+    artefatosHabs={artefatosHabs||{}} showHeader={false}
+  />
+</CollapsibleSection>
 
-          {cls.id==='necromante'&&(
-            <CollapsibleSection icon="💀" label="Invocações" color={sheetColor}>
-              <InvocacoesPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor} masterMode={masterMode}/>
-            </CollapsibleSection>
-          )}
+{/* Itens — textarea maior */}
+<CollapsibleSection icon="🎒" label="Itens & Inventário" color={sheetColor}>
+  <textarea
+    value={sheet.notas||''}
+    onChange={e=>f('notas',e.target.value)}
+    placeholder="Liste outros itens carregados pelo personagem..."
+    rows={8}
+    style={{width:'100%', resize:'vertical', minHeight: 160}}
+  />
+</CollapsibleSection>
 
-          <div style={{marginTop:SPACING,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
-            {masterMode?(
-              <div>
-                <div style={{fontSize:9,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>🔒 Senha da Ficha</div>
-                <div style={{display:'flex',gap:8}}>
-                  <input type="password" value={sheet.senha||''} onChange={e=>f('senha',e.target.value)} placeholder="Definir senha..." style={{flex:1,fontSize:12}}/>
-                  {sheet.senha&&<button onClick={()=>f('senha','')} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',fontSize:10}}>Resetar</button>}
-                </div>
-                <div style={{fontSize:9,color:'#4A4050',marginTop:4,fontFamily:'Cinzel,serif'}}>O Mestre pode resetar a senha.</div>
-              </div>
-            ):(
-              sheet.senha?<div style={{fontSize:11,color:'#4A4050',fontFamily:'Cinzel,serif',textAlign:'center'}}>🔒 Ficha protegida por senha.</div>:null
-            )}
-          </div>
-        </div>
+<CollapsibleSection
+  icon="✦" label="Lore do Personagem" color={sheetColor}
+  badge={!masterMode&&sheet.lore_personagem?<span style={{fontSize:9,color:sheetColor+'66',letterSpacing:'0.1em'}}>SOMENTE LEITURA</span>:null}
+>
+  {masterMode?(
+    <textarea value={sheet.lore_personagem||''} onChange={e=>f('lore_personagem',e.target.value)} placeholder="Escreva aqui a história, origem, motivações e segredos..." rows={7} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/>
+  ):sheet.lore_personagem?(
+    <div style={{fontSize:14,color:'#B8A898',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",padding:'14px 16px',background:`${sheetColor}06`,borderRadius:10,border:`1px solid ${sheetColor}22`,borderLeft:`3px solid ${sheetColor}55`}}>
+      {sheet.lore_personagem}
+    </div>
+  ):(
+    <div style={{fontSize:12,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',textAlign:'center',padding:'20px 0',border:'1px dashed rgba(255,255,255,0.05)',borderRadius:10}}>
+      A história deste personagem ainda não foi escrita pelo Mestre.
+    </div>
+  )}
+</CollapsibleSection>
 
+{cls.id==='necromante'&&(
+  <CollapsibleSection icon="💀" label="Invocações" color={sheetColor}>
+    <InvocacoesPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor} masterMode={masterMode}/>
+  </CollapsibleSection>
+)}
+
+<div style={{marginTop:SPACING,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+  {masterMode?(
+    <div>
+      <div style={{fontSize:9,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>🔒 Senha da Ficha</div>
+      <div style={{display:'flex',gap:8}}>
+        <input type="password" value={sheet.senha||''} onChange={e=>f('senha',e.target.value)} placeholder="Definir senha..." style={{flex:1,fontSize:12}}/>
+        {sheet.senha&&<button onClick={()=>f('senha','')} style={{padding:'4px 8px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',fontSize:10}}>Resetar</button>}
+      </div>
+      <div style={{fontSize:9,color:'#4A4050',marginTop:4,fontFamily:'Cinzel,serif'}}>O Mestre pode resetar a senha.</div>
+    </div>
+  ):(
+    sheet.senha?<div style={{fontSize:11,color:'#4A4050',fontFamily:'Cinzel,serif',textAlign:'center'}}>🔒 Ficha protegida por senha.</div>:null
+  )}
+</div>
+         </div>
       </div>
     </div>
   );
@@ -5032,7 +5051,7 @@ export default function App(){
     try { await setDoc(doc(db,'config','atmosphere'),{key}); } catch(e){}
   };
 
-  const atm = ATMOSPHERES.neutro;
+  const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
   const lockPageScroll = tab === 'mapabatalha';
 
   return(
