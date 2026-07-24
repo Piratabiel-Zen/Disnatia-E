@@ -121,6 +121,18 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .class-image-wrapper img{width:100%;height:100%;display:block;object-fit:cover;object-position:center;}
 .class-illustration-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;}
 
+
+.sheet-column-scroll{scrollbar-width:thin;scrollbar-color:rgba(168,85,247,0.62) rgba(255,255,255,0.03);overscroll-behavior:contain;}
+.sheet-column-scroll::-webkit-scrollbar{width:8px;}
+.sheet-column-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,0.025);border-radius:8px;}
+.sheet-column-scroll::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.55);border-radius:8px;border:2px solid rgba(8,10,22,0.95);}
+.sheet-inner-scroll{max-height:46vh;overflow-y:auto;overscroll-behavior:contain;padding-right:5px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,0.55) rgba(255,255,255,0.025);}
+.sheet-inner-scroll::-webkit-scrollbar{width:7px;}
+.sheet-inner-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,0.025);border-radius:8px;}
+.sheet-inner-scroll::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.48);border-radius:8px;}
+.sheet-photo-main{height:clamp(190px,27vh,270px);min-height:190px;display:flex;align-items:center;justify-content:center;}
+.sheet-photo-main img{width:100%;height:100%;object-fit:contain;object-position:center top;display:block;}
+
 @media(max-width:600px){
   .classes-grid{grid-template-columns:1fr!important;}
   .class-detail-grid{grid-template-columns:1fr!important;}
@@ -152,7 +164,10 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .battlemap-zoom-controls{right:8px!important;}
   .rules-grid{grid-template-columns:1fr!important;}
   .rules-cards-grid{grid-template-columns:1fr!important;}
+  .sheet-photo-main{height:220px!important;min-height:220px!important;}
+  .sheet-inner-scroll{max-height:55vh!important;}
 }
+
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
   .enemy-stats-grid{grid-template-columns:1fr!important;}
@@ -2604,7 +2619,7 @@ function CollapsibleSection({ icon, label, color = '#A855F7', badge, defaultOpen
         {badge}
         <span style={{ color: `${color}88`, fontSize: 11, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }}>▶</span>
       </button>
-      {open && <div style={{ padding: '0 14px 14px' }}><div style={{ height: 8 }} />{children}</div>}
+      {open && <div className="sheet-inner-scroll" style={{ padding: '0 14px 14px' }}><div style={{ height: 8 }} />{children}</div>}
     </div>
   );
 }
@@ -2840,7 +2855,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
         <span style={{color:`${color}88`,fontSize:11,transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span>
       </button>
       {open&&(
-        <div style={{padding:'0 14px 14px'}}>
+        <div className="sheet-inner-scroll" style={{padding:'0 14px 14px'}}>
           <div style={{height:8}}/>
           {cls.id !== 'personalizado' && (
   <>
@@ -3065,13 +3080,13 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
       <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',height:'74vh',overflow:'hidden'}}>
 
         {/* ══ COL 1: PERSONAGEM ═══════════════════════ */}
-        <div style={col}>
+        <div className="sheet-column-scroll" style={col}>
           {colHead('Personagem','🧙')}
 
           {/* Foto */}
-          <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',borderRadius:10,marginBottom:12,minHeight:sheet.foto?0:90}}>
+          <div className="sheet-photo-main" onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',borderRadius:10,marginBottom:12,border:`1px solid ${sheetColor}22`}}>
             {sheet.foto
-              ?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F',borderRadius:10}}/>
+              ?<img src={sheet.foto} alt="personagem" style={{background:'#04060F',borderRadius:10}}/>
               :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 12px',gap:6}}>
                 <div style={{fontSize:26,opacity:0.15}}>📷</div>
                 <div style={{fontSize:11,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',textAlign:'center'}}>Toque para adicionar foto</div>
@@ -3175,7 +3190,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         <div style={{background:`${sheetColor}22`}}/>
 
         {/* ══ COL 2: COMBATE ══════════════════════════ */}
-        <div style={col}>
+        <div className="sheet-column-scroll" style={col}>
           {colHead('Combate','⚔️')}
 
           {/* Vigor */}
@@ -3224,7 +3239,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
         <div style={{background:`${sheetColor}22`}}/>
 
         {/* ══ COL 3: LORE & ITENS ═════════════════════ */}
-        <div style={col}>
+        <div className="sheet-column-scroll" style={col}>
           {colHead('Lore & Itens','📜')}
 
 {/* Habilidades — movidas da col 2 */}
