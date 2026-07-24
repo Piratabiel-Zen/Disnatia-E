@@ -133,8 +133,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .abilities-panel,.sheet-column-scroll>div{min-width:0;}
 .abilities-panel{flex:0 0 auto!important;height:auto!important;max-height:none!important;}
 .abilities-panel>.sheet-inner-scroll{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important;}
-.sheet-photo-main{height:clamp(190px,27vh,270px);min-height:190px;display:flex;align-items:center;justify-content:center;}
-.sheet-photo-main img{width:100%;height:100%;object-fit:contain;object-position:center top;display:block;}
+.sheet-photo-main{height:auto;min-height:0;display:block;}
+.sheet-photo-main img{width:100%;height:auto;object-fit:contain;object-position:center top;display:block;}
 
 @media(max-width:600px){
   .classes-grid{grid-template-columns:1fr!important;}
@@ -167,7 +167,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .battlemap-zoom-controls{right:8px!important;}
   .rules-grid{grid-template-columns:1fr!important;}
   .rules-cards-grid{grid-template-columns:1fr!important;}
-  .sheet-photo-main{height:220px!important;min-height:220px!important;}
+  .sheet-photo-main{height:auto!important;min-height:0!important;}
   .sheet-inner-scroll{max-height:none!important;overflow:visible!important;}
 }
 
@@ -3675,88 +3675,46 @@ function NPCCard({ npc, onChange, onDelete, masterMode }) {
   };
 
   return (
-    <div style={{ border: '1px solid rgba(168,85,247,0.28)', borderRadius: 14, overflow: 'hidden', background: 'rgba(8,10,22,0.95)', marginBottom: 16, boxShadow: '0 4px 28px rgba(168,85,247,0.07)' }}>
-      <div style={{ height: 3, background: 'linear-gradient(90deg,#A855F7,#A855F722,transparent)' }} />
-
-      <div onClick={() => masterMode && photoRef.current?.click()} style={{ position: 'relative', width: '100%', cursor: masterMode ? 'pointer' : 'default', background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+    <div style={{ border:'1px solid rgba(168,85,247,0.28)', borderRadius:14, overflow:'hidden', background:'rgba(5,2,13,0.98)', boxShadow:'0 4px 28px rgba(105,35,170,0.12)' }}>
+      <div style={{ height:3, background:'linear-gradient(90deg,#A855F7,#A855F722,transparent)' }}/>
+      <div onClick={()=>masterMode&&photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:masterMode?'pointer':'default',background:'#030108',overflow:'hidden'}}>
         {npc.foto
-          ? <img src={npc.foto} alt={npc.nome} style={{ width: '100%', maxHeight: 360, objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
-          : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '28px', opacity: 0.3 }}>
-              <span style={{ fontSize: 24 }}>👤</span>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'Cinzel,serif' }}>{masterMode ? 'Toque para adicionar foto' : 'Sem foto disponível'}</span>
-            </div>
-        }
-        {npc.foto && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(8,10,22,0.92))', pointerEvents: 'none' }} />}
-        {npc.foto && (
-          <div style={{ position: 'absolute', bottom: 14, left: 18 }}>
-            <div style={{ fontFamily: 'Cinzel,serif', fontSize: 19, fontWeight: 700, color: '#C8A8E8', textShadow: '0 0 20px rgba(168,85,247,0.7)' }}>{npc.nome || '—'}</div>
-            {(npc.genero || npc.idade) && (
-              <div style={{ fontSize: 12, color: 'rgba(200,168,232,0.65)', marginTop: 3, fontFamily: 'Cinzel,serif' }}>
-                {[npc.genero, npc.idade && `${npc.idade} anos`].filter(Boolean).join(' · ')}
-              </div>
-            )}
-          </div>
-        )}
-        {masterMode && <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />}
+          ? <img src={npc.foto} alt={npc.nome} style={{width:'100%',height:'auto',maxHeight:'70vh',objectFit:'contain',display:'block',background:'#030108'}}/>
+          : <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'38px 24px',opacity:0.3}}><span style={{fontSize:26}}>👤</span><span style={{fontSize:12,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>{masterMode?'Toque para adicionar foto':'Sem foto disponível'}</span></div>}
+        {masterMode&&<input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>}
       </div>
+      <div style={{padding:'18px'}}>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#8A66A8',fontFamily:'Cinzel,serif',display:'block',marginBottom:6,textTransform:'uppercase'}}>Personagem</label>
+          {masterMode
+            ? <input value={npc.nome||''} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem..." style={{width:'100%'}}/>
+            : <div style={{fontFamily:'Cinzel,serif',fontSize:19,fontWeight:700,color:'#D7B8F2'}}>{npc.nome||'Desconhecido'}</div>}
+        </div>
+        <div>
+          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#8A66A8',fontFamily:'Cinzel,serif',display:'block',marginBottom:6,textTransform:'uppercase'}}>Descrição</label>
+          {masterMode
+            ? <textarea value={npc.descricao||''} onChange={e=>f('descricao',e.target.value)} placeholder="Descreva a aparência, personalidade e papel na história..." rows={7} style={{width:'100%',resize:'vertical',lineHeight:1.8}}/>
+            : <div style={{fontSize:14,color:'#A99AAD',lineHeight:1.85,whiteSpace:'pre-wrap',background:'rgba(255,255,255,0.018)',padding:'13px 14px',borderRadius:8,border:'1px solid rgba(168,85,247,0.1)'}}>{npc.descricao||'Nenhuma descrição disponível.'}</div>}
+        </div>
+        {masterMode&&<div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}><button onClick={onDelete} style={{background:'rgba(232,25,60,0.08)',border:'1px solid rgba(232,25,60,0.28)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 14px',fontSize:11,fontFamily:'Cinzel,serif'}}>✕ Remover</button></div>}
+      </div>
+    </div>
+  );
+}
 
-      <div style={{ padding: '16px 18px' }}>
-        {masterMode ? (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px', gap: 10, marginBottom: 12 }}>
-              <div>
-                <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Nome</label>
-                <input value={npc.nome} onChange={e => f('nome', e.target.value)} placeholder="Nome do personagem..." style={{ width: '100%' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Gênero</label>
-                <select value={npc.genero} onChange={e => f('genero', e.target.value)} style={{ width: '100%' }}>
-                  <option value="">—</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Feminino">Feminino</option>
-                  <option value="Não-binário">Não-binário</option>
-                  <option value="Desconhecido">Desconhecido</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Idade</label>
-                <input value={npc.idade} onChange={e => f('idade', e.target.value)} placeholder="Ex: 34" style={{ width: '100%' }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7A5A8A', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>Descrição</label>
-              <textarea value={npc.descricao} onChange={e => f('descricao', e.target.value)} placeholder="Papel na história, personalidade, motivações..." rows={4} style={{ width: '100%', resize: 'vertical', lineHeight: 1.8 }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={onDelete} style={{ background: 'rgba(232,25,60,0.08)', border: '1px solid rgba(232,25,60,0.28)', color: '#E8193C', borderRadius: 6, cursor: 'pointer', padding: '5px 14px', fontSize: 11, fontFamily: 'Cinzel,serif' }}>✕ Remover</button>
-            </div>
-          </>
-        ) : (
-          <>
-            {!npc.foto && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ fontFamily: 'Cinzel,serif', fontSize: 17, fontWeight: 700, color: '#C8A8E8', marginBottom: 4 }}>{npc.nome || 'Desconhecido'}</div>
-                {(npc.genero || npc.idade) && (
-                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                    {npc.genero && <span style={{ fontSize: 11, color: '#A855F7', fontFamily: 'Cinzel,serif', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.22)', borderRadius: 12, padding: '3px 10px' }}>{npc.genero}</span>}
-                    {npc.idade && <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12, padding: '3px 10px' }}>{npc.idade} anos</span>}
-                  </div>
-                )}
-              </div>
-            )}
-            {npc.foto && (npc.genero || npc.idade) && (
-              <div style={{ display: 'flex', gap: 7, marginBottom: 10, flexWrap: 'wrap' }}>
-                {npc.genero && <span style={{ fontSize: 11, color: '#A855F7', fontFamily: 'Cinzel,serif', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.22)', borderRadius: 12, padding: '3px 10px' }}>{npc.genero}</span>}
-                {npc.idade && <span style={{ fontSize: 11, color: '#C8B8A0', fontFamily: 'Cinzel,serif', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12, padding: '3px 10px' }}>{npc.idade} anos</span>}
-              </div>
-            )}
-            {npc.descricao
-              ? <div style={{ fontSize: 14, color: '#9A8A7A', lineHeight: 1.85, fontStyle: 'italic', whiteSpace: 'pre-wrap', background: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>{npc.descricao}</div>
-              : <div style={{ fontSize: 13, color: '#4A4050', fontStyle: 'italic', fontFamily: 'Cinzel,serif' }}>Nenhuma descrição disponível.</div>
-            }
-          </>
-        )}
+function NPCGridCard({ npc, onClick }) {
+  return (
+    <div onClick={onClick} style={{cursor:'pointer',borderRadius:14,overflow:'hidden',border:'1px solid rgba(168,85,247,0.25)',background:'rgba(5,2,13,0.98)',boxShadow:'0 4px 20px rgba(105,35,170,0.13)',transition:'transform 0.15s, box-shadow 0.15s'}}>
+      <div style={{position:'relative',width:'100%',aspectRatio:'4/3',background:'#030108',overflow:'hidden'}}>
+        {npc.foto
+          ? <img src={npc.foto} alt={npc.nome} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top'}}/>
+          : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:34,opacity:0.15}}>👤</div>}
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 42%,rgba(5,2,13,0.98))'}}/>
+        <div style={{position:'absolute',bottom:11,left:13,right:13}}>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:15,fontWeight:700,color:'#E8D8F0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{npc.nome||'Sem nome'}</div>
+        </div>
       </div>
+      <div style={{padding:'10px 13px 12px',fontSize:12,color:'#887A91',lineHeight:1.55,minHeight:48,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{npc.descricao||'Nenhuma descrição disponível.'}</div>
     </div>
   );
 }
@@ -3764,54 +3722,53 @@ function NPCCard({ npc, onChange, onDelete, masterMode }) {
 function PersonagensSection({ masterMode }) {
   const [npcs, setNpcs] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
   const saveTimeout = useRef({});
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'npcs'), snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      data.sort((a, b) => b.id - a.id);
-      setNpcs(data);
-      setLoaded(true);
+      data.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+      setNpcs(data); setLoaded(true);
     });
     return () => unsub();
   }, []);
 
   const save = npc => {
     clearTimeout(saveTimeout.current[npc.id]);
-    saveTimeout.current[npc.id] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'npcs', String(npc.id)), npc); } catch (e) { console.error(e); }
-    }, 800);
+    saveTimeout.current[npc.id] = setTimeout(async()=>{
+      try { await setDoc(doc(db,'npcs',String(npc.id)),npc); } catch(e) { console.error(e); }
+    },800);
   };
-
-  const add = () => { const n = newNPC(Date.now()); setDoc(doc(db, 'npcs', String(n.id)), n); };
-  const upd = (id, data) => { setNpcs(prev => prev.map(n => n.id === id ? data : n)); save(data); };
-  const del = async id => { await deleteDoc(doc(db, 'npcs', String(id))); };
+  const add = () => { const n=newNPC(Date.now()); setDoc(doc(db,'npcs',String(n.id)),n); setExpandedId(String(n.id)); };
+  const upd = (id,data) => { setNpcs(prev=>prev.map(n=>n.id===id?data:n)); save(data); };
+  const del = async id => { await deleteDoc(doc(db,'npcs',String(id))); if(String(id)===expandedId)setExpandedId(null); };
+  const expandedNpc=npcs.find(n=>String(n.id)===expandedId);
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 11, letterSpacing: '0.4em', color: '#7B5A9A', fontFamily: 'Cinzel,serif', marginBottom: 13, textTransform: 'uppercase' }}>Os Habitantes de Cosmum</div>
-        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 23, color: '#E8D8C0', fontWeight: 700, margin: 0 }}>Personagens</h2>
-        <div style={{ fontSize: 12, color: '#4A4050', marginTop: 9, fontFamily: 'Cinzel,serif' }}>Personagens encontrados ao longo da jornada</div>
-        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)', margin: '16px auto 0' }} />
+    <div style={{maxWidth:1100,margin:'0 auto',padding:'40px 24px 80px'}}>
+      <div style={{textAlign:'center',marginBottom:26}}>
+        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#8655AA',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>Os Habitantes de Cosmum</div>
+        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8F0',fontWeight:700,margin:0}}>Personagens</h2>
+        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'14px auto 0'}}/>
       </div>
-      {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Conectando ao cosmos...</div>}
-      {loaded && masterMode && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 18 }}>
-          <button onClick={add} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.1)', color: '#C8A8E8', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em' }}>+ Adicionar Personagem</button>
-        </div>
-      )}
-      {loaded && npcs.length === 0 && (
-        <div style={{ textAlign: 'center', padding: 44, border: '1px dashed rgba(168,85,247,0.15)', borderRadius: 14 }}>
-          <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.25 }}>👤</div>
-          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#6A5A7A' }}>
-            {masterMode ? 'Clique em "+ Adicionar Personagem" para começar.' : 'Nenhum personagem registrado ainda.'}
+
+      {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+      {loaded&&npcs.length===0&&<div style={{textAlign:'center',padding:42,border:'1px dashed rgba(168,85,247,0.16)',borderRadius:14,color:'#6A5A7A',fontFamily:'Cinzel,serif',fontSize:13}}>Nenhum personagem registrado.</div>}
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:16}}>
+        {npcs.map(npc=><NPCGridCard key={npc.id} npc={npc} onClick={()=>setExpandedId(String(npc.id))}/>)}
+        {loaded&&masterMode&&<button onClick={add} style={{minHeight:220,borderRadius:14,border:'1px dashed rgba(168,85,247,0.28)',background:'rgba(255,255,255,0.01)',color:'#875DA3',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:13,letterSpacing:'0.06em',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8}}><span style={{fontSize:28}}>+</span>Adicionar Personagem</button>}
+      </div>
+
+      {expandedNpc&&(
+        <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.9)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'40px 16px',overflowY:'auto',backdropFilter:'blur(7px)'}} onClick={()=>setExpandedId(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:650,position:'relative'}}>
+            <button onClick={()=>setExpandedId(null)} style={{position:'absolute',top:-14,right:-14,zIndex:10,width:32,height:32,borderRadius:'50%',border:'1px solid rgba(168,85,247,0.26)',background:'rgba(7,2,14,0.98)',color:'#E8D8F0',cursor:'pointer',fontSize:15}}>✕</button>
+            <NPCCard npc={expandedNpc} onChange={d=>upd(expandedNpc.id,d)} onDelete={()=>del(expandedNpc.id)} masterMode={masterMode}/>
           </div>
         </div>
       )}
-      {npcs.map(npc => (
-        <NPCCard key={npc.id} npc={npc} onChange={d => upd(npc.id, d)} onDelete={() => del(npc.id)} masterMode={masterMode} />
-      ))}
     </div>
   );
 }
