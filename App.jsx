@@ -136,6 +136,10 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .sheet-photo-main{height:auto!important;min-height:0!important;display:block;flex:0 0 auto;}
 .sheet-photo-main img{width:auto!important;max-width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;object-position:center!important;display:block!important;}
 
+@media(max-width:700px){
+  .mobile-sheet-view{width:100%!important;}
+  .mobile-sheet-view button{min-height:36px;}
+}
 @media(max-width:600px){
   .classes-grid{grid-template-columns:1fr!important;}
   .class-detail-grid{grid-template-columns:1fr!important;}
@@ -3427,7 +3431,379 @@ function InvocacoesPanel({ sheet, onChange, sheetColor, masterMode }) {
 }
 
 const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[]});
+
+function useIsMobile(breakpoint = 700) {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= breakpoint);
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth <= breakpoint);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities, revealedArtefatos, artefatosHabs}){
+  const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
+  const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
+  const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
+  const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
+  const f=(k,v)=>onChange({...sheet,[k]:v});
+  const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
+  const attrPoints = sheet.attrPoints || 0;
+  const photoInputRef=useRef(null);
+  const [levelUpData, setLevelUpData] = useState(null);
+  const [sheetTab, setSheetTab] = useState('geral');
+  // Cooldowns agora vivem na própria ficha (Firestore) — permite indicador no Modo Mestre
+  const sheetCooldowns = sheet.cooldowns || {};
+  const handleUpdateCooldown = (abilityId, turns) => { f('cooldowns', { ...sheetCooldowns, [abilityId]: turns }); };
+  const sheetTabsList = SHEET_TABS.filter(t => t.id === 'geral' || t.id === 'combate');
+  const handlePhotoFile=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async ev=>{const compressed=await compressImage(ev.target.result,900,900,0.75);f('foto',compressed);};reader.readAsDataURL(file);};
+  const attrBonus=val=>Math.floor(val/2);
+
+  const handleNivelChange = (newNivel) => {
+    const old = sheet.nivel || 1;
+    const clamped = Math.min(30, Math.max(1, newNivel));
+    if (masterMode && clamped > old) {
+      const gained = clamped - old;
+      const updated = { ...sheet, nivel: clamped, attrPoints: (sheet.attrPoints || 0) + gained };
+      onChange(updated);
+      const color = SHEET_COLORS[sheet.classe] || '#A855F7';
+      setLevelUpData({ nome: sheet.nome || 'Personagem', nivel: clamped, color });
+      pushToast(`${sheet.nome || 'Personagem'} subiu para Nível ${clamped}!`, '⬆️', color);
+    } else {
+      f('nivel', clamped);
+    }
+  };
+
+  const handleSpendPoint = (attrKey, newVal) => {
+    if (attrPoints <= 0) return;
+    onChange({ ...sheet, [attrKey]: newVal, attrPoints: attrPoints - 1 });
+  };
+
+  return(
+    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`}}>
+      {levelUpData && <LevelUpScreen data={levelUpData} onClose={() => setLevelUpData(null)} />}
+      <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
+
+      {/* HEADER STICKY — nome + foto pequena + sub-abas, visível durante toda a rolagem */}
+      <div style={{position:'sticky',top:0,zIndex:40,background:'rgba(8,10,22,0.97)',backdropFilter:'blur(8px)',borderBottom:`1px solid ${sheetColor}33`}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'9px 16px 7px'}}>
+          {sheet.foto
+            ? <img src={sheet.foto} alt="" style={{width:30,height:30,borderRadius:7,objectFit:'cover',border:`1.5px solid ${sheetColor}55`,flexShrink:0}}/>
+            : <div style={{width:30,height:30,borderRadius:7,background:`${sheetColor}15`,border:`1.5px dashed ${sheetColor}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{cls.icon}</div>
+          }
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:13,fontWeight:700,color:sheetColor,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{sheet.nome||'Sem nome'}</div>
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif'}}>Nv {sheet.nivel||1} · {hp}/{hp+hpBonus} HP</div>
+          </div>
+          {attrPoints>0 && <span title={`${attrPoints} ponto(s) de atributo pendente(s)`} style={{width:7,height:7,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite',flexShrink:0}}/>}
+        </div>
+        <div style={{display:'flex',gap:4,padding:'0 10px 8px'}}>
+          {sheetTabsList.map(t=>(
+            <button key={t.id} onClick={()=>setSheetTab(t.id)} style={{
+              flex:1,padding:'6px 8px',borderRadius:7,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.03em',
+              border:sheetTab===t.id?`1px solid ${sheetColor}66`:'1px solid rgba(255,255,255,0.07)',
+              background:sheetTab===t.id?`${sheetColor}16`:'rgba(255,255,255,0.02)',
+              color:sheetTab===t.id?sheetColor:'#6A5A7A',transition:'all 0.2s',
+            }}>{t.icon} {t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {sheetTab==='geral' && (
+        <div onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',minHeight:sheet.foto?0:130}}>
+          {sheet.foto?<img src={sheet.foto} alt="personagem" style={{width:'100%',display:'block',objectFit:'contain',background:'#04060F'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px 20px',gap:10}}><div style={{fontSize:40,opacity:0.15}}>📷</div><div style={{fontSize:12,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',textAlign:'center'}}>Toque para adicionar a foto do personagem</div></div>}
+          {sheet.foto&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:'30%',background:'linear-gradient(to bottom,transparent,rgba(4,6,15,0.95))',pointerEvents:'none'}}/>}
+          {sheet.foto&&<div style={{position:'absolute',bottom:16,left:20,right:20}}><div style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:700,color:sheetColor,textShadow:`0 0 24px ${sheetColor}88`}}>{sheet.nome||'Sem nome'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.55)',marginTop:4,fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel} · {label(sheet.nivel)}</div></div>}
+        </div>
+      )}
+      <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
+
+      <div style={{padding:'18px'}}>
+
+        {sheetTab==='geral' && (<>
+        {attrPoints > 0 && (
+          <div style={{ marginBottom: SPACING, padding: '14px 18px', border: '1px solid rgba(168,85,247,0.5)', borderRadius: 12, background: 'rgba(168,85,247,0.08)', animation: 'bannerGlow 2s ease-in-out infinite', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 22 }}>✨</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#C8A8E8', fontWeight: 700, marginBottom: 2 }}>{attrPoints} Ponto{attrPoints > 1 ? 's' : ''} de Atributo disponíve{attrPoints > 1 ? 'is' : 'l'}!</div>
+              <div style={{ fontSize: 12, color: '#7A6A9A' }}>Clique na próxima bolinha de um atributo para gastar um ponto.</div>
+            </div>
+            {masterMode && <button onClick={() => f('attrPoints', Math.max(0, attrPoints - 1))} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10 }}>−1</button>}
+          </div>
+        )}
+
+        <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
+          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+          {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
+        </div>
+
+        <div className="sheet-stats-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(138px,1fr))',gap:8,marginBottom:SPACING}}>
+
+          <div style={{gridColumn:'1 / -1', background:'rgba(232,25,60,0.06)', border:'1px solid rgba(232,25,60,0.18)', borderRadius:14, padding:'20px 18px'}}>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:16,textTransform:'uppercase',textAlign:'center'}}>
+              ❤️ Pontos de Vida
+            </div>
+
+            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:16}}>
+              <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>−</button>
+              <div style={{textAlign:'center',minWidth:80}}>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:52,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 28px ${hpColor(hp,30)}88, 0 0 6px ${hpColor(hp,30)}44`,transition:'color 0.4s, text-shadow 0.4s'}}>{hp}</div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}% de vida</div>
+              </div>
+              <button onClick={()=>f('hp',hp+1)} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
+            </div>
+
+            <div style={{height:8,background:'rgba(255,255,255,0.06)',borderRadius:6,marginBottom:14,overflow:'hidden'}}>
+              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
+            </div>
+
+            <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
+              {[-15,-10,-5].map(v=>(
+                <button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>{v}</button>
+              ))}
+              <div style={{width:10}}/>
+              {[+5,+10,+15].map(v=>(
+                <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
+              ))}
+            </div>
+
+            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:14,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div style={{fontSize:9,letterSpacing:'0.25em',color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>🛡 Vida Bônus</div>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <button onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>−</button>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:20,fontWeight:700,color:'#4ADE80',minWidth:28,textAlign:'center'}}>{hpBonus}</span>
+                <button onClick={()=>f('hp_bonus',hpBonus+1)} style={{width:26,height:26,borderRadius:6,border:'1px solid rgba(74,222,128,0.28)',background:'rgba(74,222,128,0.07)',color:'#4ADE80',cursor:'pointer',fontSize:16,lineHeight:1,padding:0}}>+</button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{background:'rgba(232,160,32,0.07)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:10,padding:'10px 12px'}}>
+            <div style={{fontSize:9,letterSpacing:'0.25em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Nível · XP</div>
+            {masterMode ? (
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <input type="number" min={1} max={30} value={sheet.nivel} onChange={e=>handleNivelChange(+e.target.value)} style={{width:40,textAlign:'center',fontSize:13}}/>
+                <span style={{color:'rgba(255,255,255,0.14)',fontSize:10}}>Nv</span>
+                <input type="number" min={0} value={sheet.xp} onChange={e=>f('xp',+e.target.value)} style={{width:58,textAlign:'center',fontSize:13}}/>
+                <span style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>XP</span>
+              </div>
+            ) : (
+              <div style={{display:'flex',alignItems:'baseline',gap:8}}>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:22,fontWeight:700,color:'#E8A020'}}>{sheet.nivel || 1}</span>
+                <span style={{fontSize:11,color:'rgba(232,160,32,0.5)',fontFamily:'Cinzel,serif'}}>Nível</span>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:15,fontWeight:600,color:'rgba(232,160,32,0.7)',marginLeft:6}}>{sheet.xp || 0}</span>
+                <span style={{fontSize:10,color:'rgba(232,160,32,0.4)',fontFamily:'Cinzel,serif'}}>XP</span>
+              </div>
+            )}
+            <div style={{fontSize:9,color:'#7A6A5A',marginTop:3,fontFamily:'Cinzel,serif'}}>{label(sheet.nivel)}</div>
+            {masterMode && attrPoints > 0 && <div style={{marginTop:6,fontSize:10,color:'#A855F7',fontFamily:'Cinzel,serif'}}>✨ +{attrPoints} pts pendentes</div>}
+          </div>
+        </div>
+          
+        <div className="attrs-personality-row" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:18,marginBottom:SPACING,alignItems:'start'}}>
+          <div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Atributos</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {ATTRS.map(a=>{
+                const bonus=attrBonus(sheet[a.key]||0);
+                return(
+                  <div key={a.key} style={{display:'flex',alignItems:'center',gap:8}}>
+                    <span className="attr-label" style={{fontSize:11,fontFamily:'Cinzel,serif',color:a.color,minWidth:92,letterSpacing:'0.03em'}}>{a.label}</span>
+                    <AttrDots value={sheet[a.key]||0} color={a.color} onChange={v=>{ if(masterMode) f(a.key,v); }} masterMode={masterMode} attrPoints={attrPoints} onSpendPoint={(newVal) => handleSpendPoint(a.key, newVal)}/>
+                    <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',minWidth:16,textAlign:'right'}}>{sheet[a.key]||0}</span>
+                    <span style={{fontSize:11,fontFamily:'Cinzel,serif',fontWeight:700,color:bonus>0?a.color:'rgba(255,255,255,0.12)',minWidth:26,textAlign:'center',background:bonus>0?`${a.color}15`:'transparent',borderRadius:4,padding:'1px 4px',border:bonus>0?`1px solid ${a.color}33`:'1px solid transparent',transition:'all 0.2s'}}>{bonus>0?`+${bonus}`:'—'}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.15)',marginTop:6,fontFamily:'Cinzel,serif',letterSpacing:'0.05em'}}>a cada 2 pontos = +1 bônus</div>
+          </div>
+
+          <div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Personalidade</div>
+            <PersonalityTags value={sheet.personalidade} color={sheetColor} onChange={v=>f('personalidade',v)}/>
+          </div>
+        </div>
+        </>)}
+
+                {sheetTab==='combate' && (<>
+        {/* Vigor Cósmico — visível de imediato, sem precisar voltar pra Visão Geral */}
+        <div style={{marginBottom:SPACING}}>
+          <div style={{background:`${sheetColor}09`,border:`1px solid ${sheetColor}24`,borderRadius:10,padding:'10px 12px',maxWidth:220}}>
+            <div style={{fontSize:9,letterSpacing:'0.25em',color:sheetColor,fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Vigor Cósmico</div>
+            <VigosWithLocked value={sheet.vigos||0} nivel={sheet.nivel||1} color={sheetColor} onChange={v=>f('vigos',v)}/>
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.18)',marginTop:4}}>+2 por turno</div>
+            {sheet.nivel>=8&&sheet.nivel<18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +1 VC (Nv 8)</div>}
+            {sheet.nivel>=18&&<div style={{fontSize:8,color:'rgba(255,200,0,0.5)',marginTop:2,fontFamily:'Cinzel,serif'}}>✦ +2 VC (Nv 8 e 18)</div>}
+          </div>
+        </div>
+
+        {/* Status Ativos — pra ver de cara se está envenenado, sangrando, atordoado etc. */}
+        <StatusPanel sheet={sheet} onChange={onChange} />
+
+        {/* Bônus de Atributos — leitura rápida pra rolagens; editar continua em Visão Geral */}
+        <div style={{marginBottom:SPACING}}>
+          <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Bônus de Atributos</div>
+          <AttrBonusStrip sheet={sheet}/>
+        </div>
+        <div style={{marginBottom:SPACING}}>
+          <div className="sheet-specials-row" style={{display:'flex',alignItems:'center',gap:12,marginBottom:9,flexWrap:'wrap'}}>
+            {cls.id !== 'personalizado' && (
+              <div style={{display:'flex',gap:9,flexWrap:'wrap',flex:1}}>
+                {cls.specials.map((sp,i)=>{const key=i===0?'especial1':'especial2';const unlocked=sheet[key];const canUnlock=i===0?sheet.nivel>=3:sheet.nivel>=7;return(<button key={i} onClick={()=>f(key,!unlocked)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',borderRadius:7,border:`1px solid ${unlocked?sheetColor+'55':'rgba(255,255,255,0.09)'}`,background:unlocked?`${sheetColor}14`:'rgba(255,255,255,0.02)',cursor:canUnlock?'pointer':'not-allowed',opacity:canUnlock?1:0.5,transition:'all 0.2s'}}><span style={{fontSize:12}}>{unlocked?'✦':'○'}</span><div style={{textAlign:'left'}}><div style={{fontSize:11,color:unlocked?sheetColor:'#6A5A6A',fontFamily:'Cinzel,serif'}}>{sp.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.18)'}}>Nível {sp.req}+{!canUnlock&&` (Atual: ${sheet.nivel})`}</div></div></button>);})}
+              </div>
+            )}
+            <div style={{flexShrink:0,padding:'8px 14px',borderRadius:8,border:`1px solid ${sheetColor}33`,background:`${sheetColor}0A`,textAlign:'center'}}>
+              <div style={{fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',letterSpacing:'0.15em',marginBottom:3,textTransform:'uppercase'}}>Alcance</div>
+              <div style={{fontSize:16,fontFamily:'Cinzel,serif',color:sheetColor,fontWeight:700}}>{cls.alcance}</div>
+            </div>
+          </div>
+        </div>
+
+        <HabilidadesPanel
+          cls={cls}
+          sheet={sheet}
+          customAbilities={customAbilities}
+          masterMode={masterMode}
+          onSaveCustomAbilities={onSaveCustomAbilities}
+          sheetCooldowns={sheetCooldowns}
+          onUpdateCooldown={handleUpdateCooldown}
+          currentVigos={sheet.vigos ?? 0}
+          onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+          characterName={sheet.nome || 'Personagem'}
+        />
+
+        <CollapsibleSection icon="⚔" label="Equipamentos" color={sheetColor}>
+          <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
+        </CollapsibleSection>
+
+        <CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
+          <ArtefatoFichaPanel
+            sheet={sheet}
+            onChange={onChange}
+            sheetColor={sheetColor}
+            revealedArtefatos={revealedArtefatos || []}
+            artefatosHabs={artefatosHabs || {}}
+            showHeader={false}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection icon="🎒" label="Itens & Inventário" color={sheetColor}>
+          <textarea
+            value={sheet.notas || ''}
+            onChange={e => f('notas', e.target.value)}
+            placeholder="Liste os itens carregados pelo personagem..."
+            rows={6}
+            style={{width:'100%', resize:'vertical', minHeight:140}}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          icon="✦"
+          label="Lore do Personagem"
+          color={sheetColor}
+          badge={!masterMode && sheet.lore_personagem ? <span style={{fontSize:9,color:sheetColor+'66',letterSpacing:'0.1em'}}>SOMENTE LEITURA</span> : null}
+        >
+          {masterMode ? (
+            <textarea value={sheet.lore_personagem || ''} onChange={e => f('lore_personagem', e.target.value)} rows={7} style={{width:'100%', resize:'vertical', lineHeight:1.85}}/>
+          ) : sheet.lore_personagem ? (
+            <div style={{fontSize:14,color:'#B8A898',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",padding:'14px 16px',background:`${sheetColor}06`,borderRadius:10,border:`1px solid ${sheetColor}22`,borderLeft:`3px solid ${sheetColor}55`}}>{sheet.lore_personagem}</div>
+          ) : (
+            <div style={{fontSize:12,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',textAlign:'center',padding:'20px 0'}}>A história deste personagem ainda não foi escrita pelo Mestre.</div>
+          )}
+        </CollapsibleSection>
+
+        {cls.id === 'necromante' && (
+          <CollapsibleSection icon="💀" label="Invocações" color={sheetColor}>
+            <InvocacoesPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor} masterMode={masterMode}/>
+          </CollapsibleSection>
+        )}
+        </>)}
+
+        {sheetTab==='lore' && (<>
+        <CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
+          <ArtefatoFichaPanel
+            sheet={sheet}
+            onChange={onChange}
+            sheetColor={sheetColor}
+            revealedArtefatos={revealedArtefatos || []}
+            artefatosHabs={artefatosHabs || {}}
+            showHeader={false}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection icon="🎒" label="Itens & Inventário" color={sheetColor}>
+          <textarea value={sheet.notas||''} onChange={e=>f('notas',e.target.value)} placeholder="Liste outros itens carregados pelo personagem..." rows={3} style={{width:'100%',resize:'vertical'}}/>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          icon="✦"
+          label="Lore do Personagem"
+          color={sheetColor}
+          badge={!masterMode && sheet.lore_personagem ? <span style={{fontSize:9,color:sheetColor+'66',letterSpacing:'0.1em'}}>SOMENTE LEITURA</span> : null}
+        >
+          {masterMode ? (
+            <textarea
+              value={sheet.lore_personagem||''}
+              onChange={e=>f('lore_personagem',e.target.value)}
+              placeholder="Escreva aqui a história, origem, motivações e segredos do personagem..."
+              rows={7}
+              style={{width:'100%',resize:'vertical',lineHeight:1.85}}
+            />
+          ) : sheet.lore_personagem ? (
+            <div style={{
+              fontSize:15, color:'#B8A898', lineHeight:2,
+              whiteSpace:'pre-wrap', fontFamily:"'Crimson Text',Georgia,serif",
+              padding:'16px 18px',
+              background:`${sheetColor}06`,
+              borderRadius:10,
+              border:`1px solid ${sheetColor}22`,
+              borderLeft:`3px solid ${sheetColor}55`,
+            }}>
+              {sheet.lore_personagem}
+            </div>
+          ) : (
+            <div style={{
+              fontSize:13, color:'#4A4050', fontStyle:'italic',
+              fontFamily:'Cinzel,serif', textAlign:'center',
+              padding:'24px 0', border:'1px dashed rgba(255,255,255,0.05)',
+              borderRadius:10,
+            }}>
+              A história deste personagem ainda não foi escrita pelo Mestre.
+            </div>
+          )}
+        </CollapsibleSection>
+
+        <div style={{marginTop:SPACING,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+          {masterMode ? (
+            <div>
+              <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>🔒 Senha da Ficha</div>
+              <div style={{display:'flex',gap:8}}>
+                <input type="password" value={sheet.senha||''} onChange={e=>f('senha',e.target.value)} placeholder="Definir senha do jogador..." style={{flex:1,fontSize:13}}/>
+                {sheet.senha && <button onClick={()=>f('senha','')} style={{padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.08)',color:'#E8193C',cursor:'pointer',fontSize:11}}>Resetar</button>}
+              </div>
+              <div style={{fontSize:10,color:'#4A4050',marginTop:5,fontFamily:'Cinzel,serif'}}>O Mestre pode resetar a senha. Jogadores precisam dela para abrir a ficha.</div>
+            </div>
+          ) : (
+            sheet.senha ? <div style={{fontSize:11,color:'#4A4050',fontFamily:'Cinzel,serif',textAlign:'center'}}>🔒 Ficha protegida por senha.</div> : null
+          )}
+        </div>
+        </>)}
+
+        {sheetTab==='invocacoes' && cls.id==='necromante' && (
+          <InvocacoesPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor} masterMode={masterMode}/>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+
 function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAbilities, revealedArtefatos, artefatosHabs}){
+  const isMobile = useIsMobile(700);
   const cls=CLASSES.find(c=>c.id===sheet.classe)||CLASSES[0];
   const sheetColor=SHEET_COLORS[sheet.classe]||cls.color;
   const sheetGlow=SHEET_GLOWS[sheet.classe]||cls.glow;
@@ -3466,6 +3842,21 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
       <span>{icon}</span>{label}
     </div>
   );
+
+
+  if (isMobile) {
+    return (
+      <MobileSheetFull
+        sheet={sheet}
+        onChange={onChange}
+        masterMode={masterMode}
+        customAbilities={customAbilities}
+        onSaveCustomAbilities={onSaveCustomAbilities}
+        revealedArtefatos={revealedArtefatos}
+        artefatosHabs={artefatosHabs}
+      />
+    );
+  }
 
   return(
     <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(2,0,9,0.985)',boxShadow:`0 8px 38px rgba(77,20,120,0.28), 0 6px 32px ${sheetGlow}`}}>
