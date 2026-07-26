@@ -133,8 +133,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .abilities-panel,.sheet-column-scroll>div{min-width:0;}
 .abilities-panel{flex:0 0 auto!important;height:auto!important;max-height:none!important;}
 .abilities-panel>.sheet-inner-scroll{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important;}
-.sheet-photo-main{height:auto;min-height:0;display:block;}
-.sheet-photo-main img{width:100%;height:auto;object-fit:contain;object-position:center top;display:block;}
+.sheet-photo-main{height:auto!important;min-height:0!important;display:block;flex:0 0 auto;}
+.sheet-photo-main img{width:auto!important;max-width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;object-position:center!important;display:block!important;}
 
 @media(max-width:600px){
   .classes-grid{grid-template-columns:1fr!important;}
@@ -1587,6 +1587,8 @@ function BattleMapSection({ masterMode }) {
   const [zoom, setZoom] = useState(1);
   const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
   const frameRef = useRef(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0, pointerId: null });
   const naturalSizeRef = useRef({ w: 0, h: 0 });
   const recomputeFit = () => {
     const frame = frameRef.current;
@@ -1722,6 +1724,40 @@ function BattleMapSection({ masterMode }) {
     frame.addEventListener('wheel', onWheel, { passive: false });
     return () => frame.removeEventListener('wheel', onWheel);
   }, [currentMapId, currentMap?.img]);
+
+  // Arraste do mapa ampliado: clique em uma área vazia e puxe em qualquer direção.
+  // Os tokens usam stopPropagation, portanto continuam sendo arrastados normalmente.
+  const onMapPanStart = (e) => {
+    const frame = frameRef.current;
+    if (!frame || zoomRef.current <= 1 || e.button > 1) return;
+    e.preventDefault();
+    panStartRef.current = {
+      x: e.clientX, y: e.clientY,
+      scrollLeft: frame.scrollLeft, scrollTop: frame.scrollTop,
+      pointerId: e.pointerId,
+    };
+    setIsPanning(true);
+    try { frame.setPointerCapture(e.pointerId); } catch (_) {}
+  };
+
+  const onMapPanMove = (e) => {
+    if (!isPanning) return;
+    const frame = frameRef.current;
+    if (!frame) return;
+    e.preventDefault();
+    const start = panStartRef.current;
+    frame.scrollLeft = start.scrollLeft - (e.clientX - start.x);
+    frame.scrollTop = start.scrollTop - (e.clientY - start.y);
+  };
+
+  const endMapPan = (e) => {
+    if (!isPanning) return;
+    const frame = frameRef.current;
+    setIsPanning(false);
+    if (frame && e?.pointerId != null) {
+      try { frame.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
+  };
 
   const persistMap = (mapId, data) => {
     const { tokens, ...meta } = data;
@@ -2073,7 +2109,12 @@ function BattleMapSection({ masterMode }) {
           {currentMap && currentMap.img && (
             <div
               ref={frameRef}
-              title="Use a roda do mouse para aproximar ou afastar"
+              title={zoom > 1 ? 'Clique e arraste para mover · use a roda para controlar o zoom' : 'Use a roda do mouse para aproximar'}
+              onPointerDown={onMapPanStart}
+              onPointerMove={onMapPanMove}
+              onPointerUp={endMapPan}
+              onPointerCancel={endMapPan}
+              onLostPointerCapture={endMapPan}
               style={{
                 position: 'absolute', inset: 0,
                 display: zoom > 1 ? 'block' : 'flex',
@@ -2082,6 +2123,8 @@ function BattleMapSection({ masterMode }) {
                 overflow: zoom > 1 ? 'auto' : 'hidden',
                 overscrollBehavior: 'contain',
                 scrollbarGutter: zoom > 1 ? 'stable' : undefined,
+                cursor: zoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in',
+                touchAction: 'none',
               }}
             >
               <div
@@ -3457,10 +3500,10 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           {colHead('Personagem','🧙')}
 
           {/* Foto */}
-          <div className="sheet-photo-main" onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'100%',cursor:'pointer',background:'#04060F',overflow:'hidden',borderRadius:10,marginBottom:12,border:`1px solid ${sheetColor}22`}}>
+          <div className="sheet-photo-main" onClick={()=>photoInputRef.current?.click()} style={{position:'relative',width:'fit-content',maxWidth:'100%',alignSelf:'center',cursor:'pointer',background:'#04060F',overflow:'hidden',borderRadius:10,marginBottom:12,border:`1px solid ${sheetColor}22`,lineHeight:0}}>
             {sheet.foto
-              ?<img src={sheet.foto} alt="personagem" style={{background:'#04060F',borderRadius:10}}/>
-              :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 12px',gap:6}}>
+              ?<img src={sheet.foto} alt="personagem" style={{width:'auto',maxWidth:'100%',height:'auto',maxHeight:'none',objectFit:'contain',objectPosition:'center',display:'block',background:'#04060F',borderRadius:9}}/>
+              :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 12px',gap:6,lineHeight:1.4}}>
                 <div style={{fontSize:26,opacity:0.15}}>📷</div>
                 <div style={{fontSize:11,color:'rgba(255,255,255,0.18)',fontFamily:'Cinzel,serif',textAlign:'center'}}>Toque para adicionar foto</div>
               </div>
