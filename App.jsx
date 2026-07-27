@@ -195,32 +195,37 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .chronicles-memory{aspect-ratio:16/10;border-radius:10px;overflow:hidden;border:1px solid rgba(216,180,254,.2);background:#080918;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease;cursor:zoom-in;}
 .chronicles-memory img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .35s ease,filter .35s ease;}
 @media (hover:hover) and (pointer:fine){
-  .chronicles-reading .chronicles-memory:hover{
-    position:fixed;
-    left:50%;
-    top:50%;
-    width:min(38vw,620px);
-    height:min(38vh,420px);
-    min-width:320px;
-    min-height:210px;
-    transform:translate(-50%,-50%);
-    aspect-ratio:auto;
-    z-index:10000;
-    border-radius:13px;
-    border-color:rgba(196,151,255,.62);
-    background:rgba(4,3,13,.97);
-    box-shadow:0 20px 58px rgba(0,0,0,.72),0 0 26px rgba(124,58,237,.24);
-    cursor:zoom-out;
-    animation:chronicleMemoryZoomSmall .2s ease-out;
+  /* A ampliação permanece no fluxo da galeria. Isso evita o ciclo de hover
+     causado por position:fixed, que fazia a imagem crescer e diminuir sem parar. */
+  .chronicles-reading .chronicles-memory-grid{overflow:visible;position:relative;}
+  .chronicles-reading .chronicles-memory-grid>div{position:relative;z-index:1;}
+  .chronicles-reading .chronicles-memory-grid>div:hover{z-index:40;}
+  .chronicles-reading .chronicles-memory{
+    transform-origin:center center;
+    will-change:transform;
   }
-  .chronicles-reading .chronicles-memory:hover img{object-fit:contain;transform:none;filter:none;}
-  .chronicles-reading .chronicles-memory:not(:hover) img:hover{transform:scale(1.035);filter:brightness(1.06);}
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n+1) .chronicles-memory{transform-origin:left center;}
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n) .chronicles-memory{transform-origin:right center;}
+  .chronicles-reading .chronicles-memory:hover{
+    position:relative;
+    transform:scale(1.48);
+    z-index:40;
+    border-color:rgba(196,151,255,.62);
+    background:rgba(4,3,13,.98);
+    box-shadow:0 18px 46px rgba(0,0,0,.68),0 0 24px rgba(124,58,237,.22);
+    cursor:zoom-out;
+  }
+  .chronicles-reading .chronicles-memory:hover img{
+    object-fit:contain;
+    transform:none;
+    filter:none;
+    background:#05030d;
+  }
+  .chronicles-reading .chronicles-memory:not(:hover) img:hover{
+    transform:scale(1.025);
+    filter:brightness(1.05);
+  }
 }
-@keyframes chronicleMemoryZoomSmall{
-  from{opacity:.35;transform:translate(-50%,-50%) scale(.88);}
-  to{opacity:1;transform:translate(-50%,-50%) scale(1);}
-}
-@keyframes chronicleMemoryZoom{from{opacity:.25;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
 .chronicles-side-section{padding:17px 18px;border-bottom:1px solid rgba(255,255,255,.055);}
 .chronicles-chip{display:flex;align-items:flex-start;gap:10px;margin:9px 0;color:#9e92aa;font-size:13px;line-height:1.35;}
 .chronicles-timeline{display:grid;gap:9px;}
