@@ -175,6 +175,50 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .sheet-inner-scroll{max-height:none!important;overflow:visible!important;}
 }
 
+/* ── CRÔNICAS PREMIUM ───────────────────────────────────────────── */
+.chronicles-shell{max-width:1540px;margin:0 auto;padding:18px 22px 70px;}
+.chronicles-grid{display:grid;grid-template-columns:minmax(220px,270px) minmax(0,1fr) minmax(250px,320px);gap:12px;align-items:stretch;min-height:calc(100vh - 190px);}
+.chronicles-panel{background:linear-gradient(180deg,rgba(8,10,24,.97),rgba(5,6,17,.98));border:1px solid rgba(167,139,250,.17);box-shadow:0 18px 55px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.025);}
+.chronicles-left{border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
+.chronicles-main{border-radius:14px;overflow:hidden;min-width:0;}
+.chronicles-right{border-radius:14px;overflow:hidden;}
+.chronicles-session-list{display:flex;flex-direction:column;gap:5px;}
+.chronicles-session-button{width:100%;text-align:left;border-radius:9px;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:.22s ease;}
+.chronicles-session-button:hover{transform:translateX(2px);background:rgba(124,58,237,.08)!important;}
+.chronicles-banner{position:relative;min-height:255px;overflow:hidden;background:radial-gradient(circle at 70% 25%,rgba(124,58,237,.24),transparent 45%),linear-gradient(135deg,#10091e,#050711 65%);}
+.chronicles-banner:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,4,12,.08),rgba(4,5,15,.3) 48%,rgba(5,6,17,.98));pointer-events:none;}
+.chronicles-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.chronicles-reading{padding:0 30px 26px;}
+.chronicles-story p{margin:0 0 13px;font-family:'Crimson Text',Georgia,serif;font-size:16px;line-height:1.78;color:#b8acbc;}
+.chronicles-story .dialogue{border-left:2px solid rgba(139,92,246,.75);padding:3px 0 3px 17px;color:#c8a7ff;background:linear-gradient(90deg,rgba(124,58,237,.075),transparent 68%);}
+.chronicles-memory-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+.chronicles-memory{aspect-ratio:1.45/1;border-radius:8px;overflow:hidden;border:1px solid rgba(216,180,254,.15);background:#080918;}
+.chronicles-memory img{width:100%;height:100%;display:block;object-fit:cover;}
+.chronicles-side-section{padding:17px 18px;border-bottom:1px solid rgba(255,255,255,.055);}
+.chronicles-chip{display:flex;align-items:flex-start;gap:10px;margin:9px 0;color:#9e92aa;font-size:13px;line-height:1.35;}
+.chronicles-timeline{display:grid;gap:9px;}
+.chronicles-timeline-row{display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;color:#968b9f;font-size:12px;line-height:1.45;}
+.chronicles-timeline-dot{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font:700 10px Cinzel,serif;box-shadow:0 0 10px rgba(124,58,237,.35);}
+.chronicles-editor{margin:14px 20px 22px;padding:17px;border:1px solid rgba(168,85,247,.24);border-radius:12px;background:rgba(9,5,20,.94);}
+@media(max-width:1100px){
+  .chronicles-grid{grid-template-columns:230px minmax(0,1fr);}
+  .chronicles-right{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));}
+  .chronicles-right .chronicles-side-section{border-right:1px solid rgba(255,255,255,.05);}
+}
+@media(max-width:760px){
+  .chronicles-shell{padding:12px 10px 60px;}
+  .chronicles-grid{display:block;min-height:0;}
+  .chronicles-left,.chronicles-main,.chronicles-right{margin-bottom:10px;}
+  .chronicles-left{max-height:none;}
+  .chronicles-session-list{display:flex;flex-direction:row;overflow-x:auto;padding-bottom:5px;}
+  .chronicles-session-button{min-width:230px;flex:0 0 auto;}
+  .chronicles-banner{min-height:220px;}
+  .chronicles-reading{padding:0 17px 20px;}
+  .chronicles-reading h1{font-size:25px!important;}
+  .chronicles-memory-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .chronicles-right{display:block;}
+}
+
 @media(max-width:400px){
   .sheet-stats-grid{grid-template-columns:1fr!important;}
   .enemy-stats-grid{grid-template-columns:1fr!important;}
@@ -5177,6 +5221,7 @@ function CronicasSection({masterMode}){
   const[entries,setEntries]=useState([]);
   const[loaded,setLoaded]=useState(false);
   const[open,setOpen]=useState(null);
+  const[editingChronicle,setEditingChronicle]=useState(false);
   const saveTimeout=useRef({});
   const[subTab, setSubTab]=useState('cronicas');
   const [openOva, setOpenOva] = useState(null);
@@ -5204,6 +5249,9 @@ const ecomInputRefs = useRef({});
   });
   return () => { unsub1(); unsub2(); };
 }, []);
+useEffect(()=>{
+  if(loaded && entries.length>0 && !entries.some(e=>e.id===open)) setOpen(entries[0].id);
+},[loaded,entries,open]);
   useEffect(()=>{
   const unsub = onSnapshot(collection(db,'ovas'), snap=>{
     const data = snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -5309,83 +5357,97 @@ const removeImage = async (entry, idx) => {
   await saveEntryImages(entry.id, imagens);
 };
   const imgInputRefs=useRef({});
+  const selectedEntry = entries.find(e=>e.id===open) || entries[0] || null;
+  const selectedWords = selectedEntry?.conteudo?.trim() ? selectedEntry.conteudo.trim().split(/\s+/).length : 0;
+  const selectedMinutes = Math.max(1, Math.ceil(selectedWords/180));
+  const selectedImages = selectedEntry?.imagens || [];
+  const bannerImage = selectedImages[0] || '';
+  const narrativeLines = (selectedEntry?.conteudo || '').split(/\n+/).map(t=>t.trim()).filter(Boolean);
+  const arcTitle = selectedEntry?.arco || 'Pequeninis';
+  const actTitle = selectedEntry?.ato || 'Ato III';
+  const sessionTitle = selectedEntry?.titulo || 'Crônica sem título';
+  const sessionNumber = selectedEntry?.sessao || '—';
+  const sessionQuote = selectedEntry?.frase || 'Toda aventura deixa um eco na história.';
+  const sessionLocation = selectedEntry?.local || arcTitle;
+  const sessionMaster = selectedEntry?.mestre || 'Ignácio (Mestre)';
+  const sessionDuration = selectedEntry?.duracao || 'Duração não informada';
   return(
-    <div style={{maxWidth:760,margin:'0 auto',padding:'40px 24px 80px'}}>
-      <div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Registro dos Acontecimentos</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Crônicas da Campanha</h2><div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Registre os eventos, batalhas, revelações e narrativas de cada sessão</div>
-        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/>
-      </div>
-
-      {/* Sub-abas */}
-      <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:24}}>
+    <div className="chronicles-shell">
+      {/* Sub-abas preservadas */}
+      <div style={{display:'flex',gap:10,justifyContent:'center',marginBottom:16,flexWrap:'wrap'}}>
         {[
           {id:'cronicas', label:'📜 Crônicas'},
-          {id:'ovas',     label:'\uD83C\uDFAC OVA(s)'},
-          {id:'ecom',     label:'Ecom \u26A1'},
+          {id:'ovas', label:'🎬 OVA(s)'},
+          {id:'ecom', label:'Ecom ⚡'},
         ].map(st=>(
           <button key={st.id} onClick={()=>setSubTab(st.id)} style={{
-            padding:'7px 22px', borderRadius:20, fontFamily:'Cinzel,serif', fontSize:12,
-            letterSpacing:'0.07em', cursor:'pointer', transition:'all 0.2s',
-            border: subTab===st.id ? '1px solid rgba(168,85,247,0.55)' : '1px solid rgba(255,255,255,0.08)',
-            background: subTab===st.id ? 'rgba(168,85,247,0.14)' : 'transparent',
-            color: subTab===st.id ? '#C8A8E8' : '#5A4A6A',
+            padding:'8px 24px',borderRadius:22,fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.07em',cursor:'pointer',transition:'all .2s',
+            border:subTab===st.id?'1px solid rgba(192,132,252,.7)':'1px solid rgba(255,255,255,.08)',
+            background:subTab===st.id?'linear-gradient(180deg,rgba(124,58,237,.27),rgba(76,29,149,.18))':'rgba(5,6,16,.6)',
+            color:subTab===st.id?'#ead7ff':'#655b72',boxShadow:subTab===st.id?'0 0 22px rgba(124,58,237,.18)':'none'
           }}>{st.label}</button>
         ))}
       </div>
-      {/* ── ABA CRÔNICAS ── */}
-      {subTab === 'cronicas' && (<>
-        {!loaded && <div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
-        {loaded && (<>
-          {masterMode && (
-            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:18}}>
-              <button onClick={add} style={{padding:'8px 20px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.1)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.08em'}}>+ Nova Crônica</button>
-            </div>
-          )}
-          {entries.length===0&&(<div style={{textAlign:'center',padding:38,border:'1px dashed rgba(255,255,255,0.07)',borderRadius:12}}><div style={{fontSize:30,marginBottom:10}}>📜</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Nenhuma crônica registrada.</div></div>)}
-          {entries.map(entry=>(
-            <div key={entry.id} style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:11,marginBottom:11,overflow:'hidden',background:'rgba(8,10,22,0.85)'}}>
-              <div onClick={()=>setOpen(open===entry.id?null:entry.id)} style={{padding:'13px 17px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}>
-                <span style={{fontSize:15}}>📜</span>
-                <div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600}}>{entry.titulo||'(Sem título)'}</div><div style={{fontSize:11,color:'#5A5070',marginTop:2,display:'flex',gap:10,flexWrap:'wrap'}}>{entry.sessao&&<span>Sessão {entry.sessao}</span>}<span>{entry.data}</span>{entry.conteudo&&<span style={{color:'#4A4050'}}>{entry.conteudo.split(' ').length} palavras</span>}{(entry.imagens||[]).length>0&&<span style={{color:'#4A4050'}}>🖼 {entry.imagens.length}</span>}</div></div>
-                <div style={{display:'flex',gap:7}}>
-                  {masterMode&&<button onClick={e=>{e.stopPropagation();del(entry.id);}} style={{background:'rgba(232,25,60,0.09)',border:'1px solid rgba(232,25,60,0.22)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 8px',fontSize:11}}>✕</button>}
-                  <span style={{color:'rgba(255,255,255,0.2)',fontSize:11,transform:open===entry.id?'rotate(90deg)':'none',transition:'transform 0.3s',display:'flex',alignItems:'center'}}>▶</span>
+
+      {subTab==='cronicas'&&(<>
+        {!loaded&&<div style={{textAlign:'center',color:'#746883',fontFamily:'Cinzel,serif',padding:50}}>Conectando ao arquivo das crônicas...</div>}
+        {loaded&&entries.length===0&&<div className="chronicles-panel" style={{padding:50,textAlign:'center',borderRadius:14}}><div style={{fontSize:38}}>📖</div><div style={{fontFamily:'Cinzel,serif',color:'#bda8cf',marginTop:10}}>Nenhuma crônica registrada.</div>{masterMode&&<button onClick={add} style={{...btnStyle('#A855F7'),marginTop:18}}>+ Nova Crônica</button>}</div>}
+        {loaded&&selectedEntry&&(
+          <div className="chronicles-grid">
+            <aside className="chronicles-panel chronicles-left">
+              <div style={{padding:'20px 18px 17px',borderBottom:'1px solid rgba(255,255,255,.055)'}}>
+                <div style={{display:'flex',gap:11,alignItems:'center'}}><div style={{width:42,height:42,borderRadius:'50%',border:'1px solid rgba(216,180,254,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,background:'rgba(124,58,237,.08)'}}>📖</div><div><div style={{fontFamily:'Cinzel Decorative,serif',fontSize:18,color:'#e6d6c8'}}>Crônicas</div><div style={{fontSize:11,color:'#786d80',lineHeight:1.4,marginTop:2}}>Registros das aventuras<br/>e memórias de cada sessão.</div></div></div>
+              </div>
+              <div style={{padding:'17px 13px 12px',overflowY:'auto'}}>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.14em',color:'#b58be8',margin:'0 5px 8px'}}>ARCO ATUAL</div>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:20,color:'#e6cfae',padding:'0 5px 13px'}}>{arcTitle}</div>
+                <div className="chronicles-session-list">
+                  {entries.map(entry=>{const active=entry.id===selectedEntry.id;return <button key={entry.id} className="chronicles-session-button" onClick={()=>{setOpen(entry.id);setEditingChronicle(false);}} style={{border:active?'1px solid rgba(168,85,247,.58)':'1px solid transparent',background:active?'linear-gradient(90deg,rgba(124,58,237,.2),rgba(76,29,149,.08))':'transparent',boxShadow:active?'inset 3px 0 0 #8b5cf6,0 0 18px rgba(124,58,237,.08)':'none',color:active?'#e8dafa':'#93859c'}}><span style={{width:10,height:10,borderRadius:'50%',marginTop:5,flexShrink:0,background:active?'#8b5cf6':'transparent',border:`1px solid ${active?'#a78bfa':'#806e83'}`,boxShadow:active?'0 0 8px #7c3aed':'none'}}/><span style={{minWidth:0,flex:1}}><span style={{display:'block',fontFamily:'Cinzel,serif',fontSize:12,color:active?'#f0e4f8':'#b6a7b5'}}>Sessão {entry.sessao||'—'}</span><span style={{display:'block',fontSize:11,color:active?'#a99ab0':'#685e70',marginTop:3,lineHeight:1.35,whiteSpace:'normal'}}>{entry.titulo||'(Sem título)'}</span></span></button>})}
+                </div>
+                <div style={{height:1,background:'rgba(255,255,255,.055)',margin:'17px 5px'}}/>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.14em',color:'#b58be8',margin:'0 5px 10px'}}>OUTROS ARCOS</div>
+                {['🏰  O Castelo','🚆  Trem Maglev','💎  Salar de Uyuni','♨️  Thermas dos Laranjais'].map(x=><div key={x} style={{padding:'9px 6px',fontFamily:'Cinzel,serif',fontSize:12,color:'#af9daa'}}>{x}</div>)}
+              </div>
+              {masterMode&&<div style={{marginTop:'auto',padding:13,borderTop:'1px solid rgba(255,255,255,.05)',display:'grid',gap:7}}><button onClick={add} style={{...btnStyle('#A855F7'),width:'100%'}}>+ Nova Crônica</button><button onClick={()=>setEditingChronicle(v=>!v)} style={{...btnStyle('#C8A8E8'),width:'100%'}}>{editingChronicle?'Fechar edição':'✦ Editar crônica'}</button></div>}
+            </aside>
+
+            <main className="chronicles-panel chronicles-main">
+              <div className="chronicles-banner">
+                {bannerImage&&<img src={bannerImage} alt=""/>}
+                <div style={{position:'absolute',zIndex:2,left:29,top:19,fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'.12em',color:'#c7a0f3'}}>✦ {arcTitle.toUpperCase()} · {actTitle.toUpperCase()}</div>
+                <div style={{position:'absolute',zIndex:2,left:29,right:26,bottom:20}}>
+                  <div style={{fontFamily:'Cinzel,serif',fontSize:14,color:'#d9b77c',marginBottom:7}}>Sessão {sessionNumber}</div>
+                  <h1 style={{fontFamily:'Cinzel Decorative,serif',fontSize:34,lineHeight:1.14,color:'#eee5dc',margin:0,textShadow:'0 3px 18px rgba(0,0,0,.9)',maxWidth:720}}>{sessionTitle}</h1>
                 </div>
               </div>
-              {open===entry.id&&(
-                <div style={{padding:'0 17px 17px',borderTop:'1px solid rgba(255,255,255,0.05)',animation:'pageTurn 0.3s ease'}}>
-                  <div style={{height:11}}/>
-                  {masterMode ? (
-                    <>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:9,marginBottom:11}}>
-                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Título</label><input value={entry.titulo||''} onChange={e=>upd(entry.id,{...entry,titulo:e.target.value})} placeholder="Nome desta crônica..." style={{width:'100%'}}/></div>
-                        <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Sessão</label><input value={entry.sessao||''} onChange={e=>upd(entry.id,{...entry,sessao:e.target.value})} placeholder="Nº" style={{width:'100%'}}/></div>
-                      </div>
-                      <div style={{marginBottom:11}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Narrativa da Sessão</label><textarea value={entry.conteudo||''} onChange={e=>upd(entry.id,{...entry,conteudo:e.target.value})} rows={10} style={{width:'100%',resize:'vertical',lineHeight:1.85}}/></div>
-                      <div style={{marginBottom:10}}>
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
-                          <label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Imagens</label>
-                          <div style={{display:'flex',alignItems:'center',gap:8}}>
-                            <span style={{fontSize:10,color:'#4A4050',fontFamily:'Cinzel,serif'}}>{(entry.imagens||[]).length}/6</span>
-                            <button onClick={()=>imgInputRefs.current[entry.id]?.click()} style={{padding:'5px 12px',borderRadius:7,border:'1px solid rgba(168,85,247,0.3)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11}}>🖼 Adicionar</button>
-                            <input ref={el=>imgInputRefs.current[entry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(entry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/>
-                          </div>
-                        </div>
-                        {(entry.imagens||[]).length>0?<div style={{display:'flex',flexDirection:'column',gap:10}}>{entry.imagens.map((img,idx)=>(<div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/><button onClick={()=>removeImage(entry,idx)} style={{position:'absolute',top:8,right:8,background:'rgba(232,25,60,0.85)',border:'none',color:'#fff',borderRadius:6,cursor:'pointer',padding:'4px 9px',fontSize:12}}>✕</button></div>))}</div>:<div style={{padding:12,borderRadius:10,border:'1px dashed rgba(255,255,255,0.06)',color:'#5A5070',textAlign:'center',fontSize:11,fontFamily:'Cinzel,serif'}}>Nenhuma imagem. (máx 6)</div>}
-                      </div>
-                      <div style={{fontSize:11,color:'#4A4050',textAlign:'right',fontFamily:'Cinzel,serif'}}>{(entry.conteudo||'').length} caracteres · salvo automaticamente</div>
-                    </>
-                  ) : (
-                    <>
-                      {(entry.titulo||entry.sessao)&&(<div style={{marginBottom:16,paddingBottom:14,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>{entry.titulo&&<div style={{fontFamily:'Cinzel,serif',fontSize:16,color:'#C8A8E8',fontWeight:700,marginBottom:4}}>{entry.titulo}</div>}<div style={{display:'flex',gap:14,flexWrap:'wrap'}}>{entry.sessao&&<span style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Sessão {entry.sessao}</span>}<span style={{fontSize:11,color:'#5A5070',fontFamily:'Cinzel,serif'}}>{entry.data}</span></div></div>)}
-                      {entry.conteudo?<div style={{fontSize:15,color:'#B0A090',lineHeight:1.95,whiteSpace:'pre-wrap',fontFamily:"'Crimson Text',Georgia,serif",marginBottom:16}}>{entry.conteudo}</div>:<div style={{fontSize:13,color:'#4A4050',fontStyle:'italic',fontFamily:'Cinzel,serif',marginBottom:16,textAlign:'center',padding:'20px 0'}}>Esta crônica ainda não possui narrativa.</div>}
-                      {(entry.imagens||[]).length>0&&(<div style={{display:'flex',flexDirection:'column',gap:12,marginTop:8}}><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:4}}>Imagens</div>{entry.imagens.map((img,idx)=>(<div key={idx} style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}><img src={img} alt="" style={{width:'100%',display:'block',objectFit:'contain',background:'rgba(0,0,0,0.3)'}}/></div>))}</div>)}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </>)}
+              <div className="chronicles-reading">
+                <div style={{display:'flex',gap:18,flexWrap:'wrap',padding:'15px 0 12px',fontSize:12,color:'#aa9178',borderBottom:'1px solid rgba(255,255,255,.045)'}}><span>▣ {selectedEntry.data}</span><span>▤ {selectedWords} palavras</span><span>◷ ~ {selectedMinutes} min de leitura</span></div>
+                <div style={{fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic',fontSize:16,color:'#d6b78b',padding:'17px 0 13px'}}>“{sessionQuote}”</div>
+                <div style={{height:3,borderRadius:4,background:'rgba(255,255,255,.07)',overflow:'hidden',marginBottom:22}}><div style={{width:'32%',height:'100%',background:'linear-gradient(90deg,#7c3aed,#a855f7)',boxShadow:'0 0 12px rgba(168,85,247,.6)'}}/></div>
+                <div className="chronicles-story">{narrativeLines.length?narrativeLines.map((line,i)=>{const dialogue=/^[—-]/.test(line);return <p key={i} className={dialogue?'dialogue':''}>{line}</p>}):<p style={{fontStyle:'italic',color:'#655b6c'}}>Esta crônica ainda não possui narrativa.</p>}</div>
+                {selectedImages.length>0&&<section style={{marginTop:24,padding:'13px',border:'1px solid rgba(216,180,254,.12)',borderRadius:11,background:'rgba(255,255,255,.012)'}}><div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.13em',color:'#c59bf3',marginBottom:10}}>✦ MEMÓRIAS DA SESSÃO</div><div className="chronicles-memory-grid">{selectedImages.slice(0,8).map((img,i)=><div key={i}><div className="chronicles-memory"><img src={img} alt=""/></div><div style={{fontSize:10,color:'#87798b',textAlign:'center',marginTop:5}}>Memória {i+1}</div></div>)}</div></section>}
+              </div>
+
+              {masterMode&&editingChronicle&&<div className="chronicles-editor">
+                <div style={{fontFamily:'Cinzel,serif',color:'#d7b9f4',fontSize:13,marginBottom:13}}>EDIÇÃO DA CRÔNICA — salvamento automático</div>
+                <div style={{display:'grid',gridTemplateColumns:'2fr 90px 1fr 1fr',gap:8,marginBottom:8}}><input value={selectedEntry.titulo||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,titulo:e.target.value})} placeholder="Título"/><input value={selectedEntry.sessao||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,sessao:e.target.value})} placeholder="Sessão"/><input value={selectedEntry.arco||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,arco:e.target.value})} placeholder="Arco"/><input value={selectedEntry.ato||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,ato:e.target.value})} placeholder="Ato"/></div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:8}}><input value={selectedEntry.duracao||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,duracao:e.target.value})} placeholder="Duração"/><input value={selectedEntry.local||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,local:e.target.value})} placeholder="Local"/><input value={selectedEntry.mestre||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,mestre:e.target.value})} placeholder="Mestre"/></div>
+                <input value={selectedEntry.frase||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,frase:e.target.value})} placeholder="Frase de impacto" style={{width:'100%',marginBottom:8}}/>
+                <textarea value={selectedEntry.conteudo||''} onChange={e=>upd(selectedEntry.id,{...selectedEntry,conteudo:e.target.value})} rows={12} style={{width:'100%',resize:'vertical',lineHeight:1.75,marginBottom:10}}/>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}><div style={{fontSize:11,color:'#6d6174'}}>{selectedImages.length}/8 imagens preservadas</div><div style={{display:'flex',gap:8}}><button onClick={()=>imgInputRefs.current[selectedEntry.id]?.click()} style={btnStyle('#A855F7')}>🖼 Adicionar imagem</button><input ref={el=>imgInputRefs.current[selectedEntry.id]=el} type="file" accept="image/*" onChange={e=>{if(e.target.files[0])addImage(selectedEntry,e.target.files[0]);e.target.value='';}} style={{display:'none'}}/><button onClick={()=>{if(confirm('Excluir esta crônica e suas imagens?'))del(selectedEntry.id)}} style={btnStyle('#E8193C')}>Excluir</button></div></div>
+                {selectedImages.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8,marginTop:12}}>{selectedImages.map((img,i)=><div key={i} style={{position:'relative'}}><div className="chronicles-memory"><img src={img} alt=""/></div><button onClick={()=>removeImage(selectedEntry,i)} style={{position:'absolute',right:5,top:5,border:0,borderRadius:5,background:'rgba(180,20,50,.9)',color:'#fff',cursor:'pointer'}}>✕</button></div>)}</div>}
+              </div>}
+            </main>
+
+            <aside className="chronicles-panel chronicles-right">
+              <section className="chronicles-side-section"><div style={{fontFamily:'Cinzel,serif',fontSize:18,color:'#e1c08d',marginBottom:13}}>Sessão {sessionNumber}</div><div className="chronicles-chip">▣ <span>{selectedEntry.data}</span></div><div className="chronicles-chip">◷ <span>{sessionDuration}</span></div><div className="chronicles-chip">⌖ <span>{sessionLocation}</span></div><div className="chronicles-chip">♙ <span>{sessionMaster}</span></div></section>
+              <section className="chronicles-side-section"><div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.13em',color:'#c49af1',marginBottom:12}}>PERSONAGENS PRESENTES</div><div style={{display:'flex',gap:7,flexWrap:'wrap'}}>{['I','J','K','E','M'].map((x,i)=><div key={i} style={{width:42,height:42,borderRadius:'50%',border:`1px solid ${['#1ec8ff','#e8193c','#e8a020','#a855f7','#4ade80'][i]}99`,background:'radial-gradient(circle at 35% 30%,rgba(255,255,255,.12),rgba(8,8,20,.9))',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Cinzel,serif',color:'#d8ccd9'}}>{x}</div>)}</div></section>
+              <section className="chronicles-side-section"><div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.13em',color:'#c49af1',marginBottom:11}}>LOCALIZAÇÃO</div><div style={{display:'flex',gap:10,alignItems:'center'}}><span style={{fontSize:22,color:'#a855f7'}}>⌖</span><div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#d7bd91'}}>{sessionLocation}</div><div style={{fontSize:11,color:'#776c7b',marginTop:3}}>{arcTitle}</div></div></div></section>
+              <section className="chronicles-side-section"><div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.13em',color:'#c49af1',marginBottom:11}}>DESTAQUES DA SESSÃO</div>{[['◉','Revelação','#a855f7','Segredos e pistas encontrados.'],['♟','Encontro','#e8a020','Personagens importantes.'],['⚔','Combate','#e8193c','Conflitos e ameaças.'],['♦','Descoberta','#84cc16','Novos caminhos revelados.']].map(([ic,t,c,d])=><div key={t} style={{display:'grid',gridTemplateColumns:'34px 1fr',gap:9,marginBottom:9}}><div style={{height:34,borderRadius:7,border:`1px solid ${c}55`,background:`${c}12`,display:'flex',alignItems:'center',justifyContent:'center',color:c}}>{ic}</div><div><div style={{fontFamily:'Cinzel,serif',fontSize:11,color:c}}>{t}</div><div style={{fontSize:11,color:'#746a78',marginTop:2}}>{d}</div></div></div>)}</section>
+              <section className="chronicles-side-section"><div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.13em',color:'#c49af1',marginBottom:12}}>LINHA DO TEMPO</div><div className="chronicles-timeline">{narrativeLines.slice(0,5).map((line,i)=><div className="chronicles-timeline-row" key={i}><div className="chronicles-timeline-dot">{i+1}</div><div>{line.length>75?line.slice(0,75)+'…':line}</div></div>)}</div></section>
+            </aside>
+          </div>
+        )}
       </>)}
 
       {/* ── ABA OVA(s) ── */}
