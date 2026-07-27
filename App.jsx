@@ -208,7 +208,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .chronicles-reading .chronicles-memory-grid>div:nth-child(3n) .chronicles-memory{transform-origin:right center;}
   .chronicles-reading .chronicles-memory:hover{
     position:relative;
-    transform:scale(1.48);
+    transform:scale(2.96);
     z-index:40;
     border-color:rgba(196,151,255,.62);
     background:rgba(4,3,13,.98);
@@ -434,6 +434,24 @@ async function pushToast(msg, icon='✦', color='#C8A8E8') {
     await setDoc(doc(db, 'config', 'lastToast'), { msg, icon, color, ts: Date.now() });
   } catch(e) { console.error(e); }
 }
+
+// Publica cada rolagem em um canal global dedicado e mantém o documento antigo
+// por compatibilidade com componentes e versões anteriores do site.
+async function publishDiceResult(result) {
+  const payload = {
+    ...result,
+    ts: result?.ts || Date.now(),
+    rollId: result?.rollId || `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+  };
+  const writes = await Promise.allSettled([
+    setDoc(doc(db, 'config', 'public_dice_roll'), payload),
+    setDoc(doc(db, 'config', 'combat_dice'), payload),
+  ]);
+  if (writes.every(w => w.status === 'rejected')) {
+    console.error('Não foi possível publicar a rolagem global.', writes);
+  }
+  return payload;
+}
 // Registra ação de habilidade no log do combate (funciona de qualquer componente)
 async function logAbilityUsed(characterName, abilityName, cost, color = '#C8A8E8') {
   try {
@@ -541,7 +559,7 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+  const unsub = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
     if (!snap.exists()) return;
     const d = snap.data();
     if (!d.ts || Date.now() - d.ts > 8000) return;
@@ -651,7 +669,7 @@ const buildCombatants = () => [
       const isCrit = diceSides === 20 && base === 20; const isFail = diceSides === 20 && base === 1;
       const result = { base, total, sides: diceSides, bonus: Number(diceBonus), roller: masterMode ? 'Mestre' : 'Jogador', ts: Date.now(), isCrit, isFail };
       setDiceResult(result); setDiceRolling(false);
-      try { await setDoc(doc(db, 'config', 'combat_dice'), result); } catch (e) {}
+      try { await publishDiceResult(result); } catch (e) { console.error('Erro ao publicar dado:', e); }
       const newLog = addLog(`${result.roller} rolou D${diceSides}${diceBonus ? ` +${diceBonus}` : ''}: ${total}${isCrit ? ' — CRÍTICO!' : isFail ? ' — FALHA CRÍTICA!' : ''}`, isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8', isCrit ? '🌟' : isFail ? '💀' : '🎲');
       persist(initiative, round, turnIdx, newLog);
     }, 700);
@@ -1755,6 +1773,7 @@ function BattleMapSection({ masterMode }) {
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
+  const liveTokenVersionRef = useRef({});
   useEffect(() => { mapTokensRef.current = mapTokens; }, [mapTokens]);
 
   useEffect(() => {
@@ -1772,8 +1791,23 @@ function BattleMapSection({ masterMode }) {
     });
     const u1b = onSnapshot(collection(db, 'battlemap_tokens'), snap => {
       const tk = {};
-      snap.docs.forEach(d => { tk[d.id] = (d.data() && d.data().tokens) || []; });
-      setMapTokens(prev => ({ ...prev, ...tk }));
+      snap.docs.forEach(d => {
+        const data = d.data() || {};
+        const mapId = String(d.id);
+        const incomingTs = Number(data.updatedAt || 0);
+        const knownTs = Number(liveTokenVersionRef.current[mapId] || 0);
+        if (incomingTs >= knownTs) {
+          tk[mapId] = Array.isArray(data.tokens) ? data.tokens : [];
+          liveTokenVersionRef.current[mapId] = incomingTs;
+        }
+      });
+      if (Object.keys(tk).length) {
+        setMapTokens(prev => {
+          const next = { ...prev, ...tk };
+          mapTokensRef.current = next;
+          return next;
+        });
+      }
     });
     // Canal leve de sincronização ao vivo. O documento contém apenas o mapa ativo
     // e as posições dos tokens, sem carregar novamente a imagem do mapa.
@@ -1781,7 +1815,16 @@ function BattleMapSection({ masterMode }) {
       if (!snap.exists()) return;
       const data = snap.data() || {};
       if (!data.mapId || !Array.isArray(data.tokens)) return;
-      setMapTokens(prev => ({ ...prev, [String(data.mapId)]: data.tokens }));
+      const mapId = String(data.mapId);
+      const incomingTs = Number(data.updatedAt || 0);
+      const knownTs = Number(liveTokenVersionRef.current[mapId] || 0);
+      if (incomingTs < knownTs) return;
+      liveTokenVersionRef.current[mapId] = incomingTs;
+      setMapTokens(prev => {
+        const next = { ...prev, [mapId]: data.tokens };
+        mapTokensRef.current = next;
+        return next;
+      });
     });
     const u2 = onSnapshot(doc(db, 'config', 'battlemap_active'), snap => {
       if (snap.exists()) setActiveId(snap.data().activeId || '');
@@ -1898,20 +1941,24 @@ function BattleMapSection({ masterMode }) {
   };
 
   // Tokens ficam em documento à parte (leve) — grava quase instantaneamente, sem carregar a imagem junto
-  const writeLiveTokens = async (mapId, tokens) => {
-    const payload = { mapId: String(mapId), tokens, updatedAt: Date.now() };
-    // O estado ao vivo é o canal prioritário; a coleção mantém a persistência histórica.
-    await Promise.allSettled([
-      setDoc(doc(db, 'config', 'battlemap_live_tokens'), payload),
-      setDoc(doc(db, 'battlemap_tokens', String(mapId)), { tokens, updatedAt: payload.updatedAt }),
-    ]);
+  const writeLiveTokens = async (mapId, tokens, persistArchive = false) => {
+    const id = String(mapId);
+    const payload = { mapId: id, tokens, updatedAt: Date.now() };
+    liveTokenVersionRef.current[id] = payload.updatedAt;
+    const writes = [setDoc(doc(db, 'config', 'battlemap_live_tokens'), payload)];
+    // Durante o arraste, transmite somente o documento leve. A coleção permanente
+    // é atualizada ao soltar o token ou ao incluir/remover/configurar um token.
+    if (persistArchive) {
+      writes.push(setDoc(doc(db, 'battlemap_tokens', id), { tokens, updatedAt: payload.updatedAt }));
+    }
+    await Promise.allSettled(writes);
   };
 
   const persistTokens = (mapId, tokens) => {
     clearTimeout(saveTimeout.current['tk_' + mapId]);
     saveTimeout.current['tk_' + mapId] = setTimeout(() => {
-      writeLiveTokens(mapId, tokens).catch(e => console.error('Erro ao sincronizar tokens:', e));
-    }, 35);
+      writeLiveTokens(mapId, tokens, true).catch(e => console.error('Erro ao sincronizar tokens:', e));
+    }, 20);
   };
 
   const updCurrentMap = (patch) => {
@@ -1999,7 +2046,7 @@ function BattleMapSection({ masterMode }) {
  useEffect(() => {
     if (!draggingId || !currentMap) return;
     const mapIdAtDragStart = currentMap.id;
-    const TOKEN_THROTTLE_MS = 50;
+    const TOKEN_THROTTLE_MS = 30;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
@@ -2007,11 +2054,11 @@ function BattleMapSection({ masterMode }) {
       clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
       if (now - last >= TOKEN_THROTTLE_MS) {
         lastTokenWriteRef.current[mapIdAtDragStart] = now;
-        writeLiveTokens(mapIdAtDragStart, tokensArr).catch(e => console.error(e));
+        writeLiveTokens(mapIdAtDragStart, tokensArr, false).catch(e => console.error(e));
       } else {
         saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
           lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-          writeLiveTokens(mapIdAtDragStart, tokensArr).catch(e => console.error(e));
+          writeLiveTokens(mapIdAtDragStart, tokensArr, false).catch(e => console.error(e));
         }, TOKEN_THROTTLE_MS - (now - last));
       }
     };
@@ -2029,8 +2076,10 @@ function BattleMapSection({ masterMode }) {
       setMapTokens(prev => {
         const currentTokens = prev[String(mapIdAtDragStart)] || [];
         const updatedTokens = currentTokens.map(t => t.id === draggingId ? { ...t, x, y } : t);
+        const next = { ...prev, [String(mapIdAtDragStart)]: updatedTokens };
+        mapTokensRef.current = next;
         throttledTokenWrite(updatedTokens);
-        return { ...prev, [String(mapIdAtDragStart)]: updatedTokens };
+        return next;
       });
     };
     const up = () => {
@@ -2038,7 +2087,7 @@ function BattleMapSection({ masterMode }) {
       const latestTokens = mapTokensRef.current[String(mapIdAtDragStart)];
       if (latestTokens) {
         lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-        writeLiveTokens(mapIdAtDragStart, latestTokens).catch(e => console.error(e));
+        writeLiveTokens(mapIdAtDragStart, latestTokens, true).catch(e => console.error(e));
       }
       if (!moved.current) setSelectedId(prevSel => prevSel === draggingId ? null : draggingId);
       setDraggingId(null);
@@ -2539,7 +2588,7 @@ function DiceWidget() {
     const res = { base, total, sides: dice, bonus: Number(bonus), isCrit, isFail, ts: Date.now(), roller: 'Jogador' };
     setResult(res);
     setRevealed(false);
-    try { await setDoc(doc(db, 'config', 'combat_dice'), res); } catch (e) {}
+    try { await publishDiceResult(res); } catch (e) { console.error('Erro ao publicar dado:', e); }
   };
 
   return (
@@ -5771,7 +5820,7 @@ function PlayerCombatBanner() {
     const u2 = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
       if (snap.exists() && snap.data().log) setLog(snap.data().log.slice(-8));
     });
-    const u3 = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+    const u3 = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
       if (!snap.exists()) return;
       const d = snap.data();
       if (d.ts && Date.now() - d.ts < 15000) setLastDice(d);
@@ -5916,7 +5965,7 @@ function PublicDiceOverlay() {
   const hideTimer = useRef(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat_dice'), snap => {
+    const unsub = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
       if (!snap.exists()) return;
       const d = snap.data();
       if (!d.ts || Date.now() - d.ts > 12000) return;
