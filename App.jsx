@@ -194,9 +194,32 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .chronicles-memory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
 .chronicles-memory{aspect-ratio:16/10;border-radius:10px;overflow:hidden;border:1px solid rgba(216,180,254,.2);background:#080918;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease;cursor:zoom-in;}
 .chronicles-memory img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .35s ease,filter .35s ease;}
-.chronicles-reading .chronicles-memory:hover{position:fixed;inset:5vh 5vw;width:90vw;height:90vh;aspect-ratio:auto;z-index:10000;border-radius:14px;border-color:rgba(196,151,255,.75);background:rgba(3,2,10,.98);box-shadow:0 0 0 100vmax rgba(1,0,7,.88),0 26px 90px rgba(0,0,0,.9),0 0 45px rgba(124,58,237,.35);cursor:zoom-out;animation:chronicleMemoryZoom .22s ease-out;}
-.chronicles-reading .chronicles-memory:hover img{object-fit:contain;transform:none;filter:none;}
-.chronicles-reading .chronicles-memory:not(:hover) img:hover{transform:scale(1.045);filter:brightness(1.08);}
+@media (hover:hover) and (pointer:fine){
+  .chronicles-reading .chronicles-memory:hover{
+    position:fixed;
+    left:50%;
+    top:50%;
+    width:min(38vw,620px);
+    height:min(38vh,420px);
+    min-width:320px;
+    min-height:210px;
+    transform:translate(-50%,-50%);
+    aspect-ratio:auto;
+    z-index:10000;
+    border-radius:13px;
+    border-color:rgba(196,151,255,.62);
+    background:rgba(4,3,13,.97);
+    box-shadow:0 20px 58px rgba(0,0,0,.72),0 0 26px rgba(124,58,237,.24);
+    cursor:zoom-out;
+    animation:chronicleMemoryZoomSmall .2s ease-out;
+  }
+  .chronicles-reading .chronicles-memory:hover img{object-fit:contain;transform:none;filter:none;}
+  .chronicles-reading .chronicles-memory:not(:hover) img:hover{transform:scale(1.035);filter:brightness(1.06);}
+}
+@keyframes chronicleMemoryZoomSmall{
+  from{opacity:.35;transform:translate(-50%,-50%) scale(.88);}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1);}
+}
 @keyframes chronicleMemoryZoom{from{opacity:.25;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
 .chronicles-side-section{padding:17px 18px;border-bottom:1px solid rgba(255,255,255,.055);}
 .chronicles-chip{display:flex;align-items:flex-start;gap:10px;margin:9px 0;color:#9e92aa;font-size:13px;line-height:1.35;}
@@ -220,7 +243,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .chronicles-reading{padding:0 17px 20px;}
   .chronicles-reading h1{font-size:25px!important;}
   .chronicles-memory-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-  .chronicles-reading .chronicles-memory:hover{inset:8vh 3vw;width:94vw;height:84vh;}
+  .chronicles-memory{cursor:default;}
   .chronicles-right{display:block;}
 }
 
@@ -229,6 +252,55 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .enemy-stats-grid{grid-template-columns:1fr!important;}
   .attr-dots button{width:11px!important;height:11px!important;}
 }
+`;
+
+
+const LIVRO_CSS=`
+/* ─── LIVRO DA MANDÍBULA — LIVRO PROFÉTICO ─────────────────────────────── */
+.livro-shell{position:relative;max-width:1500px;margin:0 auto;padding:22px 92px 86px;min-height:calc(100vh - 150px);}
+.livro-heading{text-align:center;margin:0 auto 20px;position:relative;z-index:3;}
+.livro-kicker{font:600 11px/1.2 'Cinzel',serif;letter-spacing:.48em;text-transform:uppercase;color:#8c6d99;margin-bottom:9px;}
+.livro-title{font:700 clamp(30px,3.7vw,54px)/1.05 'Cinzel Decorative','Cinzel',serif;color:#ead8ad;text-shadow:0 2px 0 #3b2616,0 0 22px rgba(216,182,107,.18);margin:0;}
+.livro-ornament{width:min(520px,60vw);height:1px;margin:16px auto 0;background:linear-gradient(90deg,transparent,#8b6428 25%,#b46ce8 50%,#8b6428 75%,transparent);position:relative;}
+.livro-ornament:after{content:'✦';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c16cff;font-size:18px;text-shadow:0 0 14px #8b3fc7;background:#08040c;padding:0 10px;}
+.livro-tabs{display:flex;justify-content:center;align-items:flex-end;gap:4px;position:relative;z-index:6;margin:0 auto -6px;max-width:1040px;padding:0 28px;}
+.livro-tab{min-width:205px;min-height:62px;padding:12px 18px 15px;border:1px solid #5c4022;border-bottom-color:#21140b;border-radius:14px 14px 3px 3px;background:linear-gradient(180deg,#27181b,#130c0f);color:#b99a69;font:600 13px/1.2 'Cinzel',serif;letter-spacing:.04em;cursor:pointer;position:relative;box-shadow:inset 0 0 0 2px rgba(180,125,55,.08),0 -5px 18px rgba(0,0,0,.4);clip-path:polygon(4% 0,96% 0,100% 12%,98% 100%,2% 100%,0 12%);transition:.25s ease;}
+.livro-tab:before{content:'';position:absolute;inset:5px;border:1px solid rgba(216,182,107,.16);clip-path:inherit;pointer-events:none;}
+.livro-tab.active{transform:translateY(-5px);color:#ead8ad;border-color:#8b3fc7;background:linear-gradient(180deg,#442052,#241126);box-shadow:0 0 18px rgba(139,63,199,.36),inset 0 0 18px rgba(180,108,232,.11);}
+.livro-tab.active:after{content:'◆';position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);color:#d784ff;text-shadow:0 0 12px #a855f7;font-size:13px;}
+.livro-stage{position:relative;perspective:1800px;}
+.livro-cover{position:relative;margin:0 auto;max-width:1240px;padding:26px 38px 34px;border-radius:34px 34px 22px 22px;background:linear-gradient(110deg,#100b13,#251526 10%,#100b13 49%,#281727 90%,#0d0910);border:2px solid #5b3e21;box-shadow:0 30px 70px rgba(0,0,0,.78),0 0 35px rgba(96,30,135,.25),inset 0 0 0 5px #170e19,inset 0 0 0 7px rgba(139,100,40,.42);}
+.livro-cover:before,.livro-cover:after{content:'';position:absolute;top:34px;bottom:38px;width:25px;background:repeating-linear-gradient(90deg,#654b2e 0 2px,#28190f 2px 4px,#b18d53 4px 5px);opacity:.75;z-index:0;}
+.livro-cover:before{left:18px;border-radius:14px 2px 2px 14px}.livro-cover:after{right:18px;border-radius:2px 14px 14px 2px}
+.livro-pages{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;min-height:610px;border-radius:15px 15px 18px 18px;overflow:hidden;filter:drop-shadow(0 12px 12px rgba(0,0,0,.55));}
+.livro-page{position:relative;color:#3c2c20;padding:42px 48px 46px;overflow:auto;background-color:#d8c391;background-image:radial-gradient(circle at 15% 18%,rgba(83,51,23,.18),transparent 24%),radial-gradient(circle at 78% 82%,rgba(105,61,22,.12),transparent 30%),linear-gradient(100deg,rgba(255,246,209,.55),transparent 20%,rgba(85,48,23,.12) 100%),repeating-linear-gradient(7deg,rgba(82,50,22,.025) 0 1px,transparent 1px 4px);box-shadow:inset 0 0 55px rgba(91,55,24,.35),inset 0 0 0 1px rgba(91,55,24,.25);font-family:'Crimson Text',Georgia,serif;}
+.livro-page.left{border-radius:14px 2px 2px 16px;box-shadow:inset -35px 0 42px rgba(45,25,12,.34),inset 13px 0 28px rgba(255,238,188,.18),inset 0 0 0 1px rgba(91,55,24,.25);}
+.livro-page.right{border-radius:2px 14px 16px 2px;box-shadow:inset 35px 0 42px rgba(45,25,12,.36),inset -13px 0 28px rgba(255,238,188,.18),inset 0 0 0 1px rgba(91,55,24,.25);}
+.livro-page:before{content:'';position:absolute;inset:13px;border:1px solid rgba(111,70,28,.28);pointer-events:none;clip-path:polygon(2% 0,98% 0,100% 3%,100% 97%,98% 100%,2% 100%,0 97%,0 3%);}
+.livro-page:after{content:'✧ ᚱ ᛟ ᚾ ✧';position:absolute;right:24px;top:19px;color:rgba(78,43,29,.12);font-family:'Cinzel',serif;letter-spacing:.35em;transform:rotate(4deg);pointer-events:none;}
+.livro-gutter{position:absolute;z-index:4;left:50%;top:25px;bottom:32px;width:54px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(ellipse at center,rgba(23,12,7,.58),rgba(48,27,14,.24) 28%,transparent 70%);filter:blur(2px);}
+.livro-page-title{text-align:center;font:700 18px/1.35 'Cinzel',serif;letter-spacing:.06em;color:#513725;margin:0 0 25px;text-transform:uppercase;}
+.livro-page-title:after{content:'◆';display:block;color:#7e3cab;font-size:10px;margin-top:8px;text-shadow:0 0 7px rgba(139,63,199,.5);}
+.livro-timeline{position:relative;padding-left:38px;}
+.livro-timeline:before{content:'';position:absolute;left:14px;top:9px;bottom:12px;width:1px;background:linear-gradient(#8b6428,#6d4a22);}
+.livro-milestone{position:relative;display:grid;grid-template-columns:54px 1fr;gap:13px;margin-bottom:18px;align-items:start;}
+.livro-milestone:before{content:'';position:absolute;left:-28px;top:22px;width:9px;height:9px;border-radius:50%;background:#a75ee0;border:2px solid #d6b566;box-shadow:0 0 8px #8b3fc7;}
+.livro-milestone-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:23px;background:radial-gradient(circle,#332013,#130c08);border:2px solid #a47a35;box-shadow:inset 0 0 0 2px #21140c;}
+.livro-year{font:700 15px/1.2 'Cinzel',serif;color:#6b3590;margin-bottom:4px}.livro-event{font-size:16px;font-weight:600;line-height:1.2}.livro-desc{font-size:14px;line-height:1.35;color:#5d4735;margin-top:3px}
+.livro-revelation{max-width:470px;margin:0 auto;text-align:center;border:1px solid rgba(112,70,31,.42);padding:34px 38px;position:relative;box-shadow:inset 0 0 0 5px rgba(112,70,31,.08);}
+.livro-revelation p{font-size:16px;line-height:1.45;margin:0 0 14px;font-style:italic}.livro-revelation .emphasis{color:#6e3a91;font-weight:600}
+.livro-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}.livro-engraved{border:1px solid rgba(100,61,27,.43);padding:15px 12px;text-align:center;background:rgba(255,244,201,.1);box-shadow:inset 0 0 0 3px rgba(100,61,27,.06)}.livro-engraved:last-child{grid-column:1/-1}.livro-engraved strong{display:block;font:600 11px 'Cinzel',serif;text-transform:uppercase;margin-bottom:5px}.livro-engraved span{font-size:13px;color:#5e4936}
+.livro-note{margin-top:20px;border:1px solid rgba(112,60,139,.55);padding:12px 16px;color:#6d398d;font-style:italic;text-align:center;font-size:14px;}
+.livro-record{height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}.livro-record-icon{width:170px;height:170px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:72px;color:#39243d;background:radial-gradient(circle,rgba(128,67,158,.18),rgba(65,39,23,.08) 65%,transparent);border:1px solid rgba(100,60,32,.4);box-shadow:inset 0 0 35px rgba(75,41,25,.16)}
+.livro-record-name{font:700 22px 'Cinzel',serif;color:#523727;margin-top:22px}.livro-status{font:600 10px 'Cinzel',serif;letter-spacing:.23em;color:#70418b;margin-top:7px;text-transform:uppercase}.livro-copy{font-size:16px;line-height:1.5;color:#4b382a}.livro-section-label{font:700 11px 'Cinzel',serif;letter-spacing:.2em;color:#6f3c8d;text-transform:uppercase;margin:17px 0 7px}.livro-seal{font-size:70px;filter:grayscale(1);opacity:.22}.livro-locked{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#5b4635}.livro-master-embed{height:500px;overflow:auto;padding-right:5px}.livro-master-embed>div>div:first-child{background:transparent!important;border-color:rgba(91,55,24,.28)!important;color:#5c4634!important}.livro-master-embed input,.livro-master-embed textarea{color:#3c2c20!important;background:rgba(255,248,218,.45)!important;border-color:rgba(91,55,24,.38)!important}.livro-master-embed button{filter:saturate(.75)}
+.livro-turning .livro-pages{animation:livroFlip .78s cubic-bezier(.3,.02,.2,1)}
+@keyframes livroFlip{0%{transform:rotateY(0);filter:brightness(1)}45%{transform:rotateY(var(--flip-dir));filter:brightness(.58)}55%{transform:rotateY(calc(var(--flip-dir) * -0.25));filter:brightness(.7)}100%{transform:rotateY(0);filter:brightness(1)}}
+.livro-arrow{position:absolute;top:54%;transform:translateY(-50%);width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#30183d,#0e0913 72%);border:2px solid #6b2e8d;color:#e0b85c;font-size:39px;cursor:pointer;z-index:8;box-shadow:0 0 0 7px rgba(77,30,101,.2),0 0 24px rgba(139,63,199,.45),inset 0 0 15px rgba(180,108,232,.2);transition:.2s}.livro-arrow:hover{transform:translateY(-50%) scale(1.07);box-shadow:0 0 0 7px rgba(77,30,101,.3),0 0 34px rgba(180,108,232,.65)}.livro-arrow.prev{left:3px}.livro-arrow.next{right:3px}.livro-arrow:disabled{opacity:.3;cursor:default;transform:translateY(-50%)}
+.livro-bookmark{position:absolute;z-index:6;left:50%;bottom:-38px;transform:translateX(-50%);width:56px;height:94px;background:linear-gradient(90deg,#23162b,#6b2f83 50%,#221329);clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%);border-top:2px solid #a7783d;box-shadow:0 8px 15px rgba(0,0,0,.5)}.livro-bookmark:after{content:'✦';position:absolute;top:22px;left:50%;transform:translateX(-50%);color:#d8b66b;font-size:24px;text-shadow:0 0 10px #8b3fc7}
+.livro-page-count{text-align:center;margin-top:18px;color:#7b637d;font:600 10px 'Cinzel',serif;letter-spacing:.18em;text-transform:uppercase}
+@media(max-width:1100px){.livro-shell{padding-left:62px;padding-right:62px}.livro-tabs{overflow-x:auto;justify-content:flex-start}.livro-tab{min-width:175px}.livro-pages{min-height:570px}.livro-page{padding:34px 30px}.livro-arrow{width:55px;height:55px;font-size:30px}}
+@media(max-width:720px){.livro-shell{padding:18px 12px 74px}.livro-kicker{font-size:8px;letter-spacing:.34em}.livro-tabs{padding:0 4px;margin-bottom:0;gap:5px}.livro-tab{min-width:142px;min-height:48px;padding:9px 10px;font-size:10px}.livro-cover{padding:15px 15px 25px;border-radius:18px}.livro-pages{display:block;min-height:0}.livro-page{display:none;min-height:620px;padding:35px 25px 42px;border-radius:10px!important}.livro-page.mobile-visible{display:block}.livro-gutter{display:none}.livro-arrow{position:fixed;top:auto;bottom:20px;width:48px;height:48px;font-size:27px}.livro-arrow.prev{left:18px}.livro-arrow.next{right:78px}.livro-bookmark{display:none}.livro-info-grid{grid-template-columns:1fr}.livro-engraved:last-child{grid-column:auto}.livro-milestone{grid-template-columns:44px 1fr}.livro-milestone-icon{width:40px;height:40px;font-size:18px}.livro-master-embed{height:auto;max-height:none}.livro-page-count{margin-top:10px}}
+@media(prefers-reduced-motion:reduce){.livro-turning .livro-pages{animation:none!important}.livro-tab,.livro-arrow{transition:none!important}}
 `;
 
 const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80',necromante:'#6E6E80',bardo:'#FFD86B',arcanjo:'#5B2C8C',personalizado:'#C0C0C0'};
@@ -5119,9 +5191,17 @@ function MasterPagesBook({masterMode}){
 
 // ─── LIVRO DA MANDÍBULA ───────────────────────────────────────────────────────
 function LibroSection({masterMode}){
-  const[page,setPage]=useState(0);const[unlocked,setUnlocked]=useState({});const[artefatosUnlocked,setArtefatosUnlocked]=useState({});const[coordRevealed,setCoordRevealed]=useState(false);
-  const[artefatosHabs,setArtefatosHabs]=useState({});
-  const[formHab,setFormHab]=useState({});
+  const [activeTab,setActiveTab]=useState('marcos');
+  const [tabPages,setTabPages]=useState({marcos:0,entidades:0,artefatos:0,mestre:0});
+  const [mobileSide,setMobileSide]=useState(0);
+  const [turning,setTurning]=useState(false);
+  const [turnDir,setTurnDir]=useState(1);
+  const touchStart=useRef(null);
+  const [unlocked,setUnlocked]=useState({});
+  const [artefatosUnlocked,setArtefatosUnlocked]=useState({});
+  const [coordRevealed,setCoordRevealed]=useState(false);
+  const [artefatosHabs,setArtefatosHabs]=useState({});
+  const [formHab,setFormHab]=useState({});
 
   useEffect(()=>{
     const u1=onSnapshot(doc(db,'config','entities'),snap=>{if(snap.exists())setUnlocked(snap.data().unlocked||{});});
@@ -5133,91 +5213,93 @@ function LibroSection({masterMode}){
 
   const toggleUnlock=async id=>{const updated={...unlocked,[id]:!unlocked[id]};await setDoc(doc(db,'config','entities'),{unlocked:updated});};
   const toggleArtefato=async id=>{const updated={...artefatosUnlocked,[id]:!artefatosUnlocked[id]};await setDoc(doc(db,'config','artefatos'),{unlocked:updated});};
-  const toggleCoord=async()=>{await setDoc(doc(db,'config','prophecy'),{coordRevealed:!coordRevealed});};
+  const toggleCoord=async()=>setDoc(doc(db,'config','prophecy'),{coordRevealed:!coordRevealed});
+  const saveHab=async artefatoId=>{const nova=formHab[artefatoId];if(!nova?.nome)return;const next={...artefatosHabs,[artefatoId]:[...(artefatosHabs[artefatoId]||[]),{...nova,id:Date.now()}]};await setDoc(doc(db,'config','artefatos_habilidades'),next);setFormHab(p=>({...p,[artefatoId]:{nome:'',descricao:'',custo:'',dano:'',cooldown:''}}));};
+  const deleteHab=async(artefatoId,habId)=>{const next={...artefatosHabs,[artefatoId]:(artefatosHabs[artefatoId]||[]).filter(h=>h.id!==habId)};await setDoc(doc(db,'config','artefatos_habilidades'),next);};
+  const isEntityRevealed=(ent,i)=>i<2||!!unlocked[ent.id];
 
-  const saveHab=async(artefatoId)=>{
-    const novaHab=formHab[artefatoId];
-    if(!novaHab||!novaHab.nome)return;
-    const atuais=artefatosHabs[artefatoId]||[];
-    const nextHabs={...artefatosHabs,[artefatoId]:[...atuais,{...novaHab,id:Date.now()}]};
-    await setDoc(doc(db,'config','artefatos_habilidades'),nextHabs);
-    setFormHab(prev=>({...prev,[artefatoId]:{nome:'',descricao:'',custo:'',dano:'',cooldown:''}}));
+  const tabs=[
+    {id:'marcos',label:'Marcos & Profecia',icon:'▣'},
+    {id:'entidades',label:'As Seis Entidades',icon:'◈'},
+    {id:'artefatos',label:'Os 6 Artefatos',icon:'◆'},
+    {id:'mestre',label:'Páginas do Mestre',icon:'▤'},
+  ];
+  const totals={marcos:2,entidades:ENTITIES_DATA.length,artefatos:ARTEFATOS_DATA.length,mestre:1};
+  const spread=tabPages[activeTab]||0;
+
+  const changeTab=id=>{if(turning)return;setActiveTab(id);setMobileSide(0);};
+  const turnPage=dir=>{
+    if(turning)return;
+    if(window.innerWidth<=720){
+      if(dir>0&&mobileSide===0){setMobileSide(1);return;}
+      if(dir<0&&mobileSide===1){setMobileSide(0);return;}
+    }
+    const next=Math.max(0,Math.min(totals[activeTab]-1,spread+dir));
+    if(next===spread)return;
+    setTurnDir(dir);setTurning(true);
+    setTimeout(()=>{setTabPages(p=>({...p,[activeTab]:next}));setMobileSide(dir>0?0:1);},360);
+    setTimeout(()=>setTurning(false),780);
   };
-  const deleteHab=async(artefatoId,habId)=>{
-    const atuais=artefatosHabs[artefatoId]||[];
-    const nextHabs={...artefatosHabs,[artefatoId]:atuais.filter(h=>h.id!==habId)};
-    await setDoc(doc(db,'config','artefatos_habilidades'),nextHabs);
+
+  useEffect(()=>{
+    const onKey=e=>{if(e.key==='ArrowRight')turnPage(1);if(e.key==='ArrowLeft')turnPage(-1);};
+    window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
+  },[activeTab,spread,turning,mobileSide]);
+
+  const milestoneDescriptions={
+    'Descoberta e controle do fogo':'O domínio das chamas inaugurou a era da transformação.',
+    'Revolução agrícola — os humanos se tornam sedentários':'A civilização começa a florescer e a memória passa a criar raízes.',
+    'Surgimento das primeiras civilizações: Mesopotâmia e Egito':'Culturas antigas erguem os pilares do conhecimento.',
+    'Albert Einstein publica a Teoria da Relatividade':'A compreensão do tempo e do espaço muda para sempre.',
+    'Era Atômica — o poder de destruição da humanidade se torna real':'O poder de destruição da humanidade se torna real.',
   };
+  const milestoneChunk=spread===0?MILESTONES.slice(0,5):MILESTONES.slice(5);
 
-  const starC=['#1EC8FF','#E8A020','#A855F7','#E8193C'];
-  const isRevealed=(ent,i)=>i<2?true:(unlocked[ent.id]||false);
+  const MarcosLeft=()=> <>
+    <h3 className="livro-page-title">{spread===0?'Marcos da Humanidade':'Os Últimos Presságios'}</h3>
+    <div className="livro-timeline">{milestoneChunk.map((m,i)=><div className="livro-milestone" key={`${m.year}-${i}`}>
+      <div className="livro-milestone-icon">{m.icon}</div><div><div className="livro-year">{m.year}</div><div className="livro-event">{m.event}</div><div className="livro-desc">{milestoneDescriptions[m.event]||(m.prophecy?'Quatro estrelas aparecem nos céus de Cosmum. Elas se aproximam.':'Um novo capítulo muda o destino da humanidade.')}</div></div>
+    </div>)}</div>
+  </>;
+  const MarcosRight=()=>spread===0?<>
+    <h3 className="livro-page-title">Revelação do Livro</h3>
+    <div className="livro-revelation"><p>Estes escritos foram deixados pelos primeiros <strong>Magos do Prólogo</strong> para guiar aqueles que vierem depois.</p><p>Aqui estão registrados os marcos da humanidade, as entidades que nos observam, os artefatos capazes de mudar destinos e as páginas que o Mestre escreve conforme a história se desenrola.</p><p className="emphasis">Cada página é uma verdade. Cada escolha, uma consequência.<br/>Que a Mandíbula guie seus passos.</p><div className="livro-info-grid"><div className="livro-engraved"><strong>◈ As Seis Entidades</strong><span>Seis forças antigas que moldam o destino.</span></div><div className="livro-engraved"><strong>◆ Os 6 Artefatos</strong><span>Seis relíquias de poder inimaginável.</span></div><div className="livro-engraved"><strong>▤ Páginas do Mestre</strong><span>Páginas mágicas escritas conforme a jornada avança.</span></div></div></div><div className="livro-note">Novas páginas serão preenchidas conforme a história avança.<br/>Volte sempre e descubra o que foi revelado.</div>
+  </>:<>
+    <h3 className="livro-page-title">A Profecia das Quatro Estrelas</h3><div className="livro-revelation"><div style={{fontSize:34,letterSpacing:18,color:'#6d358c',marginBottom:20}}>✦ ✦ ✦ ✦</div><p>“Quatro estrelas surgirão nos céus de Cosmum — visíveis tanto de dia quanto de noite. A cada dia que passa, elas se aproximam.”</p><p>Quando chegarem ao máximo possível de proximidade, algo acontecerá. O Livro não ousou descrever.</p>{coordRevealed?<><div className="livro-section-label">As Coordenadas do Destino</div><div style={{font:'700 18px Cinzel,serif',letterSpacing:'.13em',color:'#6d358c'}}>45° 30′ 53.6″ N<br/>25° 22′ 1.8″ E</div>{masterMode&&<button onClick={toggleCoord} style={parchmentBtn}>Selar novamente</button>}</>:<><div className="livro-seal">⌾</div><p>A próxima passagem permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={toggleCoord} style={parchmentBtn}>Quebrar selo</button>}</>}</div>
+  </>;
 
-  return(<div style={{maxWidth:780,margin:'0 auto',padding:'40px 24px 80px'}}><div style={{textAlign:'center',marginBottom:28}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>O Artefato da Profecia</div><h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>Livro da Mandíbula</h2><div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.6),transparent)',margin:'15px auto 0'}}/></div><div style={{display:'flex',gap:6,marginBottom:26,justifyContent:'center',flexWrap:'wrap'}}>{['📜 Marcos & Profecia','◈ As Seis Entidades','◆ Os 6 Artefatos','📖 Páginas do Mestre'].map((t,i)=>(<button key={i} onClick={()=>setPage(i)} style={{padding:'7px 16px',borderRadius:20,fontFamily:'Cinzel,serif',fontSize:11,letterSpacing:'0.07em',border:page===i?'1px solid rgba(168,85,247,0.5)':'1px solid rgba(255,255,255,0.08)',background:page===i?'rgba(168,85,247,0.12)':'transparent',color:page===i?'#C8A8E8':'#5A4A6A',cursor:'pointer',transition:'all 0.2s'}}>{t}</button>))}</div>
-  {page===0&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:24,padding:'14px 18px',border:'1px solid rgba(168,85,247,0.18)',borderRadius:10,background:'rgba(168,85,247,0.05)',fontFamily:'Crimson Text,Georgia,serif',fontSize:14,color:'#9A8A9A',lineHeight:1.8,fontStyle:'italic',textAlign:'center'}}>"Escrito na era em que o primeiro Mago do Prólogo tocou a pena celestial — estas páginas registram os passos da humanidade e para onde eles a levam."</div><div style={{position:'relative',paddingLeft:26}}><div style={{position:'absolute',left:7,top:0,bottom:0,width:1,background:'linear-gradient(180deg,rgba(168,85,247,0.4),rgba(232,25,60,0.6))'}}/>{MILESTONES.map((m,i)=>(<div key={i} style={{position:'relative',marginBottom:m.prophecy?0:15,paddingLeft:18}}><div style={{position:'absolute',left:-18,top:5,width:9,height:9,borderRadius:'50%',background:m.prophecy?'#E8193C':'rgba(168,85,247,0.5)',boxShadow:m.prophecy?'0 0 10px #E8193C':undefined,border:`1px solid ${m.prophecy?'#E8193C':'rgba(168,85,247,0.4)'}`}}/><div style={{display:'flex',alignItems:'flex-start',gap:10,padding:'9px 13px',borderRadius:8,background:m.prophecy?'rgba(232,25,60,0.07)':'rgba(255,255,255,0.018)',border:m.prophecy?'1px solid rgba(232,25,60,0.22)':'1px solid rgba(255,255,255,0.04)'}}><span style={{fontSize:15,flexShrink:0}}>{m.icon}</span><div><div style={{fontSize:10,fontFamily:'Cinzel,serif',color:m.prophecy?'#E8193C':'#7B6D8A',letterSpacing:'0.2em',marginBottom:2}}>{m.year}</div><div style={{fontSize:14,color:m.prophecy?'#F09090':'#9A8A7A',lineHeight:1.6,fontFamily:m.prophecy?'Cinzel,serif':'inherit',fontWeight:m.prophecy?600:400}}>{m.event}</div></div></div></div>))}</div><div style={{marginTop:26,padding:'22px',border:'1px solid rgba(232,25,60,0.28)',borderRadius:12,background:'rgba(232,25,60,0.05)'}}><div style={{textAlign:'center',marginBottom:16}}><div style={{fontSize:11,letterSpacing:'0.4em',color:'#E8193C',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>A Profecia</div><div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:14}}>{starC.map((c,i)=>(<div key={i} style={{textAlign:'center'}}><div style={{width:13,height:13,borderRadius:'50%',background:c,boxShadow:`0 0 12px ${c}`,margin:'0 auto 4px',animation:'shimmer 2s ease-in-out infinite',animationDelay:`${i*0.4}s`}}/><div style={{fontSize:9,color:c,fontFamily:'Cinzel,serif'}}>★</div></div>))}</div></div><p style={{fontSize:14,color:'#B09090',lineHeight:1.85,margin:'0 0 20px',textAlign:'center',fontStyle:'italic'}}>"Quatro estrelas surgirão nos céus de Cosmum — visíveis tanto de dia quanto de noite. A cada dia que passa, elas se aproximam. Quando chegarem ao máximo possível de proximidade... algo acontecerá. O que, o Livro não ousou descrever."</p>{!coordRevealed?(<div style={{textAlign:'center',marginTop:8}}><div style={{fontSize:12,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',marginBottom:10,letterSpacing:'0.15em'}}>✦ A próxima página permanece selada por uma magia poderosa ✦</div><button onClick={toggleCoord} style={{padding:'9px 24px',borderRadius:8,border:'1px solid rgba(168,85,247,0.4)',background:'rgba(168,85,247,0.08)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:12,letterSpacing:'0.1em',transition:'all 0.2s'}}>🔮 Quebrar Selo</button></div>):(<div style={{marginTop:8,padding:'18px',border:'1px solid rgba(168,85,247,0.3)',borderRadius:10,background:'rgba(168,85,247,0.06)',textAlign:'center',animation:'pageTurn 0.8s ease'}}><div style={{fontSize:10,letterSpacing:'0.35em',color:'#A855F7',fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>As Coordenadas do Destino</div><div style={{fontFamily:'Cinzel,serif',fontSize:18,color:'#C8A8E8',letterSpacing:'0.25em',animation:'revealCoord 1.2s ease',marginBottom:8}}>45° 30′ 53.6″ N, 25° 22′ 1.8″ E</div><div style={{fontSize:12,color:'#7A6A8A',fontStyle:'italic',lineHeight:1.7}}>"O ponto onde as quatro estrelas convergem. Onde o véu entre o mortal e o absoluto é mais fino."</div><button onClick={toggleCoord} style={{marginTop:14,padding:'5px 14px',borderRadius:6,border:'1px solid rgba(168,85,247,0.25)',background:'transparent',color:'#5A4A6A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>🔒 Selar novamente</button></div>)}</div></div>)}
-  {page===1&&(<div style={{animation:'pageTurn 0.4s ease'}}><div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis entidades foram vislumbradas nas páginas finais do Livro. Sua origem, forma e propósito permanecem parcialmente envoltos em sombra."</div><div style={{display:'flex',flexDirection:'column',gap:14}}>{ENTITIES_DATA.map((ent,i)=>{const revealed=isRevealed(ent,i);return(<div key={ent.id} style={{border:`1px solid ${revealed?'rgba(168,85,247,0.22)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(168,85,247,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}><div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:20}}>{ent.icon}</span><div style={{flex:1}}><div style={{fontFamily:'Cinzel,serif',fontSize:14,color:revealed?'#C8A8E8':'#5A4A6A',fontWeight:600}}>{ent.name}</div><div style={{fontSize:10,color:'#4A4050',letterSpacing:'0.18em',fontFamily:'Cinzel,serif'}}>{revealed?'ENTIDADE REGISTRADA':'TRANCADO — AGUARDANDO O MESTRE'}</div></div>{i>=2&&masterMode&&(<button onClick={()=>toggleUnlock(ent.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(168,85,247,0.35)':'rgba(232,25,60,0.35)'}`,background:revealed?'rgba(168,85,247,0.07)':'rgba(232,25,60,0.07)',color:revealed?'#C8A8E8':'#F09090',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Trancar':'🔓 Revelar'}</button>)}</div>{revealed?(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Lore / História</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{ent.lore||<span style={{color:'#4A4050'}}>Lore ainda não registrado.</span>}</div></div><div style={{height:1,background:'rgba(255,255,255,0.06)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características Físicas</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic'}}>{ent.fisico||<span style={{color:'#4A4050'}}>Características físicas ainda não registradas.</span>}</div></div></div>):(<div style={{padding:'22px 16px',textAlign:'center'}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>🔒</div><div style={{fontSize:13,color:'#4A4050',fontFamily:'Cinzel,serif',letterSpacing:'0.08em'}}>Esta entidade ainda não foi revelada.</div></div>)}</div>);})}</div></div>)}
-  {page===2&&(<div style={{animation:'pageTurn 0.4s ease'}}>
-    <div style={{marginBottom:20,textAlign:'center',fontSize:14,color:'#6A5A7A',fontFamily:'Crimson Text,Georgia,serif',fontStyle:'italic'}}>"Seis artefatos de poder imensurável foram registrados nas páginas mais antigas do Livro."</div>
-    <div style={{display:'flex',flexDirection:'column',gap:12}}>
-      {ARTEFATOS_DATA.map((art,i)=>{
-        const revealed=artefatosUnlocked[art.id]||false;
-        const hasContent=!!(art.lore||art.fisico);
-        return(
-          <div key={art.id} style={{border:`1px solid ${revealed?'rgba(232,160,32,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:11,background:revealed?'rgba(232,160,32,0.04)':'rgba(255,255,255,0.014)',overflow:'hidden'}}>
-            <div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
-              <span style={{fontSize:18,opacity:revealed?1:0.3}}>{art.icon}</span>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:revealed?'#E8D8C0':'#4A4050',fontWeight:600}}>{revealed?art.name:`Artefato ${i+1} — Selado`}</div>
-                <div style={{fontSize:10,color:revealed?'rgba(232,160,32,0.6)':'#3A3040',letterSpacing:'0.18em',fontFamily:'Cinzel,serif',marginTop:2}}>{revealed?'ARTEFATO REVELADO':'SELADO POR MAGIA PODEROSA'}</div>
-              </div>
-              {masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${revealed?'rgba(232,160,32,0.35)':'rgba(232,25,60,0.25)'}`,background:revealed?'rgba(232,160,32,0.07)':'rgba(232,25,60,0.05)',color:revealed?'#E8A020':'#6A4A4A',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em'}}>{revealed?'🔒 Selar':'🔓 Revelar'}</button>}
-            </div>
-            {!revealed&&(<div style={{padding:'16px',textAlign:'center',borderTop:'1px solid rgba(255,255,255,0.04)'}}><div style={{fontSize:12,color:'#3A3040',fontFamily:'Cinzel,serif',letterSpacing:'0.08em',fontStyle:'italic'}}>Este artefato permanece oculto por uma magia poderosa.</div></div>)}
-            {revealed&&(<div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12,borderTop:'1px solid rgba(232,160,32,0.1)'}}>
-              {hasContent?<>
-                <div><div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(232,160,32,0.6)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Descrição</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{art.lore}</div></div>
-                {art.fisico&&(<><div style={{height:1,background:'rgba(232,160,32,0.1)'}}/><div><div style={{fontSize:10,letterSpacing:'0.3em',color:'rgba(232,160,32,0.6)',fontFamily:'Cinzel,serif',marginBottom:7,textTransform:'uppercase'}}>Localização & Origem</div><div style={{fontSize:14,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',whiteSpace:'pre-line'}}>{art.fisico}</div></div></>)}
-              </>:<div style={{fontSize:13,color:'#7A6A5A',fontStyle:'italic',fontFamily:'Crimson Text,Georgia,serif',lineHeight:1.7}}>Informações sobre este artefato serão reveladas pelo Mestre ao longo da campanha.</div>}
-              
-              {/* NOVA SEÇÃO: PODERES DO ARTEFATO */}
-              <div style={{marginTop:16}}>
-                <div style={{fontSize:10,letterSpacing:'0.2em',color:'#E8A020',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Poderes do Artefato</div>
-                {(artefatosHabs[art.id]||[]).map(h=>(
-                  <div key={h.id} style={{background:'rgba(232,160,32,0.05)',border:'1px solid rgba(232,160,32,0.2)',borderRadius:8,padding:'10px',marginBottom:8}}>
-                    <div style={{display:'flex',justifyContent:'space-between'}}>
-                      <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                        <span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#E8D8C0',fontWeight:600}}>{h.nome}</span>
-                        {h.custo && <span style={{fontSize:10,color:'#E8A020'}}>{h.custo} VC</span>}
-                        {h.dano && <span style={{fontSize:10,color:'#4ADE80'}}>⚔ {h.dano}</span>}
-                        {h.cooldown && <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>⏱ {h.cooldown}</span>}
-                      </div>
-                      {masterMode && <button onClick={()=>deleteHab(art.id, h.id)} style={{background:'transparent',border:'1px solid rgba(232,25,60,0.3)',color:'#E8193C',borderRadius:4,padding:'2px 6px',fontSize:10,cursor:'pointer'}}>✕</button>}
-                    </div>
-                    <div style={{fontSize:12,color:'#9A8A7A',marginTop:4}}>{h.descricao}</div>
-                  </div>
-                ))}
-                {masterMode && (
-                  <div style={{background:'rgba(255,255,255,0.02)',padding:12,borderRadius:8,border:'1px dashed rgba(232,160,32,0.3)',marginTop:10}}>
-                    <div style={{fontSize:10,color:'rgba(255,255,255,0.5)',marginBottom:8,fontFamily:'Cinzel,serif'}}>+ Adicionar Novo Poder</div>
-                    <input value={formHab[art.id]?.nome||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],nome:e.target.value}}))} placeholder="Nome do Poder..." style={{width:'100%',marginBottom:6,fontSize:12}}/>
-                    <div style={{display:'flex',gap:6,marginBottom:6}}>
-                      <input value={formHab[art.id]?.dano||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],dano:e.target.value}}))} placeholder="Dano (ex: 1D12)" style={{flex:1,fontSize:12}}/>
-                      <input type="number" value={formHab[art.id]?.custo||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],custo:e.target.value}}))} placeholder="VC" style={{width:60,fontSize:12}}/>
-                      <input value={formHab[art.id]?.cooldown||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],cooldown:e.target.value}}))} placeholder="CD" style={{width:80,fontSize:12}}/>
-                    </div>
-                    <textarea value={formHab[art.id]?.descricao||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],descricao:e.target.value}}))} placeholder="Efeito detalhado..." rows={2} style={{width:'100%',marginBottom:6,fontSize:12,resize:'vertical'}}/>
-                    <button onClick={()=>saveHab(art.id)} disabled={!formHab[art.id]?.nome} style={{width:'100%',padding:'6px',borderRadius:6,border:'1px solid #E8A020',background:'rgba(232,160,32,0.1)',color:'#E8A020',cursor:formHab[art.id]?.nome?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:11}}>Salvar Poder</button>
-                  </div>
-                )}
-              </div>
-            </div>)}
-          </div>
-        );
-      })}
+  const EntityPages=()=>{const ent=ENTITIES_DATA[spread];const revealed=isEntityRevealed(ent,spread);return [
+    revealed?<div className="livro-record"><div className="livro-record-icon">{ent.icon}</div><div className="livro-record-name">{ent.name}</div><div className="livro-status">Entidade registrada</div>{spread>=2&&masterMode&&<button onClick={()=>toggleUnlock(ent.id)} style={parchmentBtn}>Ocultar registro</button>}</div>:<div className="livro-locked"><div className="livro-seal">🔒</div><h3 className="livro-page-title">Registro Selado</h3><p>O nome desta entidade foi apagado das páginas. Seu símbolo aguarda revelação.</p>{masterMode&&<button onClick={()=>toggleUnlock(ent.id)} style={parchmentBtn}>Revelar entidade</button>}</div>,
+    revealed?<div><h3 className="livro-page-title">Registro da Entidade</h3><div className="livro-section-label">Lore & Origem</div><div className="livro-copy">{ent.lore||'A origem desta entidade ainda não foi registrada.'}</div><div className="livro-section-label">Características Físicas</div><div className="livro-copy">{ent.fisico||'Sua forma verdadeira permanece envolta em sombras e versões contraditórias.'}</div><div className="livro-note">Conhecimento atual dos jogadores: {spread<2?'parcialmente revelado':'registro autorizado pelo Mestre'}.</div></div>:<div className="livro-locked"><div style={{fontSize:44}}>◈</div><p>“Registro ainda não revelado.”</p><p>As palavras foram cobertas por tinta e seladas por runas.</p></div>
+  ]};
+
+  const ArtifactPages=()=>{const art=ARTEFATOS_DATA[spread];const revealed=!!artefatosUnlocked[art.id];const powers=artefatosHabs[art.id]||[];return [
+    revealed?<div className="livro-record"><div className="livro-record-icon">{art.icon}</div><div className="livro-record-name">{art.name}</div><div className="livro-status">Artefato revelado</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Selar artefato</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar artefato</button>}</div>,
+    revealed?<div><h3 className="livro-page-title">{art.name}</h3><div className="livro-section-label">Descrição & Origem</div><div className="livro-copy">{art.lore||'Informações sobre este artefato serão reveladas conforme a campanha avança.'}</div>{art.fisico&&<><div className="livro-section-label">Localização conhecida</div><div className="livro-copy">{art.fisico}</div></>}<div className="livro-section-label">Poderes registrados</div>{powers.length===0?<div className="livro-copy" style={{fontStyle:'italic'}}>Nenhum poder foi inscrito nesta página.</div>:powers.map(h=><div className="livro-engraved" key={h.id} style={{textAlign:'left',marginBottom:8}}><strong>{h.nome}{h.custo?` · ${h.custo} VC`:''}</strong><span>{h.dano&&`⚔ ${h.dano} · `}{h.cooldown&&`⏱ ${h.cooldown} · `}{h.descricao}</span>{masterMode&&<button onClick={()=>deleteHab(art.id,h.id)} style={{...parchmentBtn,float:'right',marginTop:5}}>Remover</button>}</div>)}{masterMode&&<div style={{marginTop:12,borderTop:'1px solid rgba(91,55,24,.28)',paddingTop:12}}><input value={formHab[art.id]?.nome||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],nome:e.target.value}}))} placeholder="Nome do poder" style={parchmentInput}/><textarea value={formHab[art.id]?.descricao||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],descricao:e.target.value}}))} placeholder="Descrição" rows={2} style={parchmentInput}/><div style={{display:'flex',gap:6}}><input value={formHab[art.id]?.dano||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],dano:e.target.value}}))} placeholder="Dano" style={parchmentInput}/><input value={formHab[art.id]?.custo||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],custo:e.target.value}}))} placeholder="VC" style={parchmentInput}/><input value={formHab[art.id]?.cooldown||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],cooldown:e.target.value}}))} placeholder="Recarga" style={parchmentInput}/></div><button onClick={()=>saveHab(art.id)} style={parchmentBtn}>Inscrever poder</button></div>}</div>:<div className="livro-locked"><div style={{fontSize:54}}>◇</div><p>Nome, origem e poder foram apagados desta página.</p></div>
+  ]};
+
+  let leftContent,rightContent;
+  if(activeTab==='marcos'){leftContent=<MarcosLeft/>;rightContent=<MarcosRight/>;}
+  if(activeTab==='entidades')[leftContent,rightContent]=EntityPages();
+  if(activeTab==='artefatos')[leftContent,rightContent]=ArtifactPages();
+  if(activeTab==='mestre'){leftContent=<div className="livro-record"><div className="livro-record-icon">✒</div><div className="livro-record-name">Páginas do Mestre</div><div className="livro-copy" style={{marginTop:16}}>Registros encontrados durante a campanha aparecem como folhas anexadas ao artefato.</div></div>;rightContent=<div><h3 className="livro-page-title">Registros da Jornada</h3><div className="livro-master-embed"><MasterPagesBook masterMode={masterMode}/></div></div>}
+
+  const hasPrev=spread>0||mobileSide===1;
+  const hasNext=spread<totals[activeTab]-1||mobileSide===0;
+  return <div className="livro-shell" onTouchStart={e=>touchStart.current=e.touches[0]?.clientX} onTouchEnd={e=>{if(touchStart.current==null)return;const dx=e.changedTouches[0].clientX-touchStart.current;if(Math.abs(dx)>45)turnPage(dx<0?1:-1);touchStart.current=null;}}>
+    <header className="livro-heading"><div className="livro-kicker">O Artefato da Profecia</div><h2 className="livro-title">Livro da Mandíbula</h2><div className="livro-ornament"/></header>
+    <nav className="livro-tabs" aria-label="Seções do Livro da Mandíbula">{tabs.map(t=><button className={`livro-tab ${activeTab===t.id?'active':''}`} key={t.id} onClick={()=>changeTab(t.id)}><span style={{marginRight:9}}>{t.icon}</span>{t.label}</button>)}</nav>
+    <div className={`livro-stage ${turning?'livro-turning':''}`} style={{'--flip-dir':`${turnDir*16}deg`}}>
+      <button className="livro-arrow prev" onClick={()=>turnPage(-1)} disabled={!hasPrev} aria-label="Página anterior">‹</button>
+      <div className="livro-cover"><div className="livro-pages"><section className={`livro-page left ${mobileSide===0?'mobile-visible':''}`}>{leftContent}</section><section className={`livro-page right ${mobileSide===1?'mobile-visible':''}`}>{rightContent}</section><div className="livro-gutter"/></div><div className="livro-bookmark"/></div>
+      <button className="livro-arrow next" onClick={()=>turnPage(1)} disabled={!hasNext} aria-label="Próxima página">›</button>
     </div>
-  </div>)}
-  {page===3&&<MasterPagesBook masterMode={masterMode}/>}
-  </div>);
+    <div className="livro-page-count">{tabs.find(t=>t.id===activeTab)?.label} · Página {spread+1} de {totals[activeTab]}</div>
+  </div>;
 }
+
+const parchmentBtn={marginTop:14,padding:'7px 13px',border:'1px solid rgba(91,55,24,.5)',background:'rgba(111,61,24,.09)',color:'#533822',fontFamily:'Cinzel,serif',fontSize:10,fontWeight:600,letterSpacing:'.06em',cursor:'pointer',borderRadius:3};
+const parchmentInput={width:'100%',marginBottom:6,padding:'7px 8px',border:'1px solid rgba(91,55,24,.4)',background:'rgba(255,246,210,.38)',color:'#3c2c20',fontFamily:'Crimson Text,serif',fontSize:13,borderRadius:3};
 
 // ─── CRÔNICAS ─────────────────────────────────────────────────────────────────
 const newEntry=id=>({id,titulo:'',sessao:'',data:new Date().toLocaleDateString('pt-BR'),conteudo:'',imagens:[]});
@@ -5882,7 +5964,7 @@ export default function App(){
   const[masterMode,setMasterMode]=useState(false);
   const[atmosphere,setAtmosphere]=useState('neutro');
 
-  useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
+  useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS+LIVRO_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
 
   // Mantendo o sincronismo de atmosfera
   useEffect(()=>{
