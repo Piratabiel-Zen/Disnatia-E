@@ -201,11 +201,11 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .chronicles-reading .chronicles-memory-grid>div{position:relative;z-index:1;}
   .chronicles-reading .chronicles-memory-grid>div:hover{z-index:40;}
   .chronicles-reading .chronicles-memory{
-    transform-origin:center center;
+    transform-origin:center bottom;
     will-change:transform;
   }
-  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n+1) .chronicles-memory{transform-origin:left center;}
-  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n) .chronicles-memory{transform-origin:right center;}
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n+1) .chronicles-memory{transform-origin:left bottom;}
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n) .chronicles-memory{transform-origin:right bottom;}
   .chronicles-reading .chronicles-memory:hover{
     position:relative;
     transform:scale(2.96);
