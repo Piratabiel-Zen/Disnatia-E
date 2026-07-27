@@ -191,9 +191,13 @@ button{font-family:'Crimson Text',Georgia,serif;}
 .chronicles-reading{padding:0 30px 26px;}
 .chronicles-story p{margin:0 0 13px;font-family:'Crimson Text',Georgia,serif;font-size:16px;line-height:1.78;color:#b8acbc;}
 .chronicles-story .dialogue{border-left:2px solid rgba(139,92,246,.75);padding:3px 0 3px 17px;color:#c8a7ff;background:linear-gradient(90deg,rgba(124,58,237,.075),transparent 68%);}
-.chronicles-memory-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
-.chronicles-memory{aspect-ratio:1.45/1;border-radius:8px;overflow:hidden;border:1px solid rgba(216,180,254,.15);background:#080918;}
-.chronicles-memory img{width:100%;height:100%;display:block;object-fit:cover;}
+.chronicles-memory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+.chronicles-memory{aspect-ratio:16/10;border-radius:10px;overflow:hidden;border:1px solid rgba(216,180,254,.2);background:#080918;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease;cursor:zoom-in;}
+.chronicles-memory img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .35s ease,filter .35s ease;}
+.chronicles-reading .chronicles-memory:hover{position:fixed;inset:5vh 5vw;width:90vw;height:90vh;aspect-ratio:auto;z-index:10000;border-radius:14px;border-color:rgba(196,151,255,.75);background:rgba(3,2,10,.98);box-shadow:0 0 0 100vmax rgba(1,0,7,.88),0 26px 90px rgba(0,0,0,.9),0 0 45px rgba(124,58,237,.35);cursor:zoom-out;animation:chronicleMemoryZoom .22s ease-out;}
+.chronicles-reading .chronicles-memory:hover img{object-fit:contain;transform:none;filter:none;}
+.chronicles-reading .chronicles-memory:not(:hover) img:hover{transform:scale(1.045);filter:brightness(1.08);}
+@keyframes chronicleMemoryZoom{from{opacity:.25;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
 .chronicles-side-section{padding:17px 18px;border-bottom:1px solid rgba(255,255,255,.055);}
 .chronicles-chip{display:flex;align-items:flex-start;gap:10px;margin:9px 0;color:#9e92aa;font-size:13px;line-height:1.35;}
 .chronicles-timeline{display:grid;gap:9px;}
@@ -215,7 +219,8 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .chronicles-banner{min-height:220px;}
   .chronicles-reading{padding:0 17px 20px;}
   .chronicles-reading h1{font-size:25px!important;}
-  .chronicles-memory-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .chronicles-memory-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .chronicles-reading .chronicles-memory:hover{inset:8vh 3vw;width:94vw;height:84vh;}
   .chronicles-right{display:block;}
 }
 
