@@ -257,6 +257,11 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .enemy-stats-grid{grid-template-columns:1fr!important;}
   .attr-dots button{width:11px!important;height:11px!important;}
 }
+
+/* Tema claro de alto contraste. A dupla inversão preserva mapas, retratos e vídeos. */
+.site-light-theme{filter:invert(1) hue-rotate(180deg);background:#f7f4fb!important;}
+.site-light-theme img,.site-light-theme video,.site-light-theme iframe{filter:invert(1) hue-rotate(180deg);}
+.site-light-theme canvas{opacity:.32;}
 `;
 
 
@@ -922,7 +927,7 @@ const CLASSES=[
   {id:'corvos',alcance:'5m',name:'Corvos do Horizonte',icon:'🐦‍⬛',color:'#E8A020',glow:'rgba(232,160,32,0.16)',role:'Atirador · Precisão Absoluta',lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes corvos e gaviões. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,passive:{name:'Visão do Gavião',desc:'Nunca sofre penalidade por distância. Ataques à longa distância ganham +2 no dado de precisão automaticamente. Além disso, a cada 2 ataques, seu próximo terá um acerto garantido.'},normal:[{name:'Sniper Americano',cost:2,cooldown:'—',desc:'Garante acerto em alvos de 5–10 metros sempre. Custo: causa apenas 0,50× do dano normal.'},{name:'Saque Rápido',cost:2,cooldown:'2 rodadas',desc:'Realiza um ataque a qualquer momento, mesmo fora do turno. Precisão reduzida em 3 pontos neste disparo.'},{name:'Foco Absoluto',cost:2,cooldown:'2 rodadas',desc:'Fica 1 rodada inteira sem atacar, apenas focando em um alvo. Garante acerto crítico automático na próxima rodada caso acerte.'}],specials:[{name:'Precisão Celestial',cost:3,cooldown:'4 rodadas',desc:'Disparo crítico perfurante no primeiro alvo e nos demais que estejam na mesma trajetória. O(s) inimigo(s) atingido(s) perde −2 de vida por rodada pelos 3 turnos seguintes.',req:3},{name:'Chuva Mortal',cost:3,cooldown:'5 rodadas', dano: '3D8',desc:'Canaliza calmamente sua arma atual com uma precisão fora do comum, disparando múltiplos acertos simultâneos em uma área de 10–13 metros ao redor. Não atinge aliados.',req:7}]},
   {id:'magos',alcance:'5m',name:'Magos do Prólogo do Céu',icon:'☄️',color:'#A855F7',glow:'rgba(168,85,247,0.16)',role:'Vidente · Mago Cósmico',lore:`Outrora humanos comuns, o seu destino mudou quando uma pena celestial caiu dos céus. O primeiro a tocá-la teve a sua mente expandida além da compreensão mortal, despertando o dom absoluto da clarividência. Ele não controlava o tempo, mas conseguia observá-lo. Ao ver os fragmentos do futuro da humanidade, fundou esta ordem mágica e escreveu as suas visões no lendário Livro da Mandíbula. Transmitem o conhecimento cósmico através de diagramas sagrados, cânticos e uma profunda ligação com as anomalias do universo.`,passive:{name:'Visão Profética',desc:'Podem ver brevemente acontecimentos futuros ou preverem eventos por pistas do cenário, concedendo pontos bônus de combate ao grupo (+2 no atributo escolhido até o final do combate).'},normal:[{name:'Fortitude Ígnia',cost:2,cooldown:'1× por combate',desc:'Um personagem aliado recebe +3 de defesa por 2 rodadas. 1 uso por combate por jogador.'},{name:'Fluxo de Magia',cost:2,cooldown:'4 rodadas',desc:'Distribui parte da sua magia entre aliados em até 2m ao redor, buffando o dano deles em +2 por 4 rodadas.'},{name:'Telecinese',cost:2,cooldown:'variável', dano : '1D4|1D6|1D8|1D12|1D20 + Inteligência',desc:'Controla objetos ao redor e os arremessa contra inimigos. Tempo varia conforme o objeto. Pessoas só com consentimento.'}],specials:[{name:'Recuperação Divina',cost:3,cooldown:'7 rodadas',desc:'Remove todos os efeitos negativos de todos os aliados e cura em +8 pontos de vida.',req:3},{name:'Flecha do Último Guardião',cost:3,cooldown:'5 rodadas', dano : '2D12 + Inteligência', desc:'Invoca um arco gigante que dispara uma flecha com atributos de qualquer elemento escolhido, causando dano massivo em área (1d12).',req:7}]},
   {id:'marfim',alcance:'1m',name:'Cientistas de Marfim',icon:'🧪',color:'#4ADE80',glow:'rgba(212,197,169,0.16)',role:'Inventor · Gênio Adaptável',lore:`A origem desta linhagem começou com o primeiro grande alquimista da história. Através de anos de experimentação, ele sintetizou a "Pedra de Marfim" — o que as lendas chamam de Pedra Filosofal. Este objeto concedeu-lhe o conhecimento absoluto sobre física, química e tudo ainda por descobrir. Esta iluminação alterou o seu DNA. Todos os descendentes nascem com QI astronômico — um deles foi Nikola Tesla — criando maravilhas tecnológicas com sucata e compostos simples.`,passive:{name:'Percepção Elevada',desc:'Tem percepção acima do comum: pode revelar objetos escondidos no cenário e seus itens são utilizados das formas mais eficazes possiveis, ganhando +1 em qualquer atributo.'},normal:[{name:'Material de Pesquisa',cost:2,cooldown:'2 rodadas',desc:'Sempre carregado. Permite juntar 2 a 3 itens do cenário e combiná-los em um novo item.'},{name:'Seringa da Juventude',cost:2,cooldown:'3 rodadas',desc:'Aplica uma seringa que cura 2 de vida ao alvo e concede +2 Vigor Cósmico a ele e restaura o tempo de recarga de uma das suas habilidades em 2 rodadas. Caso o Cientista use a seringa em si mesmo, ele ira se curar 3 de vida, ganhará 3 de Vigo Cósmico e tera uma de suas habilidades resturada em 3 rodadas exceto "Seringa da Juventude".'},{name:'QI Distorcido',cost:2,cooldown:'1× por arma',desc:'Melhora qualquer arma concedendo mais alcance, dano ou precisão. 1 uso por arma por combate.'}],specials:[{name:'O 1° Alquimista',cost:3,cooldown:'4 rodadas', dano: '1D6 + Inteligência',desc:'Combina 4 a 5 itens criando algo novo e poderoso. Pode também disparar 1 tiro de tesla caso tenha algum objeto metalico ou condutor de energia, atordoando o alvo por 1 rodada.',req:3},{name:'Anti-Matéria',cost:3,cooldown:'6 rodadas', dano: '2D10 + Inteligência', desc:'Transcende, invocando 1mg de antimatéria: dano crítico garantido + efeitos negativos (lentidão, tontura, lepra degenerativa - demora 4 rounds para a lepra fazer efeito, degenerando uma parte do corpo do oponente).',req:7}]},
-  {id:'necromante',alcance:'2m',name:'Necromantes das Cinzas Eternas',icon:'💀',color:'#6E6E80',glow:'rgba(110,110,128,0.18)',role:'Necromante · Controlador Sombrio',lore:`Nascidos à sombra de campos de batalha esquecidos, os Necromantes aprenderam a ouvir o silêncio que resta após a morte. Não dominam a vida — dominam o que fica depois dela. Cada osso, cada última respiração, cada eco de dor guardado num campo de batalha é, para eles, uma ferramenta. Dizem que o primeiro Necromante não escolheu seu dom: ele apenas parou de temer os mortos, e os mortos, em troca, pararam de temê-lo.`,passive:{name:'Passos dos que já Se Foram',desc:'Sempre que anda ou se movimenta, o Necromante não faz nenhum barulho — uma névoa negra envolve a sola de seus pés, amortecendo sempre sua passada.'},normal:[{name:'Metamorfose Negra',cost:2,cooldown:'3 rodadas',dano:'+4 de Dano',desc:'Ao causar dano em um inimigo, imbui magia negra em um item — seja em si mesmo ou em um objeto — causando +4 de dano e metade de todo dano causado, podendo direcionar a cura para si mesmo ou para outra pessoa. Caso o inimigo esteja sangrando no local atingido, o valor da cura é dobrado.'},{name:'Animar os Mortos',cost:2,cooldown:'4 rodadas',desc:'Conjura monstros ou seres de ameaça baixa ou média que foram mortos por ele, ou que morreram naquele local, para se juntarem à batalha ao seu lado — porém com sua energia (vida e atributos) reduzida pela metade e apenas 2 habilidades.'},{name:'Corte do Silêncio',cost:2,cooldown:'3 rodadas',dano:'2 de dano + Inteligência',desc:'Desfere um corte que marca o alvo com uma runa negra. Caso acerte, o membro atingido fica inutilizado por 2 rodadas, e durante esse mesmo período o alvo sofre dano por rodada.'}],specials:[{name:'Grito das Lamentações',cost:3,cooldown:'5 rodadas',dano: '2D10 + Inteligência ', desc:'Invoca as almas dos que foram mortos naquele local, criando gritos avassaladores que danificam todos os alvos atingidos, deixando-os com −3 de precisão por 2 rodadas.',req:3},{name:'Invocação dos Lordes',cost:3,cooldown:'6 rodadas',desc:'Conjura um inimigo de classe alta, ainda com metade da vida, para lutar ao seu lado. Se o Necromante rolar 1D20 e tirar 18 ou mais (escalando com sua Inteligência), ganha uma segunda invocação gratuita de classe média.',req:7}]},
+  {id:'necromante',alcance:'2m',name:'Necromantes das Cinzas Eternas',icon:'💀',color:'#6E6E80',glow:'rgba(110,110,128,0.18)',role:'Necromante · Controlador Sombrio',lore:`Nascidos à sombra de campos de batalha esquecidos, os Necromantes aprenderam a ouvir o silêncio que resta após a morte. Não dominam a vida — dominam o que fica depois dela. Cada osso, cada última respiração, cada eco de dor guardado num campo de batalha é, para eles, uma ferramenta. Dizem que o primeiro Necromante não escolheu seu dom: ele apenas parou de temer os mortos, e os mortos, em troca, pararam de temê-lo.`,passive:{name:'Passos dos que já Se Foram',desc:'Sempre que anda ou se movimenta, o Necromante não faz nenhum barulho — uma névoa negra envolve a sola de seus pés, amortecendo sempre sua passada.'},normal:[{name:'Metamorfose Negra',cost:2,cooldown:'3 rodadas',dano:'+4 de Dano',desc:'Ao causar dano em um inimigo, imbui magia negra em um item — seja em si mesmo ou em um objeto — causando +4 de dano e curando todo esse dano causado, podendo direcionar a cura para si mesmo ou para outra pessoa. Caso o inimigo esteja sangrando no local atingido, o valor da cura é dobrado.'},{name:'Animar os Mortos',cost:2,cooldown:'4 rodadas',desc:'Conjura monstros ou seres de ameaça baixa ou média que foram mortos por ele, ou que morreram naquele local, para se juntarem à batalha ao seu lado — porém com sua energia (vida e atributos) reduzida pela metade.'},{name:'Corte do Silêncio',cost:2,cooldown:'3 rodadas',dano:'3 de dano por rodada',desc:'Desfere um corte que marca o alvo com uma runa negra. Caso acerte, o membro atingido fica inutilizado por 2 rodadas, e durante esse mesmo período o alvo sofre 3 de dano por rodada.'}],specials:[{name:'Grito das Lamentações',cost:3,cooldown:'5 rodadas',desc:'Invoca as almas dos que foram mortos naquele local, criando gritos avassaladores que danificam todos os alvos atingidos, deixando-os com −3 de precisão por 2 rodadas.',req:3},{name:'Invocação dos Lordes',cost:3,cooldown:'6 rodadas',desc:'Conjura um inimigo de classe alta, ainda com metade da vida, para lutar ao seu lado. Se o Necromante rolar 1D20 e tirar 17 ou mais (escalando com sua Inteligência), ganha uma segunda invocação gratuita de classe média.',req:7}]},
   {id:'bardo',alcance:'4m',name:'Bardos da Luz',icon:'🎶',color:'#FFD86B',glow:'rgba(255,216,107,0.18)',role:'Bardo · Suporte Encantador',lore:`No passado, estes bardos aprenderam a extrair a vontade e o poder mágico guardados em canções antigas, canalizando-os em magias poderosas — feitas, acima de tudo, para erguer seus companheiros. Não costumavam ser os mais fortes em combate direto, e sim os que mantinham o grupo de pé, de corpo e de espírito. Alegres por natureza, tornaram-se indispensáveis em qualquer jornada: onde a esperança faltava, uma canção deles sempre encontrava um jeito de acender de novo.`,passive:{name:'Canção que Cura',desc:'A cada rodada, caso cante uma frase em voz alta, cura um aliado escolhido em 2 pontos de vida.'},normal:[{name:'Inspiração Bárdica',cost:2,cooldown:'2 rodadas',dano:'+2 a +5 (bônus)',desc:'O Bardo usa uma palavra inspiradora — que deve ser dita em voz alta no momento do uso — para conceder um bônus de +2, +3, +4 ou +5 a um aliado, escolhido entre Dano, Precisão ou Inteligência.'},{name:'Charme Natural',cost:2,cooldown:'3 rodadas',dano: '1D20 + Sorte',desc:'Encanta um NPC, fazendo com que ele aja a favor do que o Bardo deseja com mais facilidade. Role 2D20 — é preciso tirar 12 ou mais em ao menos um dos dados.'},{name:'Palavras Cortantes',cost:2,cooldown:'2 rodadas',dano:'2D4 de dano -3 (Precisão ou Durabilidade)',desc:'Zomba e xinga um inimigo, fazendo sua magia entrar na mente do adversário: causa dano e retira 3 pontos de Precisão ou Durabilidade, à escolha do Bardo.'}],specials:[{name:'Contra-Canção',cost:3,cooldown:'4 rodadas',desc:'Devolve por completo um ataque ou dano que um inimigo tenha causado. Pode ser usado a qualquer momento, mesmo fora do próprio turno, desde que haja Vigor Cósmico disponível — inclusive redirecionando danos causados a um aliado no momento.',req:3},{name:'Double Chance',cost:3,cooldown:'3 rodadas',desc:'Caso erre um ataque ou tire um resultado baixo no dado de dano, rola mais dois dados extras e usa sempre o maior resultado entre eles. Pode ser usado para si mesmo ou para um aliado, no momento da ação dele.',req:7}]},
   {id:'arcanjo',alcance:'3m',name:'Arcanjos da Escuridão',icon:'🪽',color:'#5B2C8C',glow:'rgba(91,44,140,0.2)',role:'Arcanjo Caído · Guerreiro Alado',lore:`Certo dia, uma pena celestial caiu dos céus — mas não era uma pena comum. Era negra, como de um anjo caído ou de uma criatura desconhecida pelos homens. Ao entrar em contato com uma criança pequena, fez com ela uma simbiose quase instantânea: asas transparentes e negras começaram a brotar de seu corpo. A partir daí, ela passou a voar pelos céus, provocando ventanias absurdas — fenômenos que os homens daquela época confundiram com desastres naturais, e que muitos passaram a temer, e venerar, como sinal de uma divindade.`,passive:{name:'Asas do Vazio',desc:'Pode conjurar asas negras e translúcidas que permitem voar até 7 metros de distância por 6 segundos. Após conjuradas, não podem ser invocadas novamente por 1 minuto.'},normal:[{name:'Lanças da Dor',cost:2,cooldown:'2 rodadas',dano:'1D6 + Força',desc:'Lança penas negras que cravam no corpo do alvo, causando dano e deixando penas encravadas no local atingido. Caso acerte um segundo ataque no mesmo local, causara +4 de dano extra, e deixará o alvo amaldiçoado (condição para acertar novamente é narrativamente estar a queima roupa, o inimigo estar atortoado ou caso tire um 17 em 1D20 puro).'},{name:'Ventos do Livro',cost:2,cooldown:'3 rodadas',dano:'1D8 + Força',desc:'Cria uma rajada de vento com as asas, que empurra e desestabiliza os inimigos atingidos, deixando-os com −2 de Precisão na rodada seguinte.'},{name:'Correntes do Silêncio',cost:2,cooldown:'2 rodadas',dano:'2D4 + Inteligência',desc:'Prende correntes invisíveis em um aliado ou inimigo, podendo puxá-lo até si ou se puxar até ele, dependendo do teste de Força realizado. Causa um pequeno dano no processo.'}],specials:[{name:'Rasante dos Deuses',cost:3,cooldown:'4 rodadas',dano:'2D8 + Agilidade',desc:'Abre as asas e voa rapidamente por entre todos os inimigos em seu caminho, cortando cada um deles e se deslocando em até 10 metros.',req:3},{name:'Furacão da Divindade',cost:3,cooldown:'5 rodadas',dano:'2D6 + Agilidade',desc:'Cria um pequeno tornado brilhante que puxa tudo ao redor, reduzindo em 4 a Durabilidade do inimigo. Em um teste de 1D10, resultado 8, 9 ou 10 desarma o inimigo — exceto se ele estiver usando um artefato.',req:7}]},
 ];
@@ -1009,6 +1014,99 @@ const SOUND_CATEGORIES = [
   { id: 'terror', label: 'Terror', icon: '💀', color: '#6E6E80' },
   { id: 'sfx', label: 'Sound Effects', icon: '🔊', color: '#FF6B9D' },
 ];
+
+
+function SoundEffectsManager({ masterMode }) {
+  const [open, setOpen] = useState(false);
+  const [sounds, setSounds] = useState([]);
+  const [nome, setNome] = useState('');
+  const [url, setUrl] = useState('');
+  const [volume, setVolume] = useState(80);
+  const fileRef = useRef(null);
+  const lastTriggerRef = useRef('');
+  const soundsRef = useRef([]);
+  const activeAudiosRef = useRef(new Set());
+
+  useEffect(() => { soundsRef.current = sounds; }, [sounds]);
+
+  useEffect(() => {
+    const u1 = onSnapshot(collection(db, 'sound_effects'), snap => {
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setSounds(items);
+      soundsRef.current = items;
+    });
+    const u2 = onSnapshot(doc(db, 'config', 'sound_effect_trigger'), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data() || {};
+      const triggerId = String(d.triggerId || d.ts || '');
+      if (!triggerId || triggerId === lastTriggerRef.current) return;
+      if (d.ts && Date.now() - Number(d.ts) > 12000) return;
+      const sound = soundsRef.current.find(x => String(x.id) === String(d.soundId));
+      const src = sound?.src || d.src;
+      if (!src) return;
+      lastTriggerRef.current = triggerId;
+      try {
+        const audio = new Audio(src);
+        audio.volume = Math.max(0, Math.min(1, Number(d.volume ?? 0.8)));
+        activeAudiosRef.current.add(audio);
+        const cleanup = () => activeAudiosRef.current.delete(audio);
+        audio.addEventListener('ended', cleanup, { once: true });
+        audio.addEventListener('error', cleanup, { once: true });
+        audio.play().catch(err => console.warn('O navegador bloqueou o efeito sonoro até a primeira interação do usuário.', err));
+      } catch (e) { console.error('Erro ao tocar efeito sonoro:', e); }
+    });
+    return () => { u1(); u2(); activeAudiosRef.current.forEach(a => { try { a.pause(); } catch (_) {} }); };
+  }, []);
+
+  const addUrl = async () => {
+    if (!nome.trim() || !url.trim()) return;
+    const id = String(Date.now());
+    await setDoc(doc(db, 'sound_effects', id), { nome: nome.trim(), src: url.trim(), createdAt: Date.now() });
+    setNome(''); setUrl('');
+  };
+
+  const addFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 700000) {
+      pushToast('Use efeitos curtos com até 700 KB.', '⚠️', '#E8A020');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const id = String(Date.now());
+      await setDoc(doc(db, 'sound_effects', id), { nome: nome.trim() || file.name.replace(/\.[^.]+$/, ''), src: ev.target.result, createdAt: Date.now() });
+      setNome('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const playGlobal = async (sound) => {
+    const payload = { soundId: sound.id, volume: volume / 100, ts: Date.now(), triggerId: `${Date.now()}_${Math.random()}` };
+    await setDoc(doc(db, 'config', 'sound_effect_trigger'), payload);
+    pushToast(`Efeito: ${sound.nome}`, '🔊', '#B46CE8');
+  };
+
+  if (!masterMode) return null;
+  return (
+    <div style={{position:'fixed',top:72,left:16,zIndex:260}}>
+      <button onClick={()=>setOpen(o=>!o)} title="Efeitos Sonoros" style={{padding:'8px 12px',borderRadius:10,border:'1px solid rgba(180,108,232,.42)',background:'rgba(20,8,32,.94)',color:'#D7B6F2',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:11,boxShadow:'0 4px 18px rgba(0,0,0,.5)',backdropFilter:'blur(10px)'}}>🔊 Efeitos Sonoros</button>
+      {open && <div style={{marginTop:8,width:330,maxHeight:'70vh',overflowY:'auto',padding:14,borderRadius:14,border:'1px solid rgba(180,108,232,.35)',background:'rgba(7,3,16,.98)',boxShadow:'0 12px 34px rgba(0,0,0,.75)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}><strong style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#D7B6F2'}}>Biblioteca de efeitos</strong><button onClick={()=>setOpen(false)} style={{background:'none',border:0,color:'#776782',cursor:'pointer'}}>✕</button></div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:7,marginBottom:8}}>
+          <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Nome do efeito" style={{minWidth:0,fontSize:12}}/>
+          <button onClick={()=>fileRef.current?.click()} style={btnStyle('#B46CE8')}>📁 Arquivo</button>
+        </div>
+        <input ref={fileRef} type="file" accept="audio/*" onChange={addFile} style={{display:'none'}}/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:7,marginBottom:10}}><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="ou cole uma URL de áudio" style={{minWidth:0,fontSize:12}}/><button onClick={addUrl} style={btnStyle('#4ADE80')}>Adicionar</button></div>
+        <label style={{display:'flex',alignItems:'center',gap:8,fontSize:10,color:'#887796',fontFamily:'Cinzel,serif',marginBottom:12}}>Volume global <input type="range" min="0" max="100" value={volume} onChange={e=>setVolume(Number(e.target.value))} style={{flex:1}}/><span>{volume}%</span></label>
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>{sounds.map(sound=><div key={sound.id} style={{display:'flex',alignItems:'center',gap:7,padding:'7px 8px',borderRadius:8,border:'1px solid rgba(255,255,255,.07)',background:'rgba(255,255,255,.025)'}}><span style={{flex:1,minWidth:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontSize:12,color:'#C9B9D2'}}>{sound.nome}</span><button onClick={()=>playGlobal(sound)} style={btnStyle('#B46CE8')}>▶ Tocar</button><button onClick={()=>deleteDoc(doc(db,'sound_effects',String(sound.id)))} style={{...btnStyle('#E8193C'),padding:'5px 7px'}}>✕</button></div>)}</div>
+        {!sounds.length&&<div style={{padding:18,textAlign:'center',fontSize:11,color:'#56485F'}}>Adicione sons curtos. Eles tocarão por cima da música ambiente para todos.</div>}
+      </div>}
+    </div>
+  );
+}
 
 function AmbientSoundPlayer({ masterMode }) {
   const [open, setOpen] = useState(false);
@@ -1770,6 +1868,11 @@ function BattleMapSection({ masterMode }) {
   const [pwInput, setPwInput] = useState('');
   const [pwError, setPwError] = useState(false);
   const [mapTokens, setMapTokens] = useState({}); // { [mapId]: tokens[] }
+  const [fogByMap, setFogByMap] = useState({});
+  const [fogMode, setFogMode] = useState('off'); // off | add | erase
+  const [fogBrush, setFogBrush] = useState(12);
+  const fogDrawingRef = useRef(false);
+  const fogSaveTimerRef = useRef(null);
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
@@ -1835,7 +1938,12 @@ function BattleMapSection({ masterMode }) {
     const u4 = onSnapshot(doc(db, 'config', 'customAbilities'), snap => {
       if (snap.exists()) setCustomAbilities(snap.data() || {});
     });
-    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); };
+    const uFog = onSnapshot(collection(db, 'battlemap_fog'), snap => {
+      const next = {};
+      snap.docs.forEach(d => { next[String(d.id)] = Array.isArray(d.data()?.patches) ? d.data().patches : []; });
+      setFogByMap(next);
+    });
+    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); uFog(); };
   }, []);
 
   useEffect(() => {
@@ -2157,6 +2265,36 @@ function BattleMapSection({ masterMode }) {
     }
   };
 
+
+  const saveFog = (mapId, patches) => {
+    setFogByMap(prev => ({ ...prev, [String(mapId)]: patches }));
+    clearTimeout(fogSaveTimerRef.current);
+    fogSaveTimerRef.current = setTimeout(() => {
+      setDoc(doc(db, 'battlemap_fog', String(mapId)), { patches, updatedAt: Date.now() }).catch(e => console.error('Erro ao salvar névoa:', e));
+    }, 70);
+  };
+
+  const editFogAtPointer = (e) => {
+    if (!masterMode || fogMode === 'off' || !currentMap || !mapRef.current) return;
+    e.preventDefault(); e.stopPropagation();
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    const id = String(currentMap.id);
+    const existing = fogByMap[id] || [];
+    if (fogMode === 'add') {
+      const last = existing[existing.length - 1];
+      if (last && Math.hypot(last.x - x, last.y - y) < fogBrush * .18) return;
+      saveFog(id, [...existing, { id: `${Date.now()}_${Math.random()}`, x, y, size: fogBrush }]);
+    } else {
+      saveFog(id, existing.filter(p => Math.hypot(p.x - x, p.y - y) > Math.max(p.size, fogBrush) * .65));
+    }
+  };
+
+  const startFogDraw = (e) => { if (fogMode === 'off') return; fogDrawingRef.current = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} editFogAtPointer(e); };
+  const moveFogDraw = (e) => { if (fogDrawingRef.current) editFogAtPointer(e); };
+  const endFogDraw = () => { fogDrawingRef.current = false; };
+
   const quickAddSheet = () => {
     if (sheets.length >= 15) return;
     const s = newSheet(Date.now());
@@ -2230,6 +2368,10 @@ function BattleMapSection({ masterMode }) {
                   <button onClick={() => fileRef.current?.click()} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.12)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🗺 {currentMap.img ? 'Trocar' : 'Enviar'} Imagem</button>
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
                   <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>+ Token</button>
+                  <button onClick={() => setFogMode(m => m === 'add' ? 'off' : 'add')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='add'?'rgba(180,108,232,.7)':'rgba(180,108,232,.3)'}`, background: fogMode==='add'?'rgba(180,108,232,.22)':'rgba(4,6,15,.7)', color:'#D7B6F2', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'blur(6px)' }}>🌫 Cobrir</button>
+                  <button onClick={() => setFogMode(m => m === 'erase' ? 'off' : 'erase')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='erase'?'rgba(74,222,128,.65)':'rgba(74,222,128,.25)'}`, background: fogMode==='erase'?'rgba(74,222,128,.18)':'rgba(4,6,15,.7)', color:'#8CF0AC', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'blur(6px)' }}>🧽 Revelar área</button>
+                  <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 6px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#8A7A9A',fontFamily:'Cinzel,serif'}}>Pincel <input type="range" min="5" max="30" value={fogBrush} onChange={e=>setFogBrush(Number(e.target.value))} style={{width:70}}/></label>
+                  <button onClick={() => { if (confirm('Remover toda a névoa deste mapa?')) saveFog(String(currentMap.id), []); }} style={{ padding:'5px 8px',borderRadius:7,border:'1px solid rgba(232,160,32,.28)',background:'rgba(4,6,15,.7)',color:'#E8A020',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>☀ Limpar névoa</button>
                   {String(activeId) === String(currentMap.id)
                     ? <button onClick={deactivateMap} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,160,32,0.35)', background: 'rgba(232,160,32,0.12)', color: '#E8A020', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🙈 Ocultar</button>
                     : <button onClick={() => activateMap(currentMap.id)} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, fontWeight: 700, backdropFilter: 'blur(6px)' }}>👁 Revelar</button>
@@ -2353,6 +2495,17 @@ function BattleMapSection({ masterMode }) {
                     </div>
                   );
                 })}
+                <div
+                  onPointerDown={startFogDraw}
+                  onPointerMove={moveFogDraw}
+                  onPointerUp={endFogDraw}
+                  onPointerCancel={endFogDraw}
+                  style={{position:'absolute',inset:0,zIndex:30,pointerEvents:masterMode&&fogMode!=='off'?'auto':'none',cursor:fogMode==='erase'?'cell':'crosshair',touchAction:'none'}}
+                >
+                  {(fogByMap[String(currentMap.id)] || []).map(p => (
+                    <div key={p.id} style={{position:'absolute',left:`${p.x}%`,top:`${p.y}%`,width:`${p.size}%`,aspectRatio:'1',transform:'translate(-50%,-50%)',borderRadius:'50%',background:'radial-gradient(circle,rgba(0,0,0,.995) 0%,rgba(0,0,0,.995) 68%,rgba(0,0,0,.92) 82%,rgba(0,0,0,0) 100%)',filter:'blur(1px)',pointerEvents:'none'}}/>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -4406,8 +4559,8 @@ function SheetsSection({masterMode}){
               </button>
             );
           })}
-          {masterMode&&sheets.length<10&&(
-            <button onClick={add} title="Novo Personagem" style={{flexShrink:0,width:44,height:44,borderRadius:'50%',border:'1px dashed rgba(255,255,255,0.2)',background:'rgba(6,8,18,0.7)',color:'#8A7A9A',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(6px)'}}>+</button>
+          {masterMode&&sheets.length<15&&(
+            <button onClick={add} title="Criar nova ficha" style={{flexShrink:0,height:44,borderRadius:10,padding:'0 15px',border:'1px dashed rgba(180,108,232,.48)',background:'rgba(180,108,232,.10)',color:'#D7B6F2',cursor:'pointer',fontSize:11,display:'flex',gap:7,alignItems:'center',justifyContent:'center',backdropFilter:'blur(6px)',fontFamily:'Cinzel,serif'}}>＋ Criar Ficha</button>
           )}
           {masterMode&&(
             <button onClick={()=>setCombatOpen(true)} title="Modo Combate" style={{flexShrink:0,width:44,height:44,borderRadius:'50%',border:'1px solid rgba(232,25,60,0.4)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(6px)'}}>⚔️</button>
@@ -6017,6 +6170,7 @@ export default function App(){
   const[tab,setTab]=useState('prologo');
   const[masterMode,setMasterMode]=useState(false);
   const[atmosphere,setAtmosphere]=useState('neutro');
+  const[siteTheme,setSiteTheme]=useState(()=>{try{return localStorage.getItem('dinastia_theme')||'dark';}catch(_){return 'dark';}});
 
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS+LIVRO_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
 
@@ -6035,9 +6189,10 @@ export default function App(){
 
   const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
   const lockPageScroll = tab === 'mapabatalha';
+  const toggleSiteTheme = () => setSiteTheme(t => { const next=t==='dark'?'light':'dark'; try{localStorage.setItem('dinastia_theme',next);}catch(_){} return next; });
 
   return(
-    <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
+    <div className={siteTheme==='light'?'site-light-theme':''} style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s, filter .35s ease'}}>
       <StarField atmosphere={atmosphere}/>
       <ToastContainer/>
       <PublicDiceOverlay />
@@ -6050,7 +6205,8 @@ export default function App(){
             <h1 className="header-title" style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,fontWeight:900,margin:0,letterSpacing:'0.08em',background:'linear-gradient(135deg,#C8A8E8,#E8D8C0,#A855F7)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Dinastia E</h1>
             <div className="header-sub" style={{fontSize:10,color:'#4A3A5A',fontFamily:'Cinzel,serif',marginTop:2,letterSpacing:'0.15em'}}>Livro do Mundo</div>
           </div>
-          <div style={{width:80,display:'flex',justifyContent:'flex-end'}}>
+          <div style={{width:180,display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8}}>
+            <button onClick={toggleSiteTheme} title={siteTheme==='dark'?'Ativar tema claro':'Voltar ao tema padrão'} style={{width:38,height:38,borderRadius:10,border:'1px solid rgba(180,108,232,.25)',background:'rgba(255,255,255,.035)',color:'#C8A8E8',cursor:'pointer',fontSize:17}}>{siteTheme==='dark'?'☀️':'🌙'}</button>
             <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>
           </div>
         </div>
@@ -6079,6 +6235,7 @@ export default function App(){
       </main>
 
       <AmbientSoundPlayer masterMode={masterMode} />
+      <SoundEffectsManager masterMode={masterMode} />
       <PlayerCombatBanner />
       <DiceWidget />
     </div>
