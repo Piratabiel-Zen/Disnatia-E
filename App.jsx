@@ -1862,7 +1862,7 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
         sheetCooldowns={sheetCooldowns}
         onUpdateCooldown={handleUpdateCooldown}
         currentVigos={sheet.vigos ?? 0}
-        onSpendVC={(cost, abilityId, turns) => onChange({ ...sheet, vigos: Math.max(0, (sheet.vigos ?? 0) - cost), cooldowns: { ...(sheet.cooldowns || {}), ...(turns > 0 ? { [abilityId]: turns } : {}) } })}
+        onSpendVC={(cost, abilityId, turns) => onChangeSheet({ ...sheet, vigos: Math.max(0, (sheet.vigos ?? 0) - cost), cooldowns: { ...(sheet.cooldowns || {}), ...(turns > 0 ? { [abilityId]: turns } : {}) } })}
         characterName={sheet.nome || 'Personagem'}
       />
 
@@ -3697,7 +3697,6 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
   };
 
   const decrement = (e) => { e.stopPropagation(); onUpdate(abilityId, Math.max(0, cd - 1)); };
-  const reset = (e) => { e.stopPropagation(); onUpdate(abilityId, 0); };
 
   if (!isActive) {
     if (!hasEnoughVC) {
@@ -3720,7 +3719,6 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
     );
   }
 
-  const increment = (e) => { e.stopPropagation(); onUpdate(abilityId, cd + 1); };
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(90deg,rgba(232,100,0,0.16),rgba(168,85,247,0.10))', border: '1px solid rgba(232,100,0,0.45)', borderRadius: 8, padding: '6px 9px', animation: 'cooldownIn 0.25s ease', boxShadow:'0 0 12px rgba(232,100,0,.08)' }}>
       <span style={{ fontSize: 11 }}>⏳</span>
@@ -3728,8 +3726,6 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
       <span style={{ fontSize: 12, fontFamily: 'Cinzel,serif', color: '#FF8A3D', fontWeight: 900 }}>{cd}</span>
       <span style={{ fontSize: 9, color: 'rgba(232,190,150,0.65)' }}>rodada{cd !== 1 ? 's' : ''}</span>
       <button onClick={decrement} title="Avançar 1 rodada" style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,.22)', color: '#7EE6A1', cursor: 'pointer', borderRadius: 4, fontSize: 11, padding: '0 5px', lineHeight: 1.5 }}>−1</button>
-      <button onClick={increment} title="Adicionar 1 rodada" style={{ background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,.22)', color: '#C8A8E8', cursor: 'pointer', borderRadius: 4, fontSize: 10, padding: '0 5px', lineHeight: 1.5 }}>+1</button>
-      <button onClick={reset} title="Remover cooldown" style={{ background: 'none', border: 'none', color: 'rgba(232,25,60,0.6)', cursor: 'pointer', fontSize: 10, padding: '0 2px' }}>✕</button>
     </div>
   );
 }
@@ -6466,7 +6462,6 @@ export default function App(){
       </main>
 
       <AmbientSoundPlayer masterMode={masterMode} />
-      <SoundEffectsManager masterMode={masterMode} />
       <PlayerCombatBanner />
       <DiceWidget />
     </div>
