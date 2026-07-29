@@ -1862,7 +1862,7 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
         sheetCooldowns={sheetCooldowns}
         onUpdateCooldown={handleUpdateCooldown}
         currentVigos={sheet.vigos ?? 0}
-        onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+        onSpendVC={(cost, abilityId, turns) => onChange({ ...sheet, vigos: Math.max(0, (sheet.vigos ?? 0) - cost), cooldowns: { ...(sheet.cooldowns || {}), ...(turns > 0 ? { [abilityId]: turns } : {}) } })}
         characterName={sheet.nome || 'Personagem'}
       />
 
@@ -1936,6 +1936,10 @@ function BattleMapSection({ masterMode }) {
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
   const liveTokenVersionRef = useRef({});
+  // Canal ultraleve por token: transmite somente x/y durante o arraste.
+  // Isso evita regravar o array completo de tokens a cada movimento do mouse.
+  const livePositionVersionRef = useRef({});
+  const liveClientIdRef = useRef(`client_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   useEffect(() => { mapTokensRef.current = mapTokens; }, [mapTokens]);
 
   useEffect(() => {
@@ -1988,6 +1992,39 @@ function BattleMapSection({ masterMode }) {
         return next;
       });
     });
+    // Posições ao vivo em documentos individuais. Como cada gravação leva apenas
+    // mapId, tokenId, x e y, a propagação fica consideravelmente mais rápida.
+    const uPositions = onSnapshot(collection(db, 'battlemap_live_positions'), snap => {
+      if (snap.empty) return;
+      const patchesByMap = {};
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') return;
+        const data = change.doc.data() || {};
+        if (!data.mapId || data.tokenId === undefined) return;
+        const mapId = String(data.mapId);
+        const tokenId = String(data.tokenId);
+        const versionKey = `${mapId}:${tokenId}`;
+        const incomingSeq = Number(data.seq || data.updatedAt || 0);
+        const knownSeq = Number(livePositionVersionRef.current[versionKey] || 0);
+        if (incomingSeq < knownSeq) return;
+        livePositionVersionRef.current[versionKey] = incomingSeq;
+        (patchesByMap[mapId] ||= []).push({ tokenId, x: Number(data.x), y: Number(data.y) });
+      });
+      if (!Object.keys(patchesByMap).length) return;
+      setMapTokens(prev => {
+        const next = { ...prev };
+        Object.entries(patchesByMap).forEach(([mapId, patches]) => {
+          const patchMap = new Map(patches.map(p => [String(p.tokenId), p]));
+          next[mapId] = (prev[mapId] || []).map(token => {
+            const patch = patchMap.get(String(token.id));
+            return patch ? { ...token, x: patch.x, y: patch.y } : token;
+          });
+        });
+        mapTokensRef.current = next;
+        return next;
+      });
+    }, err => console.error('Erro no canal rápido de posições:', err));
+
     const u2 = onSnapshot(doc(db, 'config', 'battlemap_active'), snap => {
       if (snap.exists()) setActiveId(snap.data().activeId || '');
     });
@@ -2011,7 +2048,7 @@ function BattleMapSection({ masterMode }) {
       setFloatingEffects(prev=>[...prev.filter(x=>x.id!==fx.id),fx]);
       setTimeout(()=>setFloatingEffects(prev=>prev.filter(x=>x.id!==fx.id)),2800);
     });
-    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); uFog(); uLibrary(); uFx(); };
+    return () => { u1(); u1b(); uLive(); uPositions(); u2(); u3(); u4(); uFog(); uLibrary(); uFx(); };
   }, []);
 
 
@@ -2149,6 +2186,20 @@ function BattleMapSection({ masterMode }) {
     await Promise.allSettled(writes);
   };
 
+  const writeLivePosition = (mapId, tokenId, x, y) => {
+    const id = String(mapId);
+    const tid = String(tokenId);
+    const seq = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    livePositionVersionRef.current[`${id}:${tid}`] = seq;
+    // Não aguarda a confirmação da rede: a próxima posição pode ser enviada
+    // imediatamente, enquanto o SDK mantém a ordem das gravações.
+    setDoc(doc(db, 'battlemap_live_positions', `${id}_${tid}`), {
+      mapId: id, tokenId: tid, x, y, seq,
+      clientId: liveClientIdRef.current,
+      updatedAt: Date.now(),
+    }).catch(e => console.error('Erro ao transmitir posição:', e));
+  };
+
   const persistTokens = (mapId, tokens) => {
     clearTimeout(saveTimeout.current['tk_' + mapId]);
     saveTimeout.current['tk_' + mapId] = setTimeout(() => {
@@ -2260,7 +2311,7 @@ function BattleMapSection({ masterMode }) {
  useEffect(() => {
     if (!draggingId || !currentMap) return;
     const mapIdAtDragStart = currentMap.id;
-    const TOKEN_THROTTLE_MS = 30;
+    const TOKEN_THROTTLE_MS = 16;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
@@ -2268,11 +2319,13 @@ function BattleMapSection({ masterMode }) {
       clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
       if (now - last >= TOKEN_THROTTLE_MS) {
         lastTokenWriteRef.current[mapIdAtDragStart] = now;
-        writeLiveTokens(mapIdAtDragStart, tokensArr, false).catch(e => console.error(e));
+        const movedToken = tokensArr.find(t => String(t.id) === String(draggingId));
+        if (movedToken) writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
       } else {
         saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
           lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-          writeLiveTokens(mapIdAtDragStart, tokensArr, false).catch(e => console.error(e));
+          const movedToken = tokensArr.find(t => String(t.id) === String(draggingId));
+          if (movedToken) writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
         }, TOKEN_THROTTLE_MS - (now - last));
       }
     };
@@ -3632,11 +3685,12 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
   const activate = (e) => {
     e.stopPropagation();
     if (!hasEnoughVC) return;
-    if (hasCooldown) {
-      const parsed = parseInt(String(cooldownText).replace(/\D/g, '')) || 1;
-      onUpdate(abilityId, parsed);
-    }
-    if (onSpendVC && cost > 0) onSpendVC(cost);
+    const parsed = hasCooldown ? (parseInt(String(cooldownText).replace(/\D/g, '')) || 1) : 0;
+    // Atualiza Vigor e cooldown em uma única mudança de ficha. Antes, as duas
+    // atualizações consecutivas usavam a mesma ficha antiga e a segunda podia
+    // apagar o cooldown recém-criado.
+    if (onSpendVC) onSpendVC(cost, abilityId, parsed);
+    else if (hasCooldown) onUpdate(abilityId, parsed);
     if (abilityName && characterName) {
       logAbilityUsed(characterName, abilityName, cost);
     }
@@ -3668,7 +3722,7 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
 
   const increment = (e) => { e.stopPropagation(); onUpdate(abilityId, cd + 1); };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(90deg,rgba(232,100,0,0.16),rgba(168,85,247,0.10))', border: '1px solid rgba(232,100,0,0.45)', borderRadius: 7, padding: '4px 7px', animation: 'cooldownIn 0.25s ease', boxShadow:'0 0 12px rgba(232,100,0,.08)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(90deg,rgba(232,100,0,0.16),rgba(168,85,247,0.10))', border: '1px solid rgba(232,100,0,0.45)', borderRadius: 8, padding: '6px 9px', animation: 'cooldownIn 0.25s ease', boxShadow:'0 0 12px rgba(232,100,0,.08)' }}>
       <span style={{ fontSize: 11 }}>⏳</span>
       <span style={{ fontSize: 9, color: 'rgba(232,190,150,0.75)', fontFamily:'Cinzel,serif' }}>Faltam</span>
       <span style={{ fontSize: 12, fontFamily: 'Cinzel,serif', color: '#FF8A3D', fontWeight: 900 }}>{cd}</span>
@@ -3685,6 +3739,9 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   const [form,setForm]=useState(newCustomAbility());
   const nivel = Number(sheet?.nivel) || 1;
   const classCustom = Array.isArray(customAbilities) ? customAbilities.filter(Boolean) : [];
+  const activeCooldownEntries = Object.entries(sheetCooldowns || {})
+    .filter(([, turns]) => Number(turns) > 0)
+    .map(([id, turns]) => ({ id, turns: Number(turns) }));
 
   const handleSave=()=>{
   if(!form.nome.trim())return;
@@ -3750,9 +3807,23 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
       <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',padding:'12px 16px',display:'flex',alignItems:'center',gap:10,background:open?`${color}08`:'rgba(255,255,255,0.02)',border:'none',cursor:'pointer',textAlign:'left'}}>
         <span style={{fontSize:15,color}}>{cls.icon}</span>
         <span style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#C8B8A0',fontWeight:600,flex:1}}>Habilidades — {cls.name}</span>
-        <span style={{fontSize:10,color:`${color}66`,fontFamily:'Cinzel,serif'}}>{classCustom.length>0?`+${classCustom.length} nova${classCustom.length>1?'s':''}`:''}</span>
+        <span style={{fontSize:10,color:activeCooldownEntries.length?'#FF9A52':`${color}66`,fontFamily:'Cinzel,serif',fontWeight:activeCooldownEntries.length?700:400}}>
+          {activeCooldownEntries.length ? `⏳ ${activeCooldownEntries.length} em recarga` : (classCustom.length>0?`+${classCustom.length} nova${classCustom.length>1?'s':''}`:'')}
+        </span>
         <span style={{color:`${color}88`,fontSize:11,transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}>▶</span>
       </button>
+      {activeCooldownEntries.length > 0 && (
+        <div style={{padding:'8px 12px',display:'flex',gap:6,flexWrap:'wrap',background:'rgba(232,100,0,0.055)',borderTop:'1px solid rgba(232,100,0,0.16)',borderBottom:open?'1px solid rgba(232,100,0,0.12)':'none'}}>
+          {activeCooldownEntries.map(({id,turns}) => (
+            <button key={id} onClick={(e)=>{e.stopPropagation();onUpdateCooldown?.(id,Math.max(0,turns-1));}} title="Clique para reduzir uma rodada" style={{display:'flex',alignItems:'center',gap:5,padding:'4px 7px',borderRadius:6,border:'1px solid rgba(255,138,61,.36)',background:'rgba(255,138,61,.10)',color:'#FFD0AF',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:9}}>
+              <span style={{maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{id}</span>
+              <strong style={{color:'#FF9A52',fontSize:11}}>{turns}</strong>
+              <span>rodada{turns!==1?'s':''}</span>
+              <span style={{color:'#7EE6A1'}}>−1</span>
+            </button>
+          ))}
+        </div>
+      )}
       {open&&(
         <div className="sheet-inner-scroll" style={{padding:'0 14px 14px'}}>
           <div style={{height:8}}/>
@@ -4150,7 +4221,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
           sheetCooldowns={sheetCooldowns}
           onUpdateCooldown={handleUpdateCooldown}
           currentVigos={sheet.vigos ?? 0}
-          onSpendVC={(cost) => f('vigos', Math.max(0, (sheet.vigos ?? 0) - cost))}
+          onSpendVC={(cost, abilityId, turns) => onChange({ ...sheet, vigos: Math.max(0, (sheet.vigos ?? 0) - cost), cooldowns: { ...(sheet.cooldowns || {}), ...(turns > 0 ? { [abilityId]: turns } : {}) } })}
           characterName={sheet.nome || 'Personagem'}
         />
 
@@ -4534,7 +4605,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   masterMode={masterMode} onSaveCustomAbilities={onSaveCustomAbilities}
   sheetCooldowns={sheetCooldowns} onUpdateCooldown={handleUpdateCooldown}
   currentVigos={sheet.vigos??0}
-  onSpendVC={(cost)=>f('vigos',Math.max(0,(sheet.vigos??0)-cost))}
+  onSpendVC={(cost, abilityId, turns)=>onChange({ ...sheet, vigos:Math.max(0,(sheet.vigos??0)-cost), cooldowns:{ ...(sheet.cooldowns||{}), ...(turns>0?{[abilityId]:turns}:{}) } })}
   characterName={sheet.nome||'Personagem'}
 />
 
