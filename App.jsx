@@ -161,9 +161,11 @@ button{font-family:'Crimson Text',Georgia,serif;}
   nav button{flex-shrink:0;white-space:nowrap;}
   .sheet-tabs-nav{overflow-x:auto;flex-wrap:nowrap!important;}
   .sheet-tabs-nav button{flex-shrink:0;}
-  .equip-grid{grid-template-columns:1fr!important; gap: 16px!important;}
-  .equip-slot-inputs { flex-direction: column !important; gap: 6px !important; }
-  .equip-slot-inputs input { width: 100% !important; flex: none !important; }
+  .equip-hands-grid{grid-template-columns:1fr!important;}
+  .equip-slot-fields{grid-template-columns:1fr!important;}
+  .equip-character-guide{display:none!important;}
+  .equip-slot-card{padding:12px!important;}
+  .equip-slot-main{grid-template-columns:34px minmax(0,1fr)!important;}
   .prologue-grid{grid-template-columns:1fr!important;}
   .prologue-cover{height:220px!important;}
   .floating-sheet{left:8px!important; top:8px!important; width:calc(100vw - 16px)!important; max-height:calc(100vh - 16px)!important;}
@@ -258,10 +260,19 @@ button{font-family:'Crimson Text',Georgia,serif;}
   .attr-dots button{width:11px!important;height:11px!important;}
 }
 
-/* Tema claro de alto contraste. A dupla inversão preserva mapas, retratos e vídeos. */
-.site-light-theme{filter:invert(1) hue-rotate(180deg);background:#f7f4fb!important;}
-.site-light-theme img,.site-light-theme video,.site-light-theme iframe{filter:invert(1) hue-rotate(180deg);}
-.site-light-theme canvas{opacity:.32;}
+
+.equip-panel{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;}
+.equip-hands-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0;}
+.equip-slot-card{position:relative;min-width:0;padding:13px;border-radius:12px;overflow:hidden;}
+.equip-slot-card::after{content:'';position:absolute;right:-30px;bottom:-45px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,currentColor 0%,transparent 68%);opacity:.035;pointer-events:none;}
+.equip-slot-main{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:9px;min-width:0;}
+.equip-slot-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:9px;flex-shrink:0;}
+.equip-slot-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;min-width:0;}
+.equip-slot-card input{width:100%!important;min-width:0!important;max-width:100%!important;}
+.equip-character-guide{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 12px;border-radius:10px;overflow:hidden;}
+.equip-character-guide svg{height:72px;width:auto;}
+@media(max-width:900px){.equip-slot-fields{grid-template-columns:1fr;}}
+
 `;
 
 
@@ -927,7 +938,7 @@ const CLASSES=[
   {id:'corvos',alcance:'5m',name:'Corvos do Horizonte',icon:'🐦‍⬛',color:'#E8A020',glow:'rgba(232,160,32,0.16)',role:'Atirador · Precisão Absoluta',lore:`Os primeiros caçadores desta linhagem desenvolveram uma ligação espiritual e simbiótica com as aves de rapina, especialmente os grandes corvos e gaviões. Esta conexão transcendeu a amizade, alterando os próprios sentidos destes caçadores. A sua visão tornou-se microscópica e letal, calculando ventos, distâncias e trajetórias instintivamente. Este dom genético foi passado de geração em geração, garantindo uma precisão de quase 100% com machados, flechas ou armas de fogo.`,passive:{name:'Visão do Gavião',desc:'Nunca sofre penalidade por distância. Ataques à longa distância ganham +2 no dado de precisão automaticamente. Além disso, a cada 2 ataques, seu próximo terá um acerto garantido.'},normal:[{name:'Sniper Americano',cost:2,cooldown:'—',desc:'Garante acerto em alvos de 5–10 metros sempre. Custo: causa apenas 0,50× do dano normal.'},{name:'Saque Rápido',cost:2,cooldown:'2 rodadas',desc:'Realiza um ataque a qualquer momento, mesmo fora do turno. Precisão reduzida em 3 pontos neste disparo.'},{name:'Foco Absoluto',cost:2,cooldown:'2 rodadas',desc:'Fica 1 rodada inteira sem atacar, apenas focando em um alvo. Garante acerto crítico automático na próxima rodada caso acerte.'}],specials:[{name:'Precisão Celestial',cost:3,cooldown:'4 rodadas',desc:'Disparo crítico perfurante no primeiro alvo e nos demais que estejam na mesma trajetória. O(s) inimigo(s) atingido(s) perde −2 de vida por rodada pelos 3 turnos seguintes.',req:3},{name:'Chuva Mortal',cost:3,cooldown:'5 rodadas', dano: '3D8',desc:'Canaliza calmamente sua arma atual com uma precisão fora do comum, disparando múltiplos acertos simultâneos em uma área de 10–13 metros ao redor. Não atinge aliados.',req:7}]},
   {id:'magos',alcance:'5m',name:'Magos do Prólogo do Céu',icon:'☄️',color:'#A855F7',glow:'rgba(168,85,247,0.16)',role:'Vidente · Mago Cósmico',lore:`Outrora humanos comuns, o seu destino mudou quando uma pena celestial caiu dos céus. O primeiro a tocá-la teve a sua mente expandida além da compreensão mortal, despertando o dom absoluto da clarividência. Ele não controlava o tempo, mas conseguia observá-lo. Ao ver os fragmentos do futuro da humanidade, fundou esta ordem mágica e escreveu as suas visões no lendário Livro da Mandíbula. Transmitem o conhecimento cósmico através de diagramas sagrados, cânticos e uma profunda ligação com as anomalias do universo.`,passive:{name:'Visão Profética',desc:'Podem ver brevemente acontecimentos futuros ou preverem eventos por pistas do cenário, concedendo pontos bônus de combate ao grupo (+2 no atributo escolhido até o final do combate).'},normal:[{name:'Fortitude Ígnia',cost:2,cooldown:'1× por combate',desc:'Um personagem aliado recebe +3 de defesa por 2 rodadas. 1 uso por combate por jogador.'},{name:'Fluxo de Magia',cost:2,cooldown:'4 rodadas',desc:'Distribui parte da sua magia entre aliados em até 2m ao redor, buffando o dano deles em +2 por 4 rodadas.'},{name:'Telecinese',cost:2,cooldown:'variável', dano : '1D4|1D6|1D8|1D12|1D20 + Inteligência',desc:'Controla objetos ao redor e os arremessa contra inimigos. Tempo varia conforme o objeto. Pessoas só com consentimento.'}],specials:[{name:'Recuperação Divina',cost:3,cooldown:'7 rodadas',desc:'Remove todos os efeitos negativos de todos os aliados e cura em +8 pontos de vida.',req:3},{name:'Flecha do Último Guardião',cost:3,cooldown:'5 rodadas', dano : '2D12 + Inteligência', desc:'Invoca um arco gigante que dispara uma flecha com atributos de qualquer elemento escolhido, causando dano massivo em área (1d12).',req:7}]},
   {id:'marfim',alcance:'1m',name:'Cientistas de Marfim',icon:'🧪',color:'#4ADE80',glow:'rgba(212,197,169,0.16)',role:'Inventor · Gênio Adaptável',lore:`A origem desta linhagem começou com o primeiro grande alquimista da história. Através de anos de experimentação, ele sintetizou a "Pedra de Marfim" — o que as lendas chamam de Pedra Filosofal. Este objeto concedeu-lhe o conhecimento absoluto sobre física, química e tudo ainda por descobrir. Esta iluminação alterou o seu DNA. Todos os descendentes nascem com QI astronômico — um deles foi Nikola Tesla — criando maravilhas tecnológicas com sucata e compostos simples.`,passive:{name:'Percepção Elevada',desc:'Tem percepção acima do comum: pode revelar objetos escondidos no cenário e seus itens são utilizados das formas mais eficazes possiveis, ganhando +1 em qualquer atributo.'},normal:[{name:'Material de Pesquisa',cost:2,cooldown:'2 rodadas',desc:'Sempre carregado. Permite juntar 2 a 3 itens do cenário e combiná-los em um novo item.'},{name:'Seringa da Juventude',cost:2,cooldown:'3 rodadas',desc:'Aplica uma seringa que cura 2 de vida ao alvo e concede +2 Vigor Cósmico a ele e restaura o tempo de recarga de uma das suas habilidades em 2 rodadas. Caso o Cientista use a seringa em si mesmo, ele ira se curar 3 de vida, ganhará 3 de Vigo Cósmico e tera uma de suas habilidades resturada em 3 rodadas exceto "Seringa da Juventude".'},{name:'QI Distorcido',cost:2,cooldown:'1× por arma',desc:'Melhora qualquer arma concedendo mais alcance, dano ou precisão. 1 uso por arma por combate.'}],specials:[{name:'O 1° Alquimista',cost:3,cooldown:'4 rodadas', dano: '1D6 + Inteligência',desc:'Combina 4 a 5 itens criando algo novo e poderoso. Pode também disparar 1 tiro de tesla caso tenha algum objeto metalico ou condutor de energia, atordoando o alvo por 1 rodada.',req:3},{name:'Anti-Matéria',cost:3,cooldown:'6 rodadas', dano: '2D10 + Inteligência', desc:'Transcende, invocando 1mg de antimatéria: dano crítico garantido + efeitos negativos (lentidão, tontura, lepra degenerativa - demora 4 rounds para a lepra fazer efeito, degenerando uma parte do corpo do oponente).',req:7}]},
-  {id:'necromante',alcance:'2m',name:'Necromantes das Cinzas Eternas',icon:'💀',color:'#6E6E80',glow:'rgba(110,110,128,0.18)',role:'Necromante · Controlador Sombrio',lore:`Nascidos à sombra de campos de batalha esquecidos, os Necromantes aprenderam a ouvir o silêncio que resta após a morte. Não dominam a vida — dominam o que fica depois dela. Cada osso, cada última respiração, cada eco de dor guardado num campo de batalha é, para eles, uma ferramenta. Dizem que o primeiro Necromante não escolheu seu dom: ele apenas parou de temer os mortos, e os mortos, em troca, pararam de temê-lo.`,passive:{name:'Passos dos que já Se Foram',desc:'Sempre que anda ou se movimenta, o Necromante não faz nenhum barulho — uma névoa negra envolve a sola de seus pés, amortecendo sempre sua passada.'},normal:[{name:'Metamorfose Negra',cost:2,cooldown:'3 rodadas',dano:'+4 de Dano',desc:'Ao causar dano em um inimigo, imbui magia negra em um item — seja em si mesmo ou em um objeto — causando +4 de dano e curando todo esse dano causado, podendo direcionar a cura para si mesmo ou para outra pessoa. Caso o inimigo esteja sangrando no local atingido, o valor da cura é dobrado.'},{name:'Animar os Mortos',cost:2,cooldown:'4 rodadas',desc:'Conjura monstros ou seres de ameaça baixa ou média que foram mortos por ele, ou que morreram naquele local, para se juntarem à batalha ao seu lado — porém com sua energia (vida e atributos) reduzida pela metade.'},{name:'Corte do Silêncio',cost:2,cooldown:'3 rodadas',dano:'3 de dano por rodada',desc:'Desfere um corte que marca o alvo com uma runa negra. Caso acerte, o membro atingido fica inutilizado por 2 rodadas, e durante esse mesmo período o alvo sofre 3 de dano por rodada.'}],specials:[{name:'Grito das Lamentações',cost:3,cooldown:'5 rodadas',desc:'Invoca as almas dos que foram mortos naquele local, criando gritos avassaladores que danificam todos os alvos atingidos, deixando-os com −3 de precisão por 2 rodadas.',req:3},{name:'Invocação dos Lordes',cost:3,cooldown:'6 rodadas',desc:'Conjura um inimigo de classe alta, ainda com metade da vida, para lutar ao seu lado. Se o Necromante rolar 1D20 e tirar 17 ou mais (escalando com sua Inteligência), ganha uma segunda invocação gratuita de classe média.',req:7}]},
+  {id:'necromante',alcance:'2m',name:'Necromantes das Cinzas Eternas',icon:'💀',color:'#6E6E80',glow:'rgba(110,110,128,0.18)',role:'Necromante · Controlador Sombrio',lore:`Nascidos à sombra de campos de batalha esquecidos, os Necromantes aprenderam a ouvir o silêncio que resta após a morte. Não dominam a vida — dominam o que fica depois dela. Cada osso, cada última respiração, cada eco de dor guardado num campo de batalha é, para eles, uma ferramenta. Dizem que o primeiro Necromante não escolheu seu dom: ele apenas parou de temer os mortos, e os mortos, em troca, pararam de temê-lo.`,passive:{name:'Passos dos que já Se Foram',desc:'Sempre que anda ou se movimenta, o Necromante não faz nenhum barulho — uma névoa negra envolve a sola de seus pés, amortecendo sempre sua passada.'},normal:[{name:'Metamorfose Negra',cost:2,cooldown:'3 rodadas',dano:'+1 de dano na arma + Inteligência',desc:'Imbui magia negra em uma arma, parte do corpo ou objeto, acrescentando +1 de dano ao ataque e escalando com Inteligência. Ao causar dano, cura todo o dano causado, podendo direcionar a cura para si mesmo ou para outra pessoa. Caso o inimigo esteja sangrando no local atingido, o valor da cura é dobrado.'},{name:'Animar os Mortos',cost:2,cooldown:'4 rodadas',desc:'Conjura monstros ou seres de ameaça baixa ou média que foram mortos por ele, ou que morreram naquele local, para se juntarem à batalha ao seu lado — porém com sua energia (vida e atributos) reduzida pela metade.'},{name:'Corte do Silêncio',cost:2,cooldown:'3 rodadas',dano:'2 de dano por rodada + Sorte',desc:'Desfere um corte que marca o alvo com uma runa negra. Caso acerte, o membro atingido fica inutilizado por 2 rodadas e, durante esse mesmo período, o alvo sofre 2 de dano por rodada, escalando com Sorte.'}],specials:[{name:'Grito das Lamentações',cost:3,cooldown:'5 rodadas',dano:'2D8 + Inteligência',desc:'Invoca as almas dos que foram mortos naquele local, criando gritos avassaladores que causam 2D8 de dano, escalando com Inteligência, em todos os alvos atingidos e deixando-os com −3 de precisão por 2 rodadas.',req:3},{name:'Invocação dos Lordes',cost:3,cooldown:'6 rodadas',desc:'Conjura um inimigo de classe alta, ainda com metade da vida, para lutar ao seu lado. Se o Necromante rolar 1D20 e tirar 17 ou mais (escalando com sua Inteligência), ganha uma segunda invocação gratuita de classe média.',req:7}]},
   {id:'bardo',alcance:'4m',name:'Bardos da Luz',icon:'🎶',color:'#FFD86B',glow:'rgba(255,216,107,0.18)',role:'Bardo · Suporte Encantador',lore:`No passado, estes bardos aprenderam a extrair a vontade e o poder mágico guardados em canções antigas, canalizando-os em magias poderosas — feitas, acima de tudo, para erguer seus companheiros. Não costumavam ser os mais fortes em combate direto, e sim os que mantinham o grupo de pé, de corpo e de espírito. Alegres por natureza, tornaram-se indispensáveis em qualquer jornada: onde a esperança faltava, uma canção deles sempre encontrava um jeito de acender de novo.`,passive:{name:'Canção que Cura',desc:'A cada rodada, caso cante uma frase em voz alta, cura um aliado escolhido em 2 pontos de vida.'},normal:[{name:'Inspiração Bárdica',cost:2,cooldown:'2 rodadas',dano:'+2 a +5 (bônus)',desc:'O Bardo usa uma palavra inspiradora — que deve ser dita em voz alta no momento do uso — para conceder um bônus de +2, +3, +4 ou +5 a um aliado, escolhido entre Dano, Precisão ou Inteligência.'},{name:'Charme Natural',cost:2,cooldown:'3 rodadas',dano: '1D20 + Sorte',desc:'Encanta um NPC, fazendo com que ele aja a favor do que o Bardo deseja com mais facilidade. Role 2D20 — é preciso tirar 12 ou mais em ao menos um dos dados.'},{name:'Palavras Cortantes',cost:2,cooldown:'2 rodadas',dano:'2D4 de dano -3 (Precisão ou Durabilidade)',desc:'Zomba e xinga um inimigo, fazendo sua magia entrar na mente do adversário: causa dano e retira 3 pontos de Precisão ou Durabilidade, à escolha do Bardo.'}],specials:[{name:'Contra-Canção',cost:3,cooldown:'4 rodadas',desc:'Devolve por completo um ataque ou dano que um inimigo tenha causado. Pode ser usado a qualquer momento, mesmo fora do próprio turno, desde que haja Vigor Cósmico disponível — inclusive redirecionando danos causados a um aliado no momento.',req:3},{name:'Double Chance',cost:3,cooldown:'3 rodadas',desc:'Caso erre um ataque ou tire um resultado baixo no dado de dano, rola mais dois dados extras e usa sempre o maior resultado entre eles. Pode ser usado para si mesmo ou para um aliado, no momento da ação dele.',req:7}]},
   {id:'arcanjo',alcance:'3m',name:'Arcanjos da Escuridão',icon:'🪽',color:'#5B2C8C',glow:'rgba(91,44,140,0.2)',role:'Arcanjo Caído · Guerreiro Alado',lore:`Certo dia, uma pena celestial caiu dos céus — mas não era uma pena comum. Era negra, como de um anjo caído ou de uma criatura desconhecida pelos homens. Ao entrar em contato com uma criança pequena, fez com ela uma simbiose quase instantânea: asas transparentes e negras começaram a brotar de seu corpo. A partir daí, ela passou a voar pelos céus, provocando ventanias absurdas — fenômenos que os homens daquela época confundiram com desastres naturais, e que muitos passaram a temer, e venerar, como sinal de uma divindade.`,passive:{name:'Asas do Vazio',desc:'Pode conjurar asas negras e translúcidas que permitem voar até 7 metros de distância por 6 segundos. Após conjuradas, não podem ser invocadas novamente por 1 minuto.'},normal:[{name:'Lanças da Dor',cost:2,cooldown:'2 rodadas',dano:'1D6 + Força',desc:'Lança penas negras que cravam no corpo do alvo, causando dano e deixando penas encravadas no local atingido. Caso acerte um segundo ataque no mesmo local, causara +4 de dano extra, e deixará o alvo amaldiçoado (condição para acertar novamente é narrativamente estar a queima roupa, o inimigo estar atortoado ou caso tire um 17 em 1D20 puro).'},{name:'Ventos do Livro',cost:2,cooldown:'3 rodadas',dano:'1D8 + Força',desc:'Cria uma rajada de vento com as asas, que empurra e desestabiliza os inimigos atingidos, deixando-os com −2 de Precisão na rodada seguinte.'},{name:'Correntes do Silêncio',cost:2,cooldown:'2 rodadas',dano:'2D4 + Inteligência',desc:'Prende correntes invisíveis em um aliado ou inimigo, podendo puxá-lo até si ou se puxar até ele, dependendo do teste de Força realizado. Causa um pequeno dano no processo.'}],specials:[{name:'Rasante dos Deuses',cost:3,cooldown:'4 rodadas',dano:'2D8 + Agilidade',desc:'Abre as asas e voa rapidamente por entre todos os inimigos em seu caminho, cortando cada um deles e se deslocando em até 10 metros.',req:3},{name:'Furacão da Divindade',cost:3,cooldown:'5 rodadas',dano:'2D6 + Agilidade',desc:'Cria um pequeno tornado brilhante que puxa tudo ao redor, reduzindo em 4 a Durabilidade do inimigo. Em um teste de 1D10, resultado 8, 9 ou 10 desarma o inimigo — exceto se ele estiver usando um artefato.',req:7}]},
 ];
@@ -3329,16 +3340,22 @@ function resolveEquipIcon(tipo=''){
   return '\uD83D\uDCE6';
 }
 
-function CompactEquipSlot({label, color, data, onChange, placeholder}){
+function CompactEquipSlot({label, color, data, onChange, placeholder, icon}){
   const d={nome:'',dano:'',tipo:placeholder,...(data||{})};
-  const dynIcon=resolveEquipIcon(d.tipo||placeholder);
+  const dynIcon=icon || resolveEquipIcon(d.tipo||placeholder);
   return(
-    <div style={{background:`${color}07`,border:`1px solid ${color}20`,borderRadius:9,padding:'9px 11px',display:'flex',flexDirection:'column',gap:6}}>
-      <div style={{fontSize:8,letterSpacing:'0.3em',color:`${color}99`,fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:1}}>{label}</div>
-      <div style={{display:'flex',alignItems:'center',gap:7}}><span style={{fontSize:17,flexShrink:0,lineHeight:1}}>{dynIcon}</span><input value={d.nome} onChange={e=>onChange({...d,nome:e.target.value})} placeholder="Nome do item..." style={{flex:1,fontSize:13,padding:'4px 7px'}}/></div>
-      <div className="equip-slot-inputs" style={{display:'flex',gap:6}}>
-        <input value={d.dano} onChange={e=>onChange({...d,dano:e.target.value})} placeholder="Dano / Ex: 1D6" style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(255,200,80,0.85)'}}/>
-        <input value={d.tipo} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder={placeholder} style={{flex:1,fontSize:12,padding:'3px 7px',color:'rgba(200,184,160,0.6)'}}/>
+    <div className="equip-slot-card" style={{color,background:`linear-gradient(145deg,${color}0D,rgba(255,255,255,0.018))`,border:`1px solid ${color}28`,boxShadow:'inset 0 1px 0 rgba(255,255,255,0.025)'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:9}}>
+        <div style={{fontSize:9,letterSpacing:'0.22em',color:`${color}B5`,fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>{label}</div>
+        <span style={{fontSize:8,color:'rgba(200,184,160,0.28)',fontFamily:'Cinzel,serif'}}>EQUIPADO</span>
+      </div>
+      <div className="equip-slot-main">
+        <div className="equip-slot-icon" style={{background:`${color}12`,border:`1px solid ${color}24`,fontSize:18}}>{dynIcon}</div>
+        <input value={d.nome} onChange={e=>onChange({...d,nome:e.target.value})} placeholder="Nome do item..." style={{fontSize:13,padding:'7px 9px'}}/>
+      </div>
+      <div className="equip-slot-fields" style={{marginTop:8}}>
+        <input value={d.dano} onChange={e=>onChange({...d,dano:e.target.value})} placeholder="Dano / Ex.: 1D6" style={{fontSize:12,padding:'6px 8px',color:'rgba(255,210,110,0.9)'}}/>
+        <input value={d.tipo} onChange={e=>onChange({...d,tipo:e.target.value})} placeholder={placeholder} style={{fontSize:12,padding:'6px 8px',color:'rgba(200,184,160,0.72)'}}/>
       </div>
     </div>
   );
@@ -3353,8 +3370,7 @@ function CharSilhouette({color}){
   const boots=<><path d="M18 102 Q16 106 13 106 Q11 106 12 104 L14 102 L20 101" stroke={color} strokeWidth="1" fill="none"/><path d="M42 102 Q44 106 47 106 Q49 106 48 104 L46 102 L40 101" stroke={color} strokeWidth="1" fill="none"/></>;
   const shoulders=<path d="M14 32 Q18 26 30 25 Q42 26 46 32" stroke={color} strokeWidth="1.2" fill="none"/>;
   const arms=<><path d="M17 33 L9 49 L11 55" stroke={color} strokeWidth="1.2" fill="none"/><path d="M43 33 L51 49 L49 55" stroke={color} strokeWidth="1.2" fill="none"/></>;
-  const weapons=<><line x1="8" y1="44" x2="8" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/><line x1="5" y1="51" x2="11" y2="51" stroke={color} strokeWidth="1.2"/><line x1="52" y1="44" x2="52" y2="66" stroke={color} strokeWidth="1.6" strokeLinecap="round"/><line x1="49" y1="51" x2="55" y2="51" stroke={color} strokeWidth="1.2"/></>;
-  return <svg width="66" height="116" viewBox="0 0 66 116" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.32,flexShrink:0}}>{head}{neck}{shoulders}{torso}{belt}{arms}{weapons}{legs}{boots}</svg>;
+  return <svg width="66" height="116" viewBox="0 0 66 116" fill="none" xmlns="http://www.w3.org/2000/svg" style={{opacity:0.28,flexShrink:0}}>{head}{neck}{shoulders}{torso}{belt}{arms}{legs}{boots}</svg>;
 }
 
 function CollapsibleSection({ icon, label, color = '#A855F7', badge, defaultOpen = false, children }) {
@@ -3375,14 +3391,20 @@ function CollapsibleSection({ icon, label, color = '#A855F7', badge, defaultOpen
 function EquipamentoPanel({sheet, onChange, sheetColor}){
   const f=(slot,val)=>onChange({...sheet,[slot]:val});
   return(
-    <>
-      <div className="equip-grid" style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',gap:12,alignItems:'start',justifyContent:'center',marginBottom:10}}>
-        <div style={{minWidth:0}}><CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma"/></div>
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,justifySelf:'center'}}><CharSilhouette color={sheetColor}/><div style={{fontSize:7,color:sheetColor+'55',fontFamily:'Cinzel,serif',letterSpacing:'0.1em',textAlign:'center',textTransform:'uppercase'}}>ESQ · DIR</div></div>
-        <div style={{minWidth:0}}><CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma"/></div>
+    <div className="equip-panel">
+      <div className="equip-hands-grid">
+        <CompactEquipSlot label="Mão Esquerda" color={sheetColor} data={sheet.equip_mao_esq} onChange={v=>f('equip_mao_esq',v)} placeholder="Espada / Arma" icon="⚔️"/>
+        <CompactEquipSlot label="Mão Direita" color={sheetColor} data={sheet.equip_mao_dir} onChange={v=>f('equip_mao_dir',v)} placeholder="Escudo / Arma" icon="🛡️"/>
       </div>
-      <CompactEquipSlot label="Corpo" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)} placeholder="Armadura / Roupa"/>
-    </>
+      <div className="equip-character-guide" style={{background:`linear-gradient(90deg,transparent,${sheetColor}08,transparent)`,borderTop:`1px solid ${sheetColor}12`,borderBottom:`1px solid ${sheetColor}12`}}>
+        <CharSilhouette color={sheetColor}/>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.18em',color:`${sheetColor}9A`,textTransform:'uppercase',marginBottom:4}}>Configuração de combate</div>
+          <div style={{fontSize:12,color:'rgba(200,184,160,0.42)',lineHeight:1.4}}>Defina separadamente os itens das mãos e a proteção utilizada pelo personagem.</div>
+        </div>
+      </div>
+      <CompactEquipSlot label="Corpo e Proteção" color={sheetColor} data={sheet.equip_corpo} onChange={v=>f('equip_corpo',v)} placeholder="Armadura / Roupa" icon="🛡️"/>
+    </div>
   );
 }
 
@@ -6170,7 +6192,6 @@ export default function App(){
   const[tab,setTab]=useState('prologo');
   const[masterMode,setMasterMode]=useState(false);
   const[atmosphere,setAtmosphere]=useState('neutro');
-  const[siteTheme,setSiteTheme]=useState(()=>{try{return localStorage.getItem('dinastia_theme')||'dark';}catch(_){return 'dark';}});
 
   useEffect(()=>{const s=document.createElement('style');s.textContent=GLOBAL_CSS+LIVRO_CSS;document.head.appendChild(s);return()=>s.remove();},[]);
 
@@ -6189,10 +6210,9 @@ export default function App(){
 
   const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
   const lockPageScroll = tab === 'mapabatalha';
-  const toggleSiteTheme = () => setSiteTheme(t => { const next=t==='dark'?'light':'dark'; try{localStorage.setItem('dinastia_theme',next);}catch(_){} return next; });
 
   return(
-    <div className={siteTheme==='light'?'site-light-theme':''} style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s, filter .35s ease'}}>
+    <div style={{height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
       <StarField atmosphere={atmosphere}/>
       <ToastContainer/>
       <PublicDiceOverlay />
@@ -6206,7 +6226,6 @@ export default function App(){
             <div className="header-sub" style={{fontSize:10,color:'#4A3A5A',fontFamily:'Cinzel,serif',marginTop:2,letterSpacing:'0.15em'}}>Livro do Mundo</div>
           </div>
           <div style={{width:180,display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8}}>
-            <button onClick={toggleSiteTheme} title={siteTheme==='dark'?'Ativar tema claro':'Voltar ao tema padrão'} style={{width:38,height:38,borderRadius:10,border:'1px solid rgba(180,108,232,.25)',background:'rgba(255,255,255,.035)',color:'#C8A8E8',cursor:'pointer',fontSize:17}}>{siteTheme==='dark'?'☀️':'🌙'}</button>
             <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>
           </div>
         </div>
