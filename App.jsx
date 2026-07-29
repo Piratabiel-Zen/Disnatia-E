@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc, updateDoc, enableIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAnaJjwoJ6YgGrR5pIoPrTIj7PculaIfyA",
@@ -12,6 +12,10 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
+// Cache persistente do Firestore: mantém os últimos mapas, fichas e registros disponíveis offline.
+enableIndexedDbPersistence(db).catch(err => {
+  if (err?.code !== 'failed-precondition' && err?.code !== 'unimplemented') console.warn('Persistência offline indisponível:', err);
+});
 
 function compressImage(dataUrl, maxW=900, maxH=900, quality=0.72){
   return new Promise(resolve=>{
@@ -100,6 +104,8 @@ html,body,#root{margin:0;padding:0;height:100%;background:#010006;}
 @keyframes combatPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,25,60,0.5);}50%{box-shadow:0 0 0 8px rgba(232,25,60,0);}}
 @keyframes turnArrow{0%{transform:translateX(-4px);}100%{transform:translateX(4px);}}
 @keyframes atmosphereShift{0%{opacity:0;}100%{opacity:1;}}
+@keyframes floatingCombatText{0%{opacity:0;transform:translate(-50%,0) scale(.7);}18%{opacity:1;transform:translate(-50%,-12px) scale(1.12);}75%{opacity:1;transform:translate(-50%,-34px) scale(1);}100%{opacity:0;transform:translate(-50%,-52px) scale(.92);}}
+@keyframes diceGlowPulse{0%,100%{box-shadow:0 0 10px rgba(168,85,247,.18),inset 0 0 12px rgba(168,85,247,.06);}50%{box-shadow:0 0 28px rgba(168,85,247,.42),inset 0 0 20px rgba(168,85,247,.12);}}
 
 input,textarea,select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.11);color:#C8B8A0;border-radius:6px;font-family:'Crimson Text',Georgia,serif;font-size:15px;padding:6px 10px;outline:none;transition:border-color 0.2s;}
 input:focus,textarea:focus,select:focus{border-color:rgba(155,89,182,0.55);}
@@ -544,6 +550,23 @@ function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [surpriseAttacker, setSurpriseAttacker] = useState(null);
   const [showSurprisePanel, setShowSurprisePanel] = useState(false);
   const logRef = useRef(null);
+  const [turnTimerEnabled, setTurnTimerEnabled] = useState(false);
+  const [turnTimerSeconds, setTurnTimerSeconds] = useState(60);
+  const [turnTimeLeft, setTurnTimeLeft] = useState(60);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const [preparedAction, setPreparedAction] = useState('');
+  const lastAction = [...log].reverse().find(x => x?.icon === '⚡' || x?.icon === '▸');
+
+  useEffect(() => {
+    if (!turnTimerEnabled || timerPaused || initiative.length === 0) return;
+    const iv = setInterval(() => setTurnTimeLeft(v => {
+      if (v <= 1) { pushToast('Tempo do turno encerrado!', '⏰', '#E8193C'); return turnTimerSeconds; }
+      return v - 1;
+    }), 1000);
+    return () => clearInterval(iv);
+  }, [turnTimerEnabled, timerPaused, turnTimerSeconds, initiative.length]);
+
+  useEffect(() => { setTurnTimeLeft(turnTimerSeconds); }, [turnIdx, round, turnTimerSeconds]);
 
 const syncStatusToSheet = async (combatant, statusId, active) => {
   if (!masterMode) return;
@@ -656,6 +679,7 @@ const buildCombatants = () => [
   };
 
   const nextTurn = async () => {
+    setPreparedAction('');
     const next = (turnIdx + 1) % initiative.length;
     const newRound = next === 0 ? round + 1 : round;
     if (next === 0) setRound(newRound);
@@ -869,6 +893,23 @@ const handleClose = () => {
               <span style={{ color: '#FF6B35' }}>→</span>
               <select value={surpriseTarget || ''} onChange={e => setSurpriseTarget(e.target.value)} style={{ fontSize: 12, padding: '4px 8px' }}><option value="">Quem deu as costas...</option>{initiative.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
               <button onClick={triggerOpportunityAttack} disabled={!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget} style={{ ...btnStyle('#FF6B35'), opacity: (!surpriseAttacker || !surpriseTarget || surpriseAttacker === surpriseTarget) ? 0.35 : 1 }}>⚡ Confirmar</button>
+            </div>
+          )}
+
+          {/* AÇÕES RÁPIDAS E CRONÔMETRO */}
+          {initiative.length > 0 && (
+            <div style={{padding:'9px 18px',background:'rgba(168,85,247,.045)',borderBottom:'1px solid rgba(168,85,247,.14)',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+              <span style={{fontSize:10,color:'#8E72AD',letterSpacing:'.15em'}}>AÇÕES RÁPIDAS</span>
+              <button onClick={()=>{const nl=addLog(`${current?.nome||'Personagem'} preparou uma ação${preparedAction?`: ${preparedAction}`:''}.`,'#E8A020','🛡');persist(initiative,round,turnIdx,nl);pushToast('Ação preparada','🛡','#E8A020');}} style={btnStyle('#E8A020')}>🛡 Preparar ação</button>
+              <input value={preparedAction} onChange={e=>setPreparedAction(e.target.value)} placeholder="Ex: atacar quando se aproximar" style={{width:210,fontSize:11,padding:'5px 8px'}}/>
+              <button disabled={!lastAction} onClick={()=>{if(!lastAction)return;const nl=addLog(`↻ ${lastAction.msg}`,'#C8A8E8','↻');persist(initiative,round,turnIdx,nl);}} style={{...btnStyle('#A855F7'),opacity:lastAction?1:.35}}>↻ Repetir última</button>
+              <button onClick={()=>setTurnTimerEnabled(v=>!v)} style={btnStyle(turnTimerEnabled?'#4ADE80':'rgba(255,255,255,.18)')}>⏱ {turnTimerEnabled?'Timer ativo':'Ativar timer'}</button>
+              {turnTimerEnabled && <>
+                <select value={turnTimerSeconds} onChange={e=>setTurnTimerSeconds(Number(e.target.value))} style={{fontSize:11,padding:'4px 7px'}}><option value={30}>30s</option><option value={60}>60s</option><option value={90}>90s</option><option value={120}>120s</option></select>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:15,fontWeight:800,color:turnTimeLeft<=10?'#E8193C':'#C8A8E8',minWidth:42,textAlign:'center'}}>{Math.floor(turnTimeLeft/60)}:{String(turnTimeLeft%60).padStart(2,'0')}</span>
+                <button onClick={()=>setTimerPaused(v=>!v)} style={btnStyle('#6A5AF7')}>{timerPaused?'▶':'⏸'}</button>
+                <button onClick={()=>setTurnTimeLeft(turnTimerSeconds)} style={btnStyle('#6A5AF7')}>↺</button>
+              </>}
             </div>
           )}
 
@@ -1693,7 +1734,7 @@ const TOKEN_TYPES = {
   jogador: { label: 'Jogador', color: '#4ADE80', ring: 'rgba(74,222,128,0.6)' },
   inimigo: { label: 'Inimigo', color: '#E8193C', ring: 'rgba(232,25,60,0.6)' },
 };
-const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false });
+const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false, hp: 0, maxHp: 0, status: {}, rangeMeters: 0 });
 const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', tokens: [] });
 
 function EquipMiniList({ sheet, color }) {
@@ -1884,6 +1925,13 @@ function BattleMapSection({ masterMode }) {
   const [fogBrush, setFogBrush] = useState(12);
   const fogDrawingRef = useRef(false);
   const fogSaveTimerRef = useRef(null);
+  const [tokenLibrary, setTokenLibrary] = useState([]);
+  const [showTokenLibrary, setShowTokenLibrary] = useState(false);
+  const [rulerMode, setRulerMode] = useState(false);
+  const [ruler, setRuler] = useState(null);
+  const [pixelsPerMeter, setPixelsPerMeter] = useState(70);
+  const [floatingEffects, setFloatingEffects] = useState([]);
+  const rulerDrawingRef = useRef(false);
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
@@ -1954,8 +2002,29 @@ function BattleMapSection({ masterMode }) {
       snap.docs.forEach(d => { next[String(d.id)] = Array.isArray(d.data()?.patches) ? d.data().patches : []; });
       setFogByMap(next);
     });
-    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); uFog(); };
+    const uLibrary = onSnapshot(collection(db, 'battlemap_token_library'), snap => {
+      setTokenLibrary(snap.docs.map(d => ({ id:d.id, ...d.data() })));
+    });
+    const uFx = onSnapshot(doc(db,'config','battlemap_effect'), snap => {
+      if(!snap.exists()) return; const fx=snap.data();
+      if(!fx?.id || Date.now()-(fx.ts||0)>5000) return;
+      setFloatingEffects(prev=>[...prev.filter(x=>x.id!==fx.id),fx]);
+      setTimeout(()=>setFloatingEffects(prev=>prev.filter(x=>x.id!==fx.id)),2800);
+    });
+    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); uFog(); uLibrary(); uFx(); };
   }, []);
+
+
+  useEffect(()=>{
+    if(maps.length) try{localStorage.setItem('dinastia_cache_battlemaps',JSON.stringify(maps));}catch(_){}
+  },[maps]);
+  useEffect(()=>{
+    if(sheets.length) try{localStorage.setItem('dinastia_cache_sheets',JSON.stringify(sheets));}catch(_){}
+  },[sheets]);
+  useEffect(()=>{
+    if(loaded || maps.length) return;
+    try{const cached=JSON.parse(localStorage.getItem('dinastia_cache_battlemaps')||'[]');if(cached.length){setMaps(cached);setLoaded(true);}}catch(_){}
+  },[loaded,maps.length]);
 
   useEffect(() => {
     if (!masterMode) return;
@@ -2051,6 +2120,13 @@ function BattleMapSection({ masterMode }) {
     }
   };
 
+  const rulerPoint = e => {
+    const el=mapRef.current;if(!el)return null;const r=el.getBoundingClientRect();return {x:Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100)),y:Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100))};
+  };
+  const startRuler = e => { if(!rulerMode)return; e.stopPropagation(); e.preventDefault(); const p=rulerPoint(e); if(!p)return; rulerDrawingRef.current=true; setRuler({start:p,end:p}); };
+  const moveRuler = e => { if(!rulerMode||!rulerDrawingRef.current)return; const p=rulerPoint(e); if(p)setRuler(r=>r?{...r,end:p}:r); };
+  const endRuler = () => { rulerDrawingRef.current=false; };
+
   const persistMap = (mapId, data) => {
     const { tokens, ...meta } = data;
     clearTimeout(saveTimeout.current[mapId]);
@@ -2136,6 +2212,25 @@ function BattleMapSection({ masterMode }) {
       setFormFoto(compressed);
     };
     reader.readAsDataURL(file); e.target.value = '';
+  };
+
+  const saveTokenToLibrary = async () => {
+    if (!formNome.trim() || !formFoto) return;
+    const id=String(Date.now());
+    await setDoc(doc(db,'battlemap_token_library',id),{nome:formNome.trim(),foto:formFoto,tipo:formTipo,size:70,createdAt:Date.now()});
+    pushToast('Token salvo na biblioteca','📚','#A855F7');
+  };
+  const addLibraryToken = async (tpl) => {
+    if(!currentMap) return;
+    const token={...newToken(Date.now()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0};
+    const tokens=[...(currentMap.tokens||[]),token];
+    setMapTokens(prev=>({...prev,[String(currentMap.id)]:tokens}));
+    await writeLiveTokens(currentMap.id,tokens,true); setSelectedId(token.id); setShowTokenLibrary(false);
+  };
+  const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(doc(db,'battlemap_token_library',String(id))); };
+  const publishTokenEffect = async (token,text,color='#C8A8E8') => {
+    const fx={id:`${Date.now()}_${Math.random()}`,mapId:String(currentMap?.id||''),tokenId:token.id,text,color,ts:Date.now()};
+    await setDoc(doc(db,'config','battlemap_effect'),fx);
   };
 
   const addToken = () => {
@@ -2379,7 +2474,13 @@ function BattleMapSection({ masterMode }) {
                   <button onClick={() => fileRef.current?.click()} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.12)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🗺 {currentMap.img ? 'Trocar' : 'Enviar'} Imagem</button>
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
                   <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>+ Token</button>
+                  <button onClick={() => setShowTokenLibrary(v=>!v)} style={{ padding:'5px 9px',borderRadius:7,border:'1px solid rgba(168,85,247,.38)',background:showTokenLibrary?'rgba(168,85,247,.2)':'rgba(4,6,15,.7)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>📚 Biblioteca</button>
+                  <button onClick={() => {setRulerMode(v=>!v);setFogMode('off');setRuler(null);}} style={{ padding:'5px 9px',borderRadius:7,border:`1px solid ${rulerMode?'rgba(30,200,255,.65)':'rgba(30,200,255,.25)'}`,background:rulerMode?'rgba(30,200,255,.18)':'rgba(4,6,15,.7)',color:'#58D9FF',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>📏 Régua</button>
+                  <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 6px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#8A7A9A',fontFamily:'Cinzel,serif'}}>1m=<input type='number' min='10' max='300' value={pixelsPerMeter} onChange={e=>setPixelsPerMeter(Math.max(10,Number(e.target.value)||70))} style={{width:45,fontSize:10,padding:'2px 4px'}}/>px</label>
                   <button onClick={() => setFogMode(m => m === 'add' ? 'off' : 'add')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='add'?'rgba(180,108,232,.7)':'rgba(180,108,232,.3)'}`, background: fogMode==='add'?'rgba(180,108,232,.22)':'rgba(4,6,15,.7)', color:'#D7B6F2', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'blur(6px)' }}>🌫 Cobrir</button>
+                  <button onClick={() => setShowTokenLibrary(v=>!v)} style={{ padding:'5px 9px',borderRadius:7,border:'1px solid rgba(168,85,247,.38)',background:showTokenLibrary?'rgba(168,85,247,.2)':'rgba(4,6,15,.7)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>📚 Biblioteca</button>
+                  <button onClick={() => {setRulerMode(v=>!v);setFogMode('off');setRuler(null);}} style={{ padding:'5px 9px',borderRadius:7,border:`1px solid ${rulerMode?'rgba(30,200,255,.65)':'rgba(30,200,255,.25)'}`,background:rulerMode?'rgba(30,200,255,.18)':'rgba(4,6,15,.7)',color:'#58D9FF',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>📏 Régua</button>
+                  <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 6px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#8A7A9A',fontFamily:'Cinzel,serif'}}>1m=<input type='number' min='10' max='300' value={pixelsPerMeter} onChange={e=>setPixelsPerMeter(Math.max(10,Number(e.target.value)||70))} style={{width:45,fontSize:10,padding:'2px 4px'}}/>px</label>
                   <button onClick={() => setFogMode(m => m === 'erase' ? 'off' : 'erase')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='erase'?'rgba(74,222,128,.65)':'rgba(74,222,128,.25)'}`, background: fogMode==='erase'?'rgba(74,222,128,.18)':'rgba(4,6,15,.7)', color:'#8CF0AC', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'blur(6px)' }}>🧽 Revelar área</button>
                   <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 6px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#8A7A9A',fontFamily:'Cinzel,serif'}}>Pincel <input type="range" min="5" max="30" value={fogBrush} onChange={e=>setFogBrush(Number(e.target.value))} style={{width:70}}/></label>
                   <button onClick={() => { if (confirm('Remover toda a névoa deste mapa?')) saveFog(String(currentMap.id), []); }} style={{ padding:'5px 8px',borderRadius:7,border:'1px solid rgba(232,160,32,.28)',background:'rgba(4,6,15,.7)',color:'#E8A020',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>☀ Limpar névoa</button>
@@ -2390,6 +2491,17 @@ function BattleMapSection({ masterMode }) {
                   <button onClick={() => deleteMap(currentMap.id)} style={{ padding: '5px 8px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.25)', background: 'rgba(4,6,15,0.7)', color: '#7A4040', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter: 'blur(6px)' }}>🗑</button>
                 </div>
               )}
+            </div>
+          )}
+
+          {showTokenLibrary && masterMode && currentMap && (
+            <div style={{position:'absolute',top:70,left:10,zIndex:42,width:330,maxHeight:'62%',overflowY:'auto',border:'1px solid rgba(168,85,247,.32)',borderRadius:12,background:'rgba(8,10,20,.97)',padding:12,boxShadow:'0 12px 34px rgba(0,0,0,.7)',backdropFilter:'blur(10px)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><span style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.18em',color:'#C8A8E8'}}>BIBLIOTECA DE TOKENS</span><button onClick={()=>setShowTokenLibrary(false)} style={{background:'none',border:'none',color:'#7A6A8A',cursor:'pointer'}}>✕</button></div>
+              {tokenLibrary.length===0?<div style={{padding:18,textAlign:'center',color:'#5A5070',fontSize:11}}>Nenhum token salvo ainda. Crie um token e use “Salvar”.</div>:
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{tokenLibrary.map(t=><div key={t.id} style={{padding:7,borderRadius:9,border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.025)',textAlign:'center',position:'relative'}}>
+                <button onClick={()=>addLibraryToken(t)} style={{width:'100%',background:'none',border:'none',cursor:'pointer',color:'#C8B8A0'}}><div style={{height:62,display:'flex',alignItems:'center',justifyContent:'center'}}>{t.foto?<img src={t.foto} alt='' style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>:<span>🎭</span>}</div><div style={{fontSize:9,fontFamily:'Cinzel,serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.nome}</div></button>
+                <button onClick={()=>deleteLibraryToken(t.id)} title='Excluir salvo' style={{position:'absolute',top:2,right:2,width:18,height:18,borderRadius:'50%',border:'none',background:'rgba(232,25,60,.18)',color:'#E8193C',cursor:'pointer',fontSize:9}}>✕</button>
+              </div>)}</div>}
             </div>
           )}
 
@@ -2412,6 +2524,7 @@ function BattleMapSection({ masterMode }) {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button onClick={saveTokenToLibrary} disabled={!formNome.trim() || !formFoto} style={{padding:'8px 10px',borderRadius:8,border:'1px solid rgba(168,85,247,.4)',background:'rgba(168,85,247,.12)',color:'#C8A8E8',cursor:(formNome.trim()&&formFoto)?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:11}}>📚 Salvar</button>
                 <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
                 <button onClick={() => { setShowAddForm(false); setFormNome(''); setFormFoto(''); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>Cancelar</button>
               </div>
@@ -2442,10 +2555,10 @@ function BattleMapSection({ masterMode }) {
             <div
               ref={frameRef}
               title={zoom > 1 ? 'Clique e arraste para mover · use a roda para controlar o zoom' : 'Use a roda do mouse para aproximar'}
-              onPointerDown={onMapPanStart}
-              onPointerMove={onMapPanMove}
-              onPointerUp={endMapPan}
-              onPointerCancel={endMapPan}
+              onPointerDown={rulerMode ? startRuler : onMapPanStart}
+              onPointerMove={rulerMode ? moveRuler : onMapPanMove}
+              onPointerUp={rulerMode ? endRuler : endMapPan}
+              onPointerCancel={rulerMode ? endRuler : endMapPan}
               onLostPointerCapture={endMapPan}
               style={{
                 position: 'absolute', inset: 0,
@@ -2470,6 +2583,7 @@ function BattleMapSection({ masterMode }) {
                 }}
               >
                 <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                {ruler && (()=>{const dx=(ruler.end.x-ruler.start.x)/100*(baseSize.w||1)*zoom;const dy=(ruler.end.y-ruler.start.y)/100*(baseSize.h||1)*zoom;const meters=Math.sqrt(dx*dx+dy*dy)/(pixelsPerMeter*zoom);return <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:24,overflow:'visible'}}><line x1={`${ruler.start.x}%`} y1={`${ruler.start.y}%`} x2={`${ruler.end.x}%`} y2={`${ruler.end.y}%`} stroke='#58D9FF' strokeWidth={2*zoom} strokeDasharray={`${7*zoom} ${5*zoom}`}/><circle cx={`${ruler.start.x}%`} cy={`${ruler.start.y}%`} r={4*zoom} fill='#58D9FF'/><circle cx={`${ruler.end.x}%`} cy={`${ruler.end.y}%`} r={4*zoom} fill='#58D9FF'/><text x={`${(ruler.start.x+ruler.end.x)/2}%`} y={`${(ruler.start.y+ruler.end.y)/2}%`} fill='#D7F7FF' fontSize={12*zoom} textAnchor='middle' style={{paintOrder:'stroke',stroke:'#02040A',strokeWidth:4*zoom,fontFamily:'Cinzel,serif'}}>{meters.toFixed(1)} m</text></svg>;})()}
                 {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const isSelected = selectedId === token.id;
@@ -2488,6 +2602,8 @@ function BattleMapSection({ masterMode }) {
                         touchAction: 'none',
                       }}
                     >
+                     {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*zoom,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*zoom,borderRadius:'50%',border:`${1.5*zoom}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
+                     {(token.maxHp||0)>0 && <div style={{width:Math.max(46*zoom,dispSize),height:5*zoom,borderRadius:5*zoom,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*zoom}px solid rgba(255,255,255,.2)`,marginBottom:1*zoom}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,((token.hp||0)/(token.maxHp||1))*100))}%`,background:hpColor(token.hp||0,token.maxHp||1),transition:'width .25s'}}/></div>}
                      <div style={{
                       width: dispSize, height: dispSize, borderRadius: '50%',
                       border: draggingId === token.id ? `2px solid ${info.ring}` : isSelected ? '2px solid #fff' : '2px solid transparent',
@@ -2503,6 +2619,8 @@ function BattleMapSection({ masterMode }) {
                       <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
+                      {token.status && Object.entries(token.status).some(([,v])=>v) && <div style={{display:'flex',gap:2*zoom,flexWrap:'wrap',justifyContent:'center',maxWidth:100*zoom}}>{STATUS_LIST.filter(st=>token.status?.[st.id]).map(st=><span key={st.id} title={st.label} style={{fontSize:10*zoom,filter:'drop-shadow(0 0 3px #000)'}}>{st.icon}</span>)}</div>}
+                      {floatingEffects.filter(f=>String(f.mapId)===String(currentMap.id)&&String(f.tokenId)===String(token.id)).map(f=><div key={f.id} style={{position:'absolute',left:'50%',top:-8*zoom,color:f.color||'#fff',fontFamily:'Cinzel Decorative,serif',fontWeight:900,fontSize:16*zoom,textShadow:'0 2px 6px #000,0 0 10px currentColor',whiteSpace:'nowrap',pointerEvents:'none',animation:'floatingCombatText 2.7s ease-out forwards',zIndex:50}}>{f.text}</div>)}
                     </div>
                   );
                 })}
@@ -2534,6 +2652,14 @@ function BattleMapSection({ masterMode }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho</span>
                 <input type="range" min={40} max={120} step={5} value={selectedToken.size || 70} onChange={e => updateToken(selectedToken.id, { size: Number(e.target.value) })} style={{ flex: 1 }} />
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:10}}>
+                <label style={{fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>HP<input type='number' value={selectedToken.hp||0} onChange={e=>updateToken(selectedToken.id,{hp:Number(e.target.value)})} style={{width:'100%',fontSize:11,marginTop:3}}/></label>
+                <label style={{fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>HP Máx.<input type='number' value={selectedToken.maxHp||0} onChange={e=>updateToken(selectedToken.id,{maxHp:Number(e.target.value)})} style={{width:'100%',fontSize:11,marginTop:3}}/></label>
+              </div>
+              <label style={{display:'flex',alignItems:'center',gap:7,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:9}}>Área/alcance <input type='range' min='0' max='30' step='1' value={selectedToken.rangeMeters||0} onChange={e=>updateToken(selectedToken.id,{rangeMeters:Number(e.target.value)})} style={{flex:1}}/><b style={{color:'#58D9FF'}}>{selectedToken.rangeMeters||0}m</b></label>
+              <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
+                {[['-8 HP','#E8193C'],['Sangrando','#E8193C'],['Crítico!','#4ADE80'],['Esquiva!','#58D9FF']].map(([txt,c])=><button key={txt} onClick={()=>publishTokenEffect(selectedToken,txt,c)} style={{padding:'4px 7px',borderRadius:6,border:`1px solid ${c}44`,background:`${c}12`,color:c,cursor:'pointer',fontSize:9,fontFamily:'Cinzel,serif'}}>{txt}</button>)}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => updateToken(selectedToken.id, { locked: !selectedToken.locked })} style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${selectedToken.locked ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`, background: selectedToken.locked ? 'rgba(232,160,32,0.1)' : 'rgba(255,255,255,0.02)', color: selectedToken.locked ? '#E8A020' : '#8A7A6A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{selectedToken.locked ? '🔒 Travado' : '🔓 Livre'}</button>
@@ -2716,11 +2842,11 @@ function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   })();
 
   return (
-    <div style={{ width: 82, height: 62, borderRadius: 10, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.55)', animation: phase === 'rolling' ? 'trayShake 0.35s ease-in-out infinite' : 'none', margin: '0 auto' }}>
+    <div style={{ width: 116, height: 88, borderRadius: 18, background: 'radial-gradient(circle at 50% 35%,rgba(168,85,247,.12),rgba(0,0,0,.58) 68%)', border: '1px solid rgba(168,85,247,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 3px 18px rgba(0,0,0,0.72),0 8px 20px rgba(0,0,0,.35)', animation: phase === 'rolling' ? 'trayShake 0.28s ease-in-out infinite, diceGlowPulse .8s ease-in-out infinite' : 'diceGlowPulse 2.8s ease-in-out infinite', margin: '0 auto', position:'relative', overflow:'hidden' }}>
       <div style={{
-        width: 38, height: sides === 8 ? 38 : 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: 54, height: sides === 8 ? 54 : 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: `linear-gradient(145deg, ${color}33, ${color}11)`, border: `1.5px solid ${color}88`,
-        color, fontFamily: 'Cinzel,serif', fontWeight: 900, fontSize: 15,
+        color, fontFamily: 'Cinzel,serif', fontWeight: 900, fontSize: 19, textShadow:`0 0 10px ${color}99`,
         animation: phase === 'rolling' ? 'diceTumble 0.5s linear infinite' : phase === 'settled' ? 'diceSettle 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
         ...shapeStyle,
       }}>
@@ -3081,9 +3207,9 @@ function PersonalityTags({ value, color, onChange }) {
 function AttrDots({ value, color, onChange, masterMode, attrPoints = 0, onSpendPoint }) {
   return (
     <div className="attr-dots" style={{ display: 'flex', gap: 4 }}>
-      {Array.from({ length: 10 }).map((_, i) => {
+      {Array.from({ length: 16 }).map((_, i) => {
         const filled = i < value;
-        const isPulsingNext = !masterMode && attrPoints > 0 && i === value && value < 10;
+        const isPulsingNext = !masterMode && attrPoints > 0 && i === value && value < 16;
         return (
           <button key={i} onClick={() => { if (masterMode) { onChange(i < value ? (i === value - 1 ? 0 : i + 1) : i + 1); } else { if (isPulsingNext && onSpendPoint) { onSpendPoint(i + 1); } } }}
             title={isPulsingNext ? `Gastar 1 Ponto de Atributo (+1)` : filled && masterMode ? 'Reduzir' : ''}
@@ -3540,13 +3666,16 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
     );
   }
 
+  const increment = (e) => { e.stopPropagation(); onUpdate(abilityId, cd + 1); };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(232,100,0,0.14)', border: '1px solid rgba(232,100,0,0.4)', borderRadius: 6, padding: '3px 7px', animation: 'cooldownIn 0.25s ease' }}>
-      <span style={{ fontSize: 10 }}>⏳</span>
-      <span style={{ fontSize: 11, fontFamily: 'Cinzel,serif', color: '#E86420', fontWeight: 700 }}>{cd}</span>
-      <span style={{ fontSize: 9, color: 'rgba(232,100,0,0.7)' }}>turno{cd !== 1 ? 's' : ''}</span>
-      <button onClick={decrement} title="-1 turno" style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E8A020', cursor: 'pointer', borderRadius: 3, fontSize: 11, padding: '0 4px', lineHeight: 1.4 }}>−</button>
-      <button onClick={reset} title="Remover cooldown" style={{ background: 'none', border: 'none', color: 'rgba(232,25,60,0.5)', cursor: 'pointer', fontSize: 9, padding: '0 2px' }}>✕</button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(90deg,rgba(232,100,0,0.16),rgba(168,85,247,0.10))', border: '1px solid rgba(232,100,0,0.45)', borderRadius: 7, padding: '4px 7px', animation: 'cooldownIn 0.25s ease', boxShadow:'0 0 12px rgba(232,100,0,.08)' }}>
+      <span style={{ fontSize: 11 }}>⏳</span>
+      <span style={{ fontSize: 9, color: 'rgba(232,190,150,0.75)', fontFamily:'Cinzel,serif' }}>Faltam</span>
+      <span style={{ fontSize: 12, fontFamily: 'Cinzel,serif', color: '#FF8A3D', fontWeight: 900 }}>{cd}</span>
+      <span style={{ fontSize: 9, color: 'rgba(232,190,150,0.65)' }}>rodada{cd !== 1 ? 's' : ''}</span>
+      <button onClick={decrement} title="Avançar 1 rodada" style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,.22)', color: '#7EE6A1', cursor: 'pointer', borderRadius: 4, fontSize: 11, padding: '0 5px', lineHeight: 1.5 }}>−1</button>
+      <button onClick={increment} title="Adicionar 1 rodada" style={{ background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,.22)', color: '#C8A8E8', cursor: 'pointer', borderRadius: 4, fontSize: 10, padding: '0 5px', lineHeight: 1.5 }}>+1</button>
+      <button onClick={reset} title="Remover cooldown" style={{ background: 'none', border: 'none', color: 'rgba(232,25,60,0.6)', cursor: 'pointer', fontSize: 10, padding: '0 2px' }}>✕</button>
     </div>
   );
 }
@@ -6188,6 +6317,17 @@ function PublicDiceOverlay() {
   );
 }
 
+function ConnectionStatus(){
+  const [online,setOnline]=useState(typeof navigator==='undefined'?true:navigator.onLine);
+  const [syncing,setSyncing]=useState(false);
+  useEffect(()=>{
+    const on=()=>{setOnline(true);setSyncing(true);setTimeout(()=>setSyncing(false),1800)};const off=()=>{setOnline(false);setSyncing(false)};
+    window.addEventListener('online',on);window.addEventListener('offline',off);return()=>{window.removeEventListener('online',on);window.removeEventListener('offline',off)};
+  },[]);
+  const color=!online?'#E8193C':syncing?'#E8A020':'#4ADE80';const label=!online?'Sem conexão':syncing?'Sincronizando':'Online';
+  return <div title={!online?'As alterações serão enviadas quando a conexão voltar. O último conteúdo permanece em cache.':'Estado da conexão'} style={{position:'fixed',left:14,bottom:14,zIndex:9996,display:'flex',alignItems:'center',gap:7,padding:'6px 10px',borderRadius:18,border:`1px solid ${color}44`,background:'rgba(5,4,14,.88)',backdropFilter:'blur(8px)',fontFamily:'Cinzel,serif',fontSize:9,color}}><span style={{width:7,height:7,borderRadius:'50%',background:color,boxShadow:`0 0 7px ${color}`}}/> {label}</div>;
+}
+
 export default function App(){
   const[tab,setTab]=useState('prologo');
   const[masterMode,setMasterMode]=useState(false);
@@ -6216,6 +6356,7 @@ export default function App(){
       <StarField atmosphere={atmosphere}/>
       <ToastContainer/>
       <PublicDiceOverlay />
+      <ConnectionStatus />
       <header style={{position:'relative',zIndex:10,borderBottom:'1px solid rgba(255,255,255,0.05)',background:'linear-gradient(180deg,rgba(8,3,18,0.99),rgba(5,2,12,0.95))',backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px 10px'}}>
           {/* Espaçador para o widget no desktop/mobile não sobrepor o título */}
