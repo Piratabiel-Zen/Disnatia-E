@@ -617,7 +617,7 @@ const buildCombatants = () => [
     nome: s.nome || 'Personagem',
     type: 'player',
     hp: s.hp || 0,
-    maxHp: (s.hp || 0) + (s.hp_bonus || 0),
+    maxHp: getSheetMaxHp(s),
     color: SHEET_COLORS[s.classe] || '#A855F7',
     foto: s.foto || '',
     agiBonus: Math.floor((s.agilidade || 0) / 2),
@@ -988,6 +988,37 @@ const PROLOGUE=[{type:'intro',text:'No início, não existia nada.'},{type:'paus
 const MILESTONES=[{year:'~400.000 AC',event:'Descoberta e controle do fogo',icon:'🔥'},{year:'~10.000 AC',event:'Revolução agrícola — os humanos se tornam sedentários',icon:'🌾'},{year:'~3.500 AC',event:'Surgimento das primeiras civilizações: Mesopotâmia e Egito',icon:'🏛️'},{year:'~3.000 AC',event:'Invenção da escrita cuneiforme',icon:'📜'},{year:'~500 AC',event:'Apogeu dos grandes impérios: Persa, Grego, Romano',icon:'⚔️'},{year:'Séc. XV',event:'Era das grandes navegações e descobrimento dos continentes',icon:'🌊'},{year:'Séc. XVIII',event:'Revolução Industrial — a máquina a vapor muda o mundo',icon:'⚙️'},{year:'1905',event:'Albert Einstein publica a Teoria da Relatividade',icon:'🧠'},{year:'1945',event:'Era Atômica — o poder de destruição da humanidade se torna real',icon:'☢️'},{year:'1969',event:'O primeiro ser humano pisa na Lua',icon:'🌕'},{year:'1990s',event:'Era digital — a internet conecta a humanidade globalmente',icon:'💻'},{year:'Séc. XXI',event:'Inteligência artificial: a humanidade cria inteligência',icon:'🤖'},{year:'AGORA',event:'Quatro estrelas aparecem nos céus de Cosmum. Elas se aproximam.',icon:'✦',prophecy:true}];
 const ENTITIES_DATA=[{id:'homem-agua',name:'Homem Água',icon:'💧',revealed:true,lore:`Era um homem comum chamado David, que vivia por volta de 1544, com seu amigo Billy Laranjais. Um dia como qualquer outro, uma lágrima celestial caiu dos céus — era de JhonKenteiker. Ninguém sabe o motivo daquela lágrima ter caído, mas ao entrar em contato com o corpo de David, tornou-o extremamente poderoso, expelindo água de seu corpo e a controlando de forma quase que divina.\n\nAo ver isso, Billy teve uma ideia, movido pela ganância. Ele atraiu seu amigo até um local, onde o prendeu e ficou drenando toda sua água, dia após dia. Com isso, Billy criou uma fortuna e o parque temático para esconder seu pecado — conhecido como "Thermas dos Laranjais".\n\nApós isso, a cada 200 a 300 anos o Homem Água não morre, mas reencarna sua essência em outro hospedeiro. Quando isso acontece, todos os Cavaleiros dos Laranjais — descendentes diretos de Billy — são acionados para capturar a criança assim que nasce, e colocá-la na prisão que um dia foi de David, para drenar sua água até que o ciclo comece outra vez.`,fisico:`Um ser formado completamente pela água mais pura já vista — transparente, límpida, quase luminosa. Seus olhos são os únicos traços aparentes: dois pontos visíveis dentro de uma forma humana inteiramente aquosa. Não possui cor, não possui sombra. Apenas água com vontade própria.`},{id:'cabecas-azuis',name:'Os Cabeças Azuis',icon:'🔵',revealed:true,lore:`No ano de 830 d.C., uma entidade senciente de vontade própria e poder imensurável despertou. Embora fosse poderosa, ela se sentia incompleta em sua solidão. Foi então que seduziu o primeiro humano — um homem cujo nome original foi apagado da história, restando apenas o "Chamado" que ressoa em sua mente.\n\nA entidade convenceu este primeiro hospedeiro de que a individualidade era um fardo e que pertencer a um único ser pensante, abrindo mão da própria dignidade e vontade, seria o maior prazer de uma vida. Ao longo dos séculos, mais e mais humanos foram abduzidos e assimilados.\n\nHoje, eles não são mais indivíduos, mas componentes de uma Mente Coletiva. Funcionam como um "software" biológico: cada novo humano assimilado serve como processamento e memória, fazendo com que a entidade cresça em inteligência e alcance a cada segundo.`,fisico:`Seres finos, quase esqueléticos, com uma cabeça desproporcional e grande. Não possuem boca nem nariz — apenas um único olho no centro do rosto, brilhando na cor de safira profunda. Sua presença, embora não seja aterrorizante, é completamente desconfortável. Como se algo essencial estivesse faltando onde deveria haver um rosto.`},{id:'homem-leite',name:'O Homem de Leite',icon:'◌',revealed:false,lore:'',fisico:''},{id:'ventus',name:'Ventus o Rei dus Tempus',icon:'🌪️',revealed:false,lore:'',fisico:''},{id:'sixseven',name:'O 67 (SixSeven)',icon:'⚡',revealed:false,lore:'',fisico:''},{id:'unknown',name:'???',icon:'◈',revealed:false,lore:'',fisico:''}];
 const ARTEFATOS_DATA=[{id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💎',lore:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha.... (o livro não descreve)`,fisico:`Localização: Desconhecida\nOrigem: Corpo do Homem Água`},{id:'artefato-2',name:'Sandaliers Six',icon:'👟',lore:`Quem possui esse artefato pode estar onde bem entender, espaço e tempo não o param, podendo se movimentar de forma livre em qualquer momento, um teleporte instantâneo.`,fisico:`Localização: Desconhecida\nOrigem: Desconhecida`},{id:'artefato-3',name:'Artefato III',icon:'◆',lore:'',fisico:''},{id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},{id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},{id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}];
+// ─── VIDA MÁXIMA POR CLASSE, NÍVEL E DURABILIDADE ─────────────────────────────
+// Nível 1 começa com a vida-base. Cada nível acima do primeiro concede +1 HP.
+// Cada ponto de bônus de Durabilidade (1 bônus a cada 2 pontos) concede +2 HP.
+const CLASS_BASE_HP = {
+  personalizado: 16,
+  fogo: 20,
+  escarlate: 25,
+  corvos: 15,
+  arcanjo: 20,
+};
+
+function getClassBaseHp(classe) {
+  return CLASS_BASE_HP[classe] ?? 15;
+}
+
+function getDurabilityBonus(durabilidade) {
+  return Math.floor(Math.max(0, Number(durabilidade) || 0) / 2);
+}
+
+function getDurabilityHp(durabilidade) {
+  return getDurabilityBonus(durabilidade) * 2;
+}
+
+function getSheetMaxHp(sheet) {
+  const base = getClassBaseHp(sheet?.classe);
+  const levelHp = Math.max(0, (Number(sheet?.nivel) || 1) - 1);
+  const durabilityHp = getDurabilityHp(sheet?.durabilidade);
+  const extraHp = Math.max(0, Number(sheet?.hp_bonus) || 0);
+  return base + levelHp + durabilityHp + extraHp;
+}
+
 const RULES_DATA=[
   {
     cat:'sistema',
@@ -1042,6 +1073,12 @@ const RULES_DATA=[
     icon:'✦',
     title:'Progressão & XP',
     body:`O nível máximo é 30.\n\nTítulos por Nível:\n• Nível 1–3 → Aprendiz Cósmico\n• Nível 4–6 → Portador do Destino\n• Nível 7–9 → Arauto do Fim\n• Nível 10–14 → Guardião Estelar\n• Nível 15–19 → Ascendente\n• Nível 20–24 → Transcendente\n• Nível 25–29 → Arauto Supremo\n• Nível 30 → Lenda Cósmica\n\nDesbloqueio de Especiais:\n• Especial I — desbloqueado no Nível 3\n• Especial II — desbloqueado no Nível 7\n\nAo alcançar os níveis 4, 10, 15, 20, 25 e 30, o personagem desbloqueia uma habilidade nova, definida em conjunto com o Mestre.`
+  }
+  ,{
+    cat:'Mecânicas',
+    icon:'❤️‍🔥',
+    title:'Vida Máxima, Classes e Durabilidade',
+    body:`A Vida Máxima dos personagens é calculada automaticamente pela classe, pelo nível e pela Durabilidade.\n\nFórmula de Vida Máxima:\nVida-base da classe + níveis acima do 1º + Vida de Durabilidade + bônus adicionais.\n\nVida-base por Classe:\n• Personalizado → 16 HP\n• Assassinos do Fogo Azul → 20 HP\n• Cavaleiros Escarlate → 25 HP\n• Corvos do Horizonte → 15 HP\n• Arcanjos da Escuridão → 20 HP\n• Todas as demais classes → 15 HP\n\nProgressão por Nível:\nO personagem começa no Nível 1 com a vida-base da classe. A cada nível conquistado acima do primeiro, recebe +1 de Vida Máxima.\n\nDurabilidade e Vida:\nA cada 2 pontos de Durabilidade, o personagem recebe +1 de bônus de Durabilidade. Cada ponto desse bônus concede +2 de Vida Máxima.\n\nExemplos:\n• Durabilidade 2 → bônus +1 → +2 HP\n• Durabilidade 6 → bônus +3 → +6 HP\n• Durabilidade 10 → bônus +5 → +10 HP\n• Durabilidade 16 → bônus +8 → +16 HP\n\nBônus adicionais de vida concedidos por itens, efeitos ou pelo Mestre são somados depois desse cálculo.`
   }
 ];
 function StarField({atmosphere='neutro'}){const ref=useRef(null);useEffect(()=>{const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext('2d');let raf;const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};resize();window.addEventListener('resize',resize);const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.2,phase:Math.random()*Math.PI*2,spd:Math.random()*0.025+0.008}));const ps=[{x:0.10,y:0.04,c:'#1EC8FF'},{x:0.87,y:0.05,c:'#E8A020'},{x:0.48,y:0.025,c:'#A855F7'},{x:0.70,y:0.06,c:'#E8193C'}];let t=0;const draw=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);t+=0.007;const atm=ATMOSPHERES[atmosphere]||ATMOSPHERES.neutro;const sc=atm.starColor;stars.forEach(s=>{const a=0.2+0.5*Math.sin(t*s.spd*50+s.phase);ctx.beginPath();ctx.arc(s.x*canvas.width,s.y*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle=sc?`${sc}${Math.round(a*255).toString(16).padStart(2,'0')}`:`rgba(255,255,255,${a})`;ctx.fill();});ps.forEach((s,i)=>{const a=0.55+0.45*Math.sin(t*1.1+i*0.8),px=s.x*canvas.width,py=s.y*canvas.height;ctx.save();ctx.shadowColor=s.c;ctx.shadowBlur=14*a;ctx.globalAlpha=a;ctx.beginPath();ctx.arc(px,py,2.8,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill();ctx.restore();ctx.save();ctx.globalAlpha=a*0.4;ctx.strokeStyle=s.c;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(px-8,py);ctx.lineTo(px+8,py);ctx.stroke();ctx.beginPath();ctx.moveTo(px,py-8);ctx.lineTo(px,py+8);ctx.stroke();ctx.restore();});raf=requestAnimationFrame(draw);};draw();return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);};},[atmosphere]);return <canvas ref={ref} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;}
@@ -1767,6 +1804,7 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
   const f = (k, v) => onChangeSheet({ ...sheet, [k]: v });
   const hp = sheet.hp || 0;
   const hpBonus = sheet.hp_bonus || 0;
+  const maxHp = getSheetMaxHp(sheet);
   const attrPoints = sheet.attrPoints || 0;
   const sheetCooldowns = sheet.cooldowns || {};
   const handleUpdateCooldown = (abilityId, turns) => f('cooldowns', { ...sheetCooldowns, [abilityId]: turns });
@@ -1793,12 +1831,12 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
         <div style={{ fontSize: 9, letterSpacing: '0.25em', color: '#E8193C', fontFamily: 'Cinzel,serif', marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' }}>❤️ Vida</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
           <button onClick={() => f('hp', Math.max(0, hp - 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.15)', color: '#E8193C', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 0 }}>−</button>
-          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 27, fontWeight: 900, color: hpColor(hp, hp + hpBonus || 1), minWidth: 44, textAlign: 'center' }}>{hp}</div>
-          <button onClick={() => f('hp', hp + 1)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 0 }}>+</button>
+          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 27, fontWeight: 900, color: hpColor(hp, maxHp || 1), minWidth: 44, textAlign: 'center' }}>{hp}</div>
+          <button onClick={() => f('hp', Math.min(maxHp, hp + 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 0 }}>+</button>
         </div>
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
           {[-10, -5].map(v => <button key={v} onClick={() => f('hp', Math.max(0, hp + v))} style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.1)', color: '#E8193C', cursor: 'pointer', fontSize: 10 }}>{v}</button>)}
-          {[5, 10].map(v => <button key={v} onClick={() => f('hp', hp + v)} style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontSize: 10 }}>+{v}</button>)}
+          {[5, 10].map(v => <button key={v} onClick={() => f('hp', Math.min(maxHp, hp + v))} style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.1)', color: '#4ADE80', cursor: 'pointer', fontSize: 10 }}>+{v}</button>)}
         </div>
       </div>
 
@@ -3976,7 +4014,7 @@ function InvocacoesPanel({ sheet, onChange, sheetColor, masterMode }) {
   );
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:10,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[]});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[]});
 
 function useIsMobile(breakpoint = 700) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= breakpoint);
@@ -3996,6 +4034,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
   const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
+  const maxHp=getSheetMaxHp(sheet);
   const attrPoints = sheet.attrPoints || 0;
   const photoInputRef=useRef(null);
   const [levelUpData, setLevelUpData] = useState(null);
@@ -4041,7 +4080,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
           }
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontFamily:'Cinzel,serif',fontSize:13,fontWeight:700,color:sheetColor,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{sheet.nome||'Sem nome'}</div>
-            <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif'}}>Nv {sheet.nivel||1} · {hp}/{hp+hpBonus} HP</div>
+            <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif'}}>Nv {sheet.nivel||1} · {hp}/{maxHp} HP</div>
           </div>
           {attrPoints>0 && <span title={`${attrPoints} ponto(s) de atributo pendente(s)`} style={{width:7,height:7,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite',flexShrink:0}}/>}
         </div>
@@ -4082,7 +4121,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
 
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
-          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
 
@@ -4097,13 +4136,14 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
               <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>−</button>
               <div style={{textAlign:'center',minWidth:80}}>
                 <div style={{fontFamily:'Cinzel,serif',fontSize:52,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 28px ${hpColor(hp,30)}88, 0 0 6px ${hpColor(hp,30)}44`,transition:'color 0.4s, text-shadow 0.4s'}}>{hp}</div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}% de vida</div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:4,letterSpacing:'0.08em'}}>{Math.round(Math.min(100,(hp/Math.max(1,maxHp))*100))}% de vida</div>
+                <div style={{fontSize:9,color:'rgba(74,222,128,0.55)',fontFamily:'Cinzel,serif',marginTop:4}}>Base {getClassBaseHp(sheet.classe)} + Nv {Math.max(0,(sheet.nivel||1)-1)} + Dur {getDurabilityHp(sheet.durabilidade)}{hpBonus>0?` + Extra ${hpBonus}`:''}</div>
               </div>
-              <button onClick={()=>f('hp',hp+1)} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
+              <button onClick={()=>f('hp',Math.min(maxHp,hp+1))} style={{width:44,height:44,borderRadius:10,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:26,lineHeight:1,padding:0,transition:'all 0.15s'}}>+</button>
             </div>
 
             <div style={{height:8,background:'rgba(255,255,255,0.06)',borderRadius:6,marginBottom:14,overflow:'hidden'}}>
-              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
+              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,maxHp))*100)}%`,background:`linear-gradient(90deg,${hpColor(hp,30)},${hpColor(hp,30)}99)`,borderRadius:6,transition:'width 0.4s ease, background 0.4s ease',boxShadow:`0 0 8px ${hpColor(hp,30)}66`}}/>
             </div>
 
             <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
@@ -4112,7 +4152,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
               ))}
               <div style={{width:10}}/>
               {[+5,+10,+15].map(v=>(
-                <button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
+                <button key={v} onClick={()=>f('hp',Math.min(maxHp,hp+v))} style={{padding:'5px 10px',borderRadius:7,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:12,fontWeight:'bold',letterSpacing:'0.04em'}}>+{v}</button>
               ))}
             </div>
 
@@ -4356,6 +4396,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   const label=v=>v<=3?'Aprendiz Cósmico':v<=6?'Portador do Destino':v<=9?'Arauto do Fim':v<=14?'Guardião Estelar':v<=19?'Ascendente':v<=24?'Transcendente':v<=29?'Arauto Supremo':'Lenda Cósmica';
   const f=(k,v)=>onChange({...sheet,[k]:v});
   const hp=sheet.hp||0; const hpBonus=sheet.hp_bonus||0;
+  const maxHp=getSheetMaxHp(sheet);
   const attrPoints=sheet.attrPoints||0;
   const photoInputRef=useRef(null);
   const [levelUpData,setLevelUpData]=useState(null);
@@ -4423,7 +4464,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           <div style={{fontSize:10,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif'}}>{cls.icon} {cls.name} · Nv {sheet.nivel||1} · {label(sheet.nivel||1)}</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-          <div style={{fontSize:13,fontFamily:'Cinzel,serif',fontWeight:700,color:hpColor(hp,hp+hpBonus||1)}}>{hp}<span style={{fontSize:9,color:'rgba(255,255,255,0.25)',fontWeight:400}}>/{hp+hpBonus} HP</span></div>
+          <div style={{fontSize:13,fontFamily:'Cinzel,serif',fontWeight:700,color:hpColor(hp,maxHp||1)}}>{hp}<span style={{fontSize:9,color:'rgba(255,255,255,0.25)',fontWeight:400}}>/{maxHp} HP</span></div>
           {attrPoints>0&&<span title={`${attrPoints} ponto(s) pendente(s)`} style={{width:8,height:8,borderRadius:'50%',background:'#A855F7',boxShadow:'0 0 6px #A855F7',animation:'pulse 1.5s ease-in-out infinite'}}/>}
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'4px 10px',fontSize:11}}>✕</button>}
         </div>
@@ -4461,7 +4502,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           {/* Nome + Classe */}
           <div style={{display:'flex',gap:7,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
             <div style={{flex:1,minWidth:90}}><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome..." style={{width:'100%',fontSize:12}}/></div>
-            <div><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>f('classe',e.target.value)} style={{fontSize:11}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+            <div><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}} style={{fontSize:11}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           </div>
 
           {/* HP */}
@@ -4471,16 +4512,17 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
               <button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:34,height:34,borderRadius:8,border:'1px solid rgba(232,25,60,0.45)',background:'rgba(232,25,60,0.18)',color:'#E8193C',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>−</button>
               <div style={{textAlign:'center',minWidth:56}}>
                 <div style={{fontFamily:'Cinzel,serif',fontSize:38,fontWeight:900,lineHeight:1,color:hpColor(hp,30),textShadow:`0 0 18px ${hpColor(hp,30)}88`,transition:'color 0.4s'}}>{hp}</div>
-                <div style={{fontSize:9,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:2}}>{Math.round(Math.min(100,(hp/Math.max(1,hp+hpBonus))*100))}%</div>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.22)',fontFamily:'Cinzel,serif',marginTop:2}}>{Math.round(Math.min(100,(hp/Math.max(1,maxHp))*100))}%</div>
+                <div style={{fontSize:8,color:'rgba(74,222,128,0.5)',fontFamily:'Cinzel,serif',marginTop:3}}>Base {getClassBaseHp(sheet.classe)} · Nv +{Math.max(0,(sheet.nivel||1)-1)} · Dur +{getDurabilityHp(sheet.durabilidade)}</div>
               </div>
-              <button onClick={()=>f('hp',hp+1)} style={{width:34,height:34,borderRadius:8,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>+</button>
+              <button onClick={()=>f('hp',Math.min(maxHp,hp+1))} style={{width:34,height:34,borderRadius:8,border:'1px solid rgba(74,222,128,0.45)',background:'rgba(74,222,128,0.18)',color:'#4ADE80',cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>+</button>
             </div>
             <div style={{height:5,background:'rgba(255,255,255,0.06)',borderRadius:4,marginBottom:10,overflow:'hidden'}}>
-              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,hp+hpBonus))*100)}%`,background:hpColor(hp,30),borderRadius:4,transition:'width 0.4s,background 0.4s'}}/>
+              <div style={{height:'100%',width:`${Math.min(100,(hp/Math.max(1,maxHp))*100)}%`,background:hpColor(hp,30),borderRadius:4,transition:'width 0.4s,background 0.4s'}}/>
             </div>
             <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'center',marginBottom:10}}>
               {[-10,-5].map(v=>(<button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(232,25,60,0.3)',background:'rgba(232,25,60,0.1)',color:'#E8193C',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>{v}</button>))}
-              {[+5,+10].map(v=>(<button key={v} onClick={()=>f('hp',hp+v)} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>+{v}</button>))}
+              {[+5,+10].map(v=>(<button key={v} onClick={()=>f('hp',Math.min(maxHp,hp+v))} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(74,222,128,0.3)',background:'rgba(74,222,128,0.1)',color:'#4ADE80',cursor:'pointer',fontSize:11,fontWeight:'bold'}}>+{v}</button>))}
             </div>
             <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <div style={{fontSize:9,color:'rgba(74,222,128,0.6)',fontFamily:'Cinzel,serif'}}>🛡 Bônus</div>
