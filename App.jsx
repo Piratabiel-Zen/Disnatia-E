@@ -4471,7 +4471,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
       </div>
 
       {/* 3 COLUNAS */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',height:'calc(100vh - 178px)',minHeight:560,maxHeight:'calc(100vh - 128px)',overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr 1px 1fr',height:'calc(100vh - 210px)',minHeight:0,maxHeight:'calc(100vh - 210px)',overflow:'hidden'}}>
 
         {/* ══ COL 1: PERSONAGEM ═══════════════════════ */}
         <div className="sheet-column-scroll" style={col}>
