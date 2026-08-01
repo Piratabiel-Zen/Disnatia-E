@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc, updateDoc, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc, updateDoc, enableMultiTabIndexedDbPersistence, getDocFromServer, query, where } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAnaJjwoJ6YgGrR5pIoPrTIj7PculaIfyA",
@@ -13,7 +13,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 // Cache persistente do Firestore: mantém os últimos mapas, fichas e registros disponíveis offline.
-enableIndexedDbPersistence(db).catch(err => {
+enableMultiTabIndexedDbPersistence(db).catch(err => {
   if (err?.code !== 'failed-precondition' && err?.code !== 'unimplemented') console.warn('Persistência offline indisponível:', err);
 });
 
@@ -1208,6 +1208,7 @@ function AmbientSoundPlayer({ masterMode }) {
   const [novoLink, setNovoLink] = useState('');
   const iframeRef = useRef(null);
   const lastTs = useRef(0);
+  const lastAmbientRevisionRef = useRef(0);
   const [combatActive, setCombatActive] = useState(false);
 
   useEffect(() => {
@@ -1225,16 +1226,29 @@ function AmbientSoundPlayer({ masterMode }) {
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'ambient'), snap => {
-      if (!snap.exists()) return;
-      const d = snap.data();
+    const ambientRef = doc(db, 'config', 'ambient');
+    const applyAmbient = (d) => {
+      if (!d) return;
+      const revision = Number(d.revision || d.ts || 0);
+      if (revision && revision < lastAmbientRevisionRef.current) return;
+      lastAmbientRevisionRef.current = revision;
       setCurrent(d);
-      if (d.ts && d.ts !== lastTs.current) {
-        lastTs.current = d.ts;
+      if (revision && revision !== lastTs.current) {
+        lastTs.current = revision;
         setUserMuted(false);
       }
-    });
-    return () => unsub();
+    };
+    const unsub = onSnapshot(ambientRef, { includeMetadataChanges: true }, snap => {
+      if (snap.exists()) applyAmbient(snap.data());
+    }, err => console.error('Erro ao sincronizar música:', err));
+    const refreshFromServer = async () => {
+      try { const snap = await getDocFromServer(ambientRef); if (snap.exists()) applyAmbient(snap.data()); } catch (_) {}
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshFromServer(); };
+    window.addEventListener('online', refreshFromServer);
+    window.addEventListener('focus', refreshFromServer);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { unsub(); window.removeEventListener('online', refreshFromServer); window.removeEventListener('focus', refreshFromServer); document.removeEventListener('visibilitychange', onVisible); };
   }, []);
 
   const extractId = (url) => {
@@ -1255,7 +1269,7 @@ function AmbientSoundPlayer({ masterMode }) {
   const playTrack = async (track, categoria) => {
     try {
       await setDoc(doc(db, 'config', 'ambient'), {
-        videoId: track.videoId, nome: track.nome, categoria, playing: true, ts: Date.now(),
+        videoId: track.videoId, nome: track.nome, categoria, playing: true, ts: Date.now(), revision: Date.now() * 1000 + Math.floor(Math.random() * 1000),
       });
       const catColor = SOUND_CATEGORIES.find(c => c.id === categoria)?.color || '#4ADE80';
       pushToast(`🎵 Tocando agora: ${track.nome}`, '🎵', catColor);
@@ -1263,7 +1277,7 @@ function AmbientSoundPlayer({ masterMode }) {
   };
 
   const stopAll = async () => {
-    try { await setDoc(doc(db, 'config', 'ambient'), { videoId: '', nome: '', categoria: '', playing: false, ts: Date.now() }); } catch (e) {}
+    try { await setDoc(doc(db, 'config', 'ambient'), { videoId: '', nome: '', categoria: '', playing: false, ts: Date.now(), revision: Date.now() * 1000 + Math.floor(Math.random() * 1000) }); } catch (e) {}
   };
 
   const addTrack = async () => {
@@ -1291,7 +1305,7 @@ function AmbientSoundPlayer({ masterMode }) {
     <div style={{ position: 'fixed', top: 14, left: 16, zIndex: 100 }}>
       {isPlaying && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-          <iframe ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
+          <iframe key={`${current?.videoId || 'none'}_${current?.revision || current?.ts || 0}`} ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
         </div>
       )}
       {!open && (
@@ -1978,6 +1992,8 @@ function BattleMapSection({ masterMode }) {
   // Isso evita regravar o array completo de tokens a cada movimento do mouse.
   const livePositionVersionRef = useRef({});
   const liveClientIdRef = useRef(`client_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  const liveSequenceRef = useRef(0);
+  const activeMapRevisionRef = useRef(0);
   useEffect(() => { mapTokensRef.current = mapTokens; }, [mapTokens]);
 
   useEffect(() => {
@@ -2030,42 +2046,17 @@ function BattleMapSection({ masterMode }) {
         return next;
       });
     });
-    // Posições ao vivo em documentos individuais. Como cada gravação leva apenas
-    // mapId, tokenId, x e y, a propagação fica consideravelmente mais rápida.
-    const uPositions = onSnapshot(collection(db, 'battlemap_live_positions'), snap => {
-      if (snap.empty) return;
-      const patchesByMap = {};
-      snap.docChanges().forEach(change => {
-        if (change.type === 'removed') return;
-        const data = change.doc.data() || {};
-        if (!data.mapId || data.tokenId === undefined) return;
-        const mapId = String(data.mapId);
-        const tokenId = String(data.tokenId);
-        const versionKey = `${mapId}:${tokenId}`;
-        const incomingSeq = Number(data.seq || data.updatedAt || 0);
-        const knownSeq = Number(livePositionVersionRef.current[versionKey] || 0);
-        if (incomingSeq < knownSeq) return;
-        livePositionVersionRef.current[versionKey] = incomingSeq;
-        (patchesByMap[mapId] ||= []).push({ tokenId, x: Number(data.x), y: Number(data.y) });
-      });
-      if (!Object.keys(patchesByMap).length) return;
-      setMapTokens(prev => {
-        const next = { ...prev };
-        Object.entries(patchesByMap).forEach(([mapId, patches]) => {
-          const patchMap = new Map(patches.map(p => [String(p.tokenId), p]));
-          next[mapId] = (prev[mapId] || []).map(token => {
-            const patch = patchMap.get(String(token.id));
-            return patch ? { ...token, x: patch.x, y: patch.y } : token;
-          });
-        });
-        mapTokensRef.current = next;
-        return next;
-      });
-    }, err => console.error('Erro no canal rápido de posições:', err));
 
-    const u2 = onSnapshot(doc(db, 'config', 'battlemap_active'), snap => {
-      if (snap.exists()) setActiveId(snap.data().activeId || '');
-    });
+    const activeMapRef = doc(db, 'config', 'battlemap_active');
+    const applyActiveMap = (data) => {
+      const revision = Number(data?.revision || data?.updatedAt || 0);
+      if (revision && revision < activeMapRevisionRef.current) return;
+      activeMapRevisionRef.current = revision;
+      setActiveId(data?.activeId || '');
+    };
+    const u2 = onSnapshot(activeMapRef, { includeMetadataChanges: true }, snap => {
+      if (snap.exists()) applyActiveMap(snap.data());
+    }, err => console.error('Erro ao sincronizar mapa ativo:', err));
     const u3 = onSnapshot(collection(db, 'sheets'), snap => {
       setSheets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
@@ -2086,7 +2077,7 @@ function BattleMapSection({ masterMode }) {
       setFloatingEffects(prev=>[...prev.filter(x=>x.id!==fx.id),fx]);
       setTimeout(()=>setFloatingEffects(prev=>prev.filter(x=>x.id!==fx.id)),2800);
     });
-    return () => { u1(); u1b(); uLive(); uPositions(); u2(); u3(); u4(); uFog(); uLibrary(); uFx(); };
+    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); uFog(); uLibrary(); uFx(); };
   }, []);
 
 
@@ -2110,6 +2101,75 @@ function BattleMapSection({ masterMode }) {
   const currentMapId = masterMode ? (editingId || activeId) : activeId;
   const currentMapRaw = maps.find(m => String(m.id) === String(currentMapId));
   const currentMap = currentMapRaw ? { ...currentMapRaw, tokens: mapTokens[String(currentMapRaw.id)] || [] } : null;
+
+  // Escuta somente as posições do mapa aberto. Isso evita receber o histórico de
+  // todos os mapas e mantém o canal leve durante sessões longas.
+  useEffect(() => {
+    if (!currentMapId) return;
+    const positionsQuery = query(collection(db, 'battlemap_live_positions'), where('mapId', '==', String(currentMapId)));
+    const unsub = onSnapshot(positionsQuery, { includeMetadataChanges: true }, snap => {
+      const patches = [];
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') return;
+        const data = change.doc.data() || {};
+        if (String(data.mapId) !== String(currentMapId) || data.tokenId === undefined) return;
+        const tokenId = String(data.tokenId);
+        const versionKey = `${currentMapId}:${tokenId}`;
+        const incomingSeq = Number(data.seq || data.updatedAt || 0);
+        const knownSeq = Number(livePositionVersionRef.current[versionKey] || 0);
+        if (incomingSeq < knownSeq) return;
+        livePositionVersionRef.current[versionKey] = incomingSeq;
+        patches.push({ tokenId, x: Number(data.x), y: Number(data.y) });
+      });
+      if (!patches.length) return;
+      setMapTokens(prev => {
+        const patchMap = new Map(patches.map(p => [String(p.tokenId), p]));
+        const nextTokens = (prev[String(currentMapId)] || []).map(token => {
+          const patch = patchMap.get(String(token.id));
+          return patch ? { ...token, x: patch.x, y: patch.y } : token;
+        });
+        const next = { ...prev, [String(currentMapId)]: nextTokens };
+        mapTokensRef.current = next;
+        return next;
+      });
+    }, err => console.error('Erro no canal rápido do mapa atual:', err));
+    return () => unsub();
+  }, [currentMapId]);
+
+  // Ao recuperar a internet, retornar à aba ou trocar de mapa, busca uma cópia
+  // diretamente do servidor para impedir que algum jogador permaneça em estado antigo.
+  useEffect(() => {
+    if (!activeId) return;
+    const refreshActiveState = async () => {
+      try {
+        const [mapSnap, tokenSnap, activeSnap] = await Promise.all([
+          getDocFromServer(doc(db, 'battlemaps', String(activeId))),
+          getDocFromServer(doc(db, 'battlemap_tokens', String(activeId))),
+          getDocFromServer(doc(db, 'config', 'battlemap_active')),
+        ]);
+        if (activeSnap.exists()) {
+          const d = activeSnap.data();
+          const rev = Number(d.revision || d.updatedAt || 0);
+          if (!rev || rev >= activeMapRevisionRef.current) { activeMapRevisionRef.current = rev; setActiveId(d.activeId || ''); }
+        }
+        if (mapSnap.exists()) setMaps(prev => {
+          const map = { id: mapSnap.id, ...mapSnap.data() };
+          return prev.some(m => String(m.id) === String(map.id)) ? prev.map(m => String(m.id) === String(map.id) ? map : m) : [...prev, map];
+        });
+        if (tokenSnap.exists()) {
+          const d = tokenSnap.data() || {};
+          setMapTokens(prev => { const next = { ...prev, [String(activeId)]: Array.isArray(d.tokens) ? d.tokens : [] }; mapTokensRef.current = next; return next; });
+        }
+      } catch (_) {}
+    };
+    refreshActiveState();
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshActiveState(); };
+    window.addEventListener('online', refreshActiveState);
+    window.addEventListener('focus', refreshActiveState);
+    document.addEventListener('visibilitychange', onVisible);
+    const heartbeat = setInterval(refreshActiveState, 15000);
+    return () => { clearInterval(heartbeat); window.removeEventListener('online', refreshActiveState); window.removeEventListener('focus', refreshActiveState); document.removeEventListener('visibilitychange', onVisible); };
+  }, [activeId]);
 
   // Referências estáveis evitam que o listener da roda seja recriado a cada mudança de zoom.
   const zoomRef = useRef(1);
@@ -2227,7 +2287,8 @@ function BattleMapSection({ masterMode }) {
   const writeLivePosition = (mapId, tokenId, x, y) => {
     const id = String(mapId);
     const tid = String(tokenId);
-    const seq = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    liveSequenceRef.current += 1;
+    const seq = Date.now() * 100000 + (liveSequenceRef.current % 100000);
     livePositionVersionRef.current[`${id}:${tid}`] = seq;
     // Não aguarda a confirmação da rede: a próxima posição pode ser enviada
     // imediatamente, enquanto o SDK mantém a ordem das gravações.
@@ -2235,7 +2296,7 @@ function BattleMapSection({ masterMode }) {
       mapId: id, tokenId: tid, x, y, seq,
       clientId: liveClientIdRef.current,
       updatedAt: Date.now(),
-    }).catch(e => console.error('Erro ao transmitir posição:', e));
+    }, { merge: true }).catch(e => console.error('Erro ao transmitir posição:', e));
   };
 
   const persistTokens = (mapId, tokens) => {
@@ -2269,18 +2330,22 @@ function BattleMapSection({ masterMode }) {
   const deleteMap = async (id) => {
     await deleteDoc(doc(db, 'battlemaps', String(id)));
     await deleteDoc(doc(db, 'battlemap_tokens', String(id))).catch(() => {});
-    if (activeId === String(id)) await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '' });
+    if (activeId === String(id)) const revision = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    activeMapRevisionRef.current = revision;
+    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '', revision, updatedAt: Date.now() });
     if (editingId === String(id)) setEditingId('');
   };
   
   const activateMap = async (id) => {
-    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: String(id) });
+    const revision = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    activeMapRevisionRef.current = revision;
+    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: String(id), revision, updatedAt: Date.now() });
     const tokens = mapTokensRef.current[String(id)] || [];
     await setDoc(doc(db, 'config', 'battlemap_live_tokens'), { mapId: String(id), tokens, updatedAt: Date.now() }).catch(console.error);
     pushToast('Mapa liberado para os jogadores!', '🗡️', '#E8193C');
   };
   const deactivateMap = async () => {
-    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '' });
+    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '', revision: Date.now() * 1000 + Math.floor(Math.random() * 1000), updatedAt: Date.now() });
   };
 
   const handleMapUpload = e => {
@@ -2349,7 +2414,8 @@ function BattleMapSection({ masterMode }) {
  useEffect(() => {
     if (!draggingId || !currentMap) return;
     const mapIdAtDragStart = currentMap.id;
-    const TOKEN_THROTTLE_MS = 16;
+    const TOKEN_THROTTLE_MS = 80;
+    let lastFallbackWrite = 0;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
@@ -2359,6 +2425,7 @@ function BattleMapSection({ masterMode }) {
         lastTokenWriteRef.current[mapIdAtDragStart] = now;
         const movedToken = tokensArr.find(t => String(t.id) === String(draggingId));
         if (movedToken) writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
+        if (now - lastFallbackWrite >= 600) { lastFallbackWrite = now; writeLiveTokens(mapIdAtDragStart, tokensArr, false).catch(() => {}); }
       } else {
         saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
           lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
@@ -2911,6 +2978,7 @@ function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   const [display, setDisplay] = useState(finalValue);
   const [phase, setPhase] = useState('idle');
   const lastTs = useRef(0);
+  const lastAmbientRevisionRef = useRef(0);
 
   useEffect(() => {
     if (!rollTs || rollTs === lastTs.current) return;
