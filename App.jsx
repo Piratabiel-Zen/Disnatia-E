@@ -987,7 +987,76 @@ const CLASSES=[
 const PROLOGUE=[{type:'intro',text:'No início, não existia nada.'},{type:'pause',text:'E do nada ele surgiu — quem o nomeou? Ele mesmo.'},{type:'title',text:'*$!6;^@$+6~=´} (JhonKenteiker)'},{type:'body',text:'Jhon viu diante de si um universo vasto, lindo, porém vazio. E assim decidiu criar o sistema solar, e dele o mundo mais belo — nomeando-o Cosmum, a Terra dos mortais.'},{type:'body',text:'Nisso, ele criou as primeiras criaturas: já fortes, ágeis, adaptáveis, sobreviventes em qualquer cenário. Os dinossauros. Porém viu que dar-lhes tantas vantagens foi um erro.'},{type:'highlight',text:'E nisso ele criou o primeiro conceito de Reinício.'},{type:'body',text:'Uma grande bola de fogo atingiu o planeta, criando eventos irreversíveis e mudanças eternas. Do silêncio das cinzas surgiram os primeiros seres. Eles evoluíram. E a partir disso, o ser humano surgiu — não tão forte quanto os dinossauros, porém com uma capacidade cognitiva incomparável.'},{type:'divider',text:'— — —'},{type:'body',text:'Mas Jhon pensa novamente em reciclar o mundo. Pois viu que, ao passar dos anos, nenhum avanço significativo ocorreu. Fazendo-o questionar: devo começar tudo de novo?'},{type:'warning',text:'E além disso... uma catástrofe se aproxima.'},{type:'body',text:'Ninguém sabe o que. Só sabe que está chegando. Pois o Livro da Mandíbula — como o calendário maia — a previa. Dizendo que quatro estrelas ficariam brilhantes sobre os céus, tanto de dia quanto de noite, e se aproximariam a cada dia.'},{type:'finale',text:'O objetivo dos personagens não é apenas sobreviver. É provar seu valor para continuarem existindo. É parar. É compreender. É decifrar a profecia antes que o Reinício seja decretado novamente — desta vez, para sempre.'}];
 const MILESTONES=[{year:'~400.000 AC',event:'Descoberta e controle do fogo',icon:'🔥'},{year:'~10.000 AC',event:'Revolução agrícola — os humanos se tornam sedentários',icon:'🌾'},{year:'~3.500 AC',event:'Surgimento das primeiras civilizações: Mesopotâmia e Egito',icon:'🏛️'},{year:'~3.000 AC',event:'Invenção da escrita cuneiforme',icon:'📜'},{year:'~500 AC',event:'Apogeu dos grandes impérios: Persa, Grego, Romano',icon:'⚔️'},{year:'Séc. XV',event:'Era das grandes navegações e descobrimento dos continentes',icon:'🌊'},{year:'Séc. XVIII',event:'Revolução Industrial — a máquina a vapor muda o mundo',icon:'⚙️'},{year:'1905',event:'Albert Einstein publica a Teoria da Relatividade',icon:'🧠'},{year:'1945',event:'Era Atômica — o poder de destruição da humanidade se torna real',icon:'☢️'},{year:'1969',event:'O primeiro ser humano pisa na Lua',icon:'🌕'},{year:'1990s',event:'Era digital — a internet conecta a humanidade globalmente',icon:'💻'},{year:'Séc. XXI',event:'Inteligência artificial: a humanidade cria inteligência',icon:'🤖'},{year:'AGORA',event:'Quatro estrelas aparecem nos céus de Cosmum. Elas se aproximam.',icon:'✦',prophecy:true}];
 const ENTITIES_DATA=[{id:'homem-agua',name:'Homem Água',icon:'💧',revealed:true,lore:`Era um homem comum chamado David, que vivia por volta de 1544, com seu amigo Billy Laranjais. Um dia como qualquer outro, uma lágrima celestial caiu dos céus — era de JhonKenteiker. Ninguém sabe o motivo daquela lágrima ter caído, mas ao entrar em contato com o corpo de David, tornou-o extremamente poderoso, expelindo água de seu corpo e a controlando de forma quase que divina.\n\nAo ver isso, Billy teve uma ideia, movido pela ganância. Ele atraiu seu amigo até um local, onde o prendeu e ficou drenando toda sua água, dia após dia. Com isso, Billy criou uma fortuna e o parque temático para esconder seu pecado — conhecido como "Thermas dos Laranjais".\n\nApós isso, a cada 200 a 300 anos o Homem Água não morre, mas reencarna sua essência em outro hospedeiro. Quando isso acontece, todos os Cavaleiros dos Laranjais — descendentes diretos de Billy — são acionados para capturar a criança assim que nasce, e colocá-la na prisão que um dia foi de David, para drenar sua água até que o ciclo comece outra vez.`,fisico:`Um ser formado completamente pela água mais pura já vista — transparente, límpida, quase luminosa. Seus olhos são os únicos traços aparentes: dois pontos visíveis dentro de uma forma humana inteiramente aquosa. Não possui cor, não possui sombra. Apenas água com vontade própria.`},{id:'cabecas-azuis',name:'Os Cabeças Azuis',icon:'🔵',revealed:true,lore:`No ano de 830 d.C., uma entidade senciente de vontade própria e poder imensurável despertou. Embora fosse poderosa, ela se sentia incompleta em sua solidão. Foi então que seduziu o primeiro humano — um homem cujo nome original foi apagado da história, restando apenas o "Chamado" que ressoa em sua mente.\n\nA entidade convenceu este primeiro hospedeiro de que a individualidade era um fardo e que pertencer a um único ser pensante, abrindo mão da própria dignidade e vontade, seria o maior prazer de uma vida. Ao longo dos séculos, mais e mais humanos foram abduzidos e assimilados.\n\nHoje, eles não são mais indivíduos, mas componentes de uma Mente Coletiva. Funcionam como um "software" biológico: cada novo humano assimilado serve como processamento e memória, fazendo com que a entidade cresça em inteligência e alcance a cada segundo.`,fisico:`Seres finos, quase esqueléticos, com uma cabeça desproporcional e grande. Não possuem boca nem nariz — apenas um único olho no centro do rosto, brilhando na cor de safira profunda. Sua presença, embora não seja aterrorizante, é completamente desconfortável. Como se algo essencial estivesse faltando onde deveria haver um rosto.`},{id:'homem-leite',name:'O Homem de Leite',icon:'◌',revealed:false,lore:'',fisico:''},{id:'ventus',name:'Ventus o Rei dus Tempus',icon:'🌪️',revealed:false,lore:'',fisico:''},{id:'sixseven',name:'O 67 (SixSeven)',icon:'⚡',revealed:false,lore:'',fisico:''},{id:'unknown',name:'???',icon:'◈',revealed:false,lore:'',fisico:''}];
-const ARTEFATOS_DATA=[{id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💎',lore:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha.... (o livro não descreve)`,fisico:`Localização: Desconhecida\nOrigem: Corpo do Homem Água`},{id:'artefato-2',name:'Sandaliers Six',icon:'👟',lore:`Quem possui esse artefato pode estar onde bem entender, espaço e tempo não o param, podendo se movimentar de forma livre em qualquer momento, um teleporte instantâneo.`,fisico:`Localização: Desconhecida\nOrigem: Desconhecida`},{id:'artefato-3',name:'Artefato III',icon:'◆',lore:'',fisico:''},{id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},{id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},{id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}];
+const ARTEFATOS_DATA=[
+  {id:'artefato-1',name:'O Cristal Cristalizado da Gota de Água',icon:'💎',lore:`Ela é um artefato muito poderoso, expelido do corpo do próprio Homem Água. O usuário que o carrega ganha.... (o livro não descreve)`,fisico:`Localização: Desconhecida
+Origem: Corpo do Homem Água`},
+  {id:'artefato-2',name:'Sandaliers Six',icon:'👟',lore:`Quem possui esse artefato pode estar onde bem entender, espaço e tempo não o param, podendo se movimentar de forma livre em qualquer momento, um teleporte instantâneo.`,fisico:`Localização: Desconhecida
+Origem: Desconhecida`},
+  {
+    id:'artefato-3',
+    name:"Esmerald'da",
+    icon:'◆',
+    sigil:'6',
+    lore:`Criada pela entidade Six Seven, a Esmerald'da não é apenas uma pedra temporal. É uma extensão da própria vontade de seu criador. Six Seven desejava que o tempo não fosse somente observado, estudado ou quebrado. Desejava que fosse dobrado como parte de seu corpo.
+
+Há 1.200 anos, a relíquia foi entregue ao seu servo mais devoto e leal, para que guardasse um fragmento de seu domínio sobre o fluxo dos instantes. Aquele que portar a Esmerald'da poderá, em breves rupturas, retornar a si mesmo, a algo ou a alguém seis segundos no passado.
+
+Mas o tempo não obedece aos fracos, aos desatentos ou aos indignos. Para tocar sua lógica, é necessário mente afiada e sorte suficiente para sobreviver ao próprio paradoxo.`,
+    fisico:`Forma: cristal de tonalidade esmeralda com o número 6 marcado em seu núcleo.
+Origem: Six Seven (67)
+Idade conhecida: aproximadamente 1.200 anos
+Localização atual: determinada pelos acontecimentos da campanha.`,
+    requisitos:{
+      inteligenciaBonus:3,
+      sorteBonus:2,
+      texto:'Bônus mínimo de +3 em Inteligência e +2 em Sorte, obtidos exclusivamente pelos atributos naturais do portador.'
+    },
+    risco:`Cada uso intenso pode atrair entidades ligadas ao fluxo do tempo e provocar ecos temporais — memórias deslocadas, fragmentos de acontecimentos e manifestações de poder cósmico.`,
+    ruptura:`Em pontos de ruptura temporal, como a Catedral de Santa Luzia, o Poço de Pequeninis ou o subterrâneo de Thermas dos Laranjais, a Esmerald'da pode abrir passagens entre o tempo.`,
+    builtInPowers:[
+      {
+        id:'esmeraldda-retrocesso-temporal',
+        nome:'Retrocesso Temporal',
+        custo:2,
+        cooldown:'4 rodadas',
+        descricao:'O portador rompe o fluxo dos instantes e faz a si mesmo, um objeto ou outra pessoa retornar exatamente seis segundos no passado. Na prática, pode retroceder por completo uma ação que acabou de ser realizada.'
+      },
+      {
+        id:'esmeraldda-ruptura-temporal',
+        nome:'Ruptura Temporal',
+        custo:0,
+        cooldown:'—',
+        descricao:"Uso especial. Em pontos de ruptura temporal — como a Catedral de Santa Luzia, o Poço de Pequeninis ou o subterrâneo de Thermas dos Laranjais — a Esmerald'da pode abrir passagens entre o tempo. Esta manifestação não consome Vigor Cósmico."
+      }
+    ]
+  },
+  {id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},
+  {id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},
+  {id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}
+];
+
+function getArtifactPowers(art, artefatosHabs){
+  if(!art) return [];
+  const builtIn=(art.builtInPowers||[]).map(p=>({...p,builtIn:true}));
+  const custom=(artefatosHabs?.[art.id]||[]).map(p=>({...p,builtIn:false}));
+  return [...builtIn,...custom];
+}
+
+function ArtifactGlyph({art,size=18}){
+  if(art?.sigil==='6'){
+    return (
+      <span style={{
+        width:size,height:size,display:'inline-flex',alignItems:'center',justifyContent:'center',
+        clipPath:'polygon(50% 0%,88% 20%,100% 58%,74% 92%,30% 100%,4% 64%,12% 22%)',
+        background:'radial-gradient(circle at 38% 30%,#8CFFB2 0%,#1D9B67 35%,#07543F 70%,#01261F 100%)',
+        border:'1px solid rgba(203,255,220,.7)',boxShadow:'0 0 12px rgba(55,255,158,.42),inset 0 0 8px rgba(220,255,235,.38)',
+        color:'#E9FFF0',fontFamily:'Cinzel Decorative,serif',fontWeight:900,fontSize:Math.max(10,size*.46),
+        textShadow:'0 0 6px rgba(255,255,255,.85)',flexShrink:0
+      }}>6</span>
+    );
+  }
+  return <span style={{fontSize:size,lineHeight:1}}>{art?.icon||'◆'}</span>;
+}
 // ─── VIDA MÁXIMA POR CLASSE, NÍVEL E DURABILIDADE ─────────────────────────────
 // Nível 1 começa com a vida-base. Cada nível acima do primeiro concede +1 HP.
 // Cada ponto de bônus de Durabilidade (1 bônus a cada 2 pontos) concede +2 HP.
@@ -3706,8 +3775,12 @@ function EquipamentoPanel({sheet, onChange, sheetColor}){
 function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, artefatosHabs, showHeader = true }) {
   const selectedId = sheet.artefato_id || '';
   const selectedArt = revealedArtefatos.find(a => a.id === selectedId);
-  const habs = selectedArt ? (artefatosHabs[selectedId] || []) : [];
+  const habs = getArtifactPowers(selectedArt, artefatosHabs);
   const [showHabs, setShowHabs] = useState(false);
+  const intBonus = Math.floor(Math.max(0, Number(sheet.inteligencia) || 0) / 2);
+  const luckBonus = Math.floor(Math.max(0, Number(sheet.sorte) || 0) / 2);
+  const req = selectedArt?.requisitos;
+  const meetsRequirements = !req || (intBonus >= (req.inteligenciaBonus || 0) && luckBonus >= (req.sorteBonus || 0));
 
   return (
     <div style={{ marginBottom: showHeader ? 16 : 0 }}>
@@ -3741,7 +3814,7 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
                 color: active ? '#E8A020' : '#7A6A5A', cursor: 'pointer', transition: 'all 0.2s',
                 boxShadow: active ? '0 0 10px rgba(232,160,32,0.25)' : 'none',
               }}>
-                {art.icon} {art.name}
+                <ArtifactGlyph art={art} size={16}/> {art.name}
               </button>
             );
           })}
@@ -3751,7 +3824,7 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
       {selectedArt && (
         <div style={{ border: '1px solid rgba(232,160,32,0.25)', borderRadius: 10, background: 'rgba(232,160,32,0.04)', overflow: 'hidden' }}>
           <button onClick={() => setShowHabs(o => !o)} style={{ width: '100%', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-            <span style={{ fontSize: 18 }}>{selectedArt.icon}</span>
+            <ArtifactGlyph art={selectedArt} size={20}/>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#E8A020', fontWeight: 700 }}>{selectedArt.name}</div>
               {habs.length > 0 && <div style={{ fontSize: 10, color: 'rgba(232,160,32,0.5)', fontFamily: 'Cinzel,serif' }}>{habs.length} poder{habs.length > 1 ? 'es' : ''} registrado{habs.length > 1 ? 's' : ''}</div>}
@@ -3760,6 +3833,21 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
           </button>
           {showHabs && (
             <div style={{ padding: '0 14px 14px', borderTop: '1px solid rgba(232,160,32,0.1)' }}>
+              {req && (
+                <div style={{
+                  marginTop:10,marginBottom:10,padding:'9px 11px',borderRadius:8,
+                  border:`1px solid ${meetsRequirements?'rgba(74,222,128,.30)':'rgba(232,25,60,.34)'}`,
+                  background:meetsRequirements?'rgba(74,222,128,.055)':'rgba(232,25,60,.055)'
+                }}>
+                  <div style={{fontFamily:'Cinzel,serif',fontSize:10,fontWeight:700,color:meetsRequirements?'#4ADE80':'#E8193C',marginBottom:4}}>
+                    {meetsRequirements?'✓ Requisitos temporais atendidos':'✕ Requisitos temporais insuficientes'}
+                  </div>
+                  <div style={{fontSize:11,color:'#7A6A5A',lineHeight:1.5}}>
+                    Exige +{req.inteligenciaBonus} Inteligência e +{req.sorteBonus} Sorte pelos atributos.
+                    {' '}Atual: +{intBonus} INT · +{luckBonus} SORTE.
+                  </div>
+                </div>
+              )}
               {habs.length === 0 ? (
                 <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 12, color: '#5A5070', fontFamily: 'Cinzel,serif', fontStyle: 'italic' }}>
                   Nenhum poder registrado para este artefato ainda.
@@ -3771,7 +3859,7 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 10, color: '#E8A020' }}>✦</span>
                         <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#C8B8A0', fontWeight: 600 }}>{h.nome}</span>
-                        {h.custo > 0 && <span style={{ fontSize: 10, color: 'rgba(232,160,32,0.7)', fontFamily: 'Cinzel,serif' }}>{h.custo} VC</span>}
+                        {h.custo !== undefined && h.custo !== '' && <span style={{ fontSize: 10, color: 'rgba(232,160,32,0.7)', fontFamily: 'Cinzel,serif' }}>{Number(h.custo)===0?'SEM CUSTO':`${h.custo} VC`}</span>}
                         {h.dano && <span style={{ fontSize: 10, color: 'rgba(255,200,80,0.85)', fontFamily: 'Cinzel,serif', background: 'rgba(255,200,80,0.08)', border: '1px solid rgba(255,200,80,0.22)', borderRadius: 4, padding: '1px 6px' }}>⚔ {h.dano}</span>}
                         {h.cooldown && h.cooldown !== '—' && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'Cinzel,serif' }}>⏱ {h.cooldown}</span>}
                       </div>
@@ -5817,9 +5905,20 @@ function LibroSection({masterMode}){
     revealed?<div><h3 className="livro-page-title">Registro da Entidade</h3><div className="livro-section-label">Lore & Origem</div><div className="livro-copy">{ent.lore||'A origem desta entidade ainda não foi registrada.'}</div><div className="livro-section-label">Características Físicas</div><div className="livro-copy">{ent.fisico||'Sua forma verdadeira permanece envolta em sombras e versões contraditórias.'}</div><div className="livro-note">Conhecimento atual dos jogadores: {spread<2?'parcialmente revelado':'registro autorizado pelo Mestre'}.</div></div>:<div className="livro-locked"><div style={{fontSize:44}}>◈</div><p>“Registro ainda não revelado.”</p><p>As palavras foram cobertas por tinta e seladas por runas.</p></div>
   ]};
 
-  const ArtifactPages=()=>{const art=ARTEFATOS_DATA[spread];const revealed=!!artefatosUnlocked[art.id];const powers=artefatosHabs[art.id]||[];return [
-    revealed?<div className="livro-record"><div className="livro-record-icon">{art.icon}</div><div className="livro-record-name">{art.name}</div><div className="livro-status">Artefato revelado</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Selar artefato</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar artefato</button>}</div>,
-    revealed?<div><h3 className="livro-page-title">{art.name}</h3><div className="livro-section-label">Descrição & Origem</div><div className="livro-copy">{art.lore||'Informações sobre este artefato serão reveladas conforme a campanha avança.'}</div>{art.fisico&&<><div className="livro-section-label">Localização conhecida</div><div className="livro-copy">{art.fisico}</div></>}<div className="livro-section-label">Poderes registrados</div>{powers.length===0?<div className="livro-copy" style={{fontStyle:'italic'}}>Nenhum poder foi inscrito nesta página.</div>:powers.map(h=><div className="livro-engraved" key={h.id} style={{textAlign:'left',marginBottom:8}}><strong>{h.nome}{h.custo?` · ${h.custo} VC`:''}</strong><span>{h.dano&&`⚔ ${h.dano} · `}{h.cooldown&&`⏱ ${h.cooldown} · `}{h.descricao}</span>{masterMode&&<button onClick={()=>deleteHab(art.id,h.id)} style={{...parchmentBtn,float:'right',marginTop:5}}>Remover</button>}</div>)}{masterMode&&<div style={{marginTop:12,borderTop:'1px solid rgba(91,55,24,.28)',paddingTop:12}}><input value={formHab[art.id]?.nome||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],nome:e.target.value}}))} placeholder="Nome do poder" style={parchmentInput}/><textarea value={formHab[art.id]?.descricao||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],descricao:e.target.value}}))} placeholder="Descrição" rows={2} style={parchmentInput}/><div style={{display:'flex',gap:6}}><input value={formHab[art.id]?.dano||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],dano:e.target.value}}))} placeholder="Dano" style={parchmentInput}/><input value={formHab[art.id]?.custo||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],custo:e.target.value}}))} placeholder="VC" style={parchmentInput}/><input value={formHab[art.id]?.cooldown||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],cooldown:e.target.value}}))} placeholder="Recarga" style={parchmentInput}/></div><button onClick={()=>saveHab(art.id)} style={parchmentBtn}>Inscrever poder</button></div>}</div>:<div className="livro-locked"><div style={{fontSize:54}}>◇</div><p>Nome, origem e poder foram apagados desta página.</p></div>
+  const ArtifactPages=()=>{const art=ARTEFATOS_DATA[spread];const revealed=!!artefatosUnlocked[art.id];const powers=getArtifactPowers(art,artefatosHabs);return [
+    revealed?<div className="livro-record"><div className="livro-record-icon"><ArtifactGlyph art={art} size={96}/></div><div className="livro-record-name">{art.name}</div><div className="livro-status">Artefato revelado</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Selar artefato</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar artefato</button>}</div>,
+    revealed?<div>
+      <h3 className="livro-page-title">{art.name}</h3>
+      <div className="livro-section-label">Descrição & Origem</div>
+      <div className="livro-copy" style={{whiteSpace:'pre-line'}}>{art.lore||'Informações sobre este artefato serão reveladas conforme a campanha avança.'}</div>
+      {art.fisico&&<><div className="livro-section-label">Registro físico</div><div className="livro-copy" style={{whiteSpace:'pre-line'}}>{art.fisico}</div></>}
+      {art.requisitos&&<><div className="livro-section-label">Requisitos para o Portador</div><div className="livro-note" style={{textAlign:'left'}}>{art.requisitos.texto}</div></>}
+      {art.ruptura&&<><div className="livro-section-label">Rupturas Temporais</div><div className="livro-copy">{art.ruptura}</div></>}
+      {art.risco&&<><div className="livro-section-label">Risco</div><div className="livro-note" style={{textAlign:'left',borderColor:'rgba(125,48,81,.55)',color:'#78364f'}}>{art.risco}</div></>}
+      <div className="livro-section-label">Poderes registrados</div>
+      {powers.length===0?<div className="livro-copy" style={{fontStyle:'italic'}}>Nenhum poder foi inscrito nesta página.</div>:powers.map(h=><div className="livro-engraved" key={h.id} style={{textAlign:'left',marginBottom:8}}><strong>{h.nome}{h.custo!==undefined&&h.custo!==''?(Number(h.custo)===0?' · Sem custo':` · ${h.custo} VC`):''}</strong><span>{h.dano&&`⚔ ${h.dano} · `}{h.cooldown&&h.cooldown!=='—'&&`⏱ ${h.cooldown} · `}{h.descricao}</span>{masterMode&&!h.builtIn&&<button onClick={()=>deleteHab(art.id,h.id)} style={{...parchmentBtn,float:'right',marginTop:5}}>Remover</button>}</div>)}
+      {masterMode&&<div style={{marginTop:12,borderTop:'1px solid rgba(91,55,24,.28)',paddingTop:12}}><input value={formHab[art.id]?.nome||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],nome:e.target.value}}))} placeholder="Nome do poder" style={parchmentInput}/><textarea value={formHab[art.id]?.descricao||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],descricao:e.target.value}}))} placeholder="Descrição" rows={2} style={parchmentInput}/><div style={{display:'flex',gap:6}}><input value={formHab[art.id]?.dano||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],dano:e.target.value}}))} placeholder="Dano" style={parchmentInput}/><input value={formHab[art.id]?.custo||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],custo:e.target.value}}))} placeholder="VC" style={parchmentInput}/><input value={formHab[art.id]?.cooldown||''} onChange={e=>setFormHab(p=>({...p,[art.id]:{...p[art.id],cooldown:e.target.value}}))} placeholder="Recarga" style={parchmentInput}/></div><button onClick={()=>saveHab(art.id)} style={parchmentBtn}>Inscrever poder</button></div>}
+    </div>:<div className="livro-locked"><div style={{fontSize:54}}>◇</div><p>Nome, origem e poder foram apagados desta página.</p></div>
   ]};
 
   let leftContent,rightContent;
