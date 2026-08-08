@@ -1002,17 +1002,12 @@ Origem: Desconhecida`},
 Há 1.200 anos, a relíquia foi entregue ao seu servo mais devoto e leal, para que guardasse um fragmento de seu domínio sobre o fluxo dos instantes. Aquele que portar a Esmerald'da poderá, em breves rupturas, retornar a si mesmo, a algo ou a alguém seis segundos no passado.
 
 Mas o tempo não obedece aos fracos, aos desatentos ou aos indignos. Para tocar sua lógica, é necessário mente afiada e sorte suficiente para sobreviver ao próprio paradoxo.`,
-    fisico:`Forma: cristal de tonalidade esmeralda com o número 6 marcado em seu núcleo.
-Origem: Six Seven (67)
-Idade conhecida: aproximadamente 1.200 anos
-Localização atual: determinada pelos acontecimentos da campanha.`,
     requisitos:{
       inteligenciaBonus:3,
       sorteBonus:2,
       texto:'Bônus mínimo de +3 em Inteligência e +2 em Sorte, obtidos exclusivamente pelos atributos naturais do portador.'
     },
     risco:`Cada uso intenso pode atrair entidades ligadas ao fluxo do tempo e provocar ecos temporais — memórias deslocadas, fragmentos de acontecimentos e manifestações de poder cósmico.`,
-    ruptura:`Em pontos de ruptura temporal, como a Catedral de Santa Luzia, o Poço de Pequeninis ou o subterrâneo de Thermas dos Laranjais, a Esmerald'da pode abrir passagens entre o tempo.`,
     builtInPowers:[
       {
         id:'esmeraldda-retrocesso-temporal',
