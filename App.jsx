@@ -2399,9 +2399,17 @@ function BattleMapSection({ masterMode }) {
   const deleteMap = async (id) => {
     await deleteDoc(doc(db, 'battlemaps', String(id)));
     await deleteDoc(doc(db, 'battlemap_tokens', String(id))).catch(() => {});
-    if (activeId === String(id)) const revision = Date.now() * 1000 + Math.floor(Math.random() * 1000);
-    activeMapRevisionRef.current = revision;
-    await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '', revision, updatedAt: Date.now() });
+
+    if (activeId === String(id)) {
+      const revision = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      activeMapRevisionRef.current = revision;
+      await setDoc(doc(db, 'config', 'battlemap_active'), {
+        activeId: '',
+        revision,
+        updatedAt: Date.now()
+      });
+    }
+
     if (editingId === String(id)) setEditingId('');
   };
   
