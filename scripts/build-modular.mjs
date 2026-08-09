@@ -22,6 +22,8 @@ if (sourceHash !== LEGACY_APP_SHA256) {
 for (const rel of [
   'src/experience/ExperienceKit.jsx',
   'src/experience/experience.css',
+  'src/experience/PlayerAccess.jsx',
+  'src/experience/access.css',
   'scripts/modular-app-source.jsx',
 ]) {
   if (!fs.existsSync(path.join(cwd, rel))) {
@@ -60,8 +62,8 @@ try {
     path.join(temp, 'src', 'App.jsx')
   );
 
-  // A navegação agora ocupa a lateral. Move o player de música para a área útil
-  // sem alterar o App legado nem a sincronização do áudio.
+  // A navegação ocupa a lateral. Move o player de música para a área útil
+  // sem alterar a sincronização do áudio.
   const ambientPath = path.join(temp, 'src', 'shell', 'AmbientSoundPlayer.jsx');
   let ambientSource = fs.readFileSync(ambientPath, 'utf8');
   ambientSource = ambientSource.replace(
@@ -69,6 +71,36 @@ try {
     "position: 'fixed', top: 'auto', bottom: 58, left: 'calc(var(--grim-w) + 14px)', zIndex: 230"
   );
   fs.writeFileSync(ambientPath, ambientSource);
+
+  // Restringe fichas ao personagem autenticado. O Mestre continua vendo todas.
+  const sheetsPath = path.join(temp, 'src', 'features', 'sheets', 'SheetsPage.jsx');
+  let sheetsSource = fs.readFileSync(sheetsPath, 'utf8');
+  sheetsSource = sheetsSource.replace(
+    'function SheetsSection({masterMode}){',
+    'function SheetsSection({masterMode,playerSheetId}){'
+  );
+  sheetsSource = sheetsSource.replace(
+    "const u1=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});",
+    "const u1=onSnapshot(collection(db,'sheets'),snap=>{const all=snap.docs.map(d=>({id:d.id,...d.data()}));const data=!masterMode&&playerSheetId?all.filter(s=>String(s.id)===String(playerSheetId)):all;setSheets(data);setLoaded(true);});"
+  );
+  sheetsSource = sheetsSource.replace(
+    "return()=>{u1();u2();u3();u4();u5();};\n  },[]);",
+    "return()=>{u1();u2();u3();u4();u5();};\n  },[masterMode,playerSheetId]);"
+  );
+  fs.writeFileSync(sheetsPath, sheetsSource);
+
+  // No mapa de batalha, jogadores também só carregam a própria ficha.
+  const battlePath = path.join(temp, 'src', 'features', 'mapa-batalha', 'BattleMapPage.jsx');
+  let battleSource = fs.readFileSync(battlePath, 'utf8');
+  battleSource = battleSource.replace(
+    'function BattleMapSection({ masterMode }) {',
+    'function BattleMapSection({ masterMode, playerSheetId }) {'
+  );
+  battleSource = battleSource.replace(
+    "const u3 = onSnapshot(collection(db, 'sheets'), snap => {\n      setSheets(snap.docs.map(d => ({ id: d.id, ...d.data() })));\n    });",
+    "const u3 = onSnapshot(collection(db, 'sheets'), snap => {\n      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));\n      setSheets(!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all);\n    });"
+  );
+  fs.writeFileSync(battlePath, battleSource);
 
   // Sanidade estrutural: falha cedo se alguma extração essencial desaparecer.
   const required = [
@@ -89,17 +121,29 @@ try {
   }
 
   const gameData = fs.readFileSync(path.join(temp, 'src', 'data', 'gameData.jsx'), 'utf8');
-  for (const symbol of ['ATMOSPHERES', 'CLASSES', 'ARTEFATOS_DATA', 'RULES_DATA']) {
+  for (const symbol of ['ATMOSPHERES', 'CLASSES', 'ARTEFATOS_DATA', 'RULES_DATA', 'MASTER_PIN']) {
     if (!gameData.includes(`export const ${symbol}`)) {
       throw new Error(`Export obrigatório ausente em gameData.jsx: ${symbol}`);
     }
   }
 
   const generatedApp = fs.readFileSync(path.join(temp, 'src', 'App.jsx'), 'utf8');
-  for (const marker of ['lazy(', '<Suspense', 'ExperienceProvider', 'ImmersiveNavigation', 'SessionDashboard', 'ExperienceLayer']) {
+  for (const marker of ['lazy(', '<Suspense', 'ExperienceProvider', 'ImmersiveNavigation', 'SessionDashboard', 'ExperienceLayer', 'PlayerAccessGate', 'playerSheetId']) {
     if (!generatedApp.includes(marker)) {
       throw new Error(`Shell modular/imersivo inválido: ${marker} não encontrado.`);
     }
+  }
+  if (generatedApp.includes('ConnectionStatus')) {
+    throw new Error('ConnectionStatus voltou ao shell, mas deve permanecer removido da interface.');
+  }
+
+  const generatedSheets = fs.readFileSync(sheetsPath, 'utf8');
+  if (!generatedSheets.includes('playerSheetId') || !generatedSheets.includes('all.filter')) {
+    throw new Error('Filtro de ficha por jogador não foi aplicado em SheetsPage.jsx.');
+  }
+  const generatedBattle = fs.readFileSync(battlePath, 'utf8');
+  if (!generatedBattle.includes('playerSheetId') || !generatedBattle.includes('all.filter')) {
+    throw new Error('Filtro de ficha por jogador não foi aplicado em BattleMapPage.jsx.');
   }
 
   const generatedSrc = path.join(temp, 'src');
@@ -113,7 +157,7 @@ try {
   }
 
   fs.copyFileSync(path.join(generatedSrc, 'App.jsx'), path.join(targetSrc, 'App.generated.jsx'));
-  console.log('Dinastia E: módulos de performance e experiência imersiva preparados e validados.');
+  console.log('Dinastia E: login por personagem, escopo de fichas e ajustes de layout preparados e validados.');
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });
 }
