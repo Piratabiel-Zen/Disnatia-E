@@ -43,3 +43,5 @@ jobs:
           git add -A
           git commit -m "refactor: modularize app and lazy-load features"
           git push origin HEAD:refactor/performance-modular-2026-08-09
+
+# Bootstrap workflow: após validar o build, remove a si próprio e o gerador.
