@@ -1,0 +1,60 @@
+name: Validate modular build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Production dependency audit
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          npm audit --omit=dev --audit-level=high
+
+      - name: Production build
+        run: npm run build
+
+      - name: Enforce bundle budget
+        shell: bash
+        run: |
+          largest=$(find dist/assets -type f -name '*.js' -printf '%s\n' | sort -nr | head -n1)
+          test -n "$largest"
+          echo "Largest JS chunk: $largest bytes"
+          test "$largest" -le 600000
+
+      - name: Preview smoke test
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/dinastia-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill $preview_pid 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /tmp/dinastia-index.html; then
+              break
+            fi
+            sleep 0.5
+          done
+          grep -q '<div id="root"></div>' /tmp/dinastia-index.html
+          asset=$(grep -oE '/assets/index-[^" ]+\.js' /tmp/dinastia-index.html | head -n1)
+          test -n "$asset"
+          curl --fail --silent --show-error "http://127.0.0.1:4173$asset" > /dev/null
