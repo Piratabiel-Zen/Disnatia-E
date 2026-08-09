@@ -11,12 +11,29 @@ const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'dinastia-modular-'));
 try {
   fs.copyFileSync(path.join(cwd, 'App.jsx'), path.join(temp, 'App.jsx'));
   fs.mkdirSync(path.join(temp, 'scripts'), { recursive: true });
-  fs.copyFileSync(path.join(cwd, 'scripts', 'modularize.mjs'), path.join(temp, 'scripts', 'modularize.mjs'));
+
+  // O gerador principal contém apenas as extrações dos módulos. O shell lazy
+  // vive em arquivo próprio para evitar templates JSX aninhados dentro do script.
+  const generatorSource = fs.readFileSync(path.join(cwd, 'scripts', 'modularize.mjs'), 'utf8');
+  const safeGeneratorSource = generatorSource
+    .split(/\r?\n/)
+    .map(line => line.startsWith("W('src/App.jsx',`")
+      ? "W('src/App.jsx','// shell modular aplicado separadamente\\n');"
+      : line)
+    .join('\n');
+
+  fs.writeFileSync(path.join(temp, 'scripts', 'modularize.mjs'), safeGeneratorSource);
 
   execFileSync(process.execPath, ['scripts/modularize.mjs'], {
     cwd: temp,
     stdio: 'inherit',
   });
+
+  // Substitui o placeholder pelo shell React.lazy validado e legível.
+  fs.copyFileSync(
+    path.join(cwd, 'scripts', 'modular-app-source.jsx'),
+    path.join(temp, 'src', 'App.jsx')
+  );
 
   const generatedSrc = path.join(temp, 'src');
   const targetSrc = path.join(cwd, 'src');
