@@ -1,0 +1,45 @@
+name: Apply modular performance refactor
+
+on:
+  push:
+    branches:
+      - refactor/performance-modular-2026-08-09
+    paths:
+      - scripts/modularize.mjs
+      - .github/workflows/apply-modular-refactor.yml
+
+permissions:
+  contents: write
+
+jobs:
+  modularize-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: refactor/performance-modular-2026-08-09
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate modular application
+        run: node scripts/modularize.mjs
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Validate production build
+        run: npm run build
+
+      - name: Commit validated refactor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f scripts/modularize.mjs .github/workflows/apply-modular-refactor.yml
+          git add -A
+          git commit -m "refactor: modularize app and lazy-load features"
+          git push origin HEAD:refactor/performance-modular-2026-08-09
