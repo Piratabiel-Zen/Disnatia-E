@@ -20,7 +20,10 @@ try {
     .map(line => line.startsWith("W('src/App.jsx',`")
       ? "W('src/App.jsx','// shell modular aplicado separadamente\\n');"
       : line)
-    .join('\n');
+    .join('\n')
+    // Alguns dados no App legado usam espaços em torno do '=' (ex.: ATMOSPHERES).
+    // Torna a exportação tolerante a formatação sem alterar o arquivo legado.
+    .replace('^const ${n}=', '^const ${n}\\\\s*=');
 
   fs.writeFileSync(path.join(temp, 'scripts', 'modularize.mjs'), safeGeneratorSource);
 
