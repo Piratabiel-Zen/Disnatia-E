@@ -14,17 +14,28 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: package.json
 
       - name: Install dependencies
         run: npm install --no-package-lock
 
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Production build
         run: npm run build
+
+      - name: Enforce bundle budget
+        shell: bash
+        run: |
+          largest=$(find dist/assets -type f -name '*.js' -printf '%s\n' | sort -nr | head -n1)
+          test -n "$largest"
+          echo "Largest JS chunk: $largest bytes"
+          test "$largest" -le 600000
