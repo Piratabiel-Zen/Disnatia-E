@@ -19,6 +19,16 @@ if (sourceHash !== LEGACY_APP_SHA256) {
   );
 }
 
+for (const rel of [
+  'src/experience/ExperienceKit.jsx',
+  'src/experience/experience.css',
+  'scripts/modular-app-source.jsx',
+]) {
+  if (!fs.existsSync(path.join(cwd, rel))) {
+    throw new Error(`Camada imersiva obrigatória ausente: ${rel}`);
+  }
+}
+
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'dinastia-modular-'));
 
 try {
@@ -35,7 +45,6 @@ try {
       : line)
     .join('\n')
     // Alguns dados no App legado usam espaços em torno do '=' (ex.: ATMOSPHERES).
-    // Torna a exportação tolerante à formatação sem alterar o arquivo legado.
     .replace('^const ${n}=', '^const ${n}\\\\s*=');
 
   fs.writeFileSync(path.join(temp, 'scripts', 'modularize.mjs'), safeGeneratorSource);
@@ -51,6 +60,16 @@ try {
     path.join(temp, 'src', 'App.jsx')
   );
 
+  // A navegação agora ocupa a lateral. Move o player de música para a área útil
+  // sem alterar o App legado nem a sincronização do áudio.
+  const ambientPath = path.join(temp, 'src', 'shell', 'AmbientSoundPlayer.jsx');
+  let ambientSource = fs.readFileSync(ambientPath, 'utf8');
+  ambientSource = ambientSource.replace(
+    "position: 'fixed', top: 14, left: 16, zIndex: 100",
+    "position: 'fixed', top: 'auto', bottom: 58, left: 'calc(var(--grim-w) + 14px)', zIndex: 230"
+  );
+  fs.writeFileSync(ambientPath, ambientSource);
+
   // Sanidade estrutural: falha cedo se alguma extração essencial desaparecer.
   const required = [
     'src/App.jsx',
@@ -60,6 +79,7 @@ try {
     'src/features/sheets/SheetsPage.jsx',
     'src/features/mapa-batalha/BattleMapPage.jsx',
     'src/shell/DiceWidget.jsx',
+    'src/shell/AmbientSoundPlayer.jsx',
     'src/styles/global.css',
   ];
   for (const rel of required) {
@@ -76,8 +96,10 @@ try {
   }
 
   const generatedApp = fs.readFileSync(path.join(temp, 'src', 'App.jsx'), 'utf8');
-  if (!generatedApp.includes('lazy(') || !generatedApp.includes('<Suspense')) {
-    throw new Error('Shell modular inválido: lazy loading/Suspense não encontrados.');
+  for (const marker of ['lazy(', '<Suspense', 'ExperienceProvider', 'ImmersiveNavigation', 'SessionDashboard', 'ExperienceLayer']) {
+    if (!generatedApp.includes(marker)) {
+      throw new Error(`Shell modular/imersivo inválido: ${marker} não encontrado.`);
+    }
   }
 
   const generatedSrc = path.join(temp, 'src');
@@ -91,7 +113,7 @@ try {
   }
 
   fs.copyFileSync(path.join(generatedSrc, 'App.jsx'), path.join(targetSrc, 'App.generated.jsx'));
-  console.log('Dinastia E: módulos de performance preparados e validados para o Vite.');
+  console.log('Dinastia E: módulos de performance e experiência imersiva preparados e validados.');
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });
 }
