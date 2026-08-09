@@ -91,58 +91,58 @@ export default function App(){
     setTab('session');
   };
 
-  return(
-    <>
+  const accessReady = !!access && (access.role === 'player' || masterMode);
+  if (!accessReady) {
+    return (
       <div style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <StarField atmosphere={atmosphere}/>
         <ToastContainer/>
-        <PublicDiceOverlay/>
         <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode}/>
       </div>
+    );
+  }
 
-      {access && (
-        <ExperienceProvider key={`${access.role}:${playerSheetId || 'master'}`} tab={tab} masterMode={masterMode}>
-          <div className={`access-${access.role}`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
-            <StarField atmosphere={atmosphere}/>
-            <ToastContainer/>
-            <PublicDiceOverlay/>
+  return(
+    <ExperienceProvider key={`${access.role}:${playerSheetId || 'master'}`} tab={tab} masterMode={masterMode}>
+      <div className={`access-${access.role}`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
+        <StarField atmosphere={atmosphere}/>
+        <ToastContainer/>
+        <PublicDiceOverlay/>
 
-            <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
+        <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
 
-            <div className="immersive-stage">
-              <header className="immersive-topbar">
-                <div className="brand-line">
-                  <span className="brand-mark">✦</span>
-                  <div>
-                    <h1>Dinastia E</h1>
-                    <small>Cosmum · Livro do Mundo · Vigor Cósmico</small>
-                  </div>
-                </div>
-                <div className="top-actions">
-                  <PlayerIdentityChip access={access} onLogout={logout}/>
-                  {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>} 
-                </div>
-              </header>
-
-              <main className={`immersive-content ${lockPageScroll ? 'main-locked' : ''}`}>
-                <div key={tab} style={lockPageScroll?{animation:'pageTurn 0.45s cubic-bezier(0.2,0.8,0.2,1)',flex:1,minHeight:0,display:'flex',flexDirection:'column'}:{animation:'pageTurn 0.45s cubic-bezier(0.2,0.8,0.2,1)'}}>
-                  {tab==='session' ? (
-                    <SessionDashboard onNavigate={navigate} masterMode={masterMode}/>
-                  ) : (
-                    <Suspense fallback={<PageSkeleton/>}>
-                      <ActivePage masterMode={masterMode} playerSheetId={playerSheetId}/>
-                    </Suspense>
-                  )}
-                </div>
-              </main>
+        <div className="immersive-stage">
+          <header className="immersive-topbar">
+            <div className="brand-line">
+              <span className="brand-mark">✦</span>
+              <div>
+                <h1>Dinastia E</h1>
+                <small>Cosmum · Livro do Mundo · Vigor Cósmico</small>
+              </div>
             </div>
+            <div className="top-actions">
+              <PlayerIdentityChip access={access} onLogout={logout}/>
+              {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>} 
+            </div>
+          </header>
 
-            <ExperienceLayer onNavigate={navigate}/>
-            <AmbientSoundPlayer masterMode={masterMode}/>
-            <DiceWidget/>
-          </div>
-        </ExperienceProvider>
-      )}
-    </>
+          <main className={`immersive-content ${lockPageScroll ? 'main-locked' : ''}`}>
+            <div key={tab} style={lockPageScroll?{animation:'pageTurn 0.45s cubic-bezier(0.2,0.8,0.2,1)',flex:1,minHeight:0,display:'flex',flexDirection:'column'}:{animation:'pageTurn 0.45s cubic-bezier(0.2,0.8,0.2,1)'}}>
+              {tab==='session' ? (
+                <SessionDashboard onNavigate={navigate} masterMode={masterMode}/>
+              ) : (
+                <Suspense fallback={<PageSkeleton/>}>
+                  <ActivePage masterMode={masterMode} playerSheetId={playerSheetId}/>
+                </Suspense>
+              )}
+            </div>
+          </main>
+        </div>
+
+        <ExperienceLayer onNavigate={navigate}/>
+        <AmbientSoundPlayer masterMode={masterMode}/>
+        <DiceWidget/>
+      </div>
+    </ExperienceProvider>
   );
 }
