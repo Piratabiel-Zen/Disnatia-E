@@ -15,6 +15,10 @@ function dinastiaModularBuild() {
         cwd: process.cwd(),
         stdio: 'inherit',
       })
+      execFileSync(process.execPath, ['scripts/session-ui-patch.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
     },
   }
 }
