@@ -11,6 +11,10 @@ function dinastiaModularBuild() {
         cwd: process.cwd(),
         stdio: 'inherit',
       })
+      execFileSync(process.execPath, ['scripts/realtime-patch.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
     },
   }
 }
