@@ -81,8 +81,51 @@ replaceApp(
   'supressão do evento cósmico legado'
 );
 
+// O player de música deixa de flutuar sobre mapa/HUD e passa a morar na barra superior.
+replaceApp(
+  '<div className="top-actions">\n              <PlayerIdentityChip access={access} onLogout={logout}/>',
+  '<div className="top-actions">\n              <AmbientSoundPlayer masterMode={masterMode}/>\n              <PlayerIdentityChip access={access} onLogout={logout}/>',
+  'player de música na topbar'
+);
+replaceApp(
+  '        <ExperienceLayer onNavigate={navigate}/>\n        <AmbientSoundPlayer masterMode={masterMode}/>\n        <DiceWidget/>',
+  '        <ExperienceLayer onNavigate={navigate}/>\n        <DiceWidget/>',
+  'remoção do player flutuante antigo'
+);
+
 if (app.includes('<PublicDiceOverlay/>')) throw new Error('Overlay público legado ainda montado.');
 if (!app.includes('<RealtimeBroadcasts/>')) throw new Error('RealtimeBroadcasts não foi montado.');
+if ((app.match(/<AmbientSoundPlayer masterMode=\{masterMode\}\/\>/g) || []).length !== 1) {
+  throw new Error('AmbientSoundPlayer deve existir uma única vez na topbar.');
+}
 fs.writeFileSync(appFile, app);
 
-console.log('Dinastia E: tokens em ~25 atualizações/s e broadcasts duráveis de dados/eventos preparados.');
+const ambientFile = path.join(process.cwd(), 'src', 'shell', 'AmbientSoundPlayer.jsx');
+let ambient = fs.readFileSync(ambientFile, 'utf8');
+const ambientRootBefore = "<div style={{ position: 'fixed', bottom: 58, left: 'calc(var(--grim-w) + 14px)', zIndex: 230 }}>";
+const ambientRootAfter = '<div className="ambient-topbar-player" style={{ position: \'relative\', zIndex: 100, flexShrink: 0 }}>';
+if (!ambient.includes(ambientRootBefore)) throw new Error('Raiz flutuante do player de música não encontrada.');
+ambient = ambient.replace(ambientRootBefore, ambientRootAfter);
+ambient = ambient.replace(
+  "<div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>",
+  "<div className=\"ambient-topbar-closed\" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>",
+);
+ambient = ambient.replace(
+  "style={{ width: 48, height: 48, borderRadius: '50%'",
+  "className=\"ambient-mute-button\" style={{ width: 36, height: 36, borderRadius: '50%'",
+);
+ambient = ambient.replace(
+  "<div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(10,12,28,0.92)'",
+  "<div className=\"ambient-track-pill\" style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(10,12,28,0.92)'",
+);
+ambient = ambient.replace('maxWidth: 220', 'maxWidth: 180');
+ambient = ambient.replace(
+  "style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.04)'",
+  "className=\"ambient-playlist-button\" style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.04)'",
+);
+fs.writeFileSync(ambientFile, ambient);
+
+const globalCssFile = path.join(process.cwd(), 'src', 'styles', 'global.css');
+fs.appendFileSync(globalCssFile, `\n/* Música integrada à topbar: nunca cobre mapa, HUD, diário ou dados. */\n.ambient-topbar-player{display:flex;align-items:center;max-width:min(340px,36vw)}\n.ambient-topbar-closed{min-width:0;max-width:100%}\n.ambient-track-pill{min-width:0}\n@media(max-width:1100px){.ambient-track-pill{max-width:135px!important}.ambient-track-pill input[type=range]{width:44px!important}}\n@media(max-width:900px){.ambient-topbar-player{max-width:none}.ambient-track-pill{display:none!important}.ambient-mute-button{width:32px!important;height:32px!important;font-size:16px!important}.ambient-playlist-button{width:30px!important;height:30px!important}.immersive-topbar .top-actions{gap:6px}}\n@media(max-width:520px){.ambient-playlist-button{display:none!important}}\n`);
+
+console.log('Dinastia E: tokens/dados/eventos realtime ajustados e música integrada à barra superior sem sobrepor conteúdo.');
