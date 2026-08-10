@@ -102,10 +102,11 @@ fs.writeFileSync(appFile, app);
 
 const ambientFile = path.join(process.cwd(), 'src', 'shell', 'AmbientSoundPlayer.jsx');
 let ambient = fs.readFileSync(ambientFile, 'utf8');
-const ambientRootBefore = "<div style={{ position: 'fixed', bottom: 58, left: 'calc(var(--grim-w) + 14px)', zIndex: 230 }}>";
+const ambientRootPattern = /<div style=\{\{ position: 'fixed', [^\n]*?zIndex: (?:100|230) \}\}>/;
 const ambientRootAfter = '<div className="ambient-topbar-player" style={{ position: \'relative\', zIndex: 100, flexShrink: 0 }}>';
-if (!ambient.includes(ambientRootBefore)) throw new Error('Raiz flutuante do player de música não encontrada.');
-ambient = ambient.replace(ambientRootBefore, ambientRootAfter);
+const ambientWithRoot = ambient.replace(ambientRootPattern, ambientRootAfter);
+if (ambientWithRoot === ambient) throw new Error('Raiz flutuante do player de música não encontrada.');
+ambient = ambientWithRoot;
 ambient = ambient.replace(
   "<div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>",
   "<div className=\"ambient-topbar-closed\" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>",
