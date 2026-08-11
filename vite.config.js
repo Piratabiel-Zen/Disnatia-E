@@ -6,7 +6,8 @@ function dinastiaModularBuild() {
   return {
     name: 'dinastia-modular-build',
     enforce: 'pre',
-    configResolved() {
+    configResolved(config) {
+      if (config.isPreview) return
       execFileSync(process.execPath, ['scripts/build-modular.mjs'], {
         cwd: process.cwd(),
         stdio: 'inherit',
