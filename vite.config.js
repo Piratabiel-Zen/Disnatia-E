@@ -28,6 +28,10 @@ function dinastiaModularBuild() {
         cwd: process.cwd(),
         stdio: 'inherit',
       })
+      execFileSync(process.execPath, ['scripts/master-battle-scroll-patch.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
     },
   }
 }
