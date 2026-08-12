@@ -6,7 +6,8 @@ function dinastiaModularBuild() {
   return {
     name: 'dinastia-modular-build',
     enforce: 'pre',
-    configResolved() {
+    configResolved(config) {
+      if (config.isPreview || process.argv.includes('preview')) return
       execFileSync(process.execPath, ['scripts/build-modular.mjs'], {
         cwd: process.cwd(),
         stdio: 'inherit',
@@ -16,6 +17,14 @@ function dinastiaModularBuild() {
         stdio: 'inherit',
       })
       execFileSync(process.execPath, ['scripts/session-ui-patch.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
+      execFileSync(process.execPath, ['scripts/experience-layer-cleanup.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
+      execFileSync(process.execPath, ['scripts/combat-hud-animation-patch.mjs'], {
         cwd: process.cwd(),
         stdio: 'inherit',
       })

@@ -48,7 +48,7 @@ function useDurableChannel({ configId, collectionName, kind, ttl }) {
       ingest(payload);
 
       // Só o navegador que originou a gravação espelha o evento para o feed durável.
-      // Os demais clientes apenas consomem, evitando 5 gravações idênticas por evento.
+      // Os demais clientes apenas consomem, evitando gravações duplicadas por evento.
       if (snap.metadata.hasPendingWrites) {
         const id = eventId(payload, kind);
         if (id) {
@@ -105,21 +105,33 @@ function CosmicBroadcastQueue({ events }) {
   const queuedRef = useRef(new Set());
 
   useEffect(() => {
-    const fresh = events.filter(e => !queuedRef.current.has(e._rtId));
+    const fresh = events.filter(e => e?._rtId && !queuedRef.current.has(e._rtId));
     if (!fresh.length) return;
     fresh.forEach(e => queuedRef.current.add(e._rtId));
+    if (queuedRef.current.size > 240) {
+      const recent = Array.from(queuedRef.current).slice(-160);
+      queuedRef.current = new Set(recent);
+    }
     setQueue(prev => [...prev, ...fresh].sort((a,b) => Number(a.ts||0)-Number(b.ts||0)));
   }, [events]);
 
+  // Retira um evento da fila. Não há timer neste efeito: assim a atualização
+  // de queue não cancela acidentalmente o tempo de exibição do evento atual.
   useEffect(() => {
     if (current || !queue.length) return;
-    const next = queue[0];
+    const [next, ...rest] = queue;
     setCurrent(next);
-    setQueue(prev => prev.slice(1));
-    const duration = next.soft ? 1700 : 3400;
-    const timer = setTimeout(() => setCurrent(null), duration);
-    return () => clearTimeout(timer);
+    setQueue(rest);
   }, [current, queue]);
+
+  // Cada evento possui seu próprio tempo de vida. Quando termina, current volta
+  // a null e o efeito acima promove imediatamente o próximo da fila.
+  useEffect(() => {
+    if (!current) return undefined;
+    const duration = current.soft ? 1900 : (current.type === 'critical' ? 4200 : 3400);
+    const timer = window.setTimeout(() => setCurrent(null), duration);
+    return () => window.clearTimeout(timer);
+  }, [current?._rtId]);
 
   if (!current) return null;
   const color = current.color || '#A855F7';
