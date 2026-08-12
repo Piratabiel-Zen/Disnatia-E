@@ -45,9 +45,7 @@ export default function EnhancedSoundscape() {
   const timersRef = useRef(new Map());
   const valuesRef = useRef(soundscape);
 
-  useEffect(() => {
-    valuesRef.current = soundscape;
-  }, [soundscape]);
+  useEffect(() => { valuesRef.current = soundscape; }, [soundscape]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'soundscape'), snap => {
@@ -67,7 +65,7 @@ export default function EnhancedSoundscape() {
 
   const playBell = useCallback((intensity) => {
     const ctx = ctxRef.current; const master = masterRef.current;
-    if (!ctx || !master || muted) return;
+    if (!ctx || !master) return;
     const start = ctx.currentTime;
     [392, 587.3, 783.9].forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -76,11 +74,11 @@ export default function EnhancedSoundscape() {
       const gain = transientGain(ctx, master, (0.011 + i * 0.003) * intensity, 2.2 + i * 0.35, start + i * 0.012);
       osc.connect(gain); osc.start(start); osc.stop(start + 2.7 + i * 0.3);
     });
-  }, [muted, transientGain]);
+  }, [transientGain]);
 
   const playDrip = useCallback((intensity) => {
     const ctx = ctxRef.current; const master = masterRef.current;
-    if (!ctx || !master || muted) return;
+    if (!ctx || !master) return;
     const start = ctx.currentTime;
     const osc = ctx.createOscillator();
     osc.type = 'sine';
@@ -89,22 +87,22 @@ export default function EnhancedSoundscape() {
     osc.frequency.exponentialRampToValueAtTime(startFreq * 0.46, start + 0.14);
     const gain = transientGain(ctx, master, 0.025 * intensity, 0.23, start);
     osc.connect(gain); osc.start(start); osc.stop(start + 0.28);
-  }, [muted, transientGain]);
+  }, [transientGain]);
 
   const playMetal = useCallback((intensity) => {
     const ctx = ctxRef.current; const master = masterRef.current;
-    if (!ctx || !master || muted) return;
+    if (!ctx || !master) return;
     const start = ctx.currentTime;
     [930, 1450].forEach((freq, i) => {
       const osc = ctx.createOscillator(); osc.type = 'square'; osc.frequency.value = freq * (0.9 + Math.random() * 0.18);
       const gain = transientGain(ctx, master, (i ? 0.0045 : 0.007) * intensity, 0.32 + i * 0.12, start + i * 0.025);
       osc.connect(gain); osc.start(start); osc.stop(start + 0.52);
     });
-  }, [muted, transientGain]);
+  }, [transientGain]);
 
   const playHeartbeat = useCallback((intensity) => {
     const ctx = ctxRef.current; const master = masterRef.current;
-    if (!ctx || !master || muted) return;
+    if (!ctx || !master) return;
     [0, 0.19].forEach((offset, i) => {
       const start = ctx.currentTime + offset;
       const osc = ctx.createOscillator(); osc.type = 'sine';
@@ -113,28 +111,28 @@ export default function EnhancedSoundscape() {
       const gain = transientGain(ctx, master, (i ? 0.024 : 0.036) * intensity, 0.22, start);
       osc.connect(gain); osc.start(start); osc.stop(start + 0.26);
     });
-  }, [muted, transientGain]);
+  }, [transientGain]);
 
   const playThunder = useCallback((intensity) => {
     const ctx = ctxRef.current; const master = masterRef.current;
-    if (!ctx || !master || muted) return;
+    if (!ctx || !master) return;
     const start = ctx.currentTime;
     const src = ctx.createBufferSource(); src.buffer = makeNoise(ctx, 1.8);
     const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 210;
     const gain = transientGain(ctx, master, 0.11 * intensity, 1.55, start);
     src.connect(filter).connect(gain); src.start(start); src.stop(start + 1.8);
-  }, [muted, transientGain]);
+  }, [transientGain]);
 
   const playInsect = useCallback((intensity) => {
     const ctx = ctxRef.current; const master = masterRef.current;
-    if (!ctx || !master || muted) return;
+    if (!ctx || !master) return;
     const start = ctx.currentTime;
     for (let i = 0; i < 3; i += 1) {
       const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 3900 + Math.random() * 1900;
       const gain = transientGain(ctx, master, 0.0035 * intensity, 0.055, start + i * 0.085);
       osc.connect(gain); osc.start(start + i * 0.085); osc.stop(start + i * 0.085 + 0.08);
     }
-  }, [muted, transientGain]);
+  }, [transientGain]);
 
   const schedule = useCallback((key, minMs, maxMs, play) => {
     const loop = () => {
@@ -151,9 +149,7 @@ export default function EnhancedSoundscape() {
 
   const ensure = useCallback(() => {
     if (ctxRef.current) {
-      ctxRef.current.resume?.();
-      setReady(true);
-      return;
+      ctxRef.current.resume?.(); setReady(true); return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
@@ -175,29 +171,17 @@ export default function EnhancedSoundscape() {
     const arcaneUpper = ctx.createOscillator(); arcaneUpper.type = 'sine'; arcaneUpper.frequency.value = 164.7;
     const arcaneUpperGain = ctx.createGain(); arcaneUpperGain.gain.value = 0; arcaneUpper.connect(arcaneUpperGain).connect(master); arcaneUpper.start();
 
-    const windLfo = ctx.createOscillator(); const windLfoGain = ctx.createGain(); windLfo.frequency.value = 0.09; windLfoGain.gain.value = 0.035; windLfo.connect(windLfoGain).connect(wind.gain.gain); windLfo.start();
-    const fireLfo = ctx.createOscillator(); const fireLfoGain = ctx.createGain(); fireLfo.frequency.value = 7.2; fireLfoGain.gain.value = 0.018; fireLfo.connect(fireLfoGain).connect(fire.gain.gain); fireLfo.start();
-    const waterLfo = ctx.createOscillator(); const waterLfoGain = ctx.createGain(); waterLfo.frequency.value = 0.18; waterLfoGain.gain.value = 0.045; waterLfo.connect(waterLfoGain).connect(water.gain.gain); waterLfo.start();
+    const windLfo = ctx.createOscillator(); const windLfoGain = ctx.createGain(); windLfo.frequency.value = 0.09; windLfoGain.gain.value = 0.012; windLfo.connect(windLfoGain).connect(wind.gain.gain); windLfo.start();
+    const fireLfo = ctx.createOscillator(); const fireLfoGain = ctx.createGain(); fireLfo.frequency.value = 7.2; fireLfoGain.gain.value = 0.008; fireLfo.connect(fireLfoGain).connect(fire.gain.gain); fireLfo.start();
+    const waterLfo = ctx.createOscillator(); const waterLfoGain = ctx.createGain(); waterLfo.frequency.value = 0.18; waterLfoGain.gain.value = 0.018; waterLfo.connect(waterLfoGain).connect(water.gain.gain); waterLfo.start();
 
-    ctxRef.current = ctx;
-    masterRef.current = master;
-    nodesRef.current = {
-      rain, wind, fire, whispers, water, crowd,
-      hum:{gain:humGain,source:humOsc},
-      arcane:{gain:arcaneGain,source:arcaneOsc},
-      arcaneUpper:{gain:arcaneUpperGain,source:arcaneUpper},
-      lfos:[windLfo,fireLfo,waterLfo],
-    };
+    ctxRef.current = ctx; masterRef.current = master;
+    nodesRef.current = { rain,wind,fire,whispers,water,crowd,hum:{gain:humGain,source:humOsc},arcane:{gain:arcaneGain,source:arcaneOsc},arcaneUpper:{gain:arcaneUpperGain,source:arcaneUpper},lfos:[windLfo,fireLfo,waterLfo] };
 
-    schedule('bells', 5200, 12500, playBell);
-    schedule('drips', 900, 4300, playDrip);
-    schedule('metal', 3600, 9800, playMetal);
-    schedule('heartbeat', 980, 1800, playHeartbeat);
-    schedule('thunder', 6500, 15500, playThunder);
-    schedule('insects', 850, 2600, playInsect);
-
+    schedule('bells',5200,12500,playBell); schedule('drips',900,4300,playDrip); schedule('metal',3600,9800,playMetal);
+    schedule('heartbeat',980,1800,playHeartbeat); schedule('thunder',6500,15500,playThunder); schedule('insects',850,2600,playInsect);
     setReady(true); ctx.resume?.();
-  }, [muted, playBell, playDrip, playMetal, playHeartbeat, playThunder, playInsect, schedule]);
+  }, [muted,playBell,playDrip,playMetal,playHeartbeat,playThunder,playInsect,schedule]);
 
   useEffect(() => {
     const activate = () => ensure();
@@ -210,34 +194,17 @@ export default function EnhancedSoundscape() {
     if (!ctx || !master) return;
     const t = ctx.currentTime;
     const set = (node, key, max) => node?.gain?.gain?.setTargetAtTime(clamp01(soundscape?.[key]) * max, t, 0.7);
-    set(nodes.rain, 'rain', 0.16);
-    set(nodes.wind, 'wind', 0.12);
-    set(nodes.fire, 'fire', 0.08);
-    set(nodes.whispers, 'whispers', 0.055);
-    set(nodes.water, 'water', 0.15);
-    set(nodes.crowd, 'crowd', 0.045);
-    set(nodes.hum, 'hum', 0.08);
-    set(nodes.arcane, 'arcane', 0.045);
-    set(nodes.arcaneUpper, 'arcane', 0.023);
+    set(nodes.rain, 'rain', 0.16); set(nodes.wind, 'wind', 0.12); set(nodes.fire, 'fire', 0.08); set(nodes.whispers, 'whispers', 0.055);
+    set(nodes.water, 'water', 0.15); set(nodes.crowd, 'crowd', 0.045); set(nodes.hum, 'hum', 0.08); set(nodes.arcane, 'arcane', 0.045); set(nodes.arcaneUpper, 'arcane', 0.023);
     master.gain.setTargetAtTime(muted ? 0 : 0.9, t, 0.25);
   }, [soundscape, muted, ready]);
 
   useEffect(() => () => {
-    timersRef.current.forEach(timer => window.clearTimeout(timer));
-    timersRef.current.clear();
+    timersRef.current.forEach(timer => window.clearTimeout(timer)); timersRef.current.clear();
     try { ctxRef.current?.close?.(); } catch (_) {}
   }, []);
 
   const active = SOUND_KEYS.some(key => Number(soundscape?.[key] || 0) > 0);
   if (!active) return null;
-  return (
-    <button
-      className={`soundscape-local ${ready ? 'ready' : ''}`}
-      onClick={() => { ensure(); setMuted(v => !v); }}
-      title={muted ? 'Ativar ambiente' : 'Silenciar ambiente'}
-    >
-      {muted ? '🌫️×' : '🌫️'}
-      <span>{soundscape.label || 'Ambiente'}</span>
-    </button>
-  );
+  return <button className={`soundscape-local ${ready ? 'ready' : ''}`} onClick={() => { ensure(); setMuted(v => !v); }} title={muted ? 'Ativar ambiente' : 'Silenciar ambiente'}>{muted ? '🌫️×' : '🌫️'}<span>{soundscape.label || 'Ambiente'}</span></button>;
 }
