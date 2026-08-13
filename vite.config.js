@@ -32,6 +32,10 @@ function dinastiaModularBuild() {
         cwd: process.cwd(),
         stdio: 'inherit',
       })
+      execFileSync(process.execPath, ['scripts/ambient-player-fix.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
     },
   }
 }
