@@ -48,6 +48,10 @@ function dinastiaModularBuild() {
         cwd: process.cwd(),
         stdio: 'inherit',
       })
+      execFileSync(process.execPath, ['scripts/cosmic-modern-ui-patch.mjs'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      })
     },
   }
 }
