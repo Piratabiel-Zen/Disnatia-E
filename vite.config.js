@@ -8,50 +8,18 @@ function dinastiaModularBuild() {
     enforce: 'pre',
     configResolved(config) {
       if (config.isPreview || process.argv.includes('preview')) return
-      execFileSync(process.execPath, ['scripts/build-modular.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/realtime-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/session-ui-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/experience-layer-cleanup.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/combat-hud-animation-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/master-battle-scroll-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/ambient-player-fix.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/dice-identity-rules-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/elyon-book-chapter-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/cronicas-hq-images-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      execFileSync(process.execPath, ['scripts/cosmic-modern-ui-patch.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
+      execFileSync(process.execPath, ['scripts/build-modular.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/realtime-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/session-ui-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/experience-layer-cleanup.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/combat-hud-animation-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/master-battle-scroll-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/ambient-player-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/dice-identity-rules-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/elyon-book-chapter-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/cronicas-hq-images-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/cosmic-modern-ui-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/enemy-sheets-battlemap-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
