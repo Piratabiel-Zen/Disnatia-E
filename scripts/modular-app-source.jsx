@@ -16,6 +16,7 @@ import MasterToggle from "./shell/MasterToggle";
 import AmbientSoundPlayer from "./shell/AmbientSoundPlayer";
 import DiceWidget from "./shell/DiceWidget";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
+import CosmicLoopVideo from "./experience/CosmicLoopVideo";
 import {
   ExperienceProvider,
   ImmersiveNavigation,
@@ -95,6 +96,7 @@ export default function App(){
     return (
       <div style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <CosmicLivingBackground variant="gate"/>
+        <CosmicLoopVideo variant="gate"/>
         <StarField atmosphere={atmosphere}/>
         <ToastContainer/>
         <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode}/>
@@ -106,6 +108,7 @@ export default function App(){
     <ExperienceProvider key={`${access.role}:${playerSheetId || 'master'}`} tab={tab} masterMode={masterMode}>
       <div className={`access-${access.role}`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <CosmicLivingBackground/>
+        <CosmicLoopVideo/>
         <StarField atmosphere={atmosphere}/>
         <ToastContainer/>
         <PublicDiceOverlay/>
