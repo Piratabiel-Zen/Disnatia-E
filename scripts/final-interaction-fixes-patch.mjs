@@ -177,4 +177,102 @@ for (const marker of ['FINAL INTERACTION FIXES', 'transform .88s cubic-bezier(.4
   if (!finalCss.includes(marker)) throw new Error(`Final interaction patch incompleto: ${marker}`);
 }
 
-console.log(`Dinastia E: correções finais aplicadas — ${protectedNow} seletor(es) adicional(is) de classe protegido(s), zoom gradual e folhear 3D fluido.`);
+// ── 4) CRÔNICAS: PREVIEW HQ SEM ESCALAR O BITMAP DO THUMBNAIL ──────────────
+// O transform:scale anterior mantinha o mesmo bitmap já rasterizado no tamanho pequeno,
+// o que deixava a memória borrada durante a aproximação. Mantemos o thumbnail parado e
+// sobrepomos a MESMA mídia HQ em um elemento absoluto que cresce por largura real.
+const cronicasGeneratedFile = path.join(root, 'src', 'features', 'cronicas', 'CronicasPage.jsx');
+let cronicasGenerated = mustRead(cronicasGeneratedFile);
+const galleryBefore = `<div className="chronicles-memory-grid">{selectedImages.slice(0,8).map((img,i)=><div key={img?.id||i}><div className="chronicles-memory"><img src={imageSrc(img)} alt=""/></div><div style={{fontSize:10,color:'#87798b',textAlign:'center',marginTop:5}}>Memória {i+1}</div></div>)}</div>`;
+const galleryAfter = `<div className="chronicles-memory-grid">{selectedImages.slice(0,8).map((img,i)=><div key={img?.id||i} className="chronicles-memory-cell"><div className="chronicles-memory"><img className="chronicles-memory-thumb" src={imageSrc(img)} alt=""/></div><div className="chronicles-memory-hq" aria-hidden="true"><img src={imageSrc(img)} alt="" loading="eager" decoding="async"/></div><div style={{fontSize:10,color:'#87798b',textAlign:'center',marginTop:5}}>Memória {i+1}</div></div>)}</div>`;
+if (!cronicasGenerated.includes('chronicles-memory-hq')) {
+  if (!cronicasGenerated.includes(galleryBefore)) throw new Error('Final interaction patch: galeria de leitura das Crônicas não encontrada para preview HQ.');
+  cronicasGenerated = cronicasGenerated.replace(galleryBefore, galleryAfter);
+  fs.writeFileSync(cronicasGeneratedFile, cronicasGenerated);
+}
+
+let nativeZoomCss = mustRead(experienceCssFile);
+const NATIVE_ZOOM_MARKER = '/* CRÔNICAS · NATIVE RESOLUTION HOVER · 2026-08-23 */';
+if (!nativeZoomCss.includes(NATIVE_ZOOM_MARKER)) {
+  nativeZoomCss += `\n${NATIVE_ZOOM_MARKER}\n
+@media (hover:hover) and (pointer:fine){
+  .chronicles-reading .chronicles-memory-cell{
+    position:relative;
+    z-index:1;
+  }
+  .chronicles-reading .chronicles-memory-cell:hover{
+    z-index:80;
+  }
+  .chronicles-reading .chronicles-memory-cell .chronicles-memory,
+  .chronicles-reading .chronicles-memory-cell .chronicles-memory:hover{
+    width:100%!important;
+    transform:none!important;
+    will-change:auto!important;
+    transition:border-color .42s ease-in-out,box-shadow .52s ease-in-out,background-color .42s ease-in-out!important;
+  }
+  .chronicles-reading .chronicles-memory-cell .chronicles-memory img{
+    image-rendering:auto!important;
+    transform:none!important;
+    filter:none!important;
+  }
+  .chronicles-reading .chronicles-memory-hq{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    aspect-ratio:16/10;
+    z-index:90;
+    overflow:hidden;
+    border:1px solid rgba(216,180,254,.20);
+    border-radius:10px;
+    background:#05030d;
+    opacity:0;
+    cursor:zoom-out;
+    pointer-events:auto;
+    transform:translate3d(0,0,0);
+    transition:width .88s cubic-bezier(.4,0,.2,1),transform .88s cubic-bezier(.4,0,.2,1),opacity .14s ease .72s,border-color .42s ease-in-out,box-shadow .52s ease-in-out;
+    will-change:width,transform;
+  }
+  .chronicles-reading .chronicles-memory-hq img{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:cover!important;
+    image-rendering:auto!important;
+    transform:none!important;
+    filter:none!important;
+    backface-visibility:visible;
+  }
+  .chronicles-reading .chronicles-memory-cell:hover .chronicles-memory-hq{
+    width:296%;
+    opacity:1;
+    border-color:rgba(196,151,255,.62);
+    box-shadow:0 18px 46px rgba(0,0,0,.68),0 0 24px rgba(124,58,237,.22);
+    transition-delay:0s,0s,0s,0s,0s;
+  }
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n+1):hover .chronicles-memory-hq{
+    transform:translate3d(0,-66.216%,0);
+  }
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n+2):hover .chronicles-memory-hq{
+    transform:translate3d(-33.108%,-66.216%,0);
+  }
+  .chronicles-reading .chronicles-memory-grid>div:nth-child(3n):hover .chronicles-memory-hq{
+    transform:translate3d(-66.216%,-66.216%,0);
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .chronicles-reading .chronicles-memory-hq{
+    transition:width .18s ease-out,transform .18s ease-out,opacity .08s linear!important;
+  }
+}
+`;
+  fs.writeFileSync(experienceCssFile, nativeZoomCss);
+}
+
+const finalCronicas = fs.readFileSync(cronicasGeneratedFile, 'utf8');
+const finalNativeCss = fs.readFileSync(experienceCssFile, 'utf8');
+for (const marker of ['chronicles-memory-hq', 'NATIVE RESOLUTION HOVER', 'width:296%', 'image-rendering:auto']) {
+  if (!(finalCronicas.includes(marker) || finalNativeCss.includes(marker))) throw new Error(`Final interaction patch: preview HQ incompleto (${marker}).`);
+}
+
+console.log(`Dinastia E: correções finais aplicadas — ${protectedNow} seletor(es) adicional(is) de classe protegido(s), zoom gradual, folhear 3D fluido e preview HQ nativo nas Crônicas.`);
