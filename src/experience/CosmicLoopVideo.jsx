@@ -1,53 +1,30 @@
-import { useEffect, useState } from 'react';
-
-const VIDEO_PARTS = [
-  '/media/deserto-bg/part-00.txt',
-  '/media/deserto-bg/part-01.txt',
-  '/media/deserto-bg/part-02.txt',
-  '/media/deserto-bg/part-03.txt',
-  '/media/deserto-bg/part-04.txt',
-  '/media/deserto-bg/part-05-07.txt',
-  '/media/deserto-bg/part-08-10.txt',
-  '/media/deserto-bg/part-11-13.txt',
-  '/media/deserto-bg/part-14-15.txt',
-];
+import { useEffect, useRef, useState } from 'react';
 
 export default function CosmicLoopVideo({ variant = 'world' }) {
-  const [src, setSrc] = useState('');
+  const videoRef = useRef(null);
+  const [ready, setReady] = useState(false);
+  const gate = variant === 'gate';
 
   useEffect(() => {
-    let cancelled = false;
-    let objectUrl = '';
+    const video = videoRef.current;
+    if (!video) return undefined;
 
-    const loadVideo = async () => {
-      try {
-        const pieces = await Promise.all(VIDEO_PARTS.map(async url => {
-          const response = await fetch(url, { cache: 'force-cache' });
-          if (!response.ok) throw new Error(`Falha ao carregar vídeo de fundo (${response.status})`);
-          return (await response.text()).trim();
-        }));
-
-        const binary = atob(pieces.join(''));
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-
-        objectUrl = URL.createObjectURL(new Blob([bytes], { type: 'video/mp4' }));
-        if (!cancelled) setSrc(objectUrl);
-      } catch (error) {
-        console.warn('Dinastia E: vídeo cósmico indisponível; mantendo o fundo animado de reserva.', error);
-      }
+    const ensurePlayback = () => {
+      video.muted = true;
+      const attempt = video.play();
+      if (attempt?.catch) attempt.catch(() => {});
     };
+    const onVisible = () => { if (!document.hidden) ensurePlayback(); };
 
-    loadVideo();
+    ensurePlayback();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pointerdown', ensurePlayback, { once: true, passive: true });
     return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pointerdown', ensurePlayback);
     };
   }, []);
 
-  if (!src) return null;
-
-  const gate = variant === 'gate';
   return (
     <div
       className={`cosmic-loop-video ${gate ? 'gate' : ''}`}
@@ -55,13 +32,15 @@ export default function CosmicLoopVideo({ variant = 'world' }) {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1,
+        zIndex: 2,
         overflow: 'hidden',
         pointerEvents: 'none',
+        background: '#030109',
       }}
     >
       <video
-        src={src}
+        ref={videoRef}
+        src="/media/deserto-bg.mp4"
         autoPlay
         muted
         loop
@@ -69,6 +48,12 @@ export default function CosmicLoopVideo({ variant = 'world' }) {
         preload="auto"
         tabIndex={-1}
         disablePictureInPicture
+        onLoadedData={() => setReady(true)}
+        onCanPlay={() => {
+          setReady(true);
+          const attempt = videoRef.current?.play();
+          if (attempt?.catch) attempt.catch(() => {});
+        }}
         style={{
           position: 'absolute',
           inset: 0,
@@ -76,26 +61,29 @@ export default function CosmicLoopVideo({ variant = 'world' }) {
           height: '100%',
           objectFit: 'cover',
           objectPosition: '50% 50%',
-          opacity: gate ? 0.58 : 0.72,
-          filter: 'brightness(.58) saturate(1.30) contrast(1.12) hue-rotate(-4deg)',
+          opacity: ready ? (gate ? 0.86 : 0.92) : 0,
+          filter: 'brightness(.84) saturate(1.24) contrast(1.08) hue-rotate(-3deg)',
           transform: 'scale(1.018)',
+          transition: 'opacity .8s ease',
         }}
       />
       <div
+        className="cosmic-video-shade"
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(circle at 50% 34%,rgba(125,73,198,.03),rgba(5,2,15,.16) 52%,rgba(2,0,8,.54) 100%),linear-gradient(180deg,rgba(2,0,8,.22),rgba(8,3,20,.13) 42%,rgba(2,0,8,.50))',
-          boxShadow: 'inset 0 0 180px rgba(0,0,0,.48)',
+          background: 'radial-gradient(circle at 50% 44%,rgba(13,5,30,.04) 8%,rgba(4,1,12,.13) 66%,rgba(1,0,5,.40) 100%),linear-gradient(180deg,rgba(3,1,10,.12),rgba(7,2,18,.08) 48%,rgba(2,0,8,.33))',
+          boxShadow: 'inset 0 0 150px rgba(0,0,0,.32)',
         }}
       />
       <div
+        className="cosmic-video-tint"
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(110deg,rgba(60,22,112,.10),transparent 38%,rgba(18,94,128,.055) 64%,rgba(76,27,126,.08))',
+          background: 'linear-gradient(110deg,rgba(82,31,138,.12),transparent 38%,rgba(27,112,151,.07) 64%,rgba(92,31,145,.10))',
           mixBlendMode: 'screen',
-          opacity: gate ? 0.34 : 0.48,
+          opacity: gate ? 0.30 : 0.42,
         }}
       />
     </div>
