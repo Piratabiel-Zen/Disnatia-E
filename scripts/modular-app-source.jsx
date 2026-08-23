@@ -7,6 +7,7 @@ import "./styles/global.css";
 import "./styles/livro.css";
 import "./experience/experience.css";
 import "./experience/access.css";
+import "./experience/cosmic-living-background.css";
 
 import StarField from "./shell/StarField";
 import { ToastContainer } from "./core/toast";
@@ -14,6 +15,7 @@ import PublicDiceOverlay from "./shell/PublicDiceOverlay";
 import MasterToggle from "./shell/MasterToggle";
 import AmbientSoundPlayer from "./shell/AmbientSoundPlayer";
 import DiceWidget from "./shell/DiceWidget";
+import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import {
   ExperienceProvider,
   ImmersiveNavigation,
@@ -27,8 +29,6 @@ import {
   clearStoredAccess,
 } from "./experience/PlayerAccess";
 
-// Cada área continua sendo um chunk independente. A nova camada de experiência
-// é global, mas fichas, mapas, crônicas e livro só são baixados quando abertos.
 const pageLoaders = {
   prologo:      () => import("./features/prologue/ProloguePage"),
   classes:      () => import("./features/classes/ClassesPage"),
@@ -61,7 +61,6 @@ export default function App(){
   const [atmosphere,setAtmosphere]=useState('neutro');
   const [access,setAccess]=useState(()=>loadStoredAccess());
 
-  // A atmosfera continua sendo um estado global e extremamente leve.
   useEffect(()=>{
     const unsub=onSnapshot(doc(db,'config','atmosphere'),snap=>{
       if(snap.exists()) setAtmosphere(snap.data().key||'neutro');
@@ -95,6 +94,7 @@ export default function App(){
   if (!accessReady) {
     return (
       <div style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
+        <CosmicLivingBackground variant="gate"/>
         <StarField atmosphere={atmosphere}/>
         <ToastContainer/>
         <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode}/>
@@ -105,6 +105,7 @@ export default function App(){
   return(
     <ExperienceProvider key={`${access.role}:${playerSheetId || 'master'}`} tab={tab} masterMode={masterMode}>
       <div className={`access-${access.role}`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
+        <CosmicLivingBackground/>
         <StarField atmosphere={atmosphere}/>
         <ToastContainer/>
         <PublicDiceOverlay/>
