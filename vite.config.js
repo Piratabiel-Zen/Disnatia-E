@@ -21,6 +21,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/cosmic-modern-ui-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/enemy-sheets-battlemap-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/player-class-lock-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/final-interaction-fixes-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
