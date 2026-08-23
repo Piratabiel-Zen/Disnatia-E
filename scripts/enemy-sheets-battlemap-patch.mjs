@@ -8,8 +8,6 @@ function replaceRequired(source, before, after, label) {
   return next;
 }
 
-// A aba Inimigos passa a usar a implementação persistente e moderna,
-// em vez de manter uma segunda ficha legada gerada do App.jsx.
 const enemyPage = path.join(process.cwd(), 'src', 'features', 'inimigos', 'InimigosPage.jsx');
 if (!fs.existsSync(enemyPage)) throw new Error('InimigosPage.jsx gerado não encontrado.');
 fs.writeFileSync(enemyPage, "export { default } from '../../experience/EnemySheetExperience.jsx';\n");
@@ -102,16 +100,10 @@ const floatingEnemyRender = [
   "",
 ].join('\n');
 
-battle = replaceRequired(
-  battle,
-  '          {/* BARRA INFERIOR DE FICHAS — apenas bolinhas com a foto, sem nome */}',
-  floatingEnemyRender + '          {/* BARRA INFERIOR DE FICHAS — personagens + inimigos do Mestre */}',
-  'render das fichas flutuantes de inimigo'
-);
-
-const enemyBubbles = [
-  "            {masterMode && enemies.length > 0 && <span className=\"enemy-map-divider\" title=\"Inimigos\"/>}",
-  "            {masterMode && enemies.map(enemy => {",
+const enemyStrip = [
+  "          {masterMode && enemies.length > 0 && <div className=\"enemy-map-strip\" style={{position:'absolute',left:70,bottom:16,zIndex:46,maxWidth:'calc(100% - 250px)',display:'flex',alignItems:'center',gap:7,overflowX:'auto',padding:'2px 4px'}}>",
+  "            <span className=\"enemy-map-divider\" title=\"Inimigos\"/>",
+  "            {enemies.map(enemy => {",
   "              const cls = CLASSES.find(c => c.id === enemy.classe);",
   "              const color = cls ? (SHEET_COLORS[cls.id] || cls.color || '#FF4F65') : ({Baixo:'#4ADE80','Médio':'#E8A020',Alto:'#FF6B35',Extremo:'#E8193C'}[enemy.perigo] || '#FF4F65');",
   "              const isOpen = floatingEnemies.some(p => p.enemyId === String(enemy.id));",
@@ -121,13 +113,15 @@ const enemyBubbles = [
   "                </button>",
   "              );",
   "            })}",
+  "          </div>}",
+  "",
 ].join('\n');
 
 battle = replaceRequired(
   battle,
-  '            {masterMode && sheets.length < 15 && (',
-  enemyBubbles + '\n            {masterMode && sheets.length < 15 && (',
-  'bolinhas de inimigo na barra inferior'
+  '          {/* FICHA DO MAPA — uma única bolinha; Mestre expande a lista */}',
+  floatingEnemyRender + enemyStrip + '          {/* FICHA DO MAPA — uma única bolinha; Mestre expande a lista */}',
+  'fichas flutuantes e atalhos dos inimigos'
 );
 
 fs.writeFileSync(battleFile, battle);
@@ -138,6 +132,7 @@ for (const marker of [
   "collection(db, 'enemies')",
   'floatingEnemies.map',
   'enemy-map-bubble',
+  'FICHA DO MAPA — uma única bolinha',
   'updEnemyFromMap',
 ]) {
   const haystack = marker === 'EnemySheetExperience.jsx' ? fs.readFileSync(enemyPage,'utf8') : battle;
