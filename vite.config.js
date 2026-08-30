@@ -25,6 +25,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/cronicas-original-quality-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/video-background-battlemap-ping-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/enemy-token-hp-link-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/global-realtime-sync-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
