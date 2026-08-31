@@ -25,7 +25,7 @@ replaceRequired(
     const prevById = new Map((previousTokens || []).map(token => [String(token.id), token]));
     return (incomingTokens || []).map(token => {
       const tid = String(token.id);
-      const live = authoritativePositionRef.current[\`${id}:${tid}\`];
+      const live = authoritativePositionRef.current[\`${'${id}:${tid}'}\`];
       const previous = prevById.get(tid);
       if (live && Number.isFinite(live.x) && Number.isFinite(live.y)) {
         return { ...token, x: live.x, y: live.y };
@@ -98,7 +98,7 @@ replaceRequired(
   `        const x = Number(data.x);
         const y = Number(data.y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        authoritativePositionRef.current[\`${currentMapId}:${tokenId}\`] = { x, y };
+        authoritativePositionRef.current[\`${'${currentMapId}:${tokenId}'}\`] = { x, y };
         remotePositionQueueRef.current.set(tokenId, { x, y });`,
   'registro autoritativo de snapshot remoto'
 );
