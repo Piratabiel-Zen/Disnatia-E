@@ -1,0 +1,41 @@
+/* DINASTIA E · PERFORMANCE LITE · 2026-08-31
+   Fundo cósmico sem vídeo/canvas contínuo. Mantém profundidade visual com camadas
+   compostas pela GPU e reduz filtros/animacões caros principalmente no mobile. */
+.cosmic-loop-video{display:none!important}
+.cosmic-living-bg.cosmic-lite-bg{opacity:1!important;z-index:0!important;background:#020106;contain:layout paint style;isolation:isolate}
+.cosmic-lite-nebula,.cosmic-lite-stars,.cosmic-lite-water{position:absolute;pointer-events:none;inset:0}
+.cosmic-lite-nebula{inset:-6%;background:radial-gradient(circle at 18% 24%,rgba(84,38,153,.18),transparent 34%),radial-gradient(circle at 76% 19%,rgba(35,116,163,.11),transparent 31%),radial-gradient(circle at 54% 48%,rgba(151,65,224,.09),transparent 29%),linear-gradient(180deg,#020108 0%,#080319 42%,#050212 58%,#010105 100%);transform:translate3d(0,0,0) scale(1.02);opacity:.95}
+.cosmic-lite-stars{background-image:radial-gradient(circle,rgba(236,241,255,.88) 0 1px,transparent 1.35px),radial-gradient(circle,rgba(194,160,255,.72) 0 1px,transparent 1.3px),radial-gradient(circle,rgba(88,217,255,.52) 0 .8px,transparent 1.15px);background-size:137px 137px,211px 211px,293px 293px;background-position:17px 31px,89px 63px,147px 119px;opacity:.46;transform:translateZ(0)}
+.cosmic-lite-water{top:55%;background:linear-gradient(180deg,rgba(84,54,159,.08),rgba(11,6,26,.025) 20%,rgba(2,1,7,.16)),repeating-linear-gradient(0deg,rgba(120,96,205,.025) 0 1px,transparent 1px 24px);mask-image:linear-gradient(180deg,rgba(0,0,0,.8),transparent 88%);opacity:.72}
+.cosmic-lite-bg .cosmic-living-vignette{opacity:.56!important;mix-blend-mode:normal!important;background:radial-gradient(circle at 50% 40%,transparent 15%,rgba(1,0,6,.18) 60%,rgba(1,0,5,.7) 100%),linear-gradient(180deg,rgba(0,0,0,.035),rgba(0,0,0,.22))}
+
+@keyframes cosmicLiteDrift{0%{transform:translate3d(-1.4%,0,0) scale(1.02)}100%{transform:translate3d(1.4%,.7%,0) scale(1.035)}}
+@keyframes cosmicLiteTwinkle{0%,100%{opacity:.38}50%{opacity:.53}}
+@media (min-width:901px) and (prefers-reduced-motion:no-preference){
+  .cosmic-lite-nebula{animation:cosmicLiteDrift 28s ease-in-out infinite alternate;will-change:transform}
+  .cosmic-lite-stars{animation:cosmicLiteTwinkle 10s ease-in-out infinite;will-change:opacity}
+  .grim-nav{backdrop-filter:blur(10px) saturate(1.03)!important;-webkit-backdrop-filter:blur(10px) saturate(1.03)!important}
+  .combat-hud,.master-battle-console,.journal-drawer,.floating-sheet{backdrop-filter:blur(8px) saturate(1.02)!important;-webkit-backdrop-filter:blur(8px) saturate(1.02)!important}
+  .immersive-topbar::before{filter:none!important;animation-duration:18s!important}
+}
+
+@media (max-width:900px){
+  .cosmic-lite-nebula{inset:0;transform:none;opacity:.9}
+  .cosmic-lite-stars{opacity:.34;background-size:169px 169px,251px 251px,337px 337px}
+  .cosmic-lite-water{opacity:.52}
+  .cosmic-side-rail{display:none!important}
+  .immersive-topbar::before,.immersive-topbar::after,.immersive-topbar .brand-mark,.grim-brand>span,.session-hero,.access-gate::before,.access-gate::after,.access-sigil{animation:none!important;filter:none!important}
+  .grim-nav,.mobile-dock,.combat-hud,.master-battle-console,.journal-drawer,.floating-sheet,.access-panel,.battlemap-ping-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .session-card{will-change:auto!important}
+  .grim-link::after,.access-panel::before,.access-character-strip button::after{display:none!important}
+}
+
+@media (max-width:560px){
+  .cosmic-lite-stars{opacity:.27;background-size:211px 211px,307px 307px,401px 401px}
+  .cosmic-lite-water{display:none}
+  .cosmic-lite-bg .cosmic-living-vignette{opacity:.64!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .cosmic-lite-nebula,.cosmic-lite-stars{animation:none!important;will-change:auto!important}
+}
