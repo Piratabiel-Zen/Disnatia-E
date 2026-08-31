@@ -124,19 +124,21 @@ replaceRequired(
   'remoção de writeLiveTokens durante movimento'
 );
 
-replaceRequired(
-  `      if (latestTokens) {
-        lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-        writeLiveTokens(mapIdAtDragStart, latestTokens, true).catch(e => console.error(e));
-      }`,
-  `      if (latestTokens) {
+const upStartForFinal = src.indexOf('    const up = () => {');
+const latestStart = src.indexOf('      const latestTokens = mapTokensRef.current[', upStartForFinal);
+const movedCheckStart = src.indexOf('      if (!moved.current)', latestStart);
+if (upStartForFinal < 0 || latestStart < 0 || movedCheckStart < 0) {
+  throw new Error('BattleMap position authority patch: bloco final do drag não encontrado.');
+}
+const finalPositionBlock = `      const latestTokens = mapTokensRef.current[String(mapIdAtDragStart)];
+      if (latestTokens) {
         const movedToken = latestTokens.find(t => String(t.id) === String(draggingId));
         if (movedToken) writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
         lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
         writeLiveTokens(mapIdAtDragStart, latestTokens, true).catch(e => console.error(e));
-      }`,
-  'flush obrigatório da posição final'
-);
+      }
+`;
+src = src.slice(0, latestStart) + finalPositionBlock + src.slice(movedCheckStart);
 
 replaceRequired(
   `        if (tokenSnap.exists()) {
