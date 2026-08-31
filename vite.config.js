@@ -27,6 +27,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/enemy-token-hp-link-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/global-realtime-sync-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/battlemap-ultra-realtime-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/battlemap-position-authority-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
