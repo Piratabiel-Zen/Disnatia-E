@@ -29,6 +29,8 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/battlemap-ultra-realtime-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/battlemap-position-authority-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/site-fluidity-hp-privacy-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/worldbook-usability-patch-v2.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/worldbook-jsx-fix-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
