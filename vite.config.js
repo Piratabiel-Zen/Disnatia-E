@@ -32,6 +32,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/worldbook-usability-patch-v2.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/worldbook-jsx-fix-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/site-immersion-performance-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/enemy-cosmic-vigor-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
