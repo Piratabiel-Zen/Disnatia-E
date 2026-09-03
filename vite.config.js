@@ -33,6 +33,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/worldbook-jsx-fix-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/site-immersion-performance-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/enemy-cosmic-vigor-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/combat-immersion-physical-dice-token-rotation-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
@@ -48,6 +49,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return
+          if (id.includes('/@3d-dice/dice-box-threejs/')) return 'dice-physics'
           if (id.includes('/@firebase/') || id.includes('/firebase/')) return 'vendor-firebase'
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react'
           return 'vendor'
