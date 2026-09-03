@@ -1,0 +1,154 @@
+/* DINASTIA E · SITE POLISH · 2026-09-02
+   Acabamento dark cosmic, organização visual e otimizações de pintura/composição.
+   Nenhuma mecânica é alterada aqui. */
+
+:root{
+  color-scheme:dark;
+  --de-void:#010207;
+  --de-surface:rgba(7,5,14,.94);
+  --de-surface-strong:rgba(5,3,11,.985);
+  --de-surface-soft:rgba(13,9,24,.72);
+  --de-line:rgba(184,155,224,.10);
+  --de-line-strong:rgba(168,85,247,.24);
+  --de-text:#c8b8a0;
+  --de-muted:#75677d;
+  --de-violet:#a855f7;
+  --de-cyan:#58d9ff;
+  --de-fast:160ms;
+  --de-medium:260ms;
+}
+
+html,body,#root{background:var(--de-void)!important}
+body{
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+button,input,textarea,select{-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:1px solid rgba(88,217,255,.62)!important;
+  outline-offset:2px;
+  box-shadow:0 0 0 3px rgba(88,217,255,.07)!important;
+}
+
+/* A troca de capítulos não usa blur: aparência equivalente, menos repaint. */
+@keyframes pageTurn{
+  0%{opacity:0;transform:translate3d(0,7px,0) scale(.998)}
+  100%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Shell: leitura mais clara e sensação de livro cósmico sem aumentar camadas animadas. */
+.immersive-topbar{
+  border-bottom-color:rgba(168,85,247,.13)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.18),inset 0 -1px 0 rgba(88,217,255,.025)!important;
+}
+.immersive-topbar .brand-mark{
+  box-shadow:inset 0 0 18px rgba(168,85,247,.08),0 0 20px rgba(88,217,255,.055)!important;
+}
+.immersive-topbar small{
+  color:#6f6179!important;
+  letter-spacing:.18em!important;
+}
+
+.immersive-content{
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+.page-stage{
+  position:relative;
+  min-height:100%;
+  isolation:isolate;
+}
+.page-stage::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:clamp(16px,3vw,46px);
+  right:clamp(16px,3vw,46px);
+  height:1px;
+  pointer-events:none;
+  opacity:.42;
+  background:linear-gradient(90deg,transparent,rgba(88,217,255,.14),rgba(168,85,247,.22),transparent);
+  z-index:0;
+}
+.page-stage::after{
+  content:'';
+  position:absolute;
+  inset:0 0 auto;
+  height:min(38vh,360px);
+  pointer-events:none;
+  z-index:-1;
+  background:radial-gradient(ellipse at 50% -20%,rgba(85,65,160,.055),transparent 68%);
+}
+
+/* Navegação: hierarquia mais legível sem animação cara. */
+.grim-link{
+  transition:color var(--de-fast) ease,background-color var(--de-fast) ease,border-color var(--de-fast) ease,box-shadow var(--de-fast) ease,transform var(--de-fast) ease!important;
+}
+.grim-link.active{
+  border-color:rgba(168,85,247,.23)!important;
+  box-shadow:inset 2px 0 0 var(--accent),0 0 18px color-mix(in srgb,var(--accent) 8%,transparent)!important;
+}
+.grim-link:active,.mobile-dock button:active,.mobile-menu-sheet button:active{transform:scale(.98)}
+.mobile-dock{
+  padding-bottom:max(7px,env(safe-area-inset-bottom));
+  box-shadow:0 -12px 32px rgba(0,0,0,.30)!important;
+}
+.mobile-dock button.active{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 0 16px color-mix(in srgb,var(--accent,#a855f7) 9%,transparent);
+}
+
+/* Superfícies: profundidade por contraste/borda, não por blur de GPU. */
+.session-card,.chronicles-panel,.enemy-sheet-panel,.access-panel,.floating-sheet,.journal-drawer,.master-battle-console{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.018)!important;
+}
+.session-card{
+  border-color:rgba(190,155,226,.075)!important;
+  background:linear-gradient(145deg,rgba(10,7,20,.88),rgba(5,3,12,.90))!important;
+}
+
+/* Evita transition:all inline em botões, que pode animar propriedades de layout. */
+button{
+  transition-property:transform,color,background-color,border-color,box-shadow,opacity!important;
+  transition-duration:var(--de-fast)!important;
+  transition-timing-function:ease!important;
+}
+
+/* Skeleton mais discreto e coerente com o universo, sem shimmer full-screen. */
+.lazy-page-skeleton{
+  min-height:220px;
+  display:grid;
+  place-items:center;
+  color:#665a70;
+  font-family:'Cinzel',serif;
+  letter-spacing:.08em;
+}
+.lazy-page-dot{
+  display:inline-block;
+  width:7px;height:7px;border-radius:50%;margin-right:9px;
+  background:#8d67b9;
+  box-shadow:0 0 12px rgba(168,85,247,.28);
+}
+
+/* Full-screen layers não ficam permanentemente forçadas na VRAM. */
+.cosmic-lite-nebula,.cosmic-lite-vortex::before,.cosmic-lite-stars-far,.cosmic-lite-stars-near,.cosmic-bright-star{
+  will-change:auto!important;
+}
+.cosmic-shooting-star{will-change:transform,opacity!important}
+
+/* Cartões de listas longas podem ser pulados pelo compositor quando fora da viewport. */
+.rules-cards-grid>* ,.enemy-ability-grid>*{
+  content-visibility:auto;
+  contain-intrinsic-size:160px;
+}
+
+@media(max-width:900px){
+  .immersive-content{scrollbar-gutter:auto}
+  .page-stage::before{left:12px;right:12px}
+  .session-card,.chronicles-panel,.enemy-sheet-panel,.access-panel,.floating-sheet,.journal-drawer,.master-battle-console{
+    box-shadow:0 12px 30px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.018)!important;
+  }
+}
