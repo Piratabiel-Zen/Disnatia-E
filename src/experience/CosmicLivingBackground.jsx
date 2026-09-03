@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef } from 'react';
 import './cosmic-living-background.css';
 import './performance-lite.css';
 
@@ -6,77 +5,55 @@ const BRIGHT_STAR_COUNT = 16;
 const SHOOTING_STAR_COUNT = 7;
 const STAR_COLORS = ['#F7FBFF', '#A9DCFF', '#C7B8FF', '#E8F4FF'];
 
+function seededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state += 0x6D2B79F5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const starRandom = seededRandom(0xD1A57A);
+const meteorRandom = seededRandom(0xC05A1C);
+
+const BRIGHT_STARS = Array.from({ length: BRIGHT_STAR_COUNT }, (_, index) => ({
+  id: index,
+  left: `${4 + starRandom() * 92}%`,
+  top: `${5 + starRandom() * 88}%`,
+  duration: `${(3.8 + starRandom() * 5.8).toFixed(2)}s`,
+  delay: `${-(starRandom() * 8).toFixed(2)}s`,
+  size: `${(2 + starRandom() * 2.2).toFixed(2)}px`,
+  color: STAR_COLORS[index % STAR_COLORS.length],
+}));
+
+const SHOOTING_STARS = Array.from({ length: SHOOTING_STAR_COUNT }, (_, index) => {
+  const duration = 13 + meteorRandom() * 13;
+  return {
+    id: index,
+    top: `${4 + meteorRandom() * 82}%`,
+    duration: `${duration.toFixed(2)}s`,
+    delay: `${-(meteorRandom() * duration).toFixed(2)}s`,
+    travelY: `${(-8 + meteorRandom() * 22).toFixed(1)}vh`,
+    angle: `${(-5 + meteorRandom() * 10).toFixed(1)}deg`,
+    length: `${90 + Math.round(meteorRandom() * 85)}px`,
+  };
+});
+
 export default function CosmicLivingBackground({ variant = 'world' }) {
-  const rootRef = useRef(null);
   const gate = variant === 'gate';
 
-  const brightStars = useMemo(() => Array.from({ length: BRIGHT_STAR_COUNT }, (_, index) => ({
-    id: index,
-    left: `${4 + Math.random() * 92}%`,
-    top: `${5 + Math.random() * 88}%`,
-    duration: `${3.8 + Math.random() * 5.8}s`,
-    delay: `${-(Math.random() * 8).toFixed(2)}s`,
-    size: `${2 + Math.random() * 2.2}px`,
-    color: STAR_COLORS[index % STAR_COLORS.length],
-  })), []);
-
-  const shootingStars = useMemo(() => Array.from({ length: SHOOTING_STAR_COUNT }, (_, index) => {
-    const duration = 13 + Math.random() * 13;
-    return {
-      id: index,
-      top: `${4 + Math.random() * 82}%`,
-      duration: `${duration.toFixed(2)}s`,
-      delay: `${-(Math.random() * duration).toFixed(2)}s`,
-      travelY: `${(-8 + Math.random() * 22).toFixed(1)}vh`,
-      angle: `${(-5 + Math.random() * 10).toFixed(1)}deg`,
-      length: `${90 + Math.round(Math.random() * 85)}px`,
-    };
-  }), []);
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || typeof window === 'undefined') return undefined;
-
-    const finePointer = window.matchMedia?.('(min-width: 901px) and (hover: hover) and (pointer: fine)');
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    if (!finePointer?.matches || reducedMotion?.matches) return undefined;
-
-    let frame = 0;
-    let nextX = 0;
-    let nextY = 0;
-
-    const flush = () => {
-      frame = 0;
-      root.style.setProperty('--cosmic-px', `${(nextX * 5).toFixed(2)}px`);
-      root.style.setProperty('--cosmic-py', `${(nextY * 4).toFixed(2)}px`);
-      root.style.setProperty('--cosmic-vx', `${(nextX * -8).toFixed(2)}px`);
-      root.style.setProperty('--cosmic-vy', `${(nextY * -6).toFixed(2)}px`);
-      root.style.setProperty('--cosmic-sx', `${(nextX * 2.5).toFixed(2)}px`);
-      root.style.setProperty('--cosmic-sy', `${(nextY * 2).toFixed(2)}px`);
-    };
-
-    const onPointerMove = event => {
-      nextX = Math.max(-1, Math.min(1, (event.clientX / Math.max(1, window.innerWidth) - .5) * 2));
-      nextY = Math.max(-1, Math.min(1, (event.clientY / Math.max(1, window.innerHeight) - .5) * 2));
-      if (!frame) frame = window.requestAnimationFrame(flush);
-    };
-
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    return () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
-
   return (
-    <div ref={rootRef} className={`cosmic-living-bg cosmic-lite-bg cosmic-dark-bg ${gate ? 'gate' : ''}`} aria-hidden="true">
+    <div className={`cosmic-living-bg cosmic-lite-bg cosmic-dark-bg ${gate ? 'gate' : ''}`} aria-hidden="true">
       <div className="cosmic-dark-space" />
       <div className="cosmic-lite-nebula" />
       <div className="cosmic-lite-vortex" />
       <div className="cosmic-lite-stars cosmic-lite-stars-far" />
       <div className="cosmic-lite-stars cosmic-lite-stars-near" />
       <div className="cosmic-bright-stars">
-        {brightStars.map(star => (
+        {BRIGHT_STARS.map(star => (
           <i
             key={star.id}
             className="cosmic-bright-star"
@@ -92,7 +69,7 @@ export default function CosmicLivingBackground({ variant = 'world' }) {
         ))}
       </div>
       <div className="cosmic-shooting-stars">
-        {shootingStars.map(meteor => (
+        {SHOOTING_STARS.map(meteor => (
           <i
             key={meteor.id}
             className="cosmic-shooting-star"
@@ -108,10 +85,6 @@ export default function CosmicLivingBackground({ variant = 'world' }) {
         ))}
       </div>
       <div className="cosmic-living-vignette" />
-      {!gate && <>
-        <div className="cosmic-side-rail cosmic-side-rail-left"><i/><i/><i/></div>
-        <div className="cosmic-side-rail cosmic-side-rail-right"><i/><i/><i/></div>
-      </>}
     </div>
   );
 }
