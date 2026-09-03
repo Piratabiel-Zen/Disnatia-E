@@ -3,10 +3,24 @@ import {
   collection, doc, limit, onSnapshot, orderBy, query, setDoc,
 } from 'firebase/firestore';
 import { db } from '../core/firebase';
-import { DiceTrayVisual } from '../shell/DiceWidget';
+import PhysicalDiceTray from './PhysicalDiceTray';
 
 const DICE_TTL = 16000;
 const COSMIC_TTL = 22000;
+const DICE_CLIENT_KEY = 'dinastia-dice-client-id';
+
+function getDiceClientId() {
+  try {
+    let id = localStorage.getItem(DICE_CLIENT_KEY);
+    if (!id) {
+      id = `dice_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem(DICE_CLIENT_KEY, id);
+    }
+    return id;
+  } catch (_) {
+    return 'dice-client';
+  }
+}
 
 function eventId(payload, kind) {
   if (!payload) return '';
@@ -47,8 +61,6 @@ function useDurableChannel({ configId, collectionName, kind, ttl }) {
       const payload = snap.data() || {};
       ingest(payload);
 
-      // Só o navegador que originou a gravação espelha o evento para o feed durável.
-      // Os demais clientes apenas consomem, evitando gravações duplicadas por evento.
       if (snap.metadata.hasPendingWrites) {
         const id = eventId(payload, kind);
         if (id) {
@@ -74,27 +86,58 @@ function useDurableChannel({ configId, collectionName, kind, ttl }) {
   return events;
 }
 
-function DiceBroadcastCard({ result, index }) {
-  const [revealed, setRevealed] = useState(false);
-  const isCrit = !!result.isCrit;
-  const isFail = !!result.isFail;
-  const color = isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8';
+function DiceBroadcastQueue({ events }) {
+  const [queue, setQueue] = useState([]);
+  const [current, setCurrent] = useState(null);
+  const queuedRef = useRef(new Set());
+  const localClientIdRef = useRef(getDiceClientId());
+  const settleTimerRef = useRef(0);
+
+  useEffect(() => {
+    const fresh = events.filter(e =>
+      e?._rtId &&
+      !queuedRef.current.has(e._rtId) &&
+      (!e.sourceClientId || e.sourceClientId !== localClientIdRef.current)
+    );
+    if (!fresh.length) return;
+    fresh.forEach(e => queuedRef.current.add(e._rtId));
+    if (queuedRef.current.size > 240) {
+      const recent = Array.from(queuedRef.current).slice(-160);
+      queuedRef.current = new Set(recent);
+    }
+    setQueue(prev => [...prev, ...fresh].sort((a,b) => Number(a.ts||0)-Number(b.ts||0)));
+  }, [events]);
+
+  useEffect(() => {
+    if (current || !queue.length) return;
+    const [next, ...rest] = queue;
+    setCurrent(next);
+    setQueue(rest);
+  }, [current, queue]);
+
+  useEffect(() => () => window.clearTimeout(settleTimerRef.current), []);
+
+  if (!current) return null;
+  const isCrit = !!current.isCrit;
+  const isFail = !!current.isFail;
+  const color = current.rollerColor || (isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8');
+  const values = Array.isArray(current.values) && current.values.length ? current.values : [current.base];
 
   return (
-    <div className="rt-dice-card" style={{ '--rt-index': index, '--rt-color': color }}>
-      <div className="rt-dice-head">🎲 {result.roller || 'Jogador'} · D{result.sides}</div>
-      <DiceTrayVisual
-        sides={Number(result.sides || 20)}
-        finalValue={Number(result.base || result.total || 0)}
-        rollTs={Number(result.ts || Date.now())}
+    <div className="rt-dice-replay" style={{ '--rt-color': color }}>
+      <PhysicalDiceTray
+        sides={Number(current.sides || 20)}
+        finalValue={Number(current.base || current.total || 1)}
+        finalValues={values}
+        rollTs={Number(current.ts || Date.now())}
         color={color}
-        onSettled={() => setRevealed(true)}
+        total={Number(current.total || 0)}
+        bonus={Number(current.bonus || 0)}
+        onSettled={() => {
+          window.clearTimeout(settleTimerRef.current);
+          settleTimerRef.current = window.setTimeout(() => setCurrent(null), 1300);
+        }}
       />
-      <div className={`rt-dice-result ${revealed ? 'shown' : ''}`}>
-        <strong>{result.total}</strong>
-        {Number(result.bonus || 0) !== 0 && <span>{result.base} {Number(result.bonus) >= 0 ? '+' : '−'} {Math.abs(Number(result.bonus))}</span>}
-        {(isCrit || isFail) && <b>{isCrit ? 'CRÍTICO!' : 'FALHA!'}</b>}
-      </div>
     </div>
   );
 }
@@ -115,8 +158,6 @@ function CosmicBroadcastQueue({ events }) {
     setQueue(prev => [...prev, ...fresh].sort((a,b) => Number(a.ts||0)-Number(b.ts||0)));
   }, [events]);
 
-  // Retira um evento da fila. Não há timer neste efeito: assim a atualização
-  // de queue não cancela acidentalmente o tempo de exibição do evento atual.
   useEffect(() => {
     if (current || !queue.length) return;
     const [next, ...rest] = queue;
@@ -124,8 +165,6 @@ function CosmicBroadcastQueue({ events }) {
     setQueue(rest);
   }, [current, queue]);
 
-  // Cada evento possui seu próprio tempo de vida. Quando termina, current volta
-  // a null e o efeito acima promove imediatamente o próximo da fila.
   useEffect(() => {
     if (!current) return undefined;
     const duration = current.soft ? 1900 : (current.type === 'critical' ? 4200 : 3400);
@@ -161,12 +200,9 @@ export default function RealtimeBroadcasts() {
     ttl: COSMIC_TTL,
   });
 
-  const visibleDice = diceEvents.slice(-3).reverse();
   return (
     <>
-      <div className="rt-dice-stack">
-        {visibleDice.map((result, index) => <DiceBroadcastCard key={result._rtId} result={result} index={index} />)}
-      </div>
+      <DiceBroadcastQueue events={diceEvents} />
       <CosmicBroadcastQueue events={cosmicEvents} />
     </>
   );
