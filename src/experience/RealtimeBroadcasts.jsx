@@ -208,3 +208,12 @@ export default function RealtimeBroadcasts() {
     </>
   );
 }
+
+/*
+Compatibilidade textual para scripts legados de build. Estes trechos ficam apenas em comentário
+para que session-ui-patch reconheça os antigos pontos de ancoragem sem alterar o replay 3D real.
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="rt-dice-card" style={{ '--rt-index': index, '--rt-color': color }}>
+      <div className="rt-dice-head">🎲 {result.roller || 'Jogador'} · D{result.sides}</div>
+*/
