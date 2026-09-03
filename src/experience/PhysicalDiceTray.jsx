@@ -1,9 +1,18 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './physical-dice.css';
 
 const clampSide = value => [4, 6, 8, 10, 12, 20].includes(Number(value)) ? Number(value) : 20;
 
-export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 0, color = '#C8A8E8', onSettled }) {
+export default function PhysicalDiceTray({
+  sides = 20,
+  finalValue = 1,
+  finalValues,
+  rollTs = 0,
+  color = '#C8A8E8',
+  total,
+  bonus = 0,
+  onSettled,
+}) {
   const reactId = useId();
   const sceneId = `dinastia-physical-dice-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const hostRef = useRef(null);
@@ -13,6 +22,12 @@ export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 
   const settledRef = useRef(onSettled);
   const [phase, setPhase] = useState('idle');
   const [fallback, setFallback] = useState(false);
+
+  const values = useMemo(() => {
+    const source = Array.isArray(finalValues) && finalValues.length ? finalValues : [finalValue];
+    return source.slice(0, 5).map(value => Number(value) || 1);
+  }, [finalValues, finalValue]);
+  const valuesKey = values.join(',');
 
   useEffect(() => { settledRef.current = onSettled; }, [onSettled]);
 
@@ -75,7 +90,7 @@ export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 
             gravity_multiplier: 430,
             light_intensity: 0.72,
             color_spotlight: 0xd9dcff,
-            baseScale: 82,
+            baseScale: values.length >= 4 ? 62 : values.length >= 2 ? 72 : 82,
             strength: 1.45,
             iterationLimit: 850,
           });
@@ -84,6 +99,7 @@ export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 
         } else if (box.updateConfig) {
           try {
             await box.updateConfig({
+              baseScale: values.length >= 4 ? 62 : values.length >= 2 ? 72 : 82,
               theme_customColorset: {
                 name: `dinastia-${sceneId}-${String(color).replace('#', '')}`,
                 foreground: color,
@@ -98,8 +114,8 @@ export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 
         if (cancelled) return;
         setPhase('rolling');
         const safeSides = clampSide(sides);
-        const safeValue = Math.max(1, Math.min(safeSides, Number(finalValue) || 1));
-        await box.roll(`1d${safeSides}@${safeValue}`);
+        const safeValues = values.map(value => Math.max(1, Math.min(safeSides, Number(value) || 1)));
+        await box.roll(`${safeValues.length}d${safeSides}@${safeValues.join(',')}`);
         if (cancelled || !mountedRef.current) return;
         setPhase('settled');
         settledRef.current?.();
@@ -117,7 +133,10 @@ export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 
       cancelled = true;
       if (fallbackTimer) window.clearTimeout(fallbackTimer);
     };
-  }, [rollTs, sides, finalValue, color, sceneId]);
+  }, [rollTs, sides, valuesKey, color, sceneId]);
+
+  const hasTotal = Number.isFinite(Number(total));
+  const numericBonus = Number(bonus || 0);
 
   return (
     <div className={`physical-dice-tray phase-${phase}`} style={{ '--dice-accent': color }}>
@@ -125,18 +144,26 @@ export default function PhysicalDiceTray({ sides = 20, finalValue = 1, rollTs = 
         <div className="physical-dice-stars" />
         <div ref={hostRef} id={sceneId} className="physical-dice-scene" />
         {fallback && (
-          <div className="physical-dice-fallback" aria-hidden="true">
-            <div className={`physical-die-fallback d${clampSide(sides)}`}>{finalValue}</div>
+          <div className="physical-dice-fallback" aria-hidden="true" style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center' }}>
+            {values.map((value, index) => (
+              <div key={`${rollTs}-${index}`} className={`physical-die-fallback d${clampSide(sides)}`}>{value}</div>
+            ))}
           </div>
         )}
         {(phase === 'loading' || phase === 'idle') && (
-          <div className="physical-dice-loading">materializando o dado…</div>
+          <div className="physical-dice-loading">materializando {values.length > 1 ? 'os dados' : 'o dado'}…</div>
         )}
       </div>
       <div className="physical-dice-caption">
-        <span>FÍSICA CÓSMICA</span>
+        <span>{values.length > 1 ? `${values.length}D${clampSide(sides)}` : `D${clampSide(sides)}`}</span>
         <i />
-        <small>{phase === 'rolling' ? 'em movimento' : phase === 'settled' ? 'repouso alcançado' : 'preparando matéria'}</small>
+        <small>
+          {phase === 'rolling'
+            ? 'em movimento'
+            : phase === 'settled' && hasTotal
+              ? `total ${Number(total)}${numericBonus ? ` (${values.reduce((sum, value) => sum + Number(value || 0), 0)} ${numericBonus >= 0 ? '+' : '−'} ${Math.abs(numericBonus)})` : ''}`
+              : phase === 'settled' ? 'repouso alcançado' : 'preparando matéria'}
+        </small>
       </div>
     </div>
   );
