@@ -1,9 +1,8 @@
-/* DINASTIA E · DARK COSMIC LITE · 2026-09-01
-   Universo profundo, estrelas pulsantes e meteoros aleatórios da direita para a esquerda.
-   Sem vídeo, sem canvas contínuo e sem loop JS permanente. */
+/* DINASTIA E · PLATFORM CONSISTENT DARK COSMIC · 2026-09-02
+   Mesma experiência visual em desktop, notebook, mobile e navegadores modernos.
+   Sem vídeo, sem canvas contínuo, sem branches por device/reduced-motion e sem blur dependente de GPU. */
 .cosmic-loop-video{display:none!important}
 .cosmic-living-bg.cosmic-lite-bg.cosmic-dark-bg{
-  --cosmic-px:0px;--cosmic-py:0px;--cosmic-vx:0px;--cosmic-vy:0px;--cosmic-sx:0px;--cosmic-sy:0px;
   opacity:1!important;z-index:0!important;overflow:hidden;contain:layout paint style;isolation:isolate;
   background:#010207;
 }
@@ -14,7 +13,6 @@
   radial-gradient(ellipse at 54% 78%,rgba(16,40,64,.11) 0%,transparent 48%),
   linear-gradient(180deg,#010207 0%,#02030a 32%,#03040c 61%,#010207 100%)}
 
-/* Nebulosas muito discretas: azul frio e violeta escuro, sem dominar o preto espacial. */
 .cosmic-lite-nebula{
   inset:-8%;z-index:1;
   background:
@@ -24,17 +22,17 @@
     radial-gradient(ellipse at 87% 70%,rgba(77,40,109,.075) 0%,rgba(41,21,66,.035) 22%,transparent 46%),
     linear-gradient(135deg,#02030a 0%,#050615 36%,#040511 60%,#06040f 78%,#010207 100%);
   opacity:.92;
-  transform:translate3d(var(--cosmic-px),var(--cosmic-py),0) scale(1.055);
-  transition:transform .42s cubic-bezier(.2,.8,.2,1);
+  transform:translate3d(0,0,0) scale(1.055);
+  animation:cosmicUnifiedNebula 28s ease-in-out infinite alternate!important;
+  will-change:transform,opacity;
 }
 .cosmic-lite-nebula::before,.cosmic-lite-nebula::after{content:'';position:absolute;inset:0;pointer-events:none}
 .cosmic-lite-nebula::before{background:linear-gradient(118deg,transparent 5%,rgba(74,87,173,.035) 24%,transparent 41%),linear-gradient(129deg,transparent 47%,rgba(36,106,153,.04) 59%,rgba(92,49,121,.03) 68%,transparent 80%)}
 .cosmic-lite-nebula::after{inset:6% -4% -5% 3%;background:radial-gradient(ellipse at 31% 47%,rgba(72,50,104,.035),transparent 35%),radial-gradient(ellipse at 66% 32%,rgba(31,91,134,.04),transparent 31%)}
 
-/* Vórtice quase fantasma: profundidade cósmica sem centro branco brilhante. */
 .cosmic-lite-vortex{
   z-index:1;width:min(94vmax,1460px);aspect-ratio:1;right:-39vmax;top:-42vmax;border-radius:50%;
-  transform:translate3d(var(--cosmic-vx),var(--cosmic-vy),0);transition:transform .46s cubic-bezier(.2,.8,.2,1);opacity:.22;
+  opacity:.22;transform:translateZ(0);
 }
 .cosmic-lite-vortex::before{
   content:'';position:absolute;inset:0;border-radius:50%;
@@ -45,11 +43,12 @@
   -webkit-mask-image:radial-gradient(circle,#000 0 49%,rgba(0,0,0,.72) 61%,rgba(0,0,0,.22) 73%,transparent 83%);
   mask-image:radial-gradient(circle,#000 0 49%,rgba(0,0,0,.72) 61%,rgba(0,0,0,.22) 73%,transparent 83%);
   transform:translateZ(0);
+  animation:cosmicVortexTurn 110s linear infinite!important;
+  will-change:transform;
 }
 .cosmic-lite-vortex::after{display:none}
 
-/* Campo de estrelas: muitas pequenas e discretas, com duas profundidades. */
-.cosmic-lite-stars{inset:-3%;z-index:2;transform:translate3d(var(--cosmic-sx),var(--cosmic-sy),0);transition:transform .36s ease-out}
+.cosmic-lite-stars{inset:-3%;z-index:2;transform:translateZ(0)}
 .cosmic-lite-stars-far{
   background-image:
     radial-gradient(circle,rgba(237,244,255,.70) 0 .8px,transparent 1.15px),
@@ -59,6 +58,8 @@
   background-size:113px 113px,173px 173px,251px 251px,337px 337px;
   background-position:17px 29px,73px 93px,137px 59px,211px 149px;
   opacity:.42;
+  animation:cosmicFarTwinkle 12s ease-in-out infinite!important;
+  will-change:opacity;
 }
 .cosmic-lite-stars-near{
   inset:-6%;
@@ -68,27 +69,30 @@
   background-size:347px 347px,487px 487px;
   background-position:43px 111px,243px 39px;
   opacity:.34;
+  animation:cosmicNearTwinkle 10s ease-in-out infinite!important;
+  will-change:opacity;
 }
 
-/* Estrelas grandes: posições e ritmos são sorteados uma vez por carregamento. */
 .cosmic-bright-stars{inset:0;z-index:3}
 .cosmic-bright-star{
   position:absolute;left:var(--star-left);top:var(--star-top);width:var(--star-size);height:var(--star-size);border-radius:50%;
-  background:var(--star-color);box-shadow:0 0 5px rgba(255,255,255,.72),0 0 12px color-mix(in srgb,var(--star-color) 64%,transparent),0 0 24px color-mix(in srgb,var(--star-color) 25%,transparent);
-  opacity:.12;transform:translateZ(0) scale(.7);animation:cosmicDarkTwinkle var(--star-duration) ease-in-out var(--star-delay) infinite;
+  background:var(--star-color);box-shadow:0 0 5px rgba(255,255,255,.72),0 0 12px rgba(150,195,255,.42),0 0 24px rgba(112,92,195,.18);
+  opacity:.12;transform:translateZ(0) scale(.7);
+  animation:cosmicDarkTwinkle var(--star-duration) ease-in-out var(--star-delay) infinite!important;
+  will-change:transform,opacity;
 }
 .cosmic-bright-star::before,.cosmic-bright-star::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.7}
-.cosmic-bright-star::before{width:15px;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--star-color) 72%,white),transparent)}
-.cosmic-bright-star::after{width:1px;height:15px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--star-color) 65%,white),transparent)}
+.cosmic-bright-star::before{width:15px;height:1px;background:linear-gradient(90deg,transparent,rgba(228,244,255,.78),transparent)}
+.cosmic-bright-star::after{width:1px;height:15px;background:linear-gradient(180deg,transparent,rgba(228,244,255,.74),transparent)}
 
-/* Meteoros aleatórios: nascem à direita e cruzam para a esquerda. */
 .cosmic-shooting-stars{inset:0;z-index:4;overflow:hidden}
 .cosmic-shooting-star{
   position:absolute;left:100%;top:var(--meteor-top);width:var(--meteor-length);height:1px;border-radius:999px;opacity:0;
   background:linear-gradient(90deg,#fff 0%,rgba(204,229,255,.9) 4%,rgba(116,174,224,.38) 31%,rgba(74,119,177,.12) 58%,transparent 100%);
   box-shadow:-4px 0 8px rgba(198,229,255,.28),-14px 0 20px rgba(73,128,190,.12);
   transform-origin:left center;transform:translate3d(10vw,0,0) rotate(var(--meteor-angle));
-  animation:cosmicMeteorRightToLeft var(--meteor-duration) linear var(--meteor-delay) infinite;
+  animation:cosmicMeteorRightToLeft var(--meteor-duration) linear var(--meteor-delay) infinite!important;
+  will-change:transform,opacity;
 }
 .cosmic-shooting-star::before{content:'';position:absolute;left:-2px;top:-1px;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff,0 0 13px rgba(147,205,255,.72)}
 
@@ -97,14 +101,22 @@
   background:radial-gradient(circle at 50% 42%,transparent 10%,rgba(0,0,4,.10) 45%,rgba(0,0,3,.62) 100%),linear-gradient(180deg,rgba(0,0,3,.08),rgba(0,0,5,.34));
 }
 
-@keyframes cosmicVortexTurn{to{transform:rotate(360deg) translateZ(0)}}
-@keyframes cosmicDarkTwinkle{
-  0%,100%{opacity:.05;transform:translateZ(0) scale(.58)}
-  18%{opacity:.16}
-  43%{opacity:.96;transform:translateZ(0) scale(1.18)}
-  57%{opacity:.72;transform:translateZ(0) scale(.96)}
-  76%{opacity:.12;transform:translateZ(0) scale(.72)}
+/* Normalização visual: mesmos efeitos em todas as plataformas. */
+.cosmic-side-rail{display:none!important}
+.grim-nav,.mobile-dock,.immersive-topbar,.combat-hud,.master-battle-console,.journal-drawer,.floating-sheet,.access-panel,.battlemap-ping-button{
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
+.immersive-topbar{background:linear-gradient(180deg,rgba(7,2,16,.97),rgba(4,1,10,.92))!important}
+.grim-nav,.mobile-dock{background:linear-gradient(180deg,rgba(7,2,16,.99),rgba(3,1,8,.99))!important}
+.immersive-topbar::after{animation:cosmicHeaderScan 8s ease-in-out infinite!important}
+.session-sigil{animation:floatSigil 4s ease-in-out infinite!important}
+.grim-live{animation:grimPulse 1.3s ease-in-out infinite!important}
+.sound-wave.playing i{animation-name:soundWave!important;animation-duration:1s!important;animation-timing-function:ease-in-out!important;animation-iteration-count:infinite!important}
+
+@keyframes cosmicUnifiedNebula{0%{transform:translate3d(-.7%,-.25%,0) scale(1.055);opacity:.88}100%{transform:translate3d(.7%,.35%,0) scale(1.07);opacity:.94}}
+@keyframes cosmicVortexTurn{to{transform:rotate(360deg) translateZ(0)}}
+@keyframes cosmicDarkTwinkle{0%,100%{opacity:.05;transform:translateZ(0) scale(.58)}18%{opacity:.16}43%{opacity:.96;transform:translateZ(0) scale(1.18)}57%{opacity:.72;transform:translateZ(0) scale(.96)}76%{opacity:.12;transform:translateZ(0) scale(.72)}}
+@keyframes cosmicFarTwinkle{0%,100%{opacity:.30}45%{opacity:.46}72%{opacity:.36}}
 @keyframes cosmicNearTwinkle{0%,100%{opacity:.22}42%{opacity:.42}67%{opacity:.29}}
 @keyframes cosmicMeteorRightToLeft{
   0%,64%{opacity:0;transform:translate3d(12vw,0,0) rotate(var(--meteor-angle)) scaleX(.55)}
@@ -115,46 +127,29 @@
   100%{opacity:0;transform:translate3d(-132vw,var(--meteor-y),0) rotate(var(--meteor-angle)) scaleX(.72)}
 }
 
-@media (min-width:901px) and (prefers-reduced-motion:no-preference){
-  .cosmic-lite-vortex::before{animation:cosmicVortexTurn 110s linear infinite;will-change:transform}
-  .cosmic-lite-stars-near{animation:cosmicNearTwinkle 10s ease-in-out infinite;will-change:opacity}
-  .cosmic-bright-star,.cosmic-shooting-star{will-change:transform,opacity}
-  .grim-nav{backdrop-filter:blur(10px) saturate(1.03)!important;-webkit-backdrop-filter:blur(10px) saturate(1.03)!important}
-  .combat-hud,.master-battle-console,.journal-drawer,.floating-sheet{backdrop-filter:blur(8px) saturate(1.02)!important;-webkit-backdrop-filter:blur(8px) saturate(1.02)!important}
-  .immersive-topbar::before{filter:none!important;animation-duration:18s!important}
+/* Somente layout responsivo. Nenhuma camada, animação ou funcionalidade é removida. */
+@media(max-width:900px){
+  .cosmic-lite-nebula{inset:-8%}
+  .cosmic-lite-vortex{width:min(94vmax,1460px);right:-39vmax;top:-42vmax;opacity:.22}
+  .cosmic-lite-stars-far,.cosmic-lite-stars-near{display:block!important}
+  .cosmic-bright-star,.cosmic-shooting-star{display:block!important}
+}
+@media(max-width:560px){
+  .cosmic-lite-vortex{display:block!important}
+  .cosmic-lite-stars-near{display:block!important}
+  .cosmic-bright-star,.cosmic-shooting-star{display:block!important}
 }
 
-@media (max-width:900px){
-  .cosmic-lite-nebula{inset:-2%;transform:none;transition:none;opacity:.9}
-  .cosmic-lite-vortex{width:116vmax;right:-68vmax;top:-33vmax;transform:none;transition:none;opacity:.14}
-  .cosmic-lite-vortex::before{animation:none!important}
-  .cosmic-lite-stars{transform:none;transition:none}
-  .cosmic-lite-stars-far{opacity:.34;background-size:149px 149px,221px 221px,307px 307px,409px 409px}
-  .cosmic-lite-stars-near{opacity:.24;background-size:421px 421px,593px 593px}
-  .cosmic-bright-star:nth-child(n+11){display:none}
-  .cosmic-shooting-star:nth-child(n+4){display:none}
-  .cosmic-shooting-star{max-width:105px;animation-duration:calc(var(--meteor-duration) * 1.2)}
-  .cosmic-side-rail{display:none!important}
-  .immersive-topbar::before,.immersive-topbar::after,.immersive-topbar .brand-mark,.grim-brand>span,.session-hero,.access-gate::before,.access-gate::after,.access-sigil{animation:none!important;filter:none!important}
-  .grim-nav,.mobile-dock,.combat-hud,.master-battle-console,.journal-drawer,.floating-sheet,.access-panel,.battlemap-ping-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  .session-card{will-change:auto!important}
-  .grim-link::after,.access-panel::before,.access-character-strip button::after{display:none!important}
-}
-
-@media (max-width:560px){
-  .cosmic-dark-space{background:radial-gradient(ellipse at 25% 28%,rgba(29,47,88,.12),transparent 42%),radial-gradient(ellipse at 78% 72%,rgba(42,25,67,.08),transparent 45%),linear-gradient(180deg,#010207,#02030a 52%,#010207)}
-  .cosmic-lite-nebula{background:radial-gradient(ellipse at 18% 75%,rgba(52,70,129,.08),transparent 43%),radial-gradient(ellipse at 76% 24%,rgba(33,79,117,.07),transparent 40%),linear-gradient(145deg,#02030a,#040511 50%,#010207)}
-  .cosmic-lite-vortex{display:none}
-  .cosmic-lite-stars-far{opacity:.31;background-size:181px 181px,267px 267px,363px 363px,493px 493px}
-  .cosmic-lite-stars-near{display:none}
-  .cosmic-bright-star:nth-child(n+8){display:none}
-  .cosmic-shooting-star:nth-child(n+3){display:none}
-  .cosmic-lite-bg .cosmic-living-vignette{opacity:.8!important}
-}
-
-@media (prefers-reduced-motion:reduce){
-  .cosmic-lite-vortex::before,.cosmic-lite-stars-near,.cosmic-bright-star,.cosmic-shooting-star{animation:none!important;will-change:auto!important}
-  .cosmic-shooting-stars{display:none}
-  .cosmic-bright-star{opacity:.36;transform:none}
-  .cosmic-lite-nebula,.cosmic-lite-vortex,.cosmic-lite-stars{transform:none!important;transition:none!important}
+/* Ignora preferência do SO apenas para manter a experiência do RPG consistente entre máquinas.
+   Uma opção interna de acessibilidade poderá ser adicionada depois, sem alterar por dispositivo. */
+@media(prefers-reduced-motion:reduce){
+  .cosmic-lite-nebula{animation:cosmicUnifiedNebula 28s ease-in-out infinite alternate!important}
+  .cosmic-lite-vortex::before{animation:cosmicVortexTurn 110s linear infinite!important}
+  .cosmic-lite-stars-far{animation:cosmicFarTwinkle 12s ease-in-out infinite!important}
+  .cosmic-lite-stars-near{animation:cosmicNearTwinkle 10s ease-in-out infinite!important}
+  .cosmic-bright-star{animation:cosmicDarkTwinkle var(--star-duration) ease-in-out var(--star-delay) infinite!important}
+  .cosmic-shooting-star{animation:cosmicMeteorRightToLeft var(--meteor-duration) linear var(--meteor-delay) infinite!important}
+  .immersive-topbar::after{animation:cosmicHeaderScan 8s ease-in-out infinite!important}
+  .session-sigil{animation:floatSigil 4s ease-in-out infinite!important}
+  .grim-live{animation:grimPulse 1.3s ease-in-out infinite!important}
 }
