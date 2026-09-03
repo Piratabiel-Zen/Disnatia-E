@@ -30,7 +30,9 @@ const broadcastsFile = path.join(root, 'src', 'experience', 'RealtimeBroadcasts.
 let broadcasts = fs.readFileSync(broadcastsFile, 'utf8');
 
 const hookStart = broadcasts.indexOf('function useDurableChannel({ configId, collectionName, kind, ttl }) {');
-const hookEnd = broadcasts.indexOf('\n\nfunction DiceBroadcastCard', hookStart);
+const legacyBoundary = broadcasts.indexOf('\n\nfunction DiceBroadcastCard', hookStart);
+const replayBoundary = broadcasts.indexOf('\n\nfunction DiceBroadcastQueue', hookStart);
+const hookEnd = [legacyBoundary, replayBoundary].filter(index => index >= 0).sort((a,b) => a-b)[0] ?? -1;
 if (hookStart < 0 || hookEnd < 0) {
   throw new Error('Global realtime patch: hook useDurableChannel não encontrado.');
 }
