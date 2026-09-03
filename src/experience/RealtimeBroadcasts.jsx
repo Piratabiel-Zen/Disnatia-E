@@ -120,6 +120,7 @@ function DiceBroadcastQueue({ events }) {
   if (!current) return null;
   const isCrit = !!current.isCrit;
   const isFail = !!current.isFail;
+  // Compatibilidade com o patch legado de identidade:  const color = result.rollerColor || (isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8');
   const color = current.rollerColor || (isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8');
   const values = Array.isArray(current.values) && current.values.length ? current.values : [current.base];
 
