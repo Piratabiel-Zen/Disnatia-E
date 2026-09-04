@@ -31,8 +31,10 @@ if (!dice.includes('const safeCount = Math.min(5')) {
     const isFail = dice === 20 && safeCount === 1 && values[0] === 1;
     let sourceClientId = 'dice-client';
     try {
-      sourceClientId = localStorage.getItem('dinastia-dice-client-id') || \`dice_\${Date.now()}_\${Math.random().toString(36).slice(2, 9)}\`;
-      localStorage.setItem('dinastia-dice-client-id', sourceClientId);
+      // O identificador precisa ser por ABA, não por navegador inteiro. Assim duas
+      // fichas abertas em abas diferentes do mesmo computador veem o replay mútuo.
+      sourceClientId = sessionStorage.getItem('dinastia-dice-tab-id') || \`dice_tab_\${Date.now()}_\${Math.random().toString(36).slice(2, 9)}\`;
+      sessionStorage.setItem('dinastia-dice-tab-id', sourceClientId);
     } catch (_) {}
     const res = {
       base, values, count: safeCount, total, sides: dice, bonus: Number(bonus), isCrit, isFail, ts: Date.now(),
@@ -98,6 +100,7 @@ for (const marker of [
   'const [count, setCount] = useState(1)',
   'const safeCount = Math.min(5',
   'values, count: safeCount',
+  "sessionStorage.getItem('dinastia-dice-tab-id')",
   'sourceClientId,',
   'finalValues={result.values}',
   'total={result.total}',
@@ -108,4 +111,4 @@ for (const marker of [
 if (dice.includes('Resultado (D{result.sides}')) throw new Error('Dice replay/multidice patch: popup textual de resultado ainda presente.');
 
 fs.writeFileSync(diceFile, dice);
-console.log('Dinastia E: replay físico sem popup e rolagens simultâneas de até 5 dados habilitadas.');
+console.log('Dinastia E: replay físico sem popup, ID por aba e rolagens simultâneas de até 5 dados habilitadas.');
