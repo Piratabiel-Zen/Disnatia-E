@@ -5,6 +5,7 @@ import PhysicalDiceTray from './PhysicalDiceTray';
 import './shared-dice-replay.css';
 
 const TAB_CLIENT_KEY = 'dinastia-dice-tab-id';
+const LOCAL_ROLL_KEY = 'dinastia-local-dice-roll-id';
 let fallbackTabClientId = `dice_tab_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 export function getDiceTabClientId() {
@@ -31,12 +32,13 @@ const firstNameOf = value => {
   return clean ? clean.split(/\s+/)[0] : 'Jogador';
 };
 
-export default function SharedDiceReplay() {
+export default function SharedDiceReplay({ access }) {
   const localClientIdRef = useRef(getDiceTabClientId());
   const seenRef = useRef(new Set());
   const [queue, setQueue] = useState([]);
   const [active, setActive] = useState(null);
   const [settled, setSettled] = useState(false);
+  const localSheetId = access?.role === 'player' && access?.sheetId ? String(access.sheetId) : '';
 
   const remember = useCallback(id => {
     if (!id) return;
@@ -52,13 +54,18 @@ export default function SharedDiceReplay() {
     if (!id || seenRef.current.has(id)) return;
     remember(id);
 
-    // A aba que executou a rolagem já está vendo a física local. Cada aba recebe
-    // um ID próprio via sessionStorage, então duas fichas abertas no mesmo navegador
-    // continuam vendo as rolagens uma da outra normalmente.
-    if (payload.sourceClientId && String(payload.sourceClientId) === String(localClientIdRef.current)) return;
+    let localRollId = '';
+    try { localRollId = window.sessionStorage.getItem(LOCAL_ROLL_KEY) || ''; } catch (_) {}
+    const sameRoll = !!localRollId && String(payload.rollId || '') === localRollId;
+    const sameClient = !!payload.sourceClientId && String(payload.sourceClientId) === String(localClientIdRef.current);
+    const samePlayerSheet = !!localSheetId && !!payload.rollerSheetId && String(payload.rollerSheetId) === localSheetId;
+
+    // Quem originou a rolagem já enxerga a física dentro do DiceWidget no canto
+    // inferior direito. O replay central existe exclusivamente para os demais clientes.
+    if (sameRoll || sameClient || samePlayerSheet) return;
 
     setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));
-  }, [remember]);
+  }, [localSheetId, remember]);
 
   useEffect(() => {
     let configPrimed = false;
