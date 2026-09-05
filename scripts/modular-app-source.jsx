@@ -16,6 +16,7 @@ import AmbientSoundPlayer from "./shell/AmbientSoundPlayer";
 import DiceWidget from "./shell/DiceWidget";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import SharedDiceReplay from "./experience/SharedDiceReplay";
+import DiceCriticalFx from "./experience/DiceCriticalFx";
 import {
   ExperienceProvider,
   ImmersiveNavigation,
@@ -108,6 +109,7 @@ export default function App(){
         <ToastContainer/>
         <PublicDiceOverlay/>
         <SharedDiceReplay access={access}/>
+        <DiceCriticalFx/>
 
         <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
 
