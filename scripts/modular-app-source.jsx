@@ -107,7 +107,7 @@ export default function App(){
         <CosmicLivingBackground/>
         <ToastContainer/>
         <PublicDiceOverlay/>
-        <SharedDiceReplay/>
+        <SharedDiceReplay access={access}/>
 
         <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
 
