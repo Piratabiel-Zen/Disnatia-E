@@ -188,7 +188,10 @@ function CosmicBroadcastQueue({ events }) {
 }
 
 export default function RealtimeBroadcasts() {
-  const diceEvents = useDurableChannel({
+  // Mantém o canal de dados ativo para espelhar o evento no feed durável, mas a
+  // renderização 3D fica exclusivamente em SharedDiceReplay. Assim não existe um
+  // segundo replay concorrendo com a visão local ou com o replay central.
+  useDurableChannel({
     configId: 'public_dice_roll',
     collectionName: 'public_dice_events',
     kind: 'dice',
@@ -201,12 +204,7 @@ export default function RealtimeBroadcasts() {
     ttl: COSMIC_TTL,
   });
 
-  return (
-    <>
-      <DiceBroadcastQueue events={diceEvents} />
-      <CosmicBroadcastQueue events={cosmicEvents} />
-    </>
-  );
+  return <CosmicBroadcastQueue events={cosmicEvents} />;
 }
 
 /*
