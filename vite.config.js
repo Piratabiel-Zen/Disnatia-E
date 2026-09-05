@@ -35,6 +35,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/enemy-cosmic-vigor-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/combat-immersion-physical-dice-token-rotation-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/dice-replay-multidice-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/vigor-dice-token-ux-refinement-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
