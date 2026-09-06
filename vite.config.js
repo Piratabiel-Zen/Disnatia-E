@@ -38,6 +38,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/vigor-dice-token-ux-refinement-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/token-rotation-follow-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/realtime-interaction-low-latency-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/advanced-combat-v2-bootstrap-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/advanced-combat-automation-v2-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
