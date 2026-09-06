@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { collection, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { SHEET_COLORS, getSheetMaxHp } from '../data/gameData';
+import { applyRoundAutomation } from './combatRoundEngine';
 import './master-battle.css';
 
 const ENEMY_COLOR = '#E8193C';
@@ -59,6 +60,9 @@ export default function MasterBattleConsole() {
   const [busy,setBusy]=useState(false);
   const [confirmEnd,setConfirmEnd]=useState(false);
   const [error,setError]=useState('');
+  const [draggedId,setDraggedId]=useState('');
+  const [dragOverId,setDragOverId]=useState('');
+  const suppressClickUntil=useRef(0);
 
   useEffect(()=>{
     const u1=onSnapshot(collection(db,'sheets'),snap=>setSheets(snap.docs.map(d=>({id:d.id,...d.data()}))));
@@ -129,18 +133,73 @@ export default function MasterBattleConsole() {
     }finally{setBusy(false);}
   };
 
+  const reorderInitiative=async(fromId,toId)=>{
+    if(busy||!initiative.length||!fromId||!toId||fromId===toId)return;
+    const from=initiative.findIndex(x=>asId(x.id)===asId(fromId));
+    const to=initiative.findIndex(x=>asId(x.id)===asId(toId));
+    if(from<0||to<0||from===to)return;
+    const currentId=asId(current?.id);
+    const reordered=[...initiative];
+    const [moved]=reordered.splice(from,1);
+    reordered.splice(to,0,moved);
+    const nextTurnIdx=Math.max(0,reordered.findIndex(x=>asId(x.id)===currentId));
+    const currentAfter=reordered[nextTurnIdx]||{};
+    const ts=Date.now();
+    setBusy(true);
+    try{
+      await Promise.all([
+        setDoc(doc(db,'config','combat_state'),{initiative:reordered,turnIdx:nextTurnIdx,round},{merge:true}),
+        setDoc(doc(db,'config','combat'),{active:true,round,currentNome:currentAfter.nome||'',currentColor:currentAfter.color||ENEMY_COLOR,currentType:currentAfter.type||'player',updatedAt:ts},{merge:true}),
+      ]);
+    }catch(err){console.error(err);setError('Não foi possível reordenar a iniciativa.');}
+    finally{setBusy(false);}
+  };
+
+  const beginDrag=(event,item)=>{
+    if(busy){event.preventDefault();return;}
+    const id=asId(item.id);
+    setDraggedId(id);setDragOverId('');
+    suppressClickUntil.current=Date.now()+500;
+    event.dataTransfer.effectAllowed='move';
+    event.dataTransfer.setData('text/plain',id);
+  };
+
+  const finishDrop=async(event,item)=>{
+    event.preventDefault();event.stopPropagation();
+    const source=draggedId||event.dataTransfer.getData('text/plain');
+    const target=asId(item.id);
+    setDraggedId('');setDragOverId('');suppressClickUntil.current=Date.now()+320;
+    await reorderInitiative(source,target);
+  };
+
   const nextTurn=async()=>{
     if(busy||!initiative.length)return;
     const next=(turnIdx+1)%initiative.length;
     const newRound=next===0?round+1:round;
-    const target=initiative[next]||{};
+    let syncedInitiative=initiative;
+    let automation=null;
+    if(next===0){
+      try{
+        automation=await applyRoundAutomation({initiative,round:newRound,combatKey:String(combat?.startedAt||state?.log?.[0]?.ts||'combat')});
+        if(automation?.effects?.length){
+          const hpById=new Map(automation.effects.filter(e=>e.damage>0).map(e=>[asId(e.combatantId),Number(e.hpAfter)]));
+          syncedInitiative=initiative.map(c=>hpById.has(asId(c.id))?{...c,hp:hpById.get(asId(c.id))}:c);
+        }
+      }catch(err){console.error('Falha ao automatizar a rodada:',err);}
+    }
+    const target=syncedInitiative[next]||{};
     const ts=Date.now();
-    const entry={msg:`Vez de ${target.nome||'combatente'}${next===0?` — Rodada ${newRound} começa!`:''}`,color:target.color||'#C8B8A0',icon:'▶',ts,round:newRound};
-    const log=[...(state.log||[]),entry].slice(-60);
+    const entries=[];
+    if(next===0&&automation?.applied){
+      const damaged=(automation.effects||[]).filter(e=>e.damage>0).length;
+      entries.push({msg:`✦ Rodada ${newRound}: cooldowns −1 · +2 VC${damaged?` · ${damaged} dano(s) de status`:''}`,color:'#A855F7',icon:'✦',ts:ts-1,round:newRound});
+    }
+    entries.push({msg:`Vez de ${target.nome||'combatente'}${next===0?` — Rodada ${newRound} começa!`:''}`,color:target.color||'#C8B8A0',icon:'▶',ts,round:newRound});
+    const log=[...(state.log||[]),...entries].slice(-60);
     setBusy(true);
     try{
       await Promise.all([
-        setDoc(doc(db,'config','combat_state'),{...state,initiative,turnIdx:next,round:newRound,log},{merge:true}),
+        setDoc(doc(db,'config','combat_state'),{...state,initiative:syncedInitiative,turnIdx:next,round:newRound,log},{merge:true}),
         setDoc(doc(db,'config','combat'),{active:true,round:newRound,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
       ]);
     }finally{setBusy(false);}
@@ -193,10 +252,31 @@ export default function MasterBattleConsole() {
             <div><small>RODADA {round} · TURNO {initiative.length?turnIdx+1:0}/{initiative.length}</small><strong>{current?.nome||'Sem combatente'}</strong>{latestAction?.msg&&<span>{latestAction.msg}</span>}</div>
             <button className="mbc-next" disabled={busy||!initiative.length} onClick={nextTurn}>Próximo <b>▶</b></button>
           </div>
-          <div className="mbc-initiative" title="Clique em um combatente para pular diretamente ao turno dele">
-            {initiative.map((item,idx)=><button key={item.id||idx} className={`${idx===turnIdx?'active':''} ${item.type==='enemy'?'enemy':''}`} onClick={()=>setTurn(idx)} disabled={busy}><Avatar item={item} active={idx===turnIdx}/><span>{item.nome}</span><small>{item.roll||'—'}</small></button>)}
+          <div className="mbc-initiative-head"><span>ORDEM DA INICIATIVA</span><small>Arraste e solte os blocos para definir 1º, 2º, 3º...</small></div>
+          <div className={`mbc-initiative ${draggedId?'is-dragging':''}`} title="Arraste para reordenar; clique para pular diretamente ao turno">
+            {initiative.map((item,idx)=>{
+              const id=asId(item.id);
+              return <button
+                key={item.id||idx}
+                draggable={!busy}
+                className={`${idx===turnIdx?'active':''} ${item.type==='enemy'?'enemy':''} ${draggedId===id?'dragging':''} ${dragOverId===id&&draggedId!==id?'drag-over':''}`}
+                onDragStart={e=>beginDrag(e,item)}
+                onDragEnter={e=>{e.preventDefault();if(draggedId&&draggedId!==id)setDragOverId(id)}}
+                onDragOver={e=>{e.preventDefault();e.dataTransfer.dropEffect='move'}}
+                onDrop={e=>finishDrop(e,item)}
+                onDragEnd={()=>{setDraggedId('');setDragOverId('');suppressClickUntil.current=Date.now()+250}}
+                onClick={()=>{if(Date.now()<suppressClickUntil.current)return;setTurn(idx)}}
+                disabled={busy}
+              >
+                <em className="mbc-rank">{idx+1}</em>
+                <Avatar item={item} active={idx===turnIdx}/>
+                <span>{item.nome}</span>
+                <small>🎲 {item.roll||'—'}</small>
+              </button>;
+            })}
           </div>
-          <div className="mbc-footer"><span>Minimizar este painel não encerra nem oculta o HUD dos jogadores.</span><button className={confirmEnd?'confirm':''} onClick={endCombat} disabled={busy}>{confirmEnd?'Confirmar fim':'Finalizar combate'}</button></div>
+          {error&&<div className="mbc-error compact">{error}</div>}
+          <div className="mbc-footer"><span>A ordem arrastada é sincronizada em tempo real para toda a mesa e mantém o turno atual.</span><button className={confirmEnd?'confirm':''} onClick={endCombat} disabled={busy}>{confirmEnd?'Confirmar fim':'Finalizar combate'}</button></div>
         </div>
       )}
     </section>
