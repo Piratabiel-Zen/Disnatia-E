@@ -24,9 +24,8 @@
   will-change:transform!important;
 }
 
-/* Dez estrelas brilhantes e três meteoros são suficientes visualmente. Os nós
-   extras continuam compatíveis com o componente, mas deixam de participar do
-   layout/compositor. */
+/* O componente agora cria só dez estrelas brilhantes e três meteoros. As regras
+   abaixo servem de proteção caso uma versão antiga do componente seja carregada. */
 .cosmic-bright-star:nth-child(n+11),
 .cosmic-shooting-star:nth-child(n+4){
   display:none!important;
@@ -36,32 +35,14 @@
   will-change:auto!important;
 }
 
-/* Animações decorativas de interface continuam presentes, só com menor cadência. */
+/* Animações decorativas continuam presentes, apenas menos agressivas. */
 .immersive-topbar::after{animation-duration:14s!important}
 .session-sigil{animation-duration:6s!important}
 .grim-live{animation-duration:1.8s!important}
 
-/* Isola áreas grandes para que mudanças internas não invalidem pintura fora do
-   container. */
-.immersive-stage,
-.immersive-content,
-.session-page{
-  contain:layout paint style;
-}
-
-/* Evita que conteúdo invisível de cartões longos seja processado antes de entrar
-   na viewport em páginas normais. */
-.session-card,
-.sheet-section,
-.grimoire-section,
-.enemy-card,
-.bestiary-card{
+/* Na home, cartões fora da viewport podem ser adiados pelo navegador sem afetar
+   HUDs, popovers, fichas ou o mapa de combate. */
+.session-card{
   content-visibility:auto;
   contain-intrinsic-size:auto 320px;
-}
-
-/* O mapa precisa continuar totalmente ativo e não recebe content-visibility. */
-.page-stage-mapabatalha,
-.page-stage-mapabatalha *{
-  content-visibility:visible;
 }
