@@ -1,5 +1,6 @@
 import './cosmic-living-background.css';
 import './performance-lite.css';
+import './performance-smooth.css';
 
 const BRIGHT_STAR_COUNT = 16;
 const SHOOTING_STAR_COUNT = 7;
