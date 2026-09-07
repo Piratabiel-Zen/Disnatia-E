@@ -2,8 +2,8 @@ import './cosmic-living-background.css';
 import './performance-lite.css';
 import './performance-smooth.css';
 
-const BRIGHT_STAR_COUNT = 16;
-const SHOOTING_STAR_COUNT = 7;
+const BRIGHT_STAR_COUNT = 10;
+const SHOOTING_STAR_COUNT = 3;
 const STAR_COLORS = ['#F7FBFF', '#A9DCFF', '#C7B8FF', '#E8F4FF'];
 
 function seededRandom(seed) {
