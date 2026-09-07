@@ -41,6 +41,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/advanced-combat-v2-bootstrap-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/advanced-combat-automation-v2-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/combat-layout-initiative-drag-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/runtime-performance-balance-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
