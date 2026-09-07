@@ -1,0 +1,67 @@
+/* DINASTIA E · SMOOTH RUNTIME OVERRIDES
+   Mantém a mesma atmosfera cósmica, mas reduz camadas que repintavam a tela
+   continuamente. O objetivo é priorizar fluidez durante a mesa. */
+
+/* As duas malhas de estrelas continuam visíveis, porém estáticas. Animar a
+   opacidade de elementos full-screen gera trabalho de composição sem acrescentar
+   informação importante para o jogador. */
+.cosmic-lite-stars-far,
+.cosmic-lite-stars-near{
+  animation:none!important;
+  will-change:auto!important;
+}
+.cosmic-lite-stars-far{opacity:.38!important}
+.cosmic-lite-stars-near{opacity:.30!important}
+
+/* Mantém movimento ambiente, mas em ritmo mais lento e com menos promoção de
+   camadas na GPU. */
+.cosmic-lite-nebula{
+  animation-duration:42s!important;
+  will-change:transform!important;
+}
+.cosmic-lite-vortex::before{
+  animation-duration:180s!important;
+  will-change:transform!important;
+}
+
+/* Dez estrelas brilhantes e três meteoros são suficientes visualmente. Os nós
+   extras continuam compatíveis com o componente, mas deixam de participar do
+   layout/compositor. */
+.cosmic-bright-star:nth-child(n+11),
+.cosmic-shooting-star:nth-child(n+4){
+  display:none!important;
+}
+.cosmic-bright-star,
+.cosmic-shooting-star{
+  will-change:auto!important;
+}
+
+/* Animações decorativas de interface continuam presentes, só com menor cadência. */
+.immersive-topbar::after{animation-duration:14s!important}
+.session-sigil{animation-duration:6s!important}
+.grim-live{animation-duration:1.8s!important}
+
+/* Isola áreas grandes para que mudanças internas não invalidem pintura fora do
+   container. */
+.immersive-stage,
+.immersive-content,
+.session-page{
+  contain:layout paint style;
+}
+
+/* Evita que conteúdo invisível de cartões longos seja processado antes de entrar
+   na viewport em páginas normais. */
+.session-card,
+.sheet-section,
+.grimoire-section,
+.enemy-card,
+.bestiary-card{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 320px;
+}
+
+/* O mapa precisa continuar totalmente ativo e não recebe content-visibility. */
+.page-stage-mapabatalha,
+.page-stage-mapabatalha *{
+  content-visibility:visible;
+}
