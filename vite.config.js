@@ -10,6 +10,7 @@ function dinastiaModularBuild() {
       if (config.isPreview || process.argv.includes('preview')) return
       execFileSync(process.execPath, ['scripts/build-modular.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/realtime-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/game-experience-3-context-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/session-ui-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/experience-layer-cleanup.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/combat-hud-animation-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
