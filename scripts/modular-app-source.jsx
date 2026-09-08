@@ -143,9 +143,9 @@ export default function App(){
         </div>
 
         <ExperienceLayer onNavigate={navigate}/>
-        <GameExperience3 access={access} masterMode={masterMode} tab={tab} onNavigate={navigate}/>
         <AmbientSoundPlayer masterMode={masterMode}/>
         <DiceWidget/>
+        <GameExperience3 access={access} masterMode={masterMode} tab={tab} onNavigate={navigate}/>
       </div>
     </ExperienceProvider>
   );
