@@ -17,6 +17,7 @@ import DiceWidget from "./shell/DiceWidget";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import SharedDiceReplay from "./experience/SharedDiceReplay";
 import DiceCriticalFx from "./experience/DiceCriticalFx";
+import GameExperience3 from "./experience/GameExperience3";
 import {
   ExperienceProvider,
   ImmersiveNavigation,
@@ -144,6 +145,7 @@ export default function App(){
         <ExperienceLayer onNavigate={navigate}/>
         <AmbientSoundPlayer masterMode={masterMode}/>
         <DiceWidget/>
+        <GameExperience3 access={access} masterMode={masterMode} tab={tab} onNavigate={navigate}/>
       </div>
     </ExperienceProvider>
   );
