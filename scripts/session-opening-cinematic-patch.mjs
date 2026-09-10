@@ -34,7 +34,7 @@ if (!game.includes(`/* ${MARKER} */`)) {
   const openingComponent = `function OpeningCinematic({opening,imageUrl,masterMode,onEnd}){\n  if(!opening?.active)return null;\n  return <div className=\"g3-opening-cinematic\">\n    {imageUrl&&<img className=\"g3-opening-bg\" src={imageUrl} alt=\"\"/>}\n    <div className=\"g3-opening-shade\"/><div className=\"g3-opening-stars\" aria-hidden=\"true\"><i/><i/><i/><i/><i/></div>\n    <div className=\"g3-opening-copy\"><small>DINASTIA E · SESSÃO ATUAL</small><h1>{opening.title||'O mundo desperta'}</h1>{opening.location&&<h2>{opening.location}</h2>}{opening.subtitle&&<p>{opening.subtitle}</p>}{opening.objective&&<div className=\"g3-opening-objective\"><span>OBJETIVO</span><b>{opening.objective}</b></div>}</div>\n    {masterMode&&<button className=\"g3-opening-end\" onClick={onEnd}>Encerrar abertura para todos</button>}\n  </div>;\n}\n\n${componentAnchor}`;
   game = game.replace(componentAnchor, openingComponent);
 
-  const renderAnchor = "    {bossVisible&&<BossCinematic boss={game?.bossReveal}/>}";
+  const renderAnchor = "    {bossVisible&&<BossCinematic boss={{...(game?.bossReveal||{}),imageUrl:directorMedia?.[String(game?.bossReveal?.imageRef||'')]?.data||game?.bossReveal?.imageUrl||''}}/>} ";
   must(game.includes(renderAnchor), 'render da cinemática de chefe não encontrado');
   game = game.replace(renderAnchor, `    {game?.openingScene?.active&&<OpeningCinematic opening={game.openingScene} imageUrl={directorMedia?.[String(game.openingScene.imageRef||'')]?.data||''} masterMode={masterMode} onEnd={()=>patchGame({openingScene:{...(game?.openingScene||{}),active:false,endedAt:Date.now()}})}/>}\n${renderAnchor}`);
 }
