@@ -45,6 +45,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/runtime-performance-balance-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/game-experience-3-world-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/game-director-persistence-broadcast-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/game-experience-3-polish-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
