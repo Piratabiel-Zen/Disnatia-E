@@ -24,9 +24,11 @@ if (!app.includes(APP_MARKER)) {
   must(app.includes(loaderAnchor), 'pageLoaders não encontrado no App gerado');
   app = app.replace(loaderAnchor, `// ${APP_MARKER}\nconst MOBILE_ALLOWED_PAGES = new Set(['fichas','bestiario','personagens','prologo','classes','cronicas','livro','regras']);\nconst isMobileViewport = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;\n\n${loaderAnchor}`);
 
-  const navAnchor = `  const navigate = id => {\n    prefetch(id);\n    setTab(id);\n  };`;
-  must(app.includes(navAnchor), 'função navigate não encontrada no App gerado');
-  app = app.replace(navAnchor, `  const navigate = id => {\n    if (isMobileViewport() && !MOBILE_ALLOWED_PAGES.has(id)) return;\n    prefetch(id);\n    setTab(id);\n  };`);
+  const navigateMatch = app.match(/  const navigate\s*=\s*id\s*=>\s*\{[\s\S]*?\n  \};/);
+  must(navigateMatch, 'função navigate não encontrada no App gerado');
+  const originalNavigate = navigateMatch[0];
+  const guardedNavigate = originalNavigate.replace('{', `{\n    if (isMobileViewport() && !MOBILE_ALLOWED_PAGES.has(id)) return;`);
+  app = app.replace(originalNavigate, guardedNavigate);
 }
 
 if (!exp.includes(EXP_MARKER)) {
@@ -34,17 +36,17 @@ if (!exp.includes(EXP_MARKER)) {
   must(exp.includes(fnAnchor), 'ImmersiveNavigation não encontrado');
   exp = exp.replace(fnAnchor, `// ${EXP_MARKER}\nconst MOBILE_ALLOWED_NAV_IDS = new Set(['fichas','bestiario','personagens','prologo','classes','cronicas','livro','regras']);\n\n${fnAnchor}`);
 
-  const mainAnchor = `  const mobileMain=[\n    {id:'session',label:'Sessão',icon:'✦'},\n    {id:'fichas',label:'Ficha',icon:'📋'},\n    {id:'mapabatalha',label:'Batalha',icon:'🗡️'},\n    {id:'mapamundi',label:'Mundo',icon:'🌍'},\n  ];`;
-  must(exp.includes(mainAnchor), 'atalhos mobile antigos não encontrados');
-  exp = exp.replace(mainAnchor, `  const mobileMain=[\n    {id:'fichas',label:'Ficha',icon:'📋'},\n    {id:'personagens',label:'Personagens',icon:'👤'},\n    {id:'livro',label:'Livro',icon:'✦'},\n    {id:'cronicas',label:'Crônicas',icon:'🗒️'},\n  ];\n  const mobileGroups = NAV_GROUPS.map(group=>({ ...group, items:group.items.filter(item=>MOBILE_ALLOWED_NAV_IDS.has(item.id)) })).filter(group=>group.items.length);`);
+  const mainRegex = /  const mobileMain=\[[\s\S]*?\n  \];/;
+  must(mainRegex.test(exp), 'atalhos mobile antigos não encontrados');
+  exp = exp.replace(mainRegex, `  const mobileMain=[\n    {id:'fichas',label:'Ficha',icon:'📋'},\n    {id:'personagens',label:'Personagens',icon:'👤'},\n    {id:'livro',label:'Livro',icon:'✦'},\n    {id:'cronicas',label:'Crônicas',icon:'🗒️'},\n  ];\n  const mobileGroups = NAV_GROUPS.map(group=>({ ...group, items:group.items.filter(item=>MOBILE_ALLOWED_NAV_IDS.has(item.id)) })).filter(group=>group.items.length);`);
 
-  const menuAnchor = `{NAV_GROUPS.map(group=><section key={group.id}><h4>{group.icon} {group.label}</h4><div>{group.items.map(item=><button key={item.id} onClick={()=>go(item.id)} className={tab===item.id?'active':''}>{item.icon} {item.label}</button>)}</div></section>)}`;
-  must(exp.includes(menuAnchor), 'lista do menu mobile não encontrada');
-  exp = exp.replace(menuAnchor, `{mobileGroups.map(group=><section key={group.id}><h4>{group.icon} {group.label}</h4><div>{group.items.map(item=><button key={item.id} onClick={()=>go(item.id)} className={tab===item.id?'active':''}>{item.icon} {item.label}</button>)}</div></section>)}`);
+  const menuRegex = /\{NAV_GROUPS\.map\(group=><section key=\{group\.id\}>[\s\S]*?<\/section>\)\}/;
+  must(menuRegex.test(exp), 'lista do menu mobile não encontrada');
+  exp = exp.replace(menuRegex, `{mobileGroups.map(group=><section key={group.id}><h4>{group.icon} {group.label}</h4><div>{group.items.map(item=><button key={item.id} onClick={()=>go(item.id)} className={tab===item.id?'active':''}>{item.icon} {item.label}</button>)}</div></section>)}`);
 
-  const enterAnchor = `  const enter=()=>onNavigate(combat?.active||activeMap?.activeId?'mapabatalha':'fichas');`;
-  must(exp.includes(enterAnchor), 'ação principal da tela inicial não encontrada');
-  exp = exp.replace(enterAnchor, `  const enter=()=>{\n    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;\n    onNavigate(mobile ? 'fichas' : (combat?.active||activeMap?.activeId?'mapabatalha':'fichas'));\n  };`);
+  const enterRegex = /  const enter=\(\)=>onNavigate\([^\n]+\);/;
+  must(enterRegex.test(exp), 'ação principal da tela inicial não encontrada');
+  exp = exp.replace(enterRegex, `  const enter=()=>{\n    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;\n    onNavigate(mobile ? 'fichas' : (combat?.active||activeMap?.activeId?'mapabatalha':'fichas'));\n  };`);
 }
 
 if (!css.includes(CSS_MARKER)) {
