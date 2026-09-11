@@ -49,6 +49,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/session-opening-cinematic-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/mobile-navigation-access-layout-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/mobile-hub-motion-audio-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/desktop-navigation-master-enemies-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
