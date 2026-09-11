@@ -10,31 +10,39 @@ for(const f of [appFile,expFile]) must(fs.existsSync(f),`arquivo ausente: ${path
 let app=fs.readFileSync(appFile,'utf8');
 let exp=fs.readFileSync(expFile,'utf8');
 
-// O desktop sempre usa a navegação completa. A única exceção de perfil é Inimigos,
-// que fica visível apenas para o login do Mestre. As restrições mobile continuam
-// sendo aplicadas separadamente pelos patches mobile anteriores.
+// Desktop usa navegação completa; as restrições permanecem exclusivas do mobile.
+// Inimigos é uma ferramenta de Mestre e fica invisível para jogadores.
 if(!app.includes('DESKTOP NAV MASTER ROLE 2026-09-11')){
-  const navCall='<ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>';
-  must(app.includes(navCall),'chamada ImmersiveNavigation não encontrada');
-  app=app.replace(navCall,`{/* DESKTOP NAV MASTER ROLE 2026-09-11 */}\n        <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent} masterMode={masterMode}/>`);
+  const navRe=/<ImmersiveNavigation\b[^>]*\/>/;
+  const match=app.match(navRe);
+  must(match,'chamada ImmersiveNavigation não encontrada');
+  let call=match[0];
+  if(!/\bmasterMode=/.test(call)) call=call.replace('/>',' masterMode={masterMode}/>');
+  app=app.replace(match[0],`{/* DESKTOP NAV MASTER ROLE 2026-09-11 */}\n        ${call}`);
 }
 
 if(!exp.includes('DESKTOP FULL NAV 2026-09-11')){
-  const sig="export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7' }){";
-  must(exp.includes(sig),'assinatura ImmersiveNavigation não encontrada');
-  exp=exp.replace(sig,"// DESKTOP FULL NAV 2026-09-11\nexport function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterMode=false }){");
+  const sigRe=/export function ImmersiveNavigation\(\{([^}]*)\}\)\{/;
+  const sigMatch=exp.match(sigRe);
+  must(sigMatch,'assinatura ImmersiveNavigation não encontrada');
+  const props=sigMatch[1].includes('masterMode')?sigMatch[1]:`${sigMatch[1].trimEnd()}, masterMode=false `;
+  exp=exp.replace(sigMatch[0],`// DESKTOP FULL NAV 2026-09-11\nexport function ImmersiveNavigation({${props}}){`);
 
-  const contextAnchor='  const { combat, selectedSheet }=useExperience();';
-  must(exp.includes(contextAnchor),'contexto da navegação não encontrado');
-  exp=exp.replace(contextAnchor,`${contextAnchor}\n  const desktopGroups = NAV_GROUPS.map(group=>({\n    ...group,\n    items:group.items.filter(item=>item.id!=='inimigos'||masterMode),\n  })).filter(group=>group.items.length);`);
+  const contextRe=/  const \{\s*combat\s*,\s*selectedSheet\s*\}=useExperience\(\);/;
+  const contextMatch=exp.match(contextRe);
+  must(contextMatch,'contexto da navegação não encontrado');
+  exp=exp.replace(contextMatch[0],`${contextMatch[0]}\n  const desktopGroups = NAV_GROUPS.map(group=>({\n    ...group,\n    items:group.items.filter(item=>item.id!=='inimigos'||masterMode),\n  })).filter(group=>group.items.length);`);
 
   const asideStart=exp.indexOf('<aside className="grim-nav">');
   const mobileStart=exp.indexOf('<nav className="mobile-dock">');
   must(asideStart>=0&&mobileStart>asideStart,'blocos desktop/mobile não encontrados');
-  const desktopSlice=exp.slice(asideStart,mobileStart);
-  must(desktopSlice.includes('NAV_GROUPS.map(group=>'),'render desktop já não usa NAV_GROUPS');
-  const fixedDesktop=desktopSlice.replace('NAV_GROUPS.map(group=>','desktopGroups.map(group=>');
-  exp=exp.slice(0,asideStart)+fixedDesktop+exp.slice(mobileStart);
+  let desktopSlice=exp.slice(asideStart,mobileStart);
+  const hasFull=desktopSlice.includes('NAV_GROUPS.map(group=>');
+  const hasWrongMobile=desktopSlice.includes('mobileAllowedGroups20260910.map(group=>');
+  must(hasFull||hasWrongMobile,'render dos grupos desktop não encontrado');
+  desktopSlice=desktopSlice.replace('mobileAllowedGroups20260910.map(group=>','desktopGroups.map(group=>');
+  desktopSlice=desktopSlice.replace('NAV_GROUPS.map(group=>','desktopGroups.map(group=>');
+  exp=exp.slice(0,asideStart)+desktopSlice+exp.slice(mobileStart);
 }
 
 must(app.includes('masterMode={masterMode}'),'masterMode não foi passado à navegação');
