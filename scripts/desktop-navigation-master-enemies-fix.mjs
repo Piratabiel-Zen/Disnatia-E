@@ -36,13 +36,20 @@ if(!exp.includes('DESKTOP FULL NAV 2026-09-11')){
   const asideStart=exp.indexOf('<aside className="grim-nav">');
   const mobileStart=exp.indexOf('<nav className="mobile-dock">');
   must(asideStart>=0&&mobileStart>asideStart,'blocos desktop/mobile não encontrados');
+
   let desktopSlice=exp.slice(asideStart,mobileStart);
   const hasFull=desktopSlice.includes('NAV_GROUPS.map(group=>');
   const hasWrongMobile=desktopSlice.includes('mobileAllowedGroups20260910.map(group=>');
   must(hasFull||hasWrongMobile,'render dos grupos desktop não encontrado');
   desktopSlice=desktopSlice.replace('mobileAllowedGroups20260910.map(group=>','desktopGroups.map(group=>');
   desktopSlice=desktopSlice.replace('NAV_GROUPS.map(group=>','desktopGroups.map(group=>');
-  exp=exp.slice(0,asideStart)+desktopSlice+exp.slice(mobileStart);
+
+  let mobileSlice=exp.slice(mobileStart);
+  if(!mobileSlice.includes('mobileAllowedGroups20260910.map(group=>')){
+    must(mobileSlice.includes('NAV_GROUPS.map(group=>'),'render dos grupos mobile não encontrado');
+    mobileSlice=mobileSlice.replace('NAV_GROUPS.map(group=>','mobileAllowedGroups20260910.map(group=>');
+  }
+  exp=exp.slice(0,asideStart)+desktopSlice+mobileSlice;
 }
 
 must(app.includes('masterMode={masterMode}'),'masterMode não foi passado à navegação');
