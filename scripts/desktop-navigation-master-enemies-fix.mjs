@@ -10,8 +10,8 @@ for(const f of [appFile,expFile]) must(fs.existsSync(f),`arquivo ausente: ${path
 let app=fs.readFileSync(appFile,'utf8');
 let exp=fs.readFileSync(expFile,'utf8');
 
-// Desktop usa navegação completa; as restrições permanecem exclusivas do mobile.
-// Inimigos é uma ferramenta de Mestre e fica invisível para jogadores.
+// Corrige somente o desktop. O mobile fica exatamente como os patches anteriores
+// deixaram: navegação restrita e hub próprio.
 if(!app.includes('DESKTOP NAV MASTER ROLE 2026-09-11')){
   const navRe=/<ImmersiveNavigation\b[^>]*\/>/;
   const match=app.match(navRe);
@@ -39,17 +39,12 @@ if(!exp.includes('DESKTOP FULL NAV 2026-09-11')){
 
   let desktopSlice=exp.slice(asideStart,mobileStart);
   const hasFull=desktopSlice.includes('NAV_GROUPS.map(group=>');
-  const hasWrongMobile=desktopSlice.includes('mobileAllowedGroups20260910.map(group=>');
-  must(hasFull||hasWrongMobile,'render dos grupos desktop não encontrado');
+  const hasFiltered=desktopSlice.includes('mobileAllowedGroups20260910.map(group=>');
+  must(hasFull||hasFiltered,'render dos grupos desktop não encontrado');
   desktopSlice=desktopSlice.replace('mobileAllowedGroups20260910.map(group=>','desktopGroups.map(group=>');
   desktopSlice=desktopSlice.replace('NAV_GROUPS.map(group=>','desktopGroups.map(group=>');
 
-  let mobileSlice=exp.slice(mobileStart);
-  if(!mobileSlice.includes('mobileAllowedGroups20260910.map(group=>')){
-    must(mobileSlice.includes('NAV_GROUPS.map(group=>'),'render dos grupos mobile não encontrado');
-    mobileSlice=mobileSlice.replace('NAV_GROUPS.map(group=>','mobileAllowedGroups20260910.map(group=>');
-  }
-  exp=exp.slice(0,asideStart)+desktopSlice+mobileSlice;
+  exp=exp.slice(0,asideStart)+desktopSlice+exp.slice(mobileStart);
 }
 
 must(app.includes('masterMode={masterMode}'),'masterMode não foi passado à navegação');
@@ -57,7 +52,6 @@ must(exp.includes('desktopGroups.map(group=>'),'desktop não usa grupos completo
 must(exp.includes("item.id!=='inimigos'||masterMode"),'regra da aba Inimigos ausente');
 must(exp.includes("{id:'mapamundi',label:'Mapa Múndi'"),'Mapa Múndi ausente do NAV_GROUPS');
 must(exp.includes("{id:'mapabatalha',label:'Mapa de Batalha'"),'Mapa de Batalha ausente do NAV_GROUPS');
-must(exp.includes('mobileAllowedGroups20260910.map(group=>'),'filtro mobile foi perdido');
 
 fs.writeFileSync(appFile,app);
 fs.writeFileSync(expFile,exp);
