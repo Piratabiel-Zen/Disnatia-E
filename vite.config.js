@@ -52,6 +52,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/desktop-navigation-master-enemies-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/battlemap-original-quality-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/battlemap-realtime-consistency-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/realtime-zero-wait-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
 }
