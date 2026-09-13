@@ -15,30 +15,20 @@ const replaceBattle = (before,after,label)=>{
   battle = battle.replace(before,after);
 };
 
-// Mais responsividade durante a sessão: mantém o movimento local em rAF e
-// aumenta apenas a cadência útil da rede, sem voltar a uma fila serial por RTT.
 replaceBattle('const TOKEN_THROTTLE_MS = 40;','const TOKEN_THROTTLE_MS = 28;','cadência do token');
 replaceBattle('if (!state.pending || state.inFlight >= 2) return;','if (!state.pending || state.inFlight >= 3) return;','pipeline concorrente');
 replaceBattle('const slot = seq % 3;','const slot = seq % 4;','slots de movimento');
 replaceBattle("transition: draggingId === token.id ? 'none' : 'left 32ms linear, top 32ms linear'","transition: draggingId === token.id ? 'none' : 'left 16ms linear, top 16ms linear'",'interpolação remota');
-
-// Alterações de propriedades do mapa/ficha devem chegar aos outros jogadores
-// praticamente imediatamente. onSnapshot continua sendo a fonte autoritativa.
 replaceBattle('    }, 450);','    }, 90);','debounce de metadata do mapa');
 replaceBattle("    }, 700);\n  };\n  const updSheet", "    }, 120);\n  };\n  const updSheet", 'debounce da ficha pelo battlemap');
-replaceBattle('    const heartbeat = setInterval(refreshActiveState, 15000);','    const heartbeat = setInterval(refreshActiveState, 4000);','fallback de reconciliação');
 
-// O upload HQ anterior esperava TODOS os chunks terminarem antes de publicar
-// sequer o preview. Em mapas grandes isso podia levar segundos. Agora o preview
-// é publicado primeiro, e o original é enviado em lotes paralelos; clientes
-// veem a troca imediatamente e migram para o original assim que ele completa.
 const oldUploadBlock = `        const preview = await makeBattleMapPreview(original);\n        for (let index = 0; index < chunks.length; index++) {\n          const chunkId = \`${'${uploadId}'}_${'${String(index).padStart(4, \'0\')}'}\`;\n          await setDoc(doc(db, 'battlemap_media_chunks', chunkId), {\n            mapId, uploadId, index, data: chunks[index], updatedAt: Date.now(),\n          });\n        }\n        const patch = {\n          img: preview,\n          imgUploadId: uploadId,\n          imgChunkCount: chunks.length,\n          imgOriginalChars: original.length,\n          imgOriginalName: file?.name || '',\n          imgOriginalType: file?.type || '',\n          imgOriginalQuality: true,\n          imgUpdatedAt: Date.now(),\n        };\n        setMaps(prev => prev.map(m => String(m.id) === mapId ? { ...m, ...patch } : m));\n        await setDoc(doc(db, 'battlemaps', mapId), patch, { merge: true });\n        if (oldUploadId && oldUploadId !== uploadId && oldChunkCount) {\n          await deleteBattleMapChunks(mapId, oldUploadId, oldChunkCount);\n        }`;
 
-const newUploadBlock = `        const preview = await makeBattleMapPreview(original);\n        const patch = {\n          img: preview,\n          imgUploadId: uploadId,\n          imgChunkCount: chunks.length,\n          imgOriginalChars: original.length,\n          imgOriginalName: file?.name || '',\n          imgOriginalType: file?.type || '',\n          imgOriginalQuality: true,\n          imgUpdatedAt: Date.now(),\n        };\n        // Publica o preview primeiro: todos recebem a mudança pelo onSnapshot\n        // sem esperar o upload integral da imagem original.\n        setMaps(prev => prev.map(m => String(m.id) === mapId ? { ...m, ...patch } : m));\n        await setDoc(doc(db, 'battlemaps', mapId), patch, { merge: true });\n\n        // Envia o original em lotes paralelos para reduzir brutalmente o tempo\n        // total sem disparar dezenas de writes simultâneos de uma só vez.\n        const BATCH = 6;\n        for (let start = 0; start < chunks.length; start += BATCH) {\n          const writes = [];\n          for (let index = start; index < Math.min(chunks.length, start + BATCH); index++) {\n            const chunkId = \`${'${uploadId}'}_${'${String(index).padStart(4, \'0\')}'}\`;\n            writes.push(setDoc(doc(db, 'battlemap_media_chunks', chunkId), {\n              mapId, uploadId, index, data: chunks[index], updatedAt: Date.now(),\n            }));\n          }\n          await Promise.all(writes);\n        }\n        if (oldUploadId && oldUploadId !== uploadId && oldChunkCount) {\n          deleteBattleMapChunks(mapId, oldUploadId, oldChunkCount).catch(() => {});\n        }`;
+const newUploadBlock = `        const preview = await makeBattleMapPreview(original);\n        const patch = {\n          img: preview,\n          imgUploadId: uploadId,\n          imgChunkCount: chunks.length,\n          imgOriginalChars: original.length,\n          imgOriginalName: file?.name || '',\n          imgOriginalType: file?.type || '',\n          imgOriginalQuality: true,\n          imgUpdatedAt: Date.now(),\n        };\n        setMaps(prev => prev.map(m => String(m.id) === mapId ? { ...m, ...patch } : m));\n        await setDoc(doc(db, 'battlemaps', mapId), patch, { merge: true });\n\n        const BATCH = 6;\n        for (let start = 0; start < chunks.length; start += BATCH) {\n          const writes = [];\n          for (let index = start; index < Math.min(chunks.length, start + BATCH); index++) {\n            const chunkId = \`${'${uploadId}'}_${'${String(index).padStart(4, \'0\')}'}\`;\n            writes.push(setDoc(doc(db, 'battlemap_media_chunks', chunkId), {\n              mapId, uploadId, index, data: chunks[index], updatedAt: Date.now(),\n            }));\n          }\n          await Promise.all(writes);\n        }\n        if (oldUploadId && oldUploadId !== uploadId && oldChunkCount) {\n          deleteBattleMapChunks(mapId, oldUploadId, oldChunkCount).catch(() => {});\n        }`;
 
 replaceBattle(oldUploadBlock,newUploadBlock,'publicação imediata de imagem do mapa');
 
-for (const marker of ['const TOKEN_THROTTLE_MS = 28;','state.inFlight >= 3','const slot = seq % 4;',"left 16ms linear, top 16ms linear",'const BATCH = 6;','setInterval(refreshActiveState, 4000)']) {
+for (const marker of ['const TOKEN_THROTTLE_MS = 28;','state.inFlight >= 3','const slot = seq % 4;',"left 16ms linear, top 16ms linear",'const BATCH = 6;']) {
   must(battle.includes(marker),`marcador final ausente: ${marker}`);
 }
 fs.writeFileSync(battleFile,battle);
