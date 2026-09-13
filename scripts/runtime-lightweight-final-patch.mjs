@@ -10,10 +10,7 @@ function replaceRequired(source, before, after, label) {
   return source.replace(before, after);
 }
 
-// 1) Access gate: depois do login não faz sentido continuar ouvindo TODAS as fichas.
-// Jogador autenticado passa a observar somente a própria ficha. Mestre autenticado
-// não mantém listener do gate; a coleção completa só existe enquanto a tela de login
-// realmente precisa listar personagens.
+// 1) Access gate: após autenticar, não mantenha a coleção inteira de fichas viva.
 const accessFile = path.join(root, 'src', 'experience', 'PlayerAccess.jsx');
 let access = fs.readFileSync(accessFile, 'utf8');
 access = replaceRequired(
@@ -27,25 +24,45 @@ const accessAfter = `  // RUNTIME LIGHTWEIGHT · ACCESS LISTENER SCOPE 2026-09-1
 access = replaceRequired(access, accessBefore, accessAfter, 'listener do gate de acesso');
 fs.writeFileSync(accessFile, access);
 
-// 2) Game Experience 3: nas páginas editoriais o HUD já está escondido. Antes,
-// cinco listeners realtime (game/presence/items/enemies/director_media) continuavam
-// vivos mesmo invisíveis. Eles agora existem apenas nas superfícies imersivas e
-// religam imediatamente ao voltar para Sessão / Mapa Múndi / Mapa de Batalha.
+// 2) Game Experience 3: envolve o efeito realtime JÁ GERADO, em vez de substituir
+// seu conteúdo. Assim preservamos todos os listeners adicionados por patches atuais
+// ou futuros (incluindo director_media), mas desligamos o conjunto inteiro nas páginas
+// editoriais onde o HUD está oculto.
 const gameFile = path.join(root, 'src', 'experience', 'GameExperience3.jsx');
 let game = fs.readFileSync(gameFile, 'utf8');
-const gameBefore = `  useEffect(()=>{\n    const u1=onSnapshot(doc(db,'config',GAME_DOC),snap=>setGame(snap.exists()?{worldMode:'exploration',environment:{type:'none',intensity:45},...(snap.data()||{})}:{worldMode:'exploration',environment:{type:'none',intensity:45}}));\n    const u2=onSnapshot(collection(db,'presence'),snap=>setPresence(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    const u3=onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0))));\n    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    const u5=onSnapshot(collection(db,'director_media'),snap=>{const rows={};snap.docs.forEach(d=>{rows[d.id]={id:d.id,...d.data()};});setDirectorMedia(rows);});\n    return()=>{u1();u2();u3();u4();u5();};\n  },[]);`;
-const gameAfter = `  // RUNTIME LIGHTWEIGHT · IMMERSIVE LISTENER SCOPE 2026-09-13\n  const g3LiveSurface=['session','mapamundi','mapabatalha'].includes(tab);\n  useEffect(()=>{\n    if(!g3LiveSurface){\n      setPresence([]);\n      setItems([]);\n      setEnemies([]);\n      setDirectorMedia({});\n      return undefined;\n    }\n    const u1=onSnapshot(doc(db,'config',GAME_DOC),snap=>setGame(snap.exists()?{worldMode:'exploration',environment:{type:'none',intensity:45},...(snap.data()||{})}:{worldMode:'exploration',environment:{type:'none',intensity:45}}));\n    const u2=onSnapshot(collection(db,'presence'),snap=>setPresence(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    const u3=onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0))));\n    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    const u5=onSnapshot(collection(db,'director_media'),snap=>{const rows={};snap.docs.forEach(d=>{rows[d.id]={id:d.id,...d.data()};});setDirectorMedia(rows);});\n    return()=>{u1();u2();u3();u4();u5();};\n  },[g3LiveSurface]);`;
-game = replaceRequired(game, gameBefore, gameAfter, 'listeners do GameExperience3');
-// Decodificação de retratos não deve travar a thread principal.
+const g3Marker = 'RUNTIME LIGHTWEIGHT · IMMERSIVE LISTENER SCOPE 2026-09-13';
+const listenerAnchor = "const u1=onSnapshot(doc(db,'config',GAME_DOC)";
+let anchorAt = game.indexOf(listenerAnchor);
+must(anchorAt >= 0, 'listener principal do GameExperience3 não encontrado');
+
+if (!game.includes(g3Marker)) {
+  const effectStart = game.lastIndexOf('  useEffect(()=>{', anchorAt);
+  must(effectStart >= 0, 'início do efeito realtime do GameExperience3 não encontrado');
+  const bodyStart = effectStart + '  useEffect(()=>{\n'.length;
+  const declaration = `  // ${g3Marker}\n  const g3LiveSurface=['session','mapamundi','mapabatalha'].includes(tab);\n`;
+  const guard = `    if(!g3LiveSurface){\n      setPresence([]);\n      setItems([]);\n      setEnemies([]);\n      if(typeof setDirectorMedia==='function')setDirectorMedia({});\n      return undefined;\n    }\n`;
+  game = game.slice(0, effectStart) + declaration + game.slice(effectStart, bodyStart) + guard + game.slice(bodyStart);
+}
+
+anchorAt = game.indexOf(listenerAnchor);
+const effectStart = game.lastIndexOf('  useEffect(()=>{', anchorAt);
+const nextEffect = game.indexOf('\n\n  useEffect(', anchorAt);
+const segmentEnd = nextEffect >= 0 ? nextEffect : game.length;
+let listenerSegment = game.slice(effectStart, segmentEnd);
+if (!listenerSegment.includes('},[g3LiveSurface]);')) {
+  must(listenerSegment.includes('  },[]);'), 'dependência do efeito realtime do GameExperience3 não encontrada');
+  listenerSegment = listenerSegment.replace('  },[]);', '  },[g3LiveSurface]);');
+  game = game.slice(0, effectStart) + listenerSegment + game.slice(segmentEnd);
+}
+
+// Imagens que aparecem no HUD/cinemáticas decodificam fora da thread crítica quando possível.
 game = game.replaceAll('<img src={entity.foto||entity.photo} alt=""/>', '<img src={entity.foto||entity.photo} alt="" decoding="async"/>');
 game = game.replaceAll('row.photo?<img src={row.photo} alt=""/>', 'row.photo?<img src={row.photo} alt="" decoding="async" loading="lazy"/>');
 game = game.replaceAll('<img src={handout.imageUrl} alt={handout.title||\'Handout\'} />', '<img src={handout.imageUrl} alt={handout.title||\'Handout\'} decoding="async" />');
 game = game.replaceAll('<img src={boss.imageUrl} alt=""/>', '<img src={boss.imageUrl} alt="" decoding="async" />');
 fs.writeFileSync(gameFile, game);
 
-// 3) ExperienceProvider: o Mestre não precisa manter mapas e Atlas inteiros em
-// memória durante Livro, Crônicas, Regras, Bestiário etc. Mantemos exatamente as
-// superfícies que consomem esses dados, com realtime intacto ao entrar nelas.
+// 3) ExperienceProvider: mapas/Atlas só ficam em memória onde são consumidos.
 for (const rel of ['src/experience/ExperienceKit.jsx', 'src/experience/ExperienceKit.generated.jsx']) {
   const file = path.join(root, rel);
   if (!fs.existsSync(file)) continue;
@@ -61,8 +78,7 @@ for (const rel of ['src/experience/ExperienceKit.jsx', 'src/experience/Experienc
   fs.writeFileSync(file, source);
 }
 
-// 4) CSS: mantém a mesma composição visual, mas evita camadas permanentemente
-// promovidas à GPU e adia pintura de blocos narrativos que estão fora da viewport.
+// 4) Mesma aparência, menos memória de compositor e menos pintura fora da viewport.
 const smoothFile = path.join(root, 'src', 'experience', 'performance-smooth.css');
 let smooth = fs.readFileSync(smoothFile, 'utf8');
 const cssMarker = '/* RUNTIME LIGHTWEIGHT · 2026-09-13 */';
@@ -71,7 +87,7 @@ if (!smooth.includes(cssMarker)) {
 }
 fs.writeFileSync(smoothFile, smooth);
 
-// Sanidade local desta camada.
+// Sanidade: se a cadeia de patches mudar, o build para antes de publicar algo parcial.
 const finalAccess = fs.readFileSync(accessFile, 'utf8');
 const finalGame = fs.readFileSync(gameFile, 'utf8');
 const finalExperience = fs.readFileSync(path.join(root, 'src', 'experience', 'ExperienceKit.generated.jsx'), 'utf8');
@@ -80,7 +96,7 @@ for (const marker of [
   "doc(db, 'sheets', String(access.sheetId))",
 ]) must(finalAccess.includes(marker), `PlayerAccess sem ${marker}`);
 for (const marker of [
-  'RUNTIME LIGHTWEIGHT · IMMERSIVE LISTENER SCOPE 2026-09-13',
+  g3Marker,
   "const g3LiveSurface=['session','mapamundi','mapabatalha'].includes(tab);",
   '},[g3LiveSurface]);',
   "collection(db,'director_media')",
