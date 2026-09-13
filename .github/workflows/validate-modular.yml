@@ -4,9 +4,16 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
+
+concurrency:
+  group: validate-modular-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -34,6 +41,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Final stability invariants
+        run: node scripts/final-stability-guard.mjs
+
       - name: Enforce bundle budget
         shell: bash
         run: |
@@ -41,6 +51,7 @@ jobs:
           test -n "$largest"
           echo "Largest JS chunk: $largest bytes"
           test "$largest" -le 600000
+          test -s dist/media/deserto-bg.mp4
 
       - name: Preview smoke test
         shell: bash
@@ -58,3 +69,4 @@ jobs:
           asset=$(grep -oE '/assets/index-[^" ]+\.js' /tmp/dinastia-index.html | head -n1)
           test -n "$asset"
           curl --fail --silent --show-error "http://127.0.0.1:4173$asset" > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/media/deserto-bg.mp4 -o /dev/null
