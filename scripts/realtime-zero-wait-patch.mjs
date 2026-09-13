@@ -13,23 +13,14 @@ function mustReplace(source, before, after, label) {
 const ambientFile = path.join(root, 'src', 'shell', 'AmbientSoundPlayer.jsx');
 let ambient = fs.readFileSync(ambientFile, 'utf8');
 
-const ambientApplyStart = ambient.indexOf('    const applyAmbient = (d) => {');
-const ambientApplyEnd = ambient.indexOf('\n\n    const unsub = onSnapshot', ambientApplyStart);
-if (ambientApplyStart < 0 || ambientApplyEnd < 0) {
-  throw new Error('Realtime zero-wait patch: applyAmbient não encontrado.');
-}
-const ambientApply = `    const applyAmbient = (d) => {
-      if (!d) return;
-      // O snapshot confirmado pelo Firestore é a autoridade. revision/ts servem
-      // somente como identidade visual e nunca para comparar relógios de PCs.
-      const eventId = String(d.commandId || d.revision || d.ts || ((d.videoId || '') + ':' + (d.playing ? '1' : '0')));
-      setCurrent(d);
-      if (eventId && eventId !== String(lastTs.current || '')) {
-        lastTs.current = eventId;
-        setUserMuted(false);
-      }
-    };`;
-ambient = ambient.slice(0, ambientApplyStart) + ambientApply + ambient.slice(ambientApplyEnd);
+ambient = mustReplace(
+  ambient,
+  `      if (revision && revision < lastAmbientRevisionRef.current) return;
+      lastAmbientRevisionRef.current = revision;`,
+  `      // O snapshot recebido do Firestore é autoritativo entre clientes.
+      // revision/ts nunca podem rejeitar outra máquina por diferença de relógio.`,
+  'remoção do gate de relógio da música'
+);
 
 const playStart = ambient.indexOf('  const playTrack = async (track, categoria) => {');
 const playEnd = ambient.indexOf('\n\n  const stopAll = async () => {', playStart);
@@ -46,8 +37,8 @@ const playTrack = `  const playTrack = async (track, categoria) => {
       commandId: 'ambient_' + now + '_' + Math.random().toString(36).slice(2, 9),
     };
 
-    // Latency compensation: o Mestre vê/ouve a mudança imediatamente, sem
-    // aguardar o round-trip do Firestore. Os demais recebem pelo onSnapshot.
+    // Latency compensation: o emissor muda imediatamente; os demais recebem
+    // o mesmo comando pelo snapshot sem aguardar qualquer comparação de relógio.
     setCurrent(nextAmbient);
     setUserMuted(false);
     lastTs.current = nextAmbient.commandId;
@@ -138,8 +129,8 @@ battle = mustReplace(
   'desativação otimista do mapa'
 );
 
-// Movimento: sobe de 25 Hz para ~30 Hz, mantendo apenas 2 writes concorrentes e
-// 3 slots. É deliberadamente mais conservador que o boost de 28 ms já revertido.
+// Movimento: ~30 Hz, mantendo 2 writes concorrentes e 3 slots. É mais
+// conservador que o boost agressivo anterior, que foi revertido.
 battle = mustReplace(battle, 'const TOKEN_THROTTLE_MS = 40;', 'const TOKEN_THROTTLE_MS = 33;', 'movimento em ~30 Hz');
 battle = mustReplace(
   battle,
