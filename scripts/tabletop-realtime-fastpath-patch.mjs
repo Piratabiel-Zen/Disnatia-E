@@ -40,13 +40,16 @@ battle = replaceRequired(
 );
 
 // Pings do Mestre já carregam role/name. Tornamos a autoria explícita na tela de
-// todos para não parecer um marcador anônimo.
-battle = replaceRequired(
-  battle,
-  "<b>{battlePing.name||'Ping'}</b>",
-  "<b>{battlePing.role==='master'?'Mestre marcou aqui':(battlePing.name||'Ping')}</b>",
-  'rótulo público do ping do Mestre'
-);
+// todos para não parecer um marcador anônimo. O regex tolera espaços inseridos
+// pelos patches anteriores.
+if (!battle.includes('Mestre marcou aqui')) {
+  const pingLabelPattern = /<b>\{battlePing\.name\s*\|\|\s*'Ping'\}<\/b>/;
+  must(pingLabelPattern.test(battle), 'marcador ausente (rótulo público do ping do Mestre)');
+  battle = battle.replace(
+    pingLabelPattern,
+    "<b>{battlePing.role==='master'?'Mestre marcou aqui':(battlePing.name||'Ping')}</b>"
+  );
+}
 
 const FAST_MARKER = 'TABLETOP REALTIME FAST PATH 2026-09-14';
 if (!battle.includes(FAST_MARKER)) {
