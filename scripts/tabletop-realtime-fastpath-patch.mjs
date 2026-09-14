@@ -39,17 +39,10 @@ battle = replaceRequired(
   'interpolação remota'
 );
 
-// Pings do Mestre já carregam role/name. Tornamos a autoria explícita na tela de
-// todos para não parecer um marcador anônimo. O regex tolera espaços inseridos
-// pelos patches anteriores.
-if (!battle.includes('Mestre marcou aqui')) {
-  const pingLabelPattern = /<b>\{battlePing\.name\s*\|\|\s*'Ping'\}<\/b>/;
-  must(pingLabelPattern.test(battle), 'marcador ausente (rótulo público do ping do Mestre)');
-  battle = battle.replace(
-    pingLabelPattern,
-    "<b>{battlePing.role==='master'?'Mestre marcou aqui':(battlePing.name||'Ping')}</b>"
-  );
-}
+// O ping já publica nome e papel do emissor. Em vez de reescrever o JSX por uma
+// âncora frágil, validamos que a autoria do Mestre continua presente no payload.
+must(battle.includes("const ownPingName = masterMode ? 'Mestre'"), 'nome do Mestre ausente no ping');
+must(battle.includes("role: masterMode ? 'master' : 'player'"), 'papel do emissor ausente no ping');
 
 const FAST_MARKER = 'TABLETOP REALTIME FAST PATH 2026-09-14';
 if (!battle.includes(FAST_MARKER)) {
@@ -66,7 +59,8 @@ for (const marker of [
   'state.pending = { x: px, y: py };',
   "channel: 'motion-v2'",
   "channel: 'position-final-v1'",
-  'Mestre marcou aqui',
+  "const ownPingName = masterMode ? 'Mestre'",
+  "role: masterMode ? 'master' : 'player'",
 ]) {
   must(battle.includes(marker), `BattleMap incompleto: ${marker}`);
 }
@@ -152,4 +146,4 @@ for (const marker of [
 
 fs.writeFileSync(sharedDiceFile, shared);
 
-console.log('Dinastia E: fast-path realtime ativo — 3 writes latest-only, interpolação 24ms, dados e pings do Mestre explicitamente públicos.');
+console.log('Dinastia E: fast-path realtime ativo — 3 writes latest-only, interpolação 24ms, dados do Mestre públicos e pings com autoria preservada.');
