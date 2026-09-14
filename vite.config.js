@@ -56,6 +56,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/desktop-runtime-stability-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/owlbear-interaction-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/runtime-lightweight-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/tabletop-realtime-fastpath-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/final-stability-guard.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
