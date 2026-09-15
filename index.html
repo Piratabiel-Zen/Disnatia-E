@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#010207" />
     <meta name="color-scheme" content="dark" />
+    <script>
+      // DINASTIA EARLY CLIENT COMPAT 2026-09-14
+      // Aplica o modo seguro ANTES do bundle React/CSS montar. Antes desta correção,
+      // o Opera GX só recebia a classe de segurança quando CosmicLoopVideo era montado,
+      // o que deixava algumas rotas suscetíveis a tela preta no compositor.
+      (() => {
+        try {
+          const ua = navigator.userAgent || '';
+          const safeQuery = new URLSearchParams(location.search).has('safe');
+          const isOpera = /OPR\//i.test(ua) || /OPRGX/i.test(ua) || /Opera GX/i.test(ua) || /Opera\//i.test(ua);
+          if (isOpera || safeQuery) {
+            document.documentElement.classList.add('opera-gx-safe');
+            window.__DINASTIA_SAFE_GRAPHICS__ = true;
+          }
+        } catch (_) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&amp;family=Cinzel:wght@400;600;700&amp;family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;display=swap" />
