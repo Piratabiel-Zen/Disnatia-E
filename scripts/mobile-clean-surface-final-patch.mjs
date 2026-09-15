@@ -35,6 +35,21 @@ if (!exp.includes(EXP_MARKER)) {
   exp = exp.replace(mobileMainRe, `  // ${EXP_MARKER}\n  const mobileMain=[\n    {id:'session',label:'Início',icon:'⌂'},\n    {id:'fichas',label:'Ficha',icon:'📋'},\n    {id:'cronicas',label:'Crônicas',icon:'🗒️'},\n    {id:'livro',label:'Livro',icon:'✦'},\n  ];`);
 }
 
+const MENU_MARKER = 'MOBILE MENU MAP FILTER 2026-09-15';
+if (!exp.includes(MENU_MARKER)) {
+  const mobileStart = exp.indexOf('<nav className="mobile-dock">');
+  const mobileEnd = exp.indexOf('export function SessionDashboard', mobileStart);
+  must(mobileStart >= 0 && mobileEnd > mobileStart, 'bloco de navegação mobile não encontrado');
+  let mobileSlice = exp.slice(mobileStart, mobileEnd);
+  const itemMapRe = /group\.items\.map\s*\(\s*item\s*=>/;
+  must(itemMapRe.test(mobileSlice), 'lista de itens do menu mobile não encontrada');
+  mobileSlice = mobileSlice.replace(
+    itemMapRe,
+    `/* ${MENU_MARKER} */ group.items.filter(item=>item.id!=='mapamundi'&&item.id!=='mapabatalha').map(item=>`
+  );
+  exp = exp.slice(0, mobileStart) + mobileSlice + exp.slice(mobileEnd);
+}
+
 const EXP_CSS_MARKER = '/* MOBILE CLEAN SURFACE · 2026-09-15 */';
 if (!expCss.includes(EXP_CSS_MARKER)) expCss += `\n\n${EXP_CSS_MARKER}\n@media(max-width:900px){\n  .mobile-dock{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:54px!important;left:8px!important;right:8px!important;bottom:calc(7px + env(safe-area-inset-bottom,0px))!important;border-radius:14px!important;box-shadow:0 10px 28px rgba(0,0,0,.46)!important}\n  .mobile-dock button{padding:4px 2px!important;gap:1px!important}.mobile-dock button span{font-size:14px!important}.mobile-dock button small{font-size:5.8px!important;letter-spacing:.02em!important}\n  .mobile-menu-sheet{max-height:min(68vh,580px)!important;padding:10px 10px calc(16px + env(safe-area-inset-bottom,0px))!important;border-radius:18px 18px 0 0!important;box-shadow:0 -16px 46px rgba(0,0,0,.58)!important}\n  .mobile-menu-head{min-height:38px!important}.mobile-menu-sheet section{margin:8px 0!important}.mobile-menu-sheet section h4{margin:0 0 6px!important;font-size:7px!important;letter-spacing:.12em!important;opacity:.72!important}.mobile-menu-sheet section>div{gap:6px!important}.mobile-menu-sheet section button{min-height:38px!important;padding:7px 9px!important;font-size:9px!important}\n  .turn-card,.atlas-card{display:none!important}.hud-actions button:last-child{display:none!important}\n  .session-sigil,.objective-glyph{display:none!important}\n  .session-hero{padding:16px 12px!important;margin-bottom:9px!important}.session-hero h2{font-size:21px!important;margin-bottom:5px!important}.session-hero p{font-size:12px!important;line-height:1.45!important;max-width:36rem!important}.session-hero-meta{gap:5px!important;margin-top:8px!important}.session-hero-meta span{font-size:8px!important;padding:4px 6px!important}\n  .session-grid{gap:8px!important}.session-card{border-radius:12px!important;box-shadow:0 10px 24px rgba(0,0,0,.22)!important}.session-page{padding-bottom:158px!important}\n}\n`;
 
@@ -43,7 +58,7 @@ if (!gameCss.includes(GAME_CSS_MARKER)) gameCss += `\n\n${GAME_CSS_MARKER}\n@med
 
 const mobileMainCheck = exp.match(/  const mobileMain=\[([\s\S]*?)\n  \];/)?.[1] || '';
 must(mobileMainCheck && !mobileMainCheck.includes('mapamundi') && !mobileMainCheck.includes('mapabatalha'), 'atalhos mobile ainda contêm mapas');
-must(exp.includes("const MOBILE_ALLOWED_NAV_IDS = new Set(['session','fichas','bestiario','personagens','prologo','classes','cronicas','livro','regras'])"), 'allowlist mobile esperada ausente');
+must(exp.includes(MENU_MARKER), 'filtro do menu mobile ausente');
 must(exp.includes("{id:'mapamundi',label:'Mapa Múndi'") && exp.includes("{id:'mapabatalha',label:'Mapa de Batalha'"), 'mapas desktop foram removidos');
 must(exp.includes('desktopGroups.map(group=>'), 'navegação desktop foi alterada indevidamente');
 must(app.includes("id==='mapamundi' || id==='mapabatalha'"), 'bloqueio mobile de mapas ausente');
