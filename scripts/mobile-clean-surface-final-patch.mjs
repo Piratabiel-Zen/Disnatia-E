@@ -43,8 +43,14 @@ if (!exp.includes(EXP_MARKER)) {
   const mobileEnd = exp.indexOf('export function SessionDashboard', mobileStart);
   must(mobileStart >= 0 && mobileEnd > mobileStart, 'bloco de navegação mobile não encontrado');
   let mobileSlice = exp.slice(mobileStart, mobileEnd);
-  must(mobileSlice.includes('desktopGroups.map(group=>'), 'menu mobile não está usando os grupos desktop esperados');
-  mobileSlice = mobileSlice.replace('desktopGroups.map(group=>', 'mobileCleanGroups20260915.map(group=>');
+  const mobileRenderCandidates = [
+    'desktopGroups.map(group=>',
+    'mobileAllowedGroups20260910.map(group=>',
+    'NAV_GROUPS.map(group=>',
+  ];
+  const activeRender = mobileRenderCandidates.find(candidate => mobileSlice.includes(candidate));
+  must(activeRender, 'render dos grupos do menu mobile não encontrado');
+  mobileSlice = mobileSlice.replace(activeRender, 'mobileCleanGroups20260915.map(group=>');
   exp = exp.slice(0, mobileStart) + mobileSlice + exp.slice(mobileEnd);
 }
 
