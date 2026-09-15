@@ -38,7 +38,7 @@ if (!cronicas.includes(CRONICAS_MARKER)) {
   const participantNames = (Array.isArray(selectedEntry?.participantes)
     ? selectedEntry.participantes
     : hasParticipantsField
-      ? String(selectedEntry?.participantes || '').split(/[,;\n]/)
+      ? String(selectedEntry?.participantes || '').split(/[,;]/)
       : legacyParticipants
   ).map(name=>String(name||'').trim()).filter(Boolean);
   const participantPalette = ['#58D9FF','#E8193C','#E8A020','#A855F7','#4ADE80','#F472B6','#22D3EE','#F59E0B'];
