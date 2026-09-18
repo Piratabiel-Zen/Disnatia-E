@@ -68,3 +68,7 @@
 @keyframes cosmicRing{0%{transform:scale(.15);opacity:0}18%{opacity:1}100%{transform:scale(8);opacity:0}}
 @keyframes cosmicLines{0%{transform:perspective(500px) rotateX(60deg) translateY(15%);opacity:0}25%{opacity:.45}100%{transform:perspective(500px) rotateX(60deg) translateY(-15%);opacity:0}}
 @keyframes cosmicMessage{0%{opacity:0;transform:scale(.65);filter:blur(8px)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
+
+
+/* CONNECTION HEALTH 2026-09-17 */
+.connection-health{position:fixed;right:12px;top:74px;z-index:430;display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:rgba(5,3,12,.72);border:1px solid rgba(255,255,255,.08);font:700 7px 'Cinzel',serif;letter-spacing:.05em;color:#8d8195;pointer-events:none;backdrop-filter:blur(8px)}.connection-health i{width:7px;height:7px;border-radius:50%;background:#6a6070;box-shadow:0 0 8px currentColor}.connection-health.good{color:#4ADE80}.connection-health.good i{background:#4ADE80}.connection-health.warn{color:#E8A020}.connection-health.warn i{background:#E8A020}.connection-health.bad{color:#E8193C}.connection-health.bad i{background:#E8193C}@media(max-width:900px){.connection-health{top:58px;right:8px;padding:4px 6px}.connection-health span{display:none}}
