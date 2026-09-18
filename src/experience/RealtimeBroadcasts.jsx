@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  collection, doc, limit, onSnapshot, orderBy, query, setDoc,
+  collection, limit, onSnapshot, orderBy, query,
 } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import PhysicalDiceTray from './PhysicalDiceTray';
@@ -27,61 +27,42 @@ function eventId(payload, kind) {
   return String(payload.rollId || payload.id || `${kind}_${payload.ts || 0}`);
 }
 
-function useDurableChannel({ configId, collectionName, kind, ttl }) {
+function useDurableChannel({ collectionName, kind, ttl }) {
   const [events, setEvents] = useState([]);
   const seenRef = useRef(new Set());
+  const primedRef = useRef(false);
 
   const ingest = useCallback((payload) => {
     if (!payload) return;
-    const ts = Number(payload.ts || 0);
-    if (!ts || Date.now() - ts > ttl) return;
     const id = eventId(payload, kind);
     if (!id || seenRef.current.has(id)) return;
-
     seenRef.current.add(id);
-    if (seenRef.current.size > 250) {
-      const recent = Array.from(seenRef.current).slice(-160);
+    if (seenRef.current.size > 300) {
+      const recent = Array.from(seenRef.current).slice(-180);
       seenRef.current = new Set(recent);
     }
-
-    const row = { ...payload, _rtId: id };
-    setEvents(prev => [...prev, row].sort((a,b) => Number(a.ts||0)-Number(b.ts||0)).slice(-40));
-
-    setTimeout(() => {
+    const row = { ...payload, _rtId: id, _receivedAt: Date.now() };
+    setEvents(prev => [...prev, row].sort((a,b) => Number(a._receivedAt||0)-Number(b._receivedAt||0)).slice(-40));
+    window.setTimeout(() => {
       setEvents(prev => prev.filter(item => item._rtId !== id));
     }, ttl);
   }, [kind, ttl]);
 
   useEffect(() => {
-    const configRef = doc(db, 'config', configId);
+    primedRef.current = false;
     const feedQuery = query(collection(db, collectionName), orderBy('ts', 'desc'), limit(20));
-
-    const unsubConfig = onSnapshot(configRef, { includeMetadataChanges: true }, snap => {
-      if (!snap.exists()) return;
-      const payload = snap.data() || {};
-      ingest(payload);
-
-      if (snap.metadata.hasPendingWrites) {
-        const id = eventId(payload, kind);
-        if (id) {
-          setDoc(doc(db, collectionName, id), {
-            ...payload,
-            mirroredAt: Date.now(),
-          }, { merge: true }).catch(() => {});
-        }
+    return onSnapshot(feedQuery, snap => {
+      if (!primedRef.current) {
+        primedRef.current = true;
+        snap.docs.forEach(d => seenRef.current.add(eventId({ _feedId:d.id, ...(d.data()||{}) }, kind)));
+        return;
       }
-    }, () => {});
-
-    const unsubFeed = onSnapshot(feedQuery, snap => {
-      const rows = snap.docs
-        .map(d => ({ _feedId: d.id, ...(d.data() || {}) }))
-        .filter(d => Number(d.ts || 0) && Date.now() - Number(d.ts || 0) <= ttl)
-        .sort((a,b) => Number(a.ts||0)-Number(b.ts||0));
-      rows.forEach(ingest);
-    }, () => {});
-
-    return () => { unsubConfig(); unsubFeed(); };
-  }, [collectionName, configId, ingest, kind, ttl]);
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') return;
+        ingest({ _feedId:change.doc.id, ...(change.doc.data()||{}) });
+      });
+    }, error => console.error('Falha no feed realtime:', collectionName, error));
+  }, [collectionName, ingest, kind]);
 
   return events;
 }
@@ -192,13 +173,11 @@ export default function RealtimeBroadcasts() {
   // renderização 3D fica exclusivamente em SharedDiceReplay. Assim não existe um
   // segundo replay concorrendo com a visão local ou com o replay central.
   useDurableChannel({
-    configId: 'public_dice_roll',
     collectionName: 'public_dice_events',
     kind: 'dice',
     ttl: DICE_TTL,
   });
   const cosmicEvents = useDurableChannel({
-    configId: 'cosmic_event',
     collectionName: 'cosmic_events',
     kind: 'cosmic',
     ttl: COSMIC_TTL,
