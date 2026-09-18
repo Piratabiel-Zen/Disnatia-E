@@ -85,9 +85,10 @@ must(fs.existsSync(generated),'ExperienceKit.generated ausente');
 const exp=fs.readFileSync(generated,'utf8');
 must(exp.includes("doc(db,'cosmic_events',event.id)"),'feed de evento cósmico ausente');
 must(exp.includes("doc(db,'cosmic_events',abilityEvent.id)"),'feed durável de habilidade ausente');
-must(exp.includes('ability-fired'),'feedback de habilidade ausente');
 must(exp.includes("e.dataTransfer.setData('text/plain',String(i))"),'drag de iniciativa ausente');
 must(css.includes(CSS_MARK),'CSS do feedback ausente');
+const feedbackBridge=fs.readFileSync(path.join(root,'src','experience','AbilityFeedbackBridge.jsx'),'utf8');
+must(feedbackBridge.includes("closest?.('.hud-ability')")&&feedbackBridge.includes('ability-fired'),'bridge de feedback de habilidade ausente');
 
 battle=fs.readFileSync(battleFile,'utf8');
 must(battle.includes('healthRingColor'),'cálculo de HP visual ausente');
