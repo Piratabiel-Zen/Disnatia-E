@@ -227,16 +227,20 @@ replaceApp(
   '} from "./experience/ExperienceKit.generated";',
   'ExperienceKit editável gerado'
 );
-replaceApp(
-  'import PublicDiceOverlay from "./shell/PublicDiceOverlay";',
-  'import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";',
-  'overlay de dados resiliente'
-);
-replaceApp(
-  '<PublicDiceOverlay/>',
-  '<RealtimeBroadcasts/>',
-  'montagem dos broadcasts'
-);
+if (app.includes('import PublicDiceOverlay from "./shell/PublicDiceOverlay";')) {
+  replaceApp(
+    'import PublicDiceOverlay from "./shell/PublicDiceOverlay";',
+    'import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";',
+    'overlay de dados resiliente'
+  );
+} else if (!app.includes('import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";')) {
+  throw new Error('Realtime shell patch falhou: nenhum broadcast realtime foi montado');
+}
+if (app.includes('<PublicDiceOverlay/>')) {
+  replaceApp('<PublicDiceOverlay/>','<RealtimeBroadcasts/>','montagem dos broadcasts');
+} else if (!app.includes('<RealtimeBroadcasts/>')) {
+  throw new Error('Realtime shell patch falhou: RealtimeBroadcasts não está no shell');
+}
 replaceApp(
   'className={`access-${access.role}`}',
   'className={`access-${access.role} realtime-sync-enabled`}',
