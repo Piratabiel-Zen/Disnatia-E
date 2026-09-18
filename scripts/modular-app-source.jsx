@@ -10,6 +10,7 @@ import "./experience/access.css";
 import "./experience/cosmic-living-background.css";
 
 import { ToastContainer } from "./core/toast";
+import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";
 import MasterToggle from "./shell/MasterToggle";
 import AmbientSoundPlayer from "./shell/AmbientSoundPlayer";
 import DiceWidget from "./shell/DiceWidget";
@@ -98,6 +99,7 @@ export default function App(){
       <div style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <CosmicLivingBackground variant="gate"/>
         <ToastContainer/>
+        <RealtimeBroadcasts/>
         <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode}/>
       </div>
     );
