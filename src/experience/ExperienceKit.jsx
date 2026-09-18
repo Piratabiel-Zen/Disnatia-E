@@ -186,7 +186,7 @@ export function ExperienceProvider({ children, tab, masterMode }) {
   const triggerCosmicEvent=useCallback(async(type='message',text='')=>{
     const info=EVENT_TYPES[type]||EVENT_TYPES.message;
     const event={id:nowId('cosmic'),type,text:String(text||info.label),ts:Date.now(),color:info.color,icon:info.icon};
-    await setDoc(doc(db,'config','cosmic_event'),event);
+    await Promise.all([setDoc(doc(db,'config','cosmic_event'),event),setDoc(doc(db,'cosmic_events',event.id),event,{merge:true})]);
     await addJournal(event.text,'event',{id:`event_${event.id}`,ts:event.ts,icon:event.icon,color:event.color,source:'cosmic'});
   },[addJournal]);
 
@@ -239,10 +239,14 @@ export function ExperienceProvider({ children, tab, masterMode }) {
       cooldowns:{...cooldowns,...(turns>0?{[abilityId]:turns}:{})},
     });
     await addJournal(`${selectedSheet.nome||'Personagem'} usou ${ability.name||ability.nome}.`,'ability',{icon:'⚡',color:selectedClass?.color||'#A855F7'});
-    await setDoc(doc(db,'config','cosmic_event'),{
-      id:nowId('ability'),type:'ability',text:ability.name||ability.nome||'Habilidade',ts:Date.now(),
-      color:selectedClass?.color||'#A855F7',icon:selectedClass?.icon||'⚡',soft:true,
-    });
+    const abilityEvent={
+      id:nowId('ability'),type:'ability',text:`${selectedSheet.nome||'Personagem'} usou ${ability.name||ability.nome||'Habilidade'}`,ts:Date.now(),
+      color:selectedClass?.color||'#A855F7',icon:selectedClass?.icon||'⚡',soft:true,source:'ability',sheetId:String(selectedSheet.id),
+    };
+    await Promise.all([
+      setDoc(doc(db,'config','cosmic_event'),abilityEvent),
+      setDoc(doc(db,'cosmic_events',abilityEvent.id),abilityEvent,{merge:true}),
+    ]);
     return true;
   },[selectedSheet,selectedClass,addJournal]);
 
