@@ -17,6 +17,7 @@ import DiceWidget from "./shell/DiceWidget";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import SharedDiceReplay from "./experience/SharedDiceReplay";
 import DiceCriticalFx from "./experience/DiceCriticalFx";
+import ConnectionHealth from "./experience/ConnectionHealth";
 import GameExperience3 from "./experience/GameExperience3";
 import {
   ExperienceProvider,
@@ -111,6 +112,7 @@ export default function App(){
         <PublicDiceOverlay/>
         <SharedDiceReplay access={access}/>
         <DiceCriticalFx/>
+        <ConnectionHealth/>
 
         <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
 
