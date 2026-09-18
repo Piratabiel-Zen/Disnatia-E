@@ -18,6 +18,7 @@ import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import SharedDiceReplay from "./experience/SharedDiceReplay";
 import DiceCriticalFx from "./experience/DiceCriticalFx";
 import ConnectionHealth from "./experience/ConnectionHealth";
+import AbilityFeedbackBridge from "./experience/AbilityFeedbackBridge";
 import GameExperience3 from "./experience/GameExperience3";
 import {
   ExperienceProvider,
@@ -113,6 +114,7 @@ export default function App(){
         <SharedDiceReplay access={access}/>
         <DiceCriticalFx/>
         <ConnectionHealth/>
+        <AbilityFeedbackBridge/>
 
         <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
 
