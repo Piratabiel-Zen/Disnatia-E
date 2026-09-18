@@ -332,7 +332,7 @@ const LIVRO_CSS=`
 
 const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80',necromante:'#6E6E80',bardo:'#FFD86B',arcanjo:'#5B2C8C',personalizado:'#C0C0C0'};
 const SHEET_GLOWS={fogo:'rgba(30,200,255,0.16)',escarlate:'rgba(232,25,60,0.16)',corvos:'rgba(232,160,32,0.16)',magos:'rgba(168,85,247,0.16)',marfim:'rgba(74,222,128,0.16)',necromante:'rgba(110,110,128,0.18)',bardo:'rgba(255,216,107,0.18)',arcanjo:'rgba(91,44,140,0.2)',personalizado:'rgba(192,192,192,0.16)'};
-const MASTER_PIN='dinastia';
+const MASTER_PIN='b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 
 // ─── 🌦️ ATMOSPHERE SYSTEM ────────────────────────────────────────────────────
 const ATMOSPHERES = {
@@ -457,20 +457,20 @@ async function pushToast(msg, icon='✦', color='#C8A8E8') {
   } catch(e) { console.error(e); }
 }
 
-// Publica cada rolagem em um canal global dedicado e mantém o documento antigo
-// por compatibilidade com componentes e versões anteriores do site.
+// Canal durável único de rolagens. Evita triplicar writes e notificações.
 async function publishDiceResult(result) {
   const payload = {
     ...result,
     ts: result?.ts || Date.now(),
     rollId: result?.rollId || `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
   };
-  const writes = await Promise.allSettled([
-    setDoc(doc(db, 'config', 'public_dice_roll'), payload),
-    setDoc(doc(db, 'config', 'combat_dice'), payload),
-  ]);
-  if (writes.every(w => w.status === 'rejected')) {
-    console.error('Não foi possível publicar a rolagem global.', writes);
+  try {
+    await setDoc(doc(db, 'public_dice_events', String(payload.rollId)), {
+      ...payload,
+      publishedAt: Date.now(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('Não foi possível publicar a rolagem global.', error);
   }
   return payload;
 }
