@@ -37,9 +37,10 @@ for(const rel of ['src/experience/ExperienceKit.jsx','src/experience/ExperienceK
   src=replaceRequired(src,abilityBefore,abilityAfter,`${rel} ability feed`);
 
   // Feedback tátil/visual imediato no HUD quando uma habilidade realmente foi aceita.
-  const clickBefore="onClick={()=>{if(!passive)useQuickAbility(a)}}";
   const clickAfter="onClick={async e=>{if(passive)return;const btn=e.currentTarget;if(await useQuickAbility(a)){btn.classList.remove('ability-fired');void btn.offsetWidth;btn.classList.add('ability-fired');window.setTimeout(()=>btn.classList.remove('ability-fired'),420)}}}";
-  if(src.includes(clickBefore))src=src.replaceAll(clickBefore,clickAfter);
+  for(const clickBefore of ["onClick={()=>{if(!passive)useQuickAbility(a)}}","onClick={()=>useQuickAbility(a)}"]){
+    if(src.includes(clickBefore))src=src.replaceAll(clickBefore,clickAfter);
+  }
 
   // Drag-and-drop real da iniciativa do Mestre. As setas continuam como fallback.
   const initBefore="<div key={c.id||i} className={i===Number(combatState.turnIdx||0)?'active':''}><span>{i+1}</span><b>{c.nome||'Combatente'}</b>";
