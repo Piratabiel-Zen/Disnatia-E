@@ -72,12 +72,14 @@ experience = replaceRequired(
 
 // Todo evento do Mestre recebe um documento próprio. Não dependemos de o snapshot
 // do documento único conseguir espelhar todas as manifestações em sequência.
+if (!experience.includes("setDoc(doc(db,'cosmic_events',event.id)")) {
 experience = replaceRequired(
   experience,
   "    await setDoc(doc(db,'config','cosmic_event'),event);\n    await addJournal(event.text,'event',{id:`event_${event.id}`,ts:event.ts,icon:event.icon,color:event.color,source:'cosmic'});",
   "    await Promise.all([\n      setDoc(doc(db,'config','cosmic_event'),event),\n      setDoc(doc(db,'cosmic_events',event.id),event),\n    ]);\n    await addJournal(event.text,'event',{id:`event_${event.id}`,ts:event.ts,icon:event.icon,color:event.color,source:'cosmic'});",
   'feed durável de todos os eventos cósmicos'
 );
+}
 
 // ── Uso rápido de habilidade: valida requisito e sempre publica animação ────
 experience = replaceRequired(
@@ -86,12 +88,14 @@ experience = replaceRequired(
   "    if(!selectedSheet || !ability) return false;\n    const level=Number(selectedSheet.nivel||1);\n    const req=Number(ability.req||1);\n    const passive=ability.tipoHab==='passiva';\n    if(passive || ability._locked || req>level) return false;\n    const abilityId=String(ability.id||ability.name||ability.nome||'');\n    const cost=Number(ability.cost||ability.custo||0);",
   'validação de requisito no uso rápido'
 );
+if (!experience.includes("setDoc(doc(db,'cosmic_events',abilityEvent.id)")) {
 experience = replaceRequired(
   experience,
   "    await setDoc(doc(db,'config','cosmic_event'),{\n      id:nowId('ability'),type:'ability',text:ability.name||ability.nome||'Habilidade',ts:Date.now(),\n      color:selectedClass?.color||'#A855F7',icon:selectedClass?.icon||'⚡',soft:true,\n    });",
   "    const abilityEvent={\n      id:nowId('ability'),type:'ability',text:ability.name||ability.nome||'Habilidade',ts:Date.now(),\n      color:selectedClass?.color||'#A855F7',icon:selectedClass?.icon||'⚡',soft:true,source:'ability',sheetId:String(selectedSheet.id),\n    };\n    await Promise.all([\n      setDoc(doc(db,'config','cosmic_event'),abilityEvent),\n      setDoc(doc(db,'cosmic_events',abilityEvent.id),abilityEvent),\n    ]);",
   'broadcast durável de cada uso de habilidade'
 );
+}
 
 // ── HUD dos jogadores: todas as habilidades da ficha ───────────────────────
 experience = replaceRequired(
