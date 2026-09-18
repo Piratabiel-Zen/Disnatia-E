@@ -66,7 +66,19 @@ if(!css.includes(CSS_MARK)){
   fs.writeFileSync(cssFile,css);
 }
 
-// ── 3) Sanidade do lote.
+// ── 3) HP: contorno por vida aplicado somente depois do patch de silhueta alfa.
+const battleFile=path.join(root,'src','features','mapa-batalha','BattleMapPage.jsx');
+let battle=fs.readFileSync(battleFile,'utf8');
+const hpShadowBefore="                                  : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))',";
+const hpShadowAfter="                                  : (displayMaxHp>0 ? \`drop-shadow(0 0 1px \${healthRingColor}) drop-shadow(0 0 \${Math.max(3,4*zoom)}px \${healthRingColor}99) drop-shadow(0 2px 4px rgba(0,0,0,.68))\` : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))'),";
+if(!battle.includes('HP HEALTH CONTOUR 2026-09-17')){
+  must(battle.includes(hpShadowBefore),'sombra base do token pós-silhueta ausente');
+  battle=battle.replace(hpShadowBefore,hpShadowAfter);
+  battle=battle.replace("                              filter: draggingId === token.id","                              /* HP HEALTH CONTOUR 2026-09-17 */\n                              filter: draggingId === token.id");
+  fs.writeFileSync(battleFile,battle);
+}
+
+// ── 4) Sanidade do lote.
 const generated=path.join(root,'src','experience','ExperienceKit.generated.jsx');
 must(fs.existsSync(generated),'ExperienceKit.generated ausente');
 const exp=fs.readFileSync(generated,'utf8');
@@ -76,8 +88,9 @@ must(exp.includes('ability-fired'),'feedback de habilidade ausente');
 must(exp.includes("e.dataTransfer.setData('text/plain',String(i))"),'drag de iniciativa ausente');
 must(css.includes(CSS_MARK),'CSS do feedback ausente');
 
-const battle=fs.readFileSync(path.join(root,'src','features','mapa-batalha','BattleMapPage.jsx'),'utf8');
-must(battle.includes('healthRingColor'),'anel de HP ausente');
+battle=fs.readFileSync(battleFile,'utf8');
+must(battle.includes('healthRingColor'),'cálculo de HP visual ausente');
+must(battle.includes('HP HEALTH CONTOUR 2026-09-17'),'contorno de HP ausente');
 must(battle.includes('undoTokenHp'),'undo de HP ausente');
 must(!battle.includes('battlemap_motion_'),'canal espelho de movimento reapareceu');
 
