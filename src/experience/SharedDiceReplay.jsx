@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import PhysicalDiceTray from './PhysicalDiceTray';
 import './shared-dice-replay.css';
@@ -68,25 +68,10 @@ export default function SharedDiceReplay({ access }) {
   }, [localSheetId, remember]);
 
   useEffect(() => {
-    let configPrimed = false;
     let feedPrimed = false;
-
-    const configRef = doc(db, 'config', 'public_dice_roll');
     const feedQuery = query(collection(db, 'public_dice_events'), orderBy('ts', 'desc'), limit(20));
 
-    const unsubConfig = onSnapshot(configRef, snap => {
-      if (!snap.exists()) return;
-      const payload = snap.data() || {};
-      const id = getReplayId(payload);
-      if (!configPrimed) {
-        configPrimed = true;
-        remember(id);
-        return;
-      }
-      enqueue(payload);
-    }, error => console.error('Falha no replay compartilhado do dado:', error));
-
-    const unsubFeed = onSnapshot(feedQuery, snap => {
+    return onSnapshot(feedQuery, snap => {
       if (!feedPrimed) {
         feedPrimed = true;
         snap.docs.forEach(d => remember(getReplayId({ _feedId: d.id, ...(d.data() || {}) })));
@@ -97,8 +82,6 @@ export default function SharedDiceReplay({ access }) {
         enqueue({ _feedId: change.doc.id, ...(change.doc.data() || {}) });
       });
     }, error => console.error('Falha no feed do replay compartilhado:', error));
-
-    return () => { unsubConfig(); unsubFeed(); };
   }, [enqueue, remember]);
 
   useEffect(() => {

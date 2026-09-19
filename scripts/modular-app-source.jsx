@@ -10,13 +10,15 @@ import "./experience/access.css";
 import "./experience/cosmic-living-background.css";
 
 import { ToastContainer } from "./core/toast";
-import PublicDiceOverlay from "./shell/PublicDiceOverlay";
+import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";
 import MasterToggle from "./shell/MasterToggle";
 import AmbientSoundPlayer from "./shell/AmbientSoundPlayer";
 import DiceWidget from "./shell/DiceWidget";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import SharedDiceReplay from "./experience/SharedDiceReplay";
 import DiceCriticalFx from "./experience/DiceCriticalFx";
+import ConnectionHealth from "./experience/ConnectionHealth";
+import AbilityFeedbackBridge from "./experience/AbilityFeedbackBridge";
 import GameExperience3 from "./experience/GameExperience3";
 import {
   ExperienceProvider,
@@ -98,6 +100,7 @@ export default function App(){
       <div style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <CosmicLivingBackground variant="gate"/>
         <ToastContainer/>
+        <RealtimeBroadcasts/>
         <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode}/>
       </div>
     );
@@ -108,9 +111,10 @@ export default function App(){
       <div className={`access-${access.role}`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <CosmicLivingBackground/>
         <ToastContainer/>
-        <PublicDiceOverlay/>
         <SharedDiceReplay access={access}/>
         <DiceCriticalFx/>
+        <ConnectionHealth/>
+        <AbilityFeedbackBridge/>
 
         <ImmersiveNavigation tab={tab} onNavigate={navigate} accent={atm.accent}/>
 

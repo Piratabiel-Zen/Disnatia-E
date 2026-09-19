@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
-import { CLASSES, MASTER_PIN, getSheetMaxHp } from '../data/gameData';
+import { CLASSES, getSheetMaxHp } from '../data/gameData';
 
 const ACCESS_KEY = 'dinastia_access_v1';
 const PLAYER_SHEET_KEY = 'dinastia_player_sheet';
+const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
+
+async function sha256(value) {
+  const bytes = new TextEncoder().encode(String(value || '').trim().toLowerCase());
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 export function loadStoredAccess() {
   try {
@@ -87,8 +94,9 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
     onAccess?.(payload);
   };
 
-  const enterMaster = () => {
-    if (String(pin).trim() !== String(MASTER_PIN)) {
+  const enterMaster = async () => {
+    const digest = await sha256(pin);
+    if (digest !== MASTER_PIN_SHA256) {
       setError('Senha do Mestre incorreta.');
       return;
     }
