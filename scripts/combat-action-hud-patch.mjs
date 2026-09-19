@@ -194,7 +194,7 @@ html.dinastia-combat-hud .g3-actionbar{display:none!important}
 @keyframes combatActionWave{0%{transform:scale(.25);opacity:0}16%{opacity:.95}100%{transform:scale(9);opacity:0}}@keyframes combatActionCore{0%{opacity:0;transform:scale(.72)}14%{opacity:1;transform:scale(1.06)}25%,78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}@keyframes combatActionIcon{0%{transform:scale(.3) rotate(-12deg);opacity:0}30%{transform:scale(1.18) rotate(3deg);opacity:1}100%{transform:scale(1);opacity:1}}@keyframes combatPulseFade{0%,100%{opacity:0}8%,84%{opacity:1}}
 @media(max-width:900px){.combat-action-hud{left:8px;right:8px;bottom:62px;transform:none;width:auto;grid-template-columns:110px minmax(0,1fr);min-height:76px;padding:6px}.combat-action-character{grid-template-columns:38px minmax(0,1fr);padding:3px;border-right:0}.combat-action-portrait{width:36px;height:36px;font-size:17px}.combat-action-identity span,.combat-action-vitals{display:none}.combat-action-abilities{grid-column:2}.combat-ability{flex-basis:112px;min-height:60px}.combat-action-side{display:none}.combat-target-picker{width:calc(100vw - 18px);bottom:calc(100% + 7px)}.combat-target-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.combat-action-pulse-core strong{font-size:clamp(24px,9vw,44px)}.combat-action-class-icon{font-size:50px}}
 @media(prefers-reduced-motion:reduce){.combat-action-wave{display:none}.combat-action-pulse,.combat-action-pulse-core,.combat-action-class-icon{animation:none!important}}
-\`;
+`;
 }
 
 must(exp.includes('function CombatActionPulse'),'pulso global ausente');
