@@ -28,21 +28,24 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: package.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install --no-package-lock
+        run: npm ci
 
       - name: Production dependency audit
         run: |
-          npm install --package-lock-only --ignore-scripts
           npm audit --omit=dev --audit-level=high
 
       - name: Production build
         run: npm run build
 
+      - name: Realtime and adventure regression tests
+        run: npm test
+
       - name: Final stability invariants
-        run: node scripts/final-stability-guard.mjs
+        working-directory: .generated
+        run: node ../scripts/final-stability-guard.mjs
 
       - name: Enforce bundle budget
         shell: bash

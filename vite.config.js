@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { execFileSync } from 'node:child_process'
+import { prepareBuild } from './scripts/prepare-build.mjs'
 
 function dinastiaModularBuild() {
   return {
@@ -8,64 +8,67 @@ function dinastiaModularBuild() {
     enforce: 'pre',
     configResolved(config) {
       if (config.isPreview || process.argv.includes('preview')) return
-      execFileSync(process.execPath, ['scripts/build-modular.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/realtime-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/game-experience-3-context-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/session-ui-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/experience-layer-cleanup.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/combat-hud-animation-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/master-battle-scroll-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/ambient-player-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/dice-identity-rules-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/elyon-book-chapter-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/cronicas-hq-images-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/cosmic-modern-ui-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/enemy-sheets-battlemap-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/player-class-lock-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/final-interaction-fixes-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/cronicas-original-quality-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/video-background-battlemap-ping-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/enemy-token-hp-link-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/global-realtime-sync-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/battlemap-ultra-realtime-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/battlemap-position-authority-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/site-fluidity-hp-privacy-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/worldbook-usability-patch-v2.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/worldbook-jsx-fix-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/site-immersion-performance-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/enemy-cosmic-vigor-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/combat-immersion-physical-dice-token-rotation-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/dice-replay-multidice-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/vigor-dice-token-ux-refinement-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/token-rotation-follow-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/realtime-interaction-low-latency-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/advanced-combat-v2-bootstrap-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/advanced-combat-automation-v2-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/combat-layout-initiative-drag-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/runtime-performance-balance-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/game-experience-3-world-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/game-director-persistence-broadcast-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/game-experience-3-polish-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/session-opening-cinematic-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/mobile-navigation-access-layout-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/mobile-hub-motion-audio-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/desktop-navigation-master-enemies-fix.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/battlemap-original-quality-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/battlemap-realtime-consistency-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/realtime-zero-wait-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/desktop-runtime-stability-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/owlbear-interaction-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/runtime-lightweight-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/tabletop-realtime-fastpath-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/live-drag-platform-parity-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/opera-mobile-parity-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/cronicas-clean-modern-stars-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/mobile-clean-surface-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/audit-ux-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/tabletop-critical-hotfix-2026-09-19.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/immersive-combat-dice-motion-hotfix-2026-09-19.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/combat-action-hud-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
-      execFileSync(process.execPath, ['scripts/final-stability-guard.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      prepareBuild([
+        "scripts/build-modular.mjs",
+        "scripts/realtime-patch.mjs",
+        "scripts/game-experience-3-context-fix.mjs",
+        "scripts/session-ui-patch.mjs",
+        "scripts/experience-layer-cleanup.mjs",
+        "scripts/combat-hud-animation-patch.mjs",
+        "scripts/master-battle-scroll-patch.mjs",
+        "scripts/ambient-player-fix.mjs",
+        "scripts/dice-identity-rules-patch.mjs",
+        "scripts/elyon-book-chapter-patch.mjs",
+        "scripts/cronicas-hq-images-patch.mjs",
+        "scripts/cosmic-modern-ui-patch.mjs",
+        "scripts/enemy-sheets-battlemap-patch.mjs",
+        "scripts/player-class-lock-patch.mjs",
+        "scripts/final-interaction-fixes-patch.mjs",
+        "scripts/cronicas-original-quality-patch.mjs",
+        "scripts/video-background-battlemap-ping-patch.mjs",
+        "scripts/enemy-token-hp-link-patch.mjs",
+        "scripts/global-realtime-sync-patch.mjs",
+        "scripts/battlemap-ultra-realtime-patch.mjs",
+        "scripts/battlemap-position-authority-patch.mjs",
+        "scripts/site-fluidity-hp-privacy-patch.mjs",
+        "scripts/worldbook-usability-patch-v2.mjs",
+        "scripts/worldbook-jsx-fix-patch.mjs",
+        "scripts/site-immersion-performance-patch.mjs",
+        "scripts/enemy-cosmic-vigor-patch.mjs",
+        "scripts/combat-immersion-physical-dice-token-rotation-patch.mjs",
+        "scripts/dice-replay-multidice-patch.mjs",
+        "scripts/vigor-dice-token-ux-refinement-patch.mjs",
+        "scripts/token-rotation-follow-patch.mjs",
+        "scripts/realtime-interaction-low-latency-patch.mjs",
+        "scripts/advanced-combat-v2-bootstrap-fix.mjs",
+        "scripts/advanced-combat-automation-v2-patch.mjs",
+        "scripts/combat-layout-initiative-drag-patch.mjs",
+        "scripts/runtime-performance-balance-patch.mjs",
+        "scripts/game-experience-3-world-patch.mjs",
+        "scripts/game-director-persistence-broadcast-patch.mjs",
+        "scripts/game-experience-3-polish-patch.mjs",
+        "scripts/session-opening-cinematic-patch.mjs",
+        "scripts/mobile-navigation-access-layout-patch.mjs",
+        "scripts/mobile-hub-motion-audio-patch.mjs",
+        "scripts/desktop-navigation-master-enemies-fix.mjs",
+        "scripts/battlemap-original-quality-patch.mjs",
+        "scripts/battlemap-realtime-consistency-patch.mjs",
+        "scripts/realtime-zero-wait-patch.mjs",
+        "scripts/desktop-runtime-stability-patch.mjs",
+        "scripts/owlbear-interaction-final-patch.mjs",
+        "scripts/runtime-lightweight-final-patch.mjs",
+        "scripts/tabletop-realtime-fastpath-patch.mjs",
+        "scripts/live-drag-platform-parity-patch.mjs",
+        "scripts/opera-mobile-parity-final-patch.mjs",
+        "scripts/cronicas-clean-modern-stars-patch.mjs",
+        "scripts/mobile-clean-surface-final-patch.mjs",
+        "scripts/audit-ux-final-patch.mjs",
+        "scripts/tabletop-critical-hotfix-2026-09-19.mjs",
+        "scripts/immersive-combat-dice-motion-hotfix-2026-09-19.mjs",
+        "scripts/combat-action-hud-patch.mjs",
+        "scripts/final-stability-guard.mjs",
+        "scripts/adventure-session-patch.mjs"
+      ])
     },
   }
 }

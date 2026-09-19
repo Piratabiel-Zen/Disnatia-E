@@ -1,0 +1,15 @@
+node_modules/
+.generated/
+dist/
+.vercel/
+.env*
+!.env.example
+public/media/deserto-bg.mp4
+src/core/
+src/data/
+src/features/
+src/shell/
+src/styles/
+src/experience/*.generated.jsx
+src/experience/*.adventure.jsx
+qa-results/
