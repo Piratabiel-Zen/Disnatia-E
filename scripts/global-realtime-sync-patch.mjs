@@ -21,13 +21,12 @@ const singleFeedFn = `export async function publishDiceResult(result) {
     ts: result?.ts || Date.now(),
     rollId: result?.rollId || \`${Date.now()}_${Math.random().toString(36).slice(2, 9)}\`,
   };
-  try {
-    await setDoc(doc(db, 'public_dice_events', String(payload.rollId)), {
-      ...payload,
-      publishedAt: Date.now(),
-    }, { merge: true });
-  } catch (error) {
-    console.error('Não foi possível publicar a rolagem global.', error);
+  const writes = await Promise.allSettled([
+    setDoc(doc(db, 'config', 'public_dice_roll'), payload, { merge: true }),
+    setDoc(doc(db, 'public_dice_events', String(payload.rollId)), { ...payload, publishedAt: Date.now() }, { merge: true }),
+  ]);
+  if (writes.every(result => result.status === 'rejected')) {
+    console.error('Não foi possível publicar a rolagem global.', writes);
   }
   return payload;
 }`;
@@ -89,7 +88,8 @@ for (const [source, marker, label] of [
 ]) {
   if (!source.includes(marker)) throw new Error(`Global realtime patch incompleto: ${label}`);
 }
-if (combat.includes("config', 'combat_dice'") || combat.includes("config', 'public_dice_roll'")) throw new Error('Global realtime patch: writes legados de dado ainda existem.');
+if (combat.includes("config', 'combat_dice'")) throw new Error('Global realtime patch: combat_dice legado ainda existe.');
+if (!combat.includes("config', 'public_dice_roll'")) throw new Error('Global realtime patch: fallback compatível public_dice_roll ausente.');
 if (battle.includes('age > 6500')) throw new Error('Global realtime patch: TTL antigo do ping ainda existe.');
 if (broadcasts.includes('Date.now() - ts > ttl')) throw new Error('Global realtime patch: TTL antigo de broadcast ainda existe.');
 if (publicDice.includes('Date.now() - d.ts > 12000')) throw new Error('Global realtime patch: TTL antigo do overlay ainda existe.');
