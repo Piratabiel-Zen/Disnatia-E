@@ -62,6 +62,7 @@ function dinastiaModularBuild() {
       execFileSync(process.execPath, ['scripts/cronicas-clean-modern-stars-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/mobile-clean-surface-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/audit-ux-final-patch.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
+      execFileSync(process.execPath, ['scripts/tabletop-critical-hotfix-2026-09-19.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
       execFileSync(process.execPath, ['scripts/final-stability-guard.mjs'], { cwd: process.cwd(), stdio: 'inherit' })
     },
   }
