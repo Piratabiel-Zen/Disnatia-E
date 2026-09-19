@@ -173,8 +173,8 @@ if(!exp.includes('<CombatActionPulse/>')){
 
 const marker='/* COMBAT ACTION HUD 2026-09-19 */';
 if(!css.includes(marker)){
-css+=\`
-\n\${marker}
+css+=`
+\n${marker}
 html.dinastia-combat-hud .g3-actionbar{display:none!important}
 .combat-action-hud{position:fixed;left:50%;bottom:12px;z-index:9200;transform:translateX(-50%);width:min(1180px,calc(100vw - 190px));min-height:92px;display:grid;grid-template-columns:280px minmax(0,1fr) auto;gap:10px;align-items:stretch;padding:8px;border-radius:18px;border:1px solid color-mix(in srgb,var(--combat-accent) 34%,transparent);background:linear-gradient(180deg,rgba(10,5,18,.97),rgba(4,2,9,.97));box-shadow:0 20px 60px rgba(0,0,0,.62),0 0 34px color-mix(in srgb,var(--combat-accent) 12%,transparent);backdrop-filter:blur(18px)}
 .combat-action-hud.my-turn{border-color:color-mix(in srgb,var(--combat-accent) 68%,transparent);box-shadow:0 20px 60px rgba(0,0,0,.62),0 0 40px color-mix(in srgb,var(--combat-accent) 24%,transparent)}
