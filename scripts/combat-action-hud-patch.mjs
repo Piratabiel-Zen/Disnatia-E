@@ -161,6 +161,67 @@ function CombatActionPulse(){
 
 exp=exp.slice(0,hudStart)+hud+exp.slice(hudEnd);
 
+// O bloco de CombatHud substitui tudo até CharacterStateAura. Nas versões
+// anteriores isso também removia TurnRibbon, embora ExperienceLayer ainda o
+// montasse depois do login. O erro em runtime desmontava toda a aplicação e
+// aparecia para o usuário como uma tela preta. Recoloque o componente no
+// mesmo patch que altera o HUD e falhe cedo se a montagem ficar inconsistente.
+if(!exp.includes('function TurnRibbon(')){
+  const turnRibbon=`function TurnRibbon(){
+  const { tab,combat,combatState }=useExperience();
+  if(!combat?.active||tab!=='mapabatalha'||!combatState?.initiative?.length) return null;
+  const list=Array.isArray(combatState.initiative)?combatState.initiative:[];
+  const idx=Math.max(0,Math.min(Number(combatState.turnIdx||0),list.length-1));
+  return <div className="turn-ribbon"><div className="turn-round">RODADA <b>{combatState.round||1}</b></div><div className="turn-list">{list.map((c,i)=><div key={c.id||i} className={'turn-chip '+(i===idx?'active ':'')+(c.type==='enemy'?'enemy':'')} style={{'--c':c.color||'#A855F7'}}><div>{c.foto?<img src={c.foto} alt="" decoding="async"/>:<span>{c.nome?.[0]||'?'}</span>}</div><small>{c.nome||'Combatente'}</small>{i===idx&&<b>AGORA</b>}</div>)}</div></div>;
+}
+
+`;
+  const turnAnchor='\nfunction CharacterStateAura';
+  must(exp.includes(turnAnchor),'âncora do TurnRibbon não encontrada');
+  exp=exp.replace(turnAnchor,`\n${turnRibbon}function CharacterStateAura`);
+}
+
+// O mesmo recorte também removia o feedback de dano aplicado no início da
+// rodada. Preserve a camada visual para que a ExperienceLayer nunca aponte
+// para um símbolo que não existe no bundle final.
+if(!exp.includes('function CombatStatusDamageFx(')){
+  const statusFx=`function CombatStatusDamageFx(){
+  const { selectedSheet }=useExperience();
+  const [event,setEvent]=useState(null);
+  const primed=useRef(false);
+  const seen=useRef(new Set());
+  useEffect(()=>{
+    if(!selectedSheet?.id)return;
+    primed.current=false;seen.current=new Set();
+    const q=query(collection(db,'combat_effect_events'),orderBy('ts','desc'),limit(20));
+    const unsub=onSnapshot(q,snap=>{
+      if(!primed.current){primed.current=true;snap.docs.forEach(d=>seen.current.add(d.id));return;}
+      snap.docChanges().forEach(change=>{
+        if(change.type==='removed'||seen.current.has(change.doc.id))return;
+        seen.current.add(change.doc.id);
+        const row=change.doc.data()||{};
+        if(String(row.sheetId||'')!==String(selectedSheet.id)||Number(row.damage||0)<=0)return;
+        setEvent({...row,_id:change.doc.id});
+      });
+    },()=>{});
+    return()=>unsub();
+  },[selectedSheet?.id]);
+  useEffect(()=>{if(!event)return;const timer=setTimeout(()=>setEvent(null),2200);return()=>clearTimeout(timer)},[event?._id]);
+  if(!event)return null;
+  return <div className="combat-status-damage-fx" key={event._id}><div><strong>−1 HP</strong><span>{event.reason||'Efeito negativo'}</span><small>Dano de status da nova rodada</small></div></div>;
+}
+
+`;
+  const statusAnchor='\nfunction CharacterStateAura';
+  must(exp.includes(statusAnchor),'âncora do CombatStatusDamageFx não encontrada');
+  exp=exp.replace(statusAnchor,`\n${statusFx}function CharacterStateAura`);
+}
+
+if(!exp.includes('<CombatStatusDamageFx/>')){
+  must(exp.includes('<TurnRibbon/>'),'montagem do CombatStatusDamageFx sem TurnRibbon');
+  exp=exp.replace('<TurnRibbon/>','<TurnRibbon/>\n    <CombatStatusDamageFx/>');
+}
+
 // Monta o pulso global junto às camadas imersivas.
 if(!exp.includes('<CombatActionPulse/>')){
   const candidates=['<CosmicEventLayer/>','<TurnRibbon/>'];
@@ -198,6 +259,10 @@ html.dinastia-combat-hud .g3-actionbar{display:none!important}
 }
 
 must(exp.includes('function CombatActionPulse'),'pulso global ausente');
+must(exp.includes('function TurnRibbon('),'TurnRibbon ausente após a substituição do HUD');
+must(exp.includes('<TurnRibbon/>'),'TurnRibbon não montado na camada de experiência');
+must(exp.includes('function CombatStatusDamageFx('),'feedback de dano ausente após a substituição do HUD');
+must(exp.includes('<CombatStatusDamageFx/>'),'feedback de dano não montado na camada de experiência');
 must(exp.includes('Ataque simples'),'ação simples ausente');
 must(exp.includes("doc(db,'config','combat_action')"),'broadcast de ação ausente');
 must(exp.includes("doc(db,'combat_action_events',id)"),'feed durável de ação ausente');
@@ -208,3 +273,4 @@ must(css.includes(marker),'CSS do HUD ausente');
 fs.writeFileSync(expFile,exp);
 fs.writeFileSync(cssFile,css);
 console.log('Dinastia E: HUD de combate contextual, ataque simples, alvo e pulso global de habilidade aplicados.');
+
