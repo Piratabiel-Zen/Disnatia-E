@@ -112,11 +112,15 @@ if(!game.includes('const clientJoinedAtRef=useRef(Date.now())')){
   const [openingVisible,setOpeningVisible]=useState(false);
   const openingSeenRef=useRef('');`);
 
-  const bossGuard=`    if(!boss?.id||boss.visible===false||dismissed===String(boss.id)){setBossVisible(false);return;}`;
-  const bossGuardNew=`    if(!boss?.id||boss.visible===false||dismissed===String(boss.id)){setBossVisible(false);return;}
-    if(Number(boss.createdAt||0) < clientJoinedAtRef.current - 1000){setBossVisible(false);lastBossRevealIdRef.current=String(boss.id||'');return;}`;
-  must(game.includes(bossGuard),'guard de boss reveal ausente');
-  game=game.replace(bossGuard,bossGuardNew);
+  const bossDismissedAnchor=`    const dismissed=String(game?.bossRevealDismissedId||'');`;
+  const bossDismissedNew=`${bossDismissedAnchor}
+    if(boss?.id && Number(boss.createdAt||0) < clientJoinedAtRef.current - 1000){
+      setBossVisible(false);
+      lastBossRevealIdRef.current=String(boss.id||'');
+      return;
+    }`;
+  must(game.includes(bossDismissedAnchor),'efeito de boss reveal final ausente');
+  game=game.replace(bossDismissedAnchor,bossDismissedNew);
 
   const bossEffectEnd=`  },[gameReady,game?.bossReveal?.id,game?.bossReveal?.visible,game?.bossRevealDismissedId]);`;
   must(game.includes(bossEffectEnd),'fim do efeito de boss ausente');
