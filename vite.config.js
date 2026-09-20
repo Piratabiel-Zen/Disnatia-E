@@ -67,7 +67,8 @@ function dinastiaModularBuild() {
         "scripts/immersive-combat-dice-motion-hotfix-2026-09-19.mjs",
         "scripts/combat-action-hud-patch.mjs",
         "scripts/final-stability-guard.mjs",
-        "scripts/adventure-session-patch.mjs"
+        "scripts/adventure-session-patch.mjs",
+        "scripts/player-experience-controls-patch.mjs"
       ])
     },
   }
