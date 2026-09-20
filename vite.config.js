@@ -70,7 +70,8 @@ function dinastiaModularBuild() {
         "scripts/adventure-session-patch.mjs",
         "scripts/player-experience-controls-patch.mjs",
         "scripts/dice-physical-critical-public-patch.mjs",
-        "scripts/immersive-cross-browser-parity-patch.mjs"
+        "scripts/immersive-cross-browser-parity-patch.mjs",
+        "scripts/css-dice-performance-final-patch.mjs"
       ])
     },
   }
@@ -87,7 +88,6 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return
-          if (id.includes('/@3d-dice/dice-box-threejs/')) return 'dice-physics'
           if (id.includes('/@firebase/') || id.includes('/firebase/')) return 'vendor-firebase'
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react'
           return 'vendor'
