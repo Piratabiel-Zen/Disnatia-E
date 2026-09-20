@@ -69,7 +69,8 @@ function dinastiaModularBuild() {
         "scripts/final-stability-guard.mjs",
         "scripts/adventure-session-patch.mjs",
         "scripts/player-experience-controls-patch.mjs",
-        "scripts/dice-physical-critical-public-patch.mjs"
+        "scripts/dice-physical-critical-public-patch.mjs",
+        "scripts/immersive-cross-browser-parity-patch.mjs"
       ])
     },
   }
