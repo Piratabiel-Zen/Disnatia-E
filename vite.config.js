@@ -68,7 +68,8 @@ function dinastiaModularBuild() {
         "scripts/combat-action-hud-patch.mjs",
         "scripts/final-stability-guard.mjs",
         "scripts/adventure-session-patch.mjs",
-        "scripts/player-experience-controls-patch.mjs"
+        "scripts/player-experience-controls-patch.mjs",
+        "scripts/dice-physical-critical-public-patch.mjs"
       ])
     },
   }
