@@ -72,7 +72,8 @@ function dinastiaModularBuild() {
         "scripts/dice-physical-critical-public-patch.mjs",
         "scripts/immersive-cross-browser-parity-patch.mjs",
         "scripts/css-dice-performance-final-patch.mjs",
-        "scripts/dice-live-session-only-patch.mjs"
+        "scripts/dice-live-session-only-patch.mjs",
+        "scripts/dice-canvas-physics-hud-final-patch.mjs"
       ])
     },
   }
