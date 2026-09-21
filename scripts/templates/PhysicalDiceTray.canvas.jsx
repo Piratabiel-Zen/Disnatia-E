@@ -68,19 +68,21 @@ function makeBodies(values, sides, width, height, rollTs) {
   const count=values.length;
   return values.map((value,index)=>({
     value:Math.max(1,Math.min(sides,Number(value)||1)),
-    x:width*.5+(index-(count-1)/2)*Math.min(86,width/(count+1))+(random()-.5)*22,
-    y:-54-index*17-random()*38,
-    vx:(random()-.5)*190,
-    vy:80+random()*90,
+    x:(index%2===0 ? width*.16 : width*.84)+(random()-.5)*18,
+    y:Math.max(30,Math.min(55,height*.18))+index*5,
+    vx:(index%2===0 ? 1 : -1)*(150+random()*95),
+    vy:-35-random()*55,
     rotation:{x:random()*6.28,y:random()*6.28,z:random()*6.28},
-    spin:{x:(random()-.5)*13,y:(random()-.5)*15,z:(random()-.5)*12},
+    spin:{x:(random()>.5?1:-1)*(18+random()*12),y:(random()>.5?1:-1)*(20+random()*13),z:(random()>.5?1:-1)*(14+random()*10)},
     radius:Math.max(28,Math.min(count>3?39:48,width/(count*2.65))),
     bounce:0,
+    impact:0,
+    trail:[],
     settled:false,
   }));
 }
 
-function drawDie(ctx,body,sides,color,rolling) {
+function drawDie(ctx,body,sides,color,rolling,now) {
   const geometry=GEOMETRIES[sides] || GEOMETRIES[20];
   const norm=sides===20 || sides===12 ? 1.42 : sides===4 ? 1.18 : 1;
   const points=geometry.vertices.map(vertex=>rotate(vertex,body.rotation).map(value=>value/norm));
@@ -97,7 +99,16 @@ function drawDie(ctx,body,sides,color,rolling) {
     return {indices,faceIndex,depth:vertices.reduce((sum,point)=>sum+point[2],0)/vertices.length,light,normal};
   }).sort((a,b)=>a.depth-b.depth);
 
-  const shadowScale=Math.max(.34,1-Math.max(0,160-body.y)*.003);
+  if(body.trail.length>1){
+    ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let index=1;index<body.trail.length;index+=1){
+      const previous=body.trail[index-1]; const current=body.trail[index];
+      ctx.beginPath(); ctx.moveTo(previous[0],previous[1]); ctx.lineTo(current[0],current[1]);
+      ctx.strokeStyle='rgba('+rgb.join(',')+','+(index/body.trail.length*.12)+')'; ctx.lineWidth=Math.max(1,body.radius*.13*index/body.trail.length); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  const shadowScale=Math.max(.3,1-Math.max(0,180-body.y)*.0032);
   ctx.save();
   ctx.translate(body.x,Math.min(body.y+body.radius*.78,ctx.canvas.height/(window.devicePixelRatio||1)*.77));
   ctx.scale(shadowScale,1);
@@ -121,13 +132,18 @@ function drawDie(ctx,body,sides,color,rolling) {
 
   if(labelFace){
     const center=labelFace.polygon.reduce((acc,point)=>[acc[0]+point[0]/labelFace.polygon.length,acc[1]+point[1]/labelFace.polygon.length],[0,0]);
-    const shown=rolling ? ((body.value+labelFace.faceIndex+Math.floor(performance.now()/70))%sides)+1 : body.value;
+    const shown=rolling ? ((body.value+labelFace.faceIndex+Math.floor(now/58))%sides)+1 : body.value;
     ctx.save(); ctx.translate(center[0],center[1]);
     ctx.fillStyle='#fff8ff'; ctx.shadowColor=color; ctx.shadowBlur=8;
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='900 '+Math.max(12,body.radius*.47)+'px Cinzel, Georgia, serif';
     ctx.fillText(String(shown),0,0); ctx.shadowBlur=0;
     ctx.font='700 '+Math.max(6,body.radius*.14)+'px Cinzel, Georgia, serif'; ctx.fillStyle='rgba(255,255,255,.72)';
     ctx.fillText('D'+sides,0,body.radius*.35); ctx.restore();
+  }
+  if(body.impact>0){
+    ctx.save(); ctx.globalAlpha=body.impact*.72; ctx.strokeStyle=color; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(body.x,body.y+body.radius*.8,body.radius*(1.15+(1-body.impact)*1.8),body.radius*.2*(1.15+(1-body.impact)),0,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
   }
 }
 
@@ -149,11 +165,10 @@ function DiceCanvas({values,sides,rollTs,color,onSettled,onPhase}){
       canvas.width=Math.max(1,Math.round(rect.width*ratio)); canvas.height=Math.max(1,Math.round(rect.height*ratio));
       context.setTransform(ratio,0,0,ratio,0,0);
       bodies=makeBodies(values,sides,rect.width,rect.height,rollTs);
-      if(reduced) bodies.forEach((body,index)=>{body.y=rect.height*.67; body.x=rect.width*.5+(index-(bodies.length-1)/2)*Math.min(86,rect.width/(bodies.length+1)); body.settled=true;});
+      if(reduced) bodies.forEach((body,index)=>{body.y=rect.height*.68; body.x=rect.width*.5+(index-(bodies.length-1)/2)*Math.min(86,rect.width/(bodies.length+1)); body.settled=true;});
     };
     resize(); onPhase(reduced?'settled':'rolling');
-    if(reduced){ context.clearRect(0,0,canvas.width,canvas.height); bodies.forEach(body=>drawDie(context,body,sides,color,false)); callbackRef.current?.(); return undefined; }
-    const observer=typeof ResizeObserver==='function'?new ResizeObserver(resize):null; observer?.observe(canvas);
+    if(reduced){ context.clearRect(0,0,canvas.width,canvas.height); bodies.forEach(body=>drawDie(context,body,sides,color,false,performance.now())); callbackRef.current?.(); return undefined; }
     const tick=now=>{
       if(disposed) return;
       const ratio=Math.min(window.devicePixelRatio||1,1.5); const width=canvas.width/ratio; const height=canvas.height/ratio;
@@ -162,24 +177,25 @@ function DiceCanvas({values,sides,rollTs,color,onSettled,onPhase}){
       let moving=false;
       bodies.forEach(body=>{
         if(!body.settled){
-          body.vy+=1220*dt; body.x+=body.vx*dt; body.y+=body.vy*dt;
+          body.trail.push([body.x,body.y]); if(body.trail.length>5) body.trail.shift();
+          body.vy+=650*dt; body.x+=body.vx*dt; body.y+=body.vy*dt; body.impact=Math.max(0,body.impact-dt*2.6);
           body.rotation.x+=body.spin.x*dt; body.rotation.y+=body.spin.y*dt; body.rotation.z+=body.spin.z*dt;
           const floor=height*.68;
-          if(body.x<body.radius*.72 || body.x>width-body.radius*.72){ body.x=Math.max(body.radius*.72,Math.min(width-body.radius*.72,body.x)); body.vx*=-.62; body.spin.y*=-.82; }
+          if(body.x<body.radius*.72 || body.x>width-body.radius*.72){ body.x=Math.max(body.radius*.72,Math.min(width-body.radius*.72,body.x)); body.vx*=-.68; body.spin.y*=-.88; body.spin.z*=-.82; }
           if(body.y>=floor){
-            body.y=floor; body.bounce+=1; body.vy=-Math.abs(body.vy)*(body.bounce===1?.43:.31); body.vx*=.67;
-            body.spin.x*=.58; body.spin.y*=.58; body.spin.z*=.58;
-            if(body.bounce>3 || (Math.abs(body.vy)<45 && elapsed>1.05)){ body.settled=true; body.vy=0; body.vx=0; body.spin={x:0,y:0,z:0}; }
+            body.y=floor; body.bounce+=1; body.impact=1; body.vy=-Math.abs(body.vy)*(body.bounce===1?.56:body.bounce===2?.43:.3); body.vx*=.72;
+            body.spin.x*=.72; body.spin.y*=.72; body.spin.z*=.7;
+            if((body.bounce>4 || Math.abs(body.vy)<34) && elapsed>1.65){ body.settled=true; body.vy=0; body.vx=0; body.spin={x:0,y:0,z:0}; body.trail=[]; }
           }
           moving=moving||!body.settled;
         }
-        drawDie(context,body,sides,color,moving);
+        drawDie(context,body,sides,color,moving,now);
       });
-      if(moving && elapsed<2.2) frame=requestAnimationFrame(tick);
-      else { bodies.forEach(body=>{body.settled=true; drawDie(context,body,sides,color,false);}); onPhase('settled'); callbackRef.current?.(); }
+      if((moving || elapsed<1.85) && elapsed<2.65) frame=requestAnimationFrame(tick);
+      else { context.clearRect(0,0,width,height); bodies.forEach(body=>{body.settled=true; body.trail=[]; drawDie(context,body,sides,color,false,now);}); onPhase('settled'); callbackRef.current?.(); }
     };
     frame=requestAnimationFrame(tick);
-    return()=>{disposed=true; cancelAnimationFrame(frame); observer?.disconnect();};
+    return()=>{disposed=true; cancelAnimationFrame(frame);};
   },[rollTs,sides,values.join(','),color,onPhase]);
 
   return <canvas ref={canvasRef} className="physical-dice-canvas" aria-hidden="true"/>;

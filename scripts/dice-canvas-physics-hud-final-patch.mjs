@@ -14,6 +14,9 @@ if (!adventure.includes(marker)) {
 }
 write(adventureFile, adventure);
 
-if (!read('src/experience/PhysicalDiceTray.jsx').includes('requestAnimationFrame(tick)')) throw new Error('Canvas dice: animation loop missing');
+const renderedDice = read('src/experience/PhysicalDiceTray.jsx');
+if (!renderedDice.includes('requestAnimationFrame(tick)')) throw new Error('Canvas dice: animation loop missing');
+if (renderedDice.includes('ResizeObserver')) throw new Error('Canvas dice: resize observer can restart the throw');
+if (!renderedDice.includes('elapsed<1.85') || !renderedDice.includes('body.impact=1')) throw new Error('Canvas dice: cinematic physics missing');
 if (!adventure.includes('.game3-tab-session .g3-utility-rail')) throw new Error('Canvas dice: desktop HUD guard missing');
 console.log('Dinastia E: física 3D leve em Canvas e HUD direito centralizado aplicados.');
