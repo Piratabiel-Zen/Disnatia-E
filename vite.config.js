@@ -76,7 +76,8 @@ function dinastiaModularBuild() {
         "scripts/dice-threejs-physics-final-patch.mjs",
         "scripts/realtime-shared-session-final-patch.mjs",
         "scripts/live-dice-critical-session-performance-final-patch.mjs",
-        "scripts/cinematic-combat-vitals-final-patch.mjs"
+        "scripts/cinematic-combat-vitals-final-patch.mjs",
+        "scripts/visible-update-proof-patch.mjs"
       ])
     },
   }
