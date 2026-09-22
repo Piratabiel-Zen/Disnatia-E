@@ -77,7 +77,8 @@ function dinastiaModularBuild() {
         "scripts/realtime-shared-session-final-patch.mjs",
         "scripts/live-dice-critical-session-performance-final-patch.mjs",
         "scripts/cinematic-combat-vitals-final-patch.mjs",
-        "scripts/visible-update-proof-patch.mjs"
+        "scripts/visible-update-proof-patch.mjs",
+        "scripts/combat-visible-runtime-hotfix-2026-09-22.mjs"
       ])
     },
   }
