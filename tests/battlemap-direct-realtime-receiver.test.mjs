@@ -23,6 +23,7 @@ test('a fresh first ping is rendered instead of being discarded as bootstrap', (
 test('quick sheet portraits keep the photo but hide class ornaments', () => {
   assert.match(css, /QUICK PORTRAIT CLEANUP/);
   assert.match(css, /\.g3-action-character \.g3-portrait\[data-classe\]::before/);
+  assert.match(css, /\.combat-action-portrait\.g3-portrait\[data-classe\]::before/);
   assert.match(css, /\.g3-sheet-hero \.g3-portrait\[data-classe\]::after/);
   assert.match(css, /overflow:hidden!important/);
 });
