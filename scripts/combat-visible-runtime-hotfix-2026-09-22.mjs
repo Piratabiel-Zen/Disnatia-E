@@ -194,7 +194,32 @@ game = replaceOnce(
   '',
   'remoção da camada de dano duplicada',
 );
+game = replaceOnce(
+  game,
+  "    if(access?.role!=='player'||effectiveMode!=='combat'||!isMyTurn)return undefined;",
+  "    if(access?.role!=='player'||effectiveMode!=='combat'||!isMyTurn||combat?.active)return undefined;",
+  'desativação dos atalhos do HUD oculto',
+);
+game = replaceOnce(
+  game,
+  '  },[access?.role,effectiveMode,isMyTurn,selectedClass,selectedSheet,chooseAbility]);',
+  '  },[access?.role,effectiveMode,isMyTurn,combat?.active,selectedClass,selectedSheet,chooseAbility]);',
+  'dependência do estado de combate nos atalhos legados',
+);
 write(gameFile, game);
+
+// O pulso de combate já mostra ícone e nome da habilidade para toda a mesa.
+// A fila cósmica deve ignorar somente esse evento intermediário para não criar
+// um segundo título por cima da animação. Invocações e outros eventos continuam.
+const realtimeFile = 'src/experience/RealtimeBroadcasts.jsx';
+let realtime = read(realtimeFile);
+realtime = replaceOnce(
+  realtime,
+  "    const fresh = events.filter(e => e?._rtId && !queuedRef.current.has(e._rtId));",
+  "    const fresh = events.filter(e => e?._rtId && !(e.type==='ability'&&e.source==='ability') && !queuedRef.current.has(e._rtId));",
+  'supressão do título cósmico duplicado de habilidade',
+);
+write(realtimeFile, realtime);
 
 // Os tokens passam a informar qual ficha/inimigo representam. Assim, o número
 // nasce sobre o alvo correto também para os demais jogadores.
@@ -236,7 +261,8 @@ write(cssFile, css);
 
 for (const [file, markers] of [
   [kitFile, ['function CombatResourceOrb', 'function CombatHotkeys', 'function FloatingDamageLayer', '<FloatingDamageLayer/>', 'aria-keyshortcuts={i<4?String(i+1):undefined}', 'combat-action-pulse compact']],
-  [gameFile, ['function CombatVitalFx', 'function SessionUpdateNotice']],
+  [gameFile, ['function CombatVitalFx', 'function SessionUpdateNotice', "!isMyTurn||combat?.active"]],
+  [realtimeFile, ["!(e.type==='ability'&&e.source==='ability')"]],
   [battleFile, ['data-combat-entity-id=', 'data-token-id=']],
   [cssFile, ['COMBAT VISIBLE RUNTIME HOTFIX 2026-09-22', '.combat-floating-damage-layer', '@keyframes combatOrbWave']],
 ]) {

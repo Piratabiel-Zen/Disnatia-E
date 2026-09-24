@@ -22,6 +22,7 @@ test('atalhos 1 a 4 acionam somente habilidades habilitadas', () => {
   assert.match(patch, /function CombatHotkeys/);
   assert.match(patch, /if\(!button\|\|button\.disabled\)return/);
   assert.match(patch, /aria-keyshortcuts=\{i<4\?String\(i\+1\):undefined\}/);
+  assert.match(patch, /!isMyTurn\|\|combat\?\.active/);
 });
 
 test('dano flutuante usa a camada global e encontra HUD ou token', () => {
@@ -34,6 +35,7 @@ test('dano flutuante usa a camada global e encontra HUD ou token', () => {
 test('a habilidade mantém apenas ícone, nome compacto e pulsação', () => {
   assert.match(patch, /combat-action-pulse compact/);
   assert.match(patch, /combat-action-class-icon/);
+  assert.match(patch, /!\(e\.type==='ability'&&e\.source==='ability'\)/);
   assert.doesNotMatch(patch.match(/const compactPulse = `[\s\S]*?`;\nkit = replaceSection/)?.[0] || '', /actorName/);
   assert.doesNotMatch(patch.match(/const compactPulse = `[\s\S]*?`;\nkit = replaceSection/)?.[0] || '', /targetName/);
 });
