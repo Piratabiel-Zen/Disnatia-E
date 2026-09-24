@@ -126,9 +126,12 @@ if (!css.includes(cssMarker)) {
    sai do botão da ficha rápida e do cabeçalho aberto por ele. */
 .g3-action-character .g3-portrait[data-classe]::before,
 .g3-action-character .g3-portrait[data-classe]::after,
+.combat-action-portrait.g3-portrait[data-classe]::before,
+.combat-action-portrait.g3-portrait[data-classe]::after,
 .g3-sheet-hero .g3-portrait[data-classe]::before,
 .g3-sheet-hero .g3-portrait[data-classe]::after{content:none!important;display:none!important;background-image:none!important;box-shadow:none!important}
 .g3-action-character .g3-portrait[data-classe],
+.combat-action-portrait.g3-portrait[data-classe],
 .g3-sheet-hero .g3-portrait[data-classe]{overflow:hidden!important;border-radius:50%!important}
 `;
   fs.writeFileSync(cssFile, css);
