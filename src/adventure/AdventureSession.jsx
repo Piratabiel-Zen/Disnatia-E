@@ -12,12 +12,26 @@ const Portrait = memo(function Portrait({ sheet, own, active, onOpen }) {
   const max = Math.max(1, getSheetMaxHp(sheet));
   const hp = Math.max(0, Number(sheet.hp) || 0);
   return <button className={`ad-companion ${own ? 'own' : ''} ${active ? 'active-turn' : ''}`} onClick={onOpen} disabled={!onOpen} title={`${sheet.nome || 'Aventureiro'} · ${hp}/${max} PV`}>
-    <span className="ad-portrait">{sheet.foto ? <img src={sheet.foto} alt="" loading="lazy" decoding="async" /> : <span>{String(sheet.nome || '?').slice(0, 1)}</span>}<span className="ad-portrait-rune" aria-hidden="true">{cls?.icon || '◆'}</span></span>
+    <span className="ad-portrait"><span className="ad-portrait-fallback" aria-hidden="true">{String(sheet.nome || '?').slice(0, 1)}</span>{sheet.foto ? <img src={sheet.foto} alt="" loading="eager" decoding="async" draggable="false" /> : null}<span className="ad-portrait-rune" aria-hidden="true">{cls?.icon || '◆'}</span></span>
     <span className="ad-companion-name">{sheet.nome || 'Aventureiro'}</span>
     <span className="ad-companion-class">{active ? 'Turno atual' : own ? 'Seu personagem' : cls?.name || cls?.nome || 'Companheiro'}</span>
     <span className="ad-hp-track"><i style={{ width: `${Math.min(100, hp / max * 100)}%` }} /></span>
     <span className="ad-companion-hp">{hp} / {max} PV</span>
   </button>;
+});
+
+const PartyRoster = memo(function PartyRoster({ sheets, playerId, current, masterMode, onPanel }) {
+  return <div className="ad-party-viewport" aria-label="Integrantes da companhia">
+    <div className="ad-party-row">
+      {sheets.length ? sheets.map(sheet => <Portrait
+        key={sheet.id}
+        sheet={sheet}
+        own={String(sheet.id) === playerId}
+        active={current?.type === 'player' && String(current.id).replace(/^p_/, '') === String(sheet.id)}
+        onOpen={String(sheet.id) === playerId || masterMode ? () => onPanel('sheet', sheet.id) : undefined}
+      />) : <p className="ad-muted ad-party-empty" role="status">Aguardando as fichas da companhia…</p>}
+    </div>
+  </div>;
 });
 
 const shortcuts = [
@@ -45,7 +59,7 @@ export function AdventureView({ session, combat, combatState, sheets, selectedSh
     {combat.active && <div className={`ad-turn-banner ${mine ? 'mine' : ''}`} role="status"><span className="ad-turn-round">RODADA <b>{combatState.round || 1}</b></span><div><span className="ad-eyebrow">{mine ? 'SUA VEZ DE AGIR' : 'NA LINHA DE FRENTE'}</span><strong>{current?.nome || combat.currentNome || 'Aguardando iniciativa'}</strong></div><button onClick={() => onPanel(masterMode ? 'combat' : 'abilities')}>{masterMode ? 'Controlar combate' : 'Ver minhas ações'} →</button></div>}
 
     <section className="ad-party" aria-labelledby="party-heading"><div className="ad-section-head"><div><span className="ad-eyebrow">NINGUÉM ESCREVE A LENDA SOZINHO</span><h3 id="party-heading">Sua companhia</h3></div><span className="ad-muted">Vitalidade compartilhada</span></div>
-      <div className="ad-party-row">{sheets.length ? sheets.map(sheet => <Portrait key={sheet.id} sheet={sheet} own={String(sheet.id) === playerId} active={current?.type === 'player' && String(current.id).replace(/^p_/, '') === String(sheet.id)} onOpen={String(sheet.id) === playerId || masterMode ? () => onPanel('sheet', sheet.id) : undefined} />) : <p className="ad-muted">Aguardando as fichas da companhia…</p>}</div>
+      <PartyRoster sheets={sheets} playerId={playerId} current={current} masterMode={masterMode} onPanel={onPanel} />
     </section>
 
     <div className="ad-action-dock" aria-label="Ferramentas de aventura">{shortcuts.map(item => <button key={item.panel} onClick={() => onPanel(item.panel)}><span className="ad-action-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.hint}</small></span><kbd>{item.key}</kbd></button>)}</div>
