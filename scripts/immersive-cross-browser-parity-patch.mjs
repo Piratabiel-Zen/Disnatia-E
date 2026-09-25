@@ -52,8 +52,10 @@ html[data-quality="cinematic"] .cosmic-shooting-star:nth-child(n+4){display:none
   .page-stage-session,
   .adventure-page,
   .ad-party,
+  .ad-party-viewport,
   .ad-party-row,
   .ad-companion,
+  .ad-portrait>img,
   .ad-action-dock,
   .ad-lower-grid,
   .ad-panel,
@@ -74,6 +76,11 @@ html[data-quality="cinematic"] .cosmic-shooting-star:nth-child(n+4){display:none
     display:flex!important;
     min-height:188px;
     align-items:stretch;
+  }
+  .ad-party-viewport{
+    min-height:188px;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
   }
   .ad-companion{
     display:flex!important;
