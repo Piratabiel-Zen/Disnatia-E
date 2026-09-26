@@ -106,8 +106,11 @@ ${CLEAN_CSS_MARKER}
 
 const STAR_MARKER = 'DINASTIA COLORED SHOOTING STARS 2026-09-15';
 if (!cosmic.includes(STAR_MARKER)) {
-  must(cosmic.includes('const SHOOTING_STAR_COUNT = 3;'), 'quantidade original de estrelas cadentes não encontrada');
-  cosmic = cosmic.replace('const SHOOTING_STAR_COUNT = 3;', `const SHOOTING_STAR_COUNT = 5;
+  const shootingCountAnchor = cosmic.includes('const SHOOTING_STAR_COUNT = 2;')
+    ? 'const SHOOTING_STAR_COUNT = 2;'
+    : 'const SHOOTING_STAR_COUNT = 3;';
+  must(cosmic.includes(shootingCountAnchor), 'quantidade original de estrelas cadentes não encontrada');
+  cosmic = cosmic.replace(shootingCountAnchor, `const SHOOTING_STAR_COUNT = 2;
 const METEOR_COLORS = ['#EAF7FF','#BFA8FF','#FF9BCB','#7FE7FF','#FFD28A']; // ${STAR_MARKER}`);
   must(cosmic.includes('const duration = 13 + meteorRandom() * 13;'), 'duração original dos meteoros não encontrada');
   cosmic = cosmic.replace('const duration = 13 + meteorRandom() * 13;', 'const duration = 18 + meteorRandom() * 22;');

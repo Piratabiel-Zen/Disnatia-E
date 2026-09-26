@@ -2,8 +2,10 @@ import './cosmic-living-background.css';
 import './performance-lite.css';
 import './performance-smooth.css';
 
-const BRIGHT_STAR_COUNT = 10;
-const SHOOTING_STAR_COUNT = 3;
+// Poucos pontos fortes preservam a profundidade sem manter dezenas de camadas
+// em composição contínua. O modo leve continua completamente estático via CSS.
+const BRIGHT_STAR_COUNT = 7;
+const SHOOTING_STAR_COUNT = 2;
 const STAR_COLORS = ['#F7FBFF', '#A9DCFF', '#C7B8FF', '#E8F4FF'];
 
 function seededRandom(seed) {
