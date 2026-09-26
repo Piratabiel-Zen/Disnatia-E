@@ -12,7 +12,7 @@ const Portrait = memo(function Portrait({ sheet, own, active, onOpen }) {
   const max = Math.max(1, getSheetMaxHp(sheet));
   const hp = Math.max(0, Number(sheet.hp) || 0);
   return <button className={`ad-companion ${own ? 'own' : ''} ${active ? 'active-turn' : ''}`} onClick={onOpen} disabled={!onOpen} title={`${sheet.nome || 'Aventureiro'} · ${hp}/${max} PV`}>
-    <span className="ad-portrait"><span className="ad-portrait-fallback" aria-hidden="true">{String(sheet.nome || '?').slice(0, 1)}</span>{sheet.foto ? <img src={sheet.foto} alt="" loading="eager" decoding="async" draggable="false" /> : null}<span className="ad-portrait-rune" aria-hidden="true">{cls?.icon || '◆'}</span></span>
+    <span className="ad-portrait"><span className="ad-portrait-fallback" aria-hidden="true">{String(sheet.nome || '?').slice(0, 1)}</span>{sheet.foto ? <img src={sheet.foto} alt="" width="76" height="86" loading="eager" decoding="async" draggable="false" /> : null}<span className="ad-portrait-rune" aria-hidden="true">{cls?.icon || '◆'}</span></span>
     <span className="ad-companion-name">{sheet.nome || 'Aventureiro'}</span>
     <span className="ad-companion-class">{active ? 'Turno atual' : own ? 'Seu personagem' : cls?.name || cls?.nome || 'Companheiro'}</span>
     <span className="ad-hp-track"><i style={{ width: `${Math.min(100, hp / max * 100)}%` }} /></span>
@@ -62,7 +62,7 @@ export function AdventureView({ session, combat, combatState, sheets, selectedSh
       <PartyRoster sheets={sheets} playerId={playerId} current={current} masterMode={masterMode} onPanel={onPanel} />
     </section>
 
-    <div className="ad-action-dock" aria-label="Ferramentas de aventura">{shortcuts.map(item => <button key={item.panel} onClick={() => onPanel(item.panel)}><span className="ad-action-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.hint}</small></span><kbd>{item.key}</kbd></button>)}</div>
+    <div className="ad-action-dock" aria-label="Ferramentas de aventura">{shortcuts.map(item => <button key={item.panel} onClick={() => onPanel(item.panel)} title={`${item.title} · ${item.hint}`}><span className="ad-action-icon" aria-hidden="true">{item.icon}</span><strong>{item.title}</strong><kbd>{item.key}</kbd></button>)}</div>
 
     <div className="ad-lower-grid">{council}<section className="ad-panel ad-journal"><div className="ad-section-head"><div><span className="ad-eyebrow">ECOS DA JORNADA</span><h3>Últimos acontecimentos</h3></div><button className="ad-text-button" onClick={() => onPanel('journal')}>Abrir diário ↗</button></div>{recent.length ? <ol>{recent.map(row => <li key={row.id}><span className="ad-journal-rune" aria-hidden="true">{row.icon || '◇'}</span><div><p>{row.text}</p><small>{row.memory ? 'MEMÓRIA DA COMPANHIA' : row.type === 'combat' ? 'COMBATE' : 'DIÁRIO VIVO'}</small></div></li>)}</ol> : <div className="ad-empty"><p>A jornada ainda guarda seus segredos.</p><span>Descobertas, decisões e acontecimentos aparecerão aqui.</span></div>}</section></div>
 

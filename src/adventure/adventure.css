@@ -99,3 +99,63 @@ html[data-quality="light"] .g3-portrait,html[data-quality="light"] .g3-hud-orb,h
   .adventure-shell:has(.page-stage-session) .g3-mobile-session-hub{display:none!important}.adventure-shell:has(.page-stage-session):not(:has(.game3-mode-combat)) .g3-mobile-hud-toggle{display:none!important}
 }
 @media(prefers-reduced-motion:reduce){.adventure-page *{transition:none!important}.cosmic-living-bg *,.g3-environment *{animation:none!important}}
+
+/* VISUAL BREATHING PASS 2026-09-25
+   Uma cena dominante, companhia compacta e ferramentas progressivas.
+   Nenhuma ação foi removida; somente a prioridade visual foi reorganizada. */
+.adventure-shell:has(.page-stage-session) .page-stage::before,
+.adventure-shell:has(.page-stage-session) .page-stage::after{opacity:.2}
+.adventure-shell:has(.page-stage-session) .g3-utility-rail{opacity:.44;transition:opacity .18s ease,max-height .24s ease,width .2s ease!important}
+.adventure-shell:has(.page-stage-session) .g3-utility-rail:hover,
+.adventure-shell:has(.page-stage-session) .g3-utility-rail:focus-within{opacity:1}
+.adventure-page{max-width:1420px}
+.ad-scene{contain:paint;isolation:isolate;box-shadow:inset 0 0 0 3px #090e1240,0 10px 24px #0002}
+.ad-scene-art{opacity:.46}
+.ad-panel{box-shadow:0 8px 20px #0001;background:linear-gradient(135deg,#192026d9,#10171be3)}
+.ad-action-dock{box-shadow:none}
+
+@media(min-width:901px){
+  .adventure-shell:has(.page-stage-session) .immersive-content{padding:14px 76px 92px 24px!important}
+  .ad-chapter-line{padding:5px 0 12px;color:#aa9a79}
+  .ad-scene{min-height:282px;background:radial-gradient(ellipse at 81% 12%,#5141294d,transparent 58%),linear-gradient(110deg,#0e151b 10%,#142228 70%,#1b2422)}
+  .ad-scene-copy{padding:31px 38px 25px;max-width:760px}
+  .ad-scene-copy h2{font-size:clamp(28px,3.15vw,46px);margin:10px 0 12px;line-height:1.14}
+  .ad-scene-copy>p{font-size:17px;line-height:1.45;max-width:570px;color:#b9c0bb}
+  .ad-location{margin:12px 0 14px;font-size:14px}.ad-location>span{font-size:18px}
+  .ad-button-row>button,.ad-primary{min-height:39px;padding:8px 15px;font-size:11px}
+  .ad-objective{padding:12px 38px;gap:13px}.ad-objective-icon{font-size:25px}.ad-objective p{font-size:16px;margin-top:2px}
+  .ad-arch{top:24px;right:7%;width:218px;height:288px;opacity:.78}.ad-orbit{width:410px;height:410px;top:-118px}.ad-celestial{font-size:104px;top:38px}
+
+  .ad-party{margin:18px 0 14px}.ad-section-head{margin-bottom:10px}.ad-section-head h3{font-size:19px;margin-top:2px}
+  .ad-party-viewport{min-height:94px;overflow-y:visible}
+  .ad-party-row{min-height:90px;gap:10px;padding:2px 2px 6px}
+  .ad-companion{flex:1 0 206px;max-width:260px;height:82px;display:grid;grid-template-columns:56px minmax(0,1fr) auto;grid-template-rows:22px 18px 8px 17px;column-gap:11px;align-items:center;text-align:left;padding:8px 10px;border-color:#5b4e3a!important;background:linear-gradient(110deg,#192226,#101519)!important}
+  .ad-companion.own{background:linear-gradient(110deg,#282b25,#11191e)!important}
+  .ad-portrait{grid-column:1;grid-row:1/5;width:52px;height:62px;margin:0;border-radius:24px 24px 3px 3px}
+  .ad-portrait-fallback{font-size:25px}.ad-portrait>img{border-radius:24px 24px 3px 3px}.ad-portrait-rune{right:-6px;bottom:-4px;width:20px;height:20px;font-size:9px}
+  .ad-companion-name{grid-column:2/4;grid-row:1;font-size:11px;align-self:end}
+  .ad-companion-class{grid-column:2/4;grid-row:2;font-size:9px;line-height:1.4;align-self:start;color:#91a19f}
+  .ad-hp-track{grid-column:2;grid-row:3;width:100%;height:3px;margin:0}
+  .ad-companion-hp{grid-column:2/4;grid-row:4;margin:0;font-size:8px;align-self:start}
+
+  .ad-action-dock{height:54px;margin-bottom:16px;border-color:#584a31;background:#0f161a}
+  .ad-action-dock>button{justify-content:flex-start;gap:9px;padding:8px 14px}
+  .ad-action-dock>button:hover{background:#2b29204d}
+  .ad-action-icon{font-size:19px;line-height:1}.ad-action-dock strong{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ad-action-dock kbd{font-size:8px;padding:2px 5px}
+  .ad-lower-grid{gap:16px}.ad-panel{padding:19px}.ad-journal li{padding:12px 0}.ad-journal li p{font-size:16px;-webkit-line-clamp:2}
+  .ad-director-bar{margin-top:17px;padding:17px 20px}.ad-footer{padding:24px 0}
+}
+
+@media(min-width:901px) and (max-width:1180px){
+  .ad-companion{flex-basis:190px;max-width:230px}
+  .ad-scene-copy{padding:28px 30px 24px}.ad-objective{padding-inline:30px}
+  .ad-action-dock>button{padding-inline:10px}.ad-action-icon{font-size:17px}
+}
+
+/* O modo leve não mantém microanimações ou filtros decorativos ativos. */
+html[data-quality="light"] .adventure-page button,
+html[data-quality="light"] .ad-hp-track i,
+html[data-quality="light"] .g3-utility-rail{transition:none!important}
+html[data-quality="light"] .grim-link::after{display:none!important}
+html[data-quality="light"] .ad-scene-art,
+html[data-quality="light"] .ad-panel{filter:none!important}
