@@ -74,18 +74,23 @@ html[data-quality="cinematic"] .cosmic-shooting-star:nth-child(n+4){display:none
   }
   .ad-party-row{
     display:flex!important;
-    min-height:188px;
+    min-height:90px;
+    gap:10px;
+    padding:2px 2px 6px;
     align-items:stretch;
   }
   .ad-party-viewport{
-    min-height:188px;
+    min-height:94px;
     overflow-x:auto!important;
-    overflow-y:hidden!important;
+    overflow-y:visible!important;
   }
   .ad-companion{
-    display:flex!important;
-    flex:0 0 134px!important;
-    min-height:181px;
+    display:grid!important;
+    flex:1 0 clamp(190px,18vw,206px)!important;
+    min-width:190px!important;
+    max-width:260px!important;
+    min-height:82px;
+    height:82px;
   }
   .ad-action-dock{display:grid!important}
   .ad-lower-grid{
