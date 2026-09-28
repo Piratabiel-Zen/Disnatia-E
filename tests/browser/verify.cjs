@@ -1,0 +1,47 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/tmp/dinastia-chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--no-zygote']});
+ const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:4179');
+ await page.getByRole('heading',{name:'A torre'}).waitFor();
+ assert.equal(await page.getByText('Ecom',{exact:true}).count(),0);
+ await page.getByRole('button',{name:'OVA',exact:true}).click();
+ await page.getByRole('heading',{name:'A jornada paralela'}).waitFor();
+ assert.equal(await page.locator('.chronicles-grid').count(),1);
+ await page.getByRole('button',{name:/Editar crônica/}).click();
+ const image=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=900;const ctx=canvas.getContext('2d');ctx.fillStyle='#a855f7';ctx.fillRect(0,0,1200,900);return canvas.toDataURL('image/png').split(',')[1];});
+ await page.locator('input[type=file]').setInputFiles({name:'teste.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
+ await page.getByText('Imagem salva.',{exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>window.__reads?.includes('cronicas_media_chunks')||false),false);
+ await page.getByRole('button',{name:'Ampliar imagem'}).click();
+ await page.locator('.chronicles-image-preview img').waitFor();
+ assert.equal(await page.evaluate(()=>window.__reads.includes('cronicas_media_chunks')),true);
+ await page.getByRole('button',{name:'Fechar imagem'}).click();
+ const widths=[];
+ for(const width of [360,390,430,1280]){
+   await page.setViewportSize({width,height:844});
+   widths.push(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth})));
+   await page.screenshot({path:'/tmp/dinastia-ova-'+width+'.png',fullPage:true});
+ }
+ assert.deepEqual(errors,[]);
+ assert.ok(widths.every(row=>row.scroll<=row.width+1),JSON.stringify(widths));
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('http://127.0.0.1:4179/?hud');
+ await page.getByRole('button',{name:'Liberar',exact:true}).click();
+ await page.getByText('47/47',{exact:true}).waitFor();
+ await page.locator('.summon-vitals>div').first().getByRole('button',{name:'−',exact:true}).click();
+ await page.getByText('46/47',{exact:true}).waitFor();
+ await page.getByRole('button',{name:/Bicada/}).click();
+ await page.getByText('2/3 VC',{exact:true}).waitFor();
+ await page.screenshot({path:'/tmp/dinastia-mobile-hud.png',fullPage:true});
+ await page.getByRole('button',{name:'Guardar',exact:true}).click();
+ assert.equal(await page.locator('.summon-live-controls').count(),0);
+ await page.getByRole('button',{name:'Liberar',exact:true}).click();
+ await page.getByText('46/47',{exact:true}).waitFor();
+ await page.getByText('2/3 VC',{exact:true}).waitFor();
+ assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({passed:true,widths,errors,writes:await page.evaluate(()=>window.__writes)}));
+ await browser.close();
+})().catch(error=>{console.error(error);process.exit(1);});
