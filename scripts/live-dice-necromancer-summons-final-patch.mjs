@@ -1,0 +1,385 @@
+import fs from 'node:fs';
+
+const read = file => fs.readFileSync(file, 'utf8');
+const write = (file, value) => fs.writeFileSync(file, value);
+const must = (condition, message) => {
+  if (!condition) throw new Error(`Live dice/summons final patch: ${message}`);
+};
+const replaceOnce = (source, before, after, label) => {
+  must(source.includes(before), `ancora ausente: ${label}`);
+  return source.replace(before, after);
+};
+const replaceRange = (source, start, end, replacement, label) => {
+  const from = source.indexOf(start);
+  const to = source.indexOf(end, from + start.length);
+  must(from >= 0 && to > from, `bloco ausente: ${label}`);
+  return source.slice(0, from) + replacement + source.slice(to);
+};
+
+// Replays: baseline autoritativo mais uma janela temporal independente. A
+// segunda barreira impede que cache, retomada de aba ou reconexao enfileirem
+// documentos historicos como se fossem novos.
+const replayFile = 'src/experience/SharedDiceReplay.jsx';
+let replay = read(replayFile);
+replay = replaceOnce(
+  replay,
+  "import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';",
+  "import { createLiveSnapshotGate, isLiveDicePayload, isNewLiveDocument } from './liveDiceGate';",
+  'import do filtro temporal',
+);
+replay = replaceOnce(
+  replay,
+  "  const localSheetId = access?.role === 'player' && access?.sheetId ? String(access.sheetId) : '';",
+  "  const localSheetId = access?.role === 'player' && access?.sheetId ? String(access.sheetId) : '';\n  const joinedAtRef = useRef(Date.now());",
+  'instante de entrada',
+);
+replay = replaceOnce(
+  replay,
+  `  const enqueue = useCallback(payload => {
+    if (!payload) return;
+    const id = getReplayId(payload);`,
+  `  const enqueue = useCallback(payload => {
+    if (!payload || !isLiveDicePayload(payload, { joinedAt: joinedAtRef.current })) return;
+    const id = getReplayId(payload);`,
+  'filtro antes da fila',
+);
+replay = replaceOnce(
+  replay,
+  "    setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));",
+  "    setQueue(prev => [...prev, { ...payload, _replayId: id }].filter(item => isLiveDicePayload(item, { joinedAt: joinedAtRef.current })).slice(-5));",
+  'fila curta e viva',
+);
+replay = replaceOnce(
+  replay,
+  `  useEffect(() => {
+    if (active || !queue.length) return;
+    setActive(queue[0]);
+    setQueue(prev => prev.slice(1));
+    setSettled(false);
+  }, [active, queue]);`,
+  `  useEffect(() => {
+    if (active || !queue.length) return;
+    const liveQueue = queue.filter(item => isLiveDicePayload(item, { joinedAt: joinedAtRef.current }));
+    if (!liveQueue.length) {
+      setQueue([]);
+      return;
+    }
+    setActive(liveQueue[0]);
+    setQueue(liveQueue.slice(1));
+    setSettled(false);
+  }, [active, queue]);`,
+  'expiracao antes da animacao',
+);
+replay = replaceOnce(
+  replay,
+  'const guard = window.setTimeout(() => setActive(null), 14000);',
+  'const guard = window.setTimeout(() => setActive(null), 9000);',
+  'limite de bloqueio',
+);
+write(replayFile, replay);
+
+const criticalFile = 'src/experience/DiceCriticalFx.jsx';
+let critical = read(criticalFile);
+critical = replaceOnce(
+  critical,
+  "import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';",
+  "import { createLiveSnapshotGate, isLiveDicePayload, isNewLiveDocument } from './liveDiceGate';",
+  'import temporal do critico',
+);
+critical = replaceOnce(
+  critical,
+  '  const seenRef = useRef(new Set());',
+  '  const seenRef = useRef(new Set());\n  const joinedAtRef = useRef(Date.now());',
+  'entrada do critico',
+);
+critical = replaceOnce(
+  critical,
+  `  const ingest = useCallback(data => {
+    if (!data) return;`,
+  `  const ingest = useCallback(data => {
+    if (!data || !isLiveDicePayload(data, { joinedAt: joinedAtRef.current })) return;`,
+  'filtro temporal do critico',
+);
+write(criticalFile, critical);
+
+// Runtime das invocacoes: somente memorias reveladas podem ser liberadas. A
+// vida e as acoes sao transacionadas no combat_state; os atributos da memoria
+// nunca sao escritos pelo jogador.
+const kitFile = 'src/experience/ExperienceKit.generated.jsx';
+let kit = read(kitFile);
+kit = replaceOnce(
+  kit,
+  '  collection, deleteDoc, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc,',
+  '  collection, deleteDoc, doc, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc,',
+  'runTransaction no kit',
+);
+
+const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon)=>{
+    if(!selectedSheet||!summon||summon.revealed!==true||!combat?.active)return false;
+    const name=String(ability?.name||ability?.nome||'').toLowerCase();
+    const threat=String(summon?.ameaca||'Baixa').toLowerCase();
+    const dead=name.includes('animar os mortos');
+    const lords=name.includes('invocação dos lordes')||name.includes('invocacao dos lordes');
+    if(!dead&&!lords)return false;
+    if(dead&&!['baixa','média','media'].includes(threat))return false;
+    if(lords&&!['alta','extrema','extremo'].includes(threat))return false;
+    const init=Array.isArray(combatState.initiative)?[...combatState.initiative]:[];
+    const owned=init.filter(c=>c.type==='summon'&&String(c.ownerSheetId||'')===String(selectedSheet.id));
+    if(owned.length>=2||owned.some(c=>String(c.summonMemoryId||'')===String(summon.id||'')))return false;
+    if(!(await useQuickAbility(ability)))return false;
+    const now=Date.now();
+    const summonId=\`summon_\${selectedSheet.id}_\${now}_\${Math.random().toString(36).slice(2,7)}\`;
+    const maxHp=Math.max(1,Math.floor((Number(summon.hp||10)+Math.max(0,Number(summon.hp_bonus||0)))*.5));
+    const scale=dead?.5:1;
+    const attr=key=>Math.floor(Number(summon?.[key]||0)*scale);
+    const attacks=(Array.isArray(summon.ataques)?summon.ataques:[]).map(action=>({
+      ...action,custo:Math.max(0,Math.min(3,Number(action?.custo??1))),
+    }));
+    const summoned={
+      id:\`s_\${summonId}\`,summonDocId:summonId,type:'summon',ownerSheetId:String(selectedSheet.id),
+      summonMemoryId:String(summon.id||''),nome:summon.nome||'Invocação',foto:summon.foto||'',
+      color:selectedClass?.color||'#6E6E80',threat:summon.ameaca||'Baixa',hp:maxHp,maxHp,
+      vigos:3,maxVigos:3,roll:0,status:{},forca:attr('forca'),agilidade:attr('agilidade'),
+      durabilidade:attr('durabilidade'),inteligencia:attr('inteligencia'),percepcao:attr('percepcao'),
+      sorte:attr('sorte'),ataques:attacks,
+    };
+    const owner=init.findIndex(c=>c.type==='player'&&String(c.id||'').replace(/^p_/,'')===String(selectedSheet.id));
+    const currentId=String(init[Number(combatState.turnIdx||0)]?.id||'');
+    init.splice(owner>=0?owner+1:init.length,0,summoned);
+    const idx=Math.max(0,init.findIndex(c=>String(c.id)===currentId));
+    const log=[...(combatState.log||[]),{
+      msg:\`\${selectedSheet.nome||'Necromante'} invocou \${summoned.nome} · 3 VC\`,
+      color:selectedClass?.color||'#6E6E80',icon:'\\uD83D\\uDC80',ts:now,round:Number(combatState.round||1),
+    }].slice(-60);
+    const event={
+      id:nowId('summon'),type:'ability',text:\`\${summoned.nome} foi invocado\`,ts:now,
+      color:selectedClass?.color||'#6E6E80',icon:'\\uD83D\\uDC80',soft:true,source:'summon',sheetId:String(selectedSheet.id),
+    };
+    await Promise.all([
+      setDoc(doc(db,'combat_summons',summonId),{...summoned,active:true,createdAt:now,round:Number(combatState.round||1)}),
+      setDoc(doc(db,'config','combat_state'),{initiative:init,turnIdx:idx,log,updatedAt:now,revision:now},{merge:true}),
+      setDoc(doc(db,'config','cosmic_event'),event),
+      setDoc(doc(db,'cosmic_events',event.id),event),
+    ]);
+    return true;
+  },[selectedSheet,selectedClass,combat?.active,combatState,useQuickAbility]);
+
+  const updateSummonHp=useCallback(async(combatantId,delta)=>{
+    if(!combatantId||!Number.isFinite(Number(delta)))return false;
+    const stateRef=doc(db,'config','combat_state');
+    return runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(stateRef);
+      if(!snapshot.exists())return false;
+      const state=snapshot.data()||{};
+      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
+      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
+      if(index<0)return false;
+      const row=initiative[index];
+      const owns=masterMode||String(row.ownerSheetId||'')===String(selectedSheet?.id||'');
+      if(!owns)return false;
+      const nextHp=Math.max(0,Math.min(Number(row.maxHp||1),Number(row.hp||0)+Number(delta)));
+      const next={...row,hp:nextHp,vigos:Math.max(0,Math.min(3,Number(row.vigos??3))),maxVigos:3};
+      initiative[index]=next;
+      const now=Date.now();
+      const summonDocId=String(row.summonDocId||row.id||'').replace(/^s_/,'');
+      transaction.set(stateRef,{initiative,updatedAt:now,revision:now},{merge:true});
+      if(summonDocId)transaction.set(doc(db,'combat_summons',summonDocId),{hp:nextHp,vigos:next.vigos,maxVigos:3,updatedAt:now},{merge:true});
+      return true;
+    });
+  },[masterMode,selectedSheet?.id]);
+
+  const useSummonAction=useCallback(async(combatantId,action)=>{
+    if(!combat?.active||!combatantId||!action)return false;
+    const stateRef=doc(db,'config','combat_state');
+    const result=await runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(stateRef);
+      if(!snapshot.exists())return null;
+      const state=snapshot.data()||{};
+      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
+      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
+      if(index<0)return null;
+      const row=initiative[index];
+      const owns=masterMode||String(row.ownerSheetId||'')===String(selectedSheet?.id||'');
+      const isTurn=String(initiative[Number(state.turnIdx||0)]?.id||'')===String(row.id||'');
+      if(!owns||(!masterMode&&!isTurn)||Number(row.hp||0)<=0)return null;
+      const cost=Math.max(0,Math.min(3,Number(action.custo??1)));
+      const currentVc=Math.max(0,Math.min(3,Number(row.vigos??3)));
+      if(currentVc<cost)return null;
+      const nextVc=currentVc-cost;
+      const next={...row,vigos:nextVc,maxVigos:3};
+      initiative[index]=next;
+      const now=Date.now();
+      const actionName=String(action.nome||action.name||'Ação');
+      const log=[...(state.log||[]),{
+        msg:\`\${row.nome||'Invocação'} usou \${actionName}\`,color:row.color||'#6E6E80',
+        icon:'\\uD83D\\uDC80',ts:now,round:Number(state.round||1),
+      }].slice(-60);
+      const summonDocId=String(row.summonDocId||row.id||'').replace(/^s_/,'');
+      transaction.set(stateRef,{initiative,log,updatedAt:now,revision:now},{merge:true});
+      if(summonDocId)transaction.set(doc(db,'combat_summons',summonDocId),{vigos:nextVc,maxVigos:3,updatedAt:now},{merge:true});
+      return {name:row.nome||'Invocação',actionName,color:row.color||'#6E6E80'};
+    });
+    if(!result)return false;
+    const now=Date.now();
+    const event={
+      id:nowId('summon_action'),type:'ability',text:\`\${result.name} usou \${result.actionName}\`,
+      ts:now,color:result.color,icon:'\\uD83D\\uDC80',soft:true,source:'summon-action',sheetId:String(selectedSheet?.id||''),
+    };
+    await Promise.all([
+      addJournal(event.text,'ability',{icon:event.icon,color:event.color}),
+      setDoc(doc(db,'config','cosmic_event'),event),
+      setDoc(doc(db,'cosmic_events',event.id),event),
+    ]);
+    return true;
+  },[combat?.active,masterMode,selectedSheet?.id,addJournal]);`;
+
+kit = replaceRange(
+  kit,
+  '  const useSummonAbility=useCallback(async(ability,summon)=>{',
+  '\n\n  const value=useMemo',
+  summonRuntime,
+  'runtime das invocacoes',
+);
+kit = kit.replaceAll(
+  'useQuickAbility,useSummonAbility',
+  'useQuickAbility,useSummonAbility,updateSummonHp,useSummonAction',
+);
+must(kit.includes('vigos:3,maxVigos:3'), 'VC fixo nao aplicado');
+must(kit.includes('const updateSummonHp=useCallback'), 'controle de HP ausente');
+must(kit.includes('const useSummonAction=useCallback'), 'acoes da invocacao ausentes');
+write(kitFile, kit);
+
+const componentsFile = 'src/features/sheets/SheetComponents.jsx';
+let components = read(componentsFile);
+components = replaceOnce(
+  components,
+  'import { logAbilityUsed } from "../../core/combatEvents";',
+  'import { logAbilityUsed } from "../../core/combatEvents";\nimport { useExperience } from "../../experience/ExperienceKit.generated";',
+  'contexto na ficha',
+);
+
+const summonComponents = `const SUMMON_THREATS=['Baixa','Média','Alta','Extrema'];
+const SUMMON_ATTRS=[['forca','Força'],['agilidade','Agilidade'],['durabilidade','Durabilidade'],['inteligencia','Inteligência'],['percepcao','Percepção'],['sorte','Sorte']];
+const SUMMON_ICON='\\uD83D\\uDC80';
+const summonRequiredAbility=threat=>['Alta','Extrema'].includes(String(threat||'Baixa'))?'Invocação dos Lordes':'Animar os Mortos';
+const newSummon=id=>({id,nome:'',ameaca:'Baixa',hp:10,hp_bonus:0,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,ataques:[],revealed:false});
+const newSummonAttack=()=>({id:Date.now()+Math.random(),nome:'',dano:'',desc:'',custo:1});
+
+function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
+  const {combat,combatState,customAbilities,useSummonAbility,updateSummonHp,useSummonAction}=useExperience();
+  const [attackDraft,setAttackDraft]=useState(newSummonAttack());
+  const [busy,setBusy]=useState(false);
+  const change=(key,value)=>onChange({...summon,[key]:value});
+  const threat=summon.ameaca||'Baixa';
+  const required=summonRequiredAbility(threat);
+  const initiative=Array.isArray(combatState?.initiative)?combatState.initiative:[];
+  const activeSummon=initiative.find(row=>row.type==='summon'
+    && String(row.ownerSheetId||'')===String(ownerSheet?.id||'')
+    && String(row.summonMemoryId||'')===String(summon.id||''));
+  const currentTurn=initiative[Number(combatState?.turnIdx||0)];
+  const isSummonTurn=Boolean(activeSummon&&String(currentTurn?.id||'')===String(activeSummon.id||''));
+  const ownerClass=CLASSES.find(entry=>entry.id===ownerSheet?.classe);
+  const configured=Array.isArray(customAbilities?.[String(ownerSheet?.id||'')])?customAbilities[String(ownerSheet.id)]:[];
+  const abilityPool=[...(ownerClass?.normal||[]),...(ownerClass?.specials||[]),...configured];
+  const releaseAbility=abilityPool.find(entry=>String(entry?.name||entry?.nome||'').toLowerCase()===required.toLowerCase());
+  const level=Number(ownerSheet?.nivel||1);
+  const abilityLocked=Number(releaseAbility?.req||1)>level;
+  const currentVc=Math.max(0,Math.min(3,Number(activeSummon?.vigos??3)));
+
+  const addAttack=()=>{
+    if(!attackDraft.nome.trim())return;
+    const next={...attackDraft,id:Date.now(),custo:Math.max(0,Math.min(3,Number(attackDraft.custo)||0))};
+    change('ataques',[...(summon.ataques||[]),next]);
+    setAttackDraft(newSummonAttack());
+  };
+  const release=async()=>{
+    if(!releaseAbility||busy)return;
+    setBusy(true);
+    try{
+      const accepted=await useSummonAbility(releaseAbility,summon);
+      if(!accepted)pushToast('A invocação não pôde ser liberada agora.',SUMMON_ICON,color);
+    }finally{setBusy(false);}
+  };
+  const adjustHp=async delta=>{
+    if(!activeSummon||busy)return;
+    setBusy(true);
+    try{await updateSummonHp(activeSummon.id,delta);}finally{setBusy(false);}
+  };
+  const useAction=async action=>{
+    if(!activeSummon||busy)return;
+    setBusy(true);
+    try{
+      const accepted=await useSummonAction(activeSummon.id,action);
+      if(!accepted)pushToast('A ação exige o turno da invocação e VC disponível.',SUMMON_ICON,color);
+    }finally{setBusy(false);}
+  };
+
+  if(masterMode){
+    return <div className={'summon-memory-slot master '+(summon.revealed?'is-revealed':'is-hidden')} style={{'--summon-color':color}}>
+      <header><div><span>{SUMMON_ICON} SLOT DE MEMÓRIA</span><b>{summon.nome||'Nova invocação'}</b></div><div className="summon-master-actions"><button className="summon-reveal-button" onClick={()=>change('revealed',!summon.revealed)}>{summon.revealed?'Ocultar':'Revelar'}</button><button className="summon-delete-button" onClick={onDelete}>×</button></div></header>
+      <div className="summon-reveal-state">{summon.revealed?'Visível para o necromante':'Oculta até o Mestre revelar'} · 3 VC</div>
+      <div className="summon-memory-form"><label className="wide">Nome<input value={summon.nome||''} onChange={event=>change('nome',event.target.value)} placeholder="Nome da criatura"/></label><label>Ameaça<select value={threat} onChange={event=>change('ameaca',event.target.value)}>{SUMMON_THREATS.map(item=><option key={item} value={item}>{item}</option>)}</select></label><label>Habilidade necessária<input value={required} readOnly/></label><label>HP base<input type="number" min="1" value={summon.hp??10} onChange={event=>change('hp',Math.max(1,Number(event.target.value)||1))}/></label><label>HP bônus<input type="number" min="0" value={summon.hp_bonus||0} onChange={event=>change('hp_bonus',Math.max(0,Number(event.target.value)||0))}/></label>{SUMMON_ATTRS.map(([key,label])=><label key={key}>{label}<input type="number" min="0" max="30" value={summon[key]||0} onChange={event=>change(key,Math.max(0,Math.min(30,Number(event.target.value)||0)))}/></label>)}</div>
+      <div className="summon-memory-attacks"><small>ATAQUES / AÇÕES · VC MÁXIMO 3</small>{(summon.ataques||[]).map(action=><div key={action.id}><b>{action.nome}</b><span>{action.dano||'—'} · {Math.max(0,Math.min(3,Number(action.custo??1)))} VC</span><p>{action.desc||''}</p><button onClick={()=>change('ataques',(summon.ataques||[]).filter(item=>item.id!==action.id))}>×</button></div>)}<div className="summon-memory-add-attack"><input value={attackDraft.nome} onChange={event=>setAttackDraft(value=>({...value,nome:event.target.value}))} placeholder="Ação / ataque"/><input value={attackDraft.dano} onChange={event=>setAttackDraft(value=>({...value,dano:event.target.value}))} placeholder="Dano"/><input type="number" min="0" max="3" value={attackDraft.custo} onChange={event=>setAttackDraft(value=>({...value,custo:Number(event.target.value)}))} aria-label="Custo em VC"/><input value={attackDraft.desc} onChange={event=>setAttackDraft(value=>({...value,desc:event.target.value}))} placeholder="Descrição"/><button onClick={addAttack}>＋</button></div></div>
+    </div>;
+  }
+
+  if(summon.revealed!==true)return null;
+  const canRelease=Boolean(combat?.active&&!activeSummon&&releaseAbility&&!abilityLocked&&!busy);
+  return <div className={'summon-memory-slot player-summon-card '+(activeSummon?'is-active':'is-revealed')} style={{'--summon-color':color}}>
+    <header><div><span>{SUMMON_ICON} MEMÓRIA REVELADA</span><strong>{summon.nome||'Invocação não nomeada'}</strong></div><div className="summon-threat"><b>Ameaça {threat}</b><small>{required}</small></div></header>
+    <div className="summon-readonly-stats">{SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}</div>
+    {!activeSummon?<div className="summon-release-row"><div><b>3 VC ao ser conjurada</b><small>{combat?.active?'Pronta para entrar na iniciativa.':'Disponível quando o combate começar.'}</small></div><button onClick={release} disabled={!canRelease}>{busy?'Liberando...':'Liberar'}</button>{!releaseAbility&&<small className="summon-release-warning">Habilidade {required} não encontrada.</small>}</div>
+    :<div className="summon-live-controls">
+      <div className="summon-vitals"><div><small>VIDA</small><span><button onClick={()=>adjustHp(-1)} disabled={busy||Number(activeSummon.hp||0)<=0}>−</button><b>{Number(activeSummon.hp||0)}/{Number(activeSummon.maxHp||1)}</b><button onClick={()=>adjustHp(1)} disabled={busy||Number(activeSummon.hp||0)>=Number(activeSummon.maxHp||1)}>+</button></span></div><div><small>VIGOR CÓSMICO</small><b>{currentVc}/3 VC</b></div></div>
+      <div className="summon-turn-state">{isSummonTurn?'Turno da invocação · ações liberadas':'Aguardando o turno da invocação'}</div>
+      <div className="summon-player-actions">{(activeSummon.ataques||[]).map(action=>{const cost=Math.max(0,Math.min(3,Number(action.custo??1)));return <button key={action.id||action.nome} disabled={!isSummonTurn||busy||currentVc<cost||Number(activeSummon.hp||0)<=0} onClick={()=>useAction(action)}><span><b>{action.nome||'Ação'}</b><small>{action.dano||'Sem dano definido'}</small></span><em>{cost} VC</em>{action.desc&&<p>{action.desc}</p>}</button>})}{!(activeSummon.ataques||[]).length&&<div className="summon-no-actions">O Mestre ainda não cadastrou ações.</div>}</div>
+    </div>}
+  </div>;
+}
+
+function InvocacoesPanel({sheet,onChange,sheetColor,masterMode}){
+  const invocations=Array.isArray(sheet.invocacoes)?sheet.invocacoes:[];
+  const visible=masterMode?invocations:invocations.filter(summon=>summon.revealed===true);
+  const save=next=>onChange({...sheet,invocacoes:next});
+  const add=()=>{if(invocations.length<6)save([...invocations,newSummon(Date.now())]);};
+  return <div className="summon-memory-panel"><div className="summon-memory-help">{masterMode?'Cadastre a criatura e use Revelar quando o necromante puder conhecê-la.':'Somente memórias reveladas pelo Mestre aparecem aqui. Use Liberar durante o combate para conjurar.'}</div>{visible.map(summon=><SummonCard key={summon.id} summon={summon} ownerSheet={sheet} masterMode={masterMode} color={sheetColor} onChange={next=>save(invocations.map(item=>String(item.id)===String(summon.id)?next:item))} onDelete={()=>save(invocations.filter(item=>String(item.id)!==String(summon.id)))}/>)}{masterMode&&invocations.length<6&&<button className="summon-memory-add" onClick={add}>＋ Adicionar invocação ({invocations.length}/6)</button>}{!masterMode&&!visible.length&&<div className="summon-memory-empty">Nenhuma invocação foi revelada pelo Mestre.</div>}</div>;
+}
+
+`;
+
+components = replaceRange(
+  components,
+  'const SUMMON_THREATS=',
+  'const newSheet',
+  summonComponents,
+  'componentes das invocacoes',
+);
+must(components.includes("summon.revealed!==true"), 'segredo do Mestre ausente');
+must(components.includes("'Liberar'"), 'botao Liberar ausente');
+write(componentsFile, components);
+
+const cssFile = 'src/experience/experience.css';
+let css = read(cssFile);
+if (!css.includes('/* NECROMANCER SUMMON CONTROL 2026-09-28 */')) css += `
+/* NECROMANCER SUMMON CONTROL 2026-09-28 */
+.summon-memory-slot.master.is-revealed{box-shadow:inset 3px 0 0 var(--summon-color),0 0 18px color-mix(in srgb,var(--summon-color) 10%,transparent)}
+.summon-memory-slot.master.is-hidden{opacity:.82}.summon-master-actions{display:flex;align-items:center;gap:6px}.summon-master-actions button{width:auto!important;min-width:0;border-radius:7px;padding:5px 9px;font:700 8px Cinzel,serif;letter-spacing:.06em}.summon-reveal-button{border:1px solid color-mix(in srgb,var(--summon-color) 45%,transparent);background:color-mix(in srgb,var(--summon-color) 12%,transparent);color:#d7ccd9}.summon-delete-button{border:1px solid rgba(232,25,60,.25);background:rgba(232,25,60,.08);color:#e76b80}.summon-reveal-state{margin:-3px 0 9px;padding:6px 8px;border-radius:7px;background:color-mix(in srgb,var(--summon-color) 7%,transparent);font:700 7px Cinzel,serif;color:#887d8c;letter-spacing:.08em;text-transform:uppercase}
+.summon-memory-add-attack{grid-template-columns:minmax(0,1fr) minmax(60px,.55fr) 54px 32px!important}.summon-memory-add-attack input:nth-child(4){grid-column:1/-2}.summon-memory-add-attack button{grid-column:-2;grid-row:1/3}
+.player-summon-card{display:block!important;padding:13px;background:linear-gradient(135deg,color-mix(in srgb,var(--summon-color) 9%,rgba(6,5,10,.86)),rgba(6,5,10,.9))}.player-summon-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)}.player-summon-card>header span{display:block;font:700 7px Cinzel,serif;color:color-mix(in srgb,var(--summon-color) 72%,#b8aebd);letter-spacing:.12em}.player-summon-card>header strong{display:block;margin-top:4px;font:800 13px Cinzel,serif;color:#ded5df}.summon-threat{text-align:right}.summon-threat b,.summon-threat small{display:block;font:700 7px Cinzel,serif;color:#887f8c}.summon-readonly-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:10px 0}.summon-readonly-stats>div{padding:6px 3px;border-radius:7px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.018);text-align:center}.summon-readonly-stats small,.summon-readonly-stats b{display:block}.summon-readonly-stats small{overflow:hidden;text-overflow:ellipsis;font:600 6px Cinzel,serif;color:#6f6672}.summon-readonly-stats b{margin-top:3px;font:800 12px Cinzel,serif;color:#bdb3c0}.summon-release-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 10px;padding:9px;border-radius:9px;border:1px solid color-mix(in srgb,var(--summon-color) 22%,transparent);background:color-mix(in srgb,var(--summon-color) 6%,transparent)}.summon-release-row b,.summon-release-row small{display:block}.summon-release-row b{font:800 9px Cinzel,serif;color:#bdb3c0}.summon-release-row small{margin-top:3px;font-size:9px;color:#746b78}.summon-release-row>button{grid-column:2;grid-row:1;padding:8px 13px;border-radius:8px;border:1px solid color-mix(in srgb,var(--summon-color) 48%,transparent);background:color-mix(in srgb,var(--summon-color) 18%,transparent);color:#eee4ef;font:800 9px Cinzel,serif}.summon-release-row>button:disabled{opacity:.38;cursor:not-allowed}.summon-release-warning{grid-column:1/-1;color:#e7a36b!important}.summon-live-controls{display:grid;gap:8px}.summon-vitals{display:grid;grid-template-columns:1fr 1fr;gap:7px}.summon-vitals>div{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.055);background:rgba(0,0,0,.2);text-align:center}.summon-vitals small{display:block;margin-bottom:5px;font:700 6px Cinzel,serif;color:#6f6672;letter-spacing:.12em}.summon-vitals span{display:flex;align-items:center;justify-content:center;gap:8px}.summon-vitals b{font:800 12px Cinzel,serif;color:#d0c6d2}.summon-vitals button{width:26px;height:24px;border-radius:6px;border:1px solid rgba(232,25,60,.25);background:rgba(232,25,60,.08);color:#e78394}.summon-vitals button:last-child{border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.08);color:#75d998}.summon-turn-state{padding:6px;text-align:center;border-radius:7px;background:color-mix(in srgb,var(--summon-color) 7%,transparent);font:700 7px Cinzel,serif;color:#8d8291;letter-spacing:.08em;text-transform:uppercase}.summon-player-actions{display:grid;gap:6px}.summon-player-actions>button{display:grid;grid-template-columns:1fr auto;text-align:left;padding:9px;border-radius:8px;border:1px solid color-mix(in srgb,var(--summon-color) 20%,transparent);background:rgba(255,255,255,.02);color:#c7bdca}.summon-player-actions>button span b,.summon-player-actions>button span small{display:block}.summon-player-actions>button span b{font:800 9px Cinzel,serif}.summon-player-actions>button span small{margin-top:3px;font-size:9px;color:#776e7b}.summon-player-actions>button em{font:800 8px Cinzel,serif;color:var(--summon-color);font-style:normal}.summon-player-actions>button p{grid-column:1/-1;margin:6px 0 0;font-size:10px;line-height:1.45;color:#8f8592}.summon-player-actions>button:disabled{opacity:.36;cursor:not-allowed}.summon-no-actions{padding:9px;text-align:center;font-size:9px;color:#6f6672}
+@media(max-width:700px){.summon-readonly-stats{grid-template-columns:repeat(3,1fr)}.summon-memory-add-attack{grid-template-columns:1fr 70px!important}.summon-memory-add-attack input:nth-child(3){grid-column:auto!important}.summon-memory-add-attack input:nth-child(4){grid-column:1/-1}.summon-memory-add-attack button{grid-column:2;grid-row:2/4}.summon-vitals{grid-template-columns:1fr}.player-summon-card>header{align-items:stretch;flex-direction:column}.summon-threat{text-align:left}}
+`;
+write(cssFile, css);
+
+for (const marker of [
+  'isLiveDicePayload(payload',
+  'joinedAtRef = useRef(Date.now())',
+  'summon.revealed!==true',
+  'vigos:3,maxVigos:3',
+  'useSummonAction',
+  'NECROMANCER SUMMON CONTROL 2026-09-28',
+]) {
+  const sources = [replay, critical, kit, components, css];
+  must(sources.some(source => source.includes(marker)), `marcador final ausente: ${marker}`);
+}
+
+console.log('Dinastia E: replay somente ao vivo e invocacoes revelaveis/controlaveis com 3 VC aplicados.');

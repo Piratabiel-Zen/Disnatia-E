@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createLiveSnapshotGate, isNewLiveDocument } from '../src/experience/liveDiceGate.js';
+import {
+  createLiveSnapshotGate, isLiveDicePayload, isNewLiveDocument,
+} from '../src/experience/liveDiceGate.js';
 import {
   mergeSessionContext, readSessionCache, writeSessionCache,
 } from '../src/adventure/sessionCache.js';
@@ -21,6 +23,15 @@ test('a reconnect creates a new silent baseline instead of replaying missed roll
   assert.equal(gate.shouldDeliver({ fromCache: true }), false);
   assert.equal(gate.shouldDeliver({ fromCache: false }), false);
   assert.equal(gate.shouldDeliver({ fromCache: false }), true);
+});
+
+test('dice payloads are accepted only when they belong to the current live visit', () => {
+  const now = 1_800_000;
+  const joinedAt = now - 5_000;
+  assert.equal(isLiveDicePayload({ ts: now - 1_000 }, { joinedAt, now }), true);
+  assert.equal(isLiveDicePayload({ ts: joinedAt - 3_000 }, { joinedAt, now }), false);
+  assert.equal(isLiveDicePayload({ ts: now - 60_000 }, { joinedAt, now }), false);
+  assert.equal(isLiveDicePayload({ ts: 0 }, { joinedAt, now }), false);
 });
 
 test('session context is immediately recoverable from a compact browser cache', () => {
