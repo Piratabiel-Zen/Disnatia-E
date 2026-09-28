@@ -79,7 +79,8 @@ function dinastiaModularBuild() {
         "scripts/cinematic-combat-vitals-final-patch.mjs",
         "scripts/visible-update-proof-patch.mjs",
         "scripts/combat-visible-runtime-hotfix-2026-09-22.mjs",
-        "scripts/battlemap-direct-realtime-receiver-fix-2026-09-24.mjs"
+        "scripts/battlemap-direct-realtime-receiver-fix-2026-09-24.mjs",
+        "scripts/live-dice-necromancer-summons-final-patch.mjs"
       ])
     },
   }
