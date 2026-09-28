@@ -1,0 +1,13 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import Cronicas from '../../.generated/src/features/cronicas/CronicasPage.jsx';
+import {ExperienceProvider,ImmersiveNavigation} from '../../.generated/src/experience/ExperienceKit.generated.jsx';
+import GameExperience3 from '../../.generated/src/experience/GameExperience3.jsx';
+import {SummonCard} from '../../.generated/src/features/sheets/SheetComponents.jsx';
+import '../../.generated/src/styles/global.css';
+import '../../.generated/src/experience/experience.css';
+import '../../.generated/src/experience/site-polish.css';
+import '../../src/experience/mobile-player-polish.css';
+const hud=new URLSearchParams(location.search).has('hud');
+const summon={id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,forca:8,ataques:[{id:1,nome:'Bicada',custo:1}]};
+createRoot(document.getElementById('root')).render(<div className="adventure-shell access-player" style={{background:'#010207',minHeight:'100vh',color:'#eee'}}>{hud?<ExperienceProvider tab="session" masterMode={false} playerSheetId="necro"><ImmersiveNavigation tab="session" onNavigate={()=>{}}/><main style={{padding:'70px 12px 170px'}}><SummonCard summon={summon} ownerSheet={{id:'necro'}} color="#a855f7" masterMode={false} onChange={()=>{}}/></main><GameExperience3 access={{role:'player',sheetId:'necro'}} masterMode={false} tab="session" onNavigate={()=>{}}/></ExperienceProvider>:<Cronicas masterMode={true}/>}</div>);
