@@ -1,0 +1,37 @@
+.chronicles-tabs{display:flex;justify-content:center;gap:8px;margin:0 0 16px}
+.chronicles-tabs button{min-height:44px;padding:8px 24px;border:1px solid #a855f744;border-radius:12px;background:#100d1c;color:#cabcd8;font:600 13px Cinzel,serif}
+.chronicles-tabs button[aria-pressed=true]{background:#a855f725;border-color:#a855f7;color:#f3eaff}
+.chronicles-upload-status,.chronicles-upload-error{padding:12px;margin:8px 0;border:1px solid #a855f766;border-radius:10px;background:#100b1d;color:#e6d6f7}
+.chronicles-upload-error{border-color:#E8193C;color:#ffb0bd}.chronicles-upload-error button{margin-left:12px}
+.chronicles-image-preview{position:fixed;inset:0;z-index:950;background:#010207f5;display:grid;place-items:center;padding:70px 16px 20px}
+.chronicles-image-preview img{max-width:100%;max-height:calc(100dvh - 100px);object-fit:contain}.chronicles-image-preview>button{position:absolute;right:16px;top:16px;min-height:44px;padding:10px 18px;background:#251834;color:white;border:1px solid #a855f7;border-radius:10px}
+button.chronicles-memory{padding:0;width:100%;cursor:zoom-in}
+@media(max-width:900px){
+  .access-player.adventure-shell{height:100dvh!important}
+  .access-player .immersive-topbar{min-height:56px!important;padding:8px 12px!important;gap:8px!important;flex-wrap:nowrap!important}
+  .access-player .brand-line h1{font-size:14px!important}.access-player .brand-line small{font-size:8px!important}.access-player .brand-mark{display:none!important}
+  .access-player .top-actions{gap:6px!important}.access-player .top-actions .session-connection{max-width:14px;overflow:hidden}
+  .access-player .ad-quality{font-size:10px!important;min-height:36px;max-width:90px}
+  .access-player .immersive-content{padding:12px 10px calc(148px + env(safe-area-inset-bottom,0px))!important;scroll-padding-bottom:160px}
+  .access-player .mobile-dock{height:62px!important;left:8px!important;right:8px!important;bottom:calc(6px + env(safe-area-inset-bottom,0px))!important;z-index:610!important}
+  .access-player .mobile-dock button{min-height:48px!important;gap:4px!important}.access-player .mobile-dock button span{font-size:18px!important}.access-player .mobile-dock button small{font-size:9px!important}
+  .access-player .g3-mobile-session-hub{height:52px!important;left:8px!important;right:66px!important;bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;opacity:1!important;background:#0b0a16f5!important}
+  .access-player .g3-mobile-session-hub button{min-height:44px!important}.access-player .g3-mobile-session-hub button small{font-size:8px!important}.access-player .g3-mobile-session-hub button span{font-size:16px!important}
+  .access-player .g3-mobile-hud-toggle{width:48px!important;height:52px!important;bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;right:8px!important}.access-player .g3-mobile-hud-toggle small{font-size:8px!important}
+  .access-player .g3-top-context{top:64px!important;left:10px!important;right:10px!important;max-width:none!important}
+  .access-player .game3-root:not(.game3-mode-combat) .g3-top-context{display:none!important}
+  .access-player .g3-context-card .g3-objective,.access-player .g3-context-card .g3-location,.access-player .g3-context-card .g3-presence{display:none!important}
+  .access-player .g3-actionbar{bottom:calc(136px + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;max-height:40dvh!important;overflow-y:auto!important}
+  .access-player .g3-drawer{top:64px!important;bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-height:none!important;border-radius:18px!important}
+  .access-player .g3-feedback-stack{top:auto!important;bottom:calc(144px + env(safe-area-inset-bottom,0px))!important;right:10px!important;max-width:calc(100vw - 20px)}
+  .access-player .mobile-menu-sheet button{min-height:44px!important;font-size:12px!important}.access-player .mobile-menu-sheet h4{font-size:10px!important}
+  .access-player .summon-vitals{grid-template-columns:1fr 1fr!important}.access-player .summon-vitals button{width:44px!important;height:44px!important;font-size:20px!important}.access-player .summon-vitals span{gap:4px!important;flex-wrap:wrap}
+  .access-player .summon-release-row>button{min-height:44px;font-size:12px}.access-player .summon-player-actions>button{min-height:56px;padding:12px}.access-player .summon-player-actions>button span b{font-size:12px}.access-player .summon-player-actions>button p{font-size:13px}
+  .access-player .summon-readonly-stats small,.access-player .summon-vitals small,.access-player .summon-threat small{font-size:9px!important}.access-player .summon-readonly-stats b,.access-player .summon-vitals b{font-size:14px!important}
+  .access-player .summon-release-row b,.access-player .summon-threat b{font-size:11px!important}.access-player .summon-release-row small{font-size:11px!important;line-height:1.4}.access-player .summon-turn-state{font-size:9px!important}
+  .chronicles-grid{display:flex!important;flex-direction:column!important;gap:12px!important}.chronicles-left,.chronicles-main,.chronicles-right{width:100%!important;min-width:0!important}
+  .chronicles-session-list{display:flex!important;overflow-x:auto;gap:8px;scroll-snap-type:x proximity}.chronicles-session-button{flex:0 0 180px;min-height:60px;scroll-snap-align:start}
+  .chronicles-left>div:nth-child(2){padding:10px!important;max-height:200px;overflow:auto}.chronicles-banner h1{font-size:25px!important}.chronicles-reading{padding:14px!important}
+  .chronicles-editor>div[style*="grid"]{grid-template-columns:1fr 1fr!important}.chronicles-editor input,.chronicles-editor textarea{font-size:16px!important;min-width:0}
+  .chronicles-editor button{min-height:44px}.chronicles-story p{font-size:17px!important;line-height:1.7!important}.chronicles-right{display:grid!important;grid-template-columns:1fr!important}
+}
