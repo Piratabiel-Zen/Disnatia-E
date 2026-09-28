@@ -26,3 +26,19 @@ test('summons require a master reveal and expose only HP, actions and three VC',
   assert.match(patch, /const updateSummonHp=useCallback/);
   assert.match(patch, /const useSummonAction=useCallback/);
 });
+
+test('a revealed summon can be released outside combat and persists for future initiative', () => {
+  assert.doesNotMatch(patch, /summon\.revealed!==true\|\|!combat\?\.active/);
+  assert.match(patch, /const canRelease=Boolean\(!activeSummon&&!busy\)/);
+  assert.match(patch, /Autorizada pelo Mestre\. Pode ser liberada agora/);
+  assert.match(patch, /collection\(db,'combat_summons'\)/);
+  assert.match(patch, /releasedSummons\.filter/);
+  assert.match(patch, /!combat\?\.active\|\|isSummonTurn/);
+});
+
+test('release is announced globally with a dedicated pulsing cinematic', () => {
+  assert.match(patch, /type:'summon_release'/);
+  assert.match(patch, /title:'INVOCAÇÃO FEITA'/);
+  assert.match(patch, /rt-summon_release/);
+  assert.match(patch, /summon-release-button is-pulsing/);
+});
