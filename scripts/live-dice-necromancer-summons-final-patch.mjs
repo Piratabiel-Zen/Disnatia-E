@@ -134,8 +134,8 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
     const now=Date.now();
     const safeId=value=>String(value||'summon').replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,80);
     const summonId=\`summon_\${safeId(selectedSheet.id)}_\${safeId(summon.id||summon.nome)}\`;
-    const maxHp=Math.max(1,Math.floor((Number(summon.hp||10)+Math.max(0,Number(summon.hp_bonus||0)))*.5));
-    const scale=isLord?1:.5;
+    const maxHp=Math.max(1,Math.floor(Number(summon.hp||10)+Math.max(0,Number(summon.hp_bonus||0))));
+    const scale=1;
     const attr=key=>Math.floor(Number(summon?.[key]||0)*scale);
     const attacks=(Array.isArray(summon.ataques)?summon.ataques:[]).map(action=>({
       ...action,custo:Math.max(0,Math.min(3,Number(action?.custo??1))),
@@ -154,7 +154,13 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
       const existing=await transaction.get(summonRef);
       const stateSnapshot=combat?.active?await transaction.get(stateRef):null;
       if(existing.exists()&&existing.data()?.active!==false)return false;
-      transaction.set(summonRef,{...summoned,active:true,createdAt:now,updatedAt:now,round:Number(combatState.round||1)});
+      // Guardar nao deve restaurar recursos gastos ao liberar novamente.
+      const previous=existing.exists()?existing.data():null;
+      if(previous){
+        summoned.hp=Math.max(0,Math.min(maxHp,Number(previous.hp??maxHp)));
+        summoned.vigos=Math.max(0,Math.min(3,Number(previous.vigos??3)));
+      }
+      transaction.set(summonRef,{...summoned,active:true,createdAt:previous?.createdAt||now,updatedAt:now,round:Number(combatState.round||1)});
       if(combat?.active){
         const state=stateSnapshot?.exists()?stateSnapshot.data()||{}:{};
         const init=Array.isArray(state.initiative)?[...state.initiative]:[];
@@ -186,7 +192,7 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
     return true;
   },[selectedSheet,selectedClass,combat?.active,combatState.round,summons,addJournal]);
 
-  const updateSummonHp=useCallback(async(combatantId,delta)=>{
+  const updateSummonHp=useCallback(async(combatantId,delta,maxHpOverride)=>{
     if(!combatantId||!Number.isFinite(Number(delta)))return false;
     const record=summons.find(row=>String(row.id||'')===String(combatantId));
     if(!record)return false;
@@ -196,24 +202,68 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
     if(!summonDocId)return false;
     const summonRef=doc(db,'combat_summons',summonDocId);
     const stateRef=doc(db,'config','combat_state');
-    return runTransaction(db,async transaction=>{
+    const result=await runTransaction(db,async transaction=>{
       const summonSnapshot=await transaction.get(summonRef);
-      const snapshot=await transaction.get(stateRef);
       if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return false;
       const current={...record,...summonSnapshot.data()};
-      const state=snapshot.exists()?snapshot.data()||{}:{};
-      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
-      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
-      const nextHp=Math.max(0,Math.min(Number(current.maxHp||1),Number(current.hp||0)+Number(delta)));
+      const maxHp=Math.max(1,Number(maxHpOverride||current.maxHp||1));
+      const wasFull=Number(current.hp||0)>=Number(current.maxHp||1);
+      const currentHp=wasFull&&maxHp>Number(current.maxHp||1)?maxHp:Number(current.hp||0);
+      const nextHp=Math.max(0,Math.min(maxHp,currentHp+Number(delta)));
       const nextVc=Math.max(0,Math.min(3,Number(current.vigos??3)));
       const now=Date.now();
-      transaction.set(summonRef,{hp:nextHp,vigos:nextVc,maxVigos:3,updatedAt:now},{merge:true});
-      if(index>=0){
-        initiative[index]={...initiative[index],hp:nextHp,vigos:nextVc,maxVigos:3};
-        transaction.set(stateRef,{initiative,updatedAt:now,revision:now},{merge:true});
-      }
-      return true;
+      transaction.set(summonRef,{hp:nextHp,maxHp,vigos:nextVc,maxVigos:3,updatedAt:now},{merge:true});
+      return {nextHp,maxHp,nextVc,now};
     });
+    if(!result)return false;
+    runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(stateRef);
+      const latest=await transaction.get(summonRef);
+      if(!latest.exists()||latest.data()?.active===false)return;
+      if(!snapshot.exists())return;
+      const state=snapshot.data()||{};
+      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
+      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
+      if(index<0)return;
+      initiative[index]={...initiative[index],hp:latest.data().hp,maxHp:latest.data().maxHp,vigos:latest.data().vigos,maxVigos:3};
+      transaction.set(stateRef,{initiative,updatedAt:result.now,revision:result.now},{merge:true});
+    }).catch(error=>console.warn('HP salvo; espelho da iniciativa indisponível:',error));
+    return true;
+  },[summons,masterMode,selectedSheet?.id]);
+
+  const updateSummonVc=useCallback(async(combatantId,delta)=>{
+    if(!combatantId||!Number.isFinite(Number(delta)))return false;
+    const record=summons.find(row=>String(row.id||'')===String(combatantId));
+    if(!record)return false;
+    const owns=masterMode||String(record.ownerSheetId||'')===String(selectedSheet?.id||'');
+    if(!owns)return false;
+    const summonDocId=String(record.summonDocId||record.id||'').replace(/^s_/,'');
+    if(!summonDocId)return false;
+    const summonRef=doc(db,'combat_summons',summonDocId);
+    const stateRef=doc(db,'config','combat_state');
+    const result=await runTransaction(db,async transaction=>{
+      const summonSnapshot=await transaction.get(summonRef);
+      if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return false;
+      const current={...record,...summonSnapshot.data()};
+      const nextVc=Math.max(0,Math.min(3,Number(current.vigos??3)+Number(delta)));
+      const now=Date.now();
+      transaction.set(summonRef,{vigos:nextVc,maxVigos:3,updatedAt:now},{merge:true});
+      return {nextVc,now};
+    });
+    if(!result)return false;
+    runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(stateRef);
+      const latest=await transaction.get(summonRef);
+      if(!latest.exists()||latest.data()?.active===false)return;
+      if(!snapshot.exists())return;
+      const state=snapshot.data()||{};
+      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
+      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
+      if(index<0)return;
+      initiative[index]={...initiative[index],vigos:latest.data().vigos,maxVigos:3};
+      transaction.set(stateRef,{initiative,updatedAt:result.now,revision:result.now},{merge:true});
+    }).catch(error=>console.warn('VC salvo; espelho da iniciativa indisponível:',error));
+    return true;
   },[summons,masterMode,selectedSheet?.id]);
 
   const useSummonAction=useCallback(async(combatantId,action)=>{
@@ -228,14 +278,9 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
     const stateRef=doc(db,'config','combat_state');
     const result=await runTransaction(db,async transaction=>{
       const summonSnapshot=await transaction.get(summonRef);
-      const snapshot=await transaction.get(stateRef);
       if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return null;
       const row={...record,...summonSnapshot.data()};
-      const state=snapshot.exists()?snapshot.data()||{}:{};
-      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
-      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
-      const isTurn=index>=0&&String(initiative[Number(state.turnIdx||0)]?.id||'')===String(row.id||'');
-      if((combat?.active&&index<0)||(!masterMode&&combat?.active&&!isTurn)||Number(row.hp||0)<=0)return null;
+      if(Number(row.hp||0)<=0)return null;
       const cost=Math.max(0,Math.min(3,Number(action.custo??1)));
       const currentVc=Math.max(0,Math.min(3,Number(row.vigos??3)));
       if(currentVc<cost)return null;
@@ -243,29 +288,78 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
       const now=Date.now();
       const actionName=String(action.nome||action.name||'Ação');
       transaction.set(summonRef,{vigos:nextVc,maxVigos:3,updatedAt:now},{merge:true});
-      if(index>=0){
-        initiative[index]={...initiative[index],vigos:nextVc,maxVigos:3};
-        const log=[...(state.log||[]),{
-          msg:\`\${row.nome||'Invocação'} usou \${actionName}\`,color:row.color||'#6E6E80',
-          icon:'\\uD83D\\uDC80',ts:now,round:Number(state.round||1),
-        }].slice(-60);
-        transaction.set(stateRef,{initiative,log,updatedAt:now,revision:now},{merge:true});
-      }
-      return {name:row.nome||'Invocação',actionName,color:row.color||'#6E6E80'};
+      return {name:row.nome||'Invocação',actionName,color:row.color||'#6E6E80',nextVc,now};
     });
     if(!result)return false;
-    const now=Date.now();
+    runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(stateRef);
+      const latest=await transaction.get(summonRef);
+      if(!latest.exists()||latest.data()?.active===false)return;
+      if(!snapshot.exists())return;
+      const state=snapshot.data()||{};
+      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
+      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
+      if(index<0)return;
+      initiative[index]={...initiative[index],vigos:latest.data().vigos,maxVigos:3};
+      const log=[...(state.log||[]),{
+        msg:\`\${result.name} usou \${result.actionName}\`,color:result.color,
+        icon:'\\uD83D\\uDC80',ts:result.now,round:Number(state.round||1),
+      }].slice(-60);
+      transaction.set(stateRef,{initiative,log,updatedAt:result.now,revision:result.now},{merge:true});
+    }).catch(error=>console.warn('Ação usada; espelho da iniciativa indisponível:',error));
+    const now=result.now;
     const event={
       id:nowId('summon_action'),type:'ability',text:\`\${result.name} usou \${result.actionName}\`,
       ts:now,color:result.color,icon:'\\uD83D\\uDC80',soft:true,source:'summon-action',sheetId:String(selectedSheet?.id||''),
     };
-    await Promise.all([
+    const broadcasts=await Promise.allSettled([
       addJournal(event.text,'ability',{icon:event.icon,color:event.color}),
       setDoc(doc(db,'config','cosmic_event'),event),
       setDoc(doc(db,'cosmic_events',event.id),event),
     ]);
+    if(broadcasts.some(item=>item.status==='rejected'))console.warn('Ação usada; parte do anúncio global não foi gravada.');
     return true;
-  },[combat?.active,summons,masterMode,selectedSheet?.id,addJournal]);`;
+  },[summons,masterMode,selectedSheet?.id,addJournal]);
+
+  const storeSummon=useCallback(async combatantId=>{
+    if(!combatantId)return false;
+    const record=summons.find(row=>String(row.id||'')===String(combatantId));
+    if(!record)return false;
+    const owns=masterMode||String(record.ownerSheetId||'')===String(selectedSheet?.id||'');
+    if(!owns)return false;
+    const summonDocId=String(record.summonDocId||record.id||'').replace(/^s_/,'');
+    if(!summonDocId)return false;
+    const summonRef=doc(db,'combat_summons',summonDocId);
+    const stateRef=doc(db,'config','combat_state');
+    const combatRef=doc(db,'config','combat');
+    const result=await runTransaction(db,async transaction=>{
+      const summonSnapshot=await transaction.get(summonRef);
+      if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return null;
+      const now=Date.now();
+      transaction.set(summonRef,{active:false,storedAt:now,updatedAt:now},{merge:true});
+      return {name:String(record.nome||'Invocação'),now};
+    });
+    if(!result)return false;
+    runTransaction(db,async transaction=>{
+      const stateSnapshot=await transaction.get(stateRef);
+      if(!stateSnapshot.exists())return;
+      const state=stateSnapshot.data()||{};
+      const initiative=Array.isArray(state.initiative)?[...state.initiative]:[];
+      const index=initiative.findIndex(row=>row.type==='summon'&&String(row.id)===String(combatantId));
+      if(index<0)return;
+      const currentId=String(initiative[Number(state.turnIdx||0)]?.id||'');
+      const nextInitiative=initiative.filter((_,itemIndex)=>itemIndex!==index);
+      let nextTurnIdx=currentId===String(combatantId)?Math.min(Math.max(0,index),Math.max(0,nextInitiative.length-1)):nextInitiative.findIndex(row=>String(row.id||'')===currentId);
+      if(nextTurnIdx<0)nextTurnIdx=0;
+      transaction.set(stateRef,{initiative:nextInitiative,turnIdx:nextTurnIdx,updatedAt:result.now,revision:result.now},{merge:true});
+      if(currentId===String(combatantId)){
+        const nextCurrent=nextInitiative[nextTurnIdx];
+        transaction.set(combatRef,{currentNome:nextCurrent?.nome||'',currentColor:nextCurrent?.color||'#E8193C',currentType:nextCurrent?.type||'',updatedAt:result.now,revision:result.now},{merge:true});
+      }
+    }).catch(error=>console.warn('Invocação guardada; espelho da iniciativa indisponível:',error));
+    addJournal(\`\${result.name} foi guardada pelo necromante.\`,'ability',{icon:'\\uD83D\\uDC80',color:record.color||'#6E6E80',source:'summon-store'}).catch(error=>console.warn('Invocação guardada; registro no diário indisponível:',error));
+    return true;
+  },[summons,masterMode,selectedSheet?.id,addJournal]);`;
 
 kit = replaceRange(
   kit,
@@ -276,7 +370,7 @@ kit = replaceRange(
 );
 kit = kit.replaceAll(
   'useQuickAbility,useSummonAbility',
-  'useQuickAbility,useSummonAbility,updateSummonHp,useSummonAction',
+  'useQuickAbility,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon',
 );
 kit = replaceOnce(
   kit,
@@ -292,7 +386,9 @@ kit = replaceOnce(
 );
 must(kit.includes('vigos:3,maxVigos:3'), 'VC fixo nao aplicado');
 must(kit.includes('const updateSummonHp=useCallback'), 'controle de HP ausente');
+must(kit.includes('const updateSummonVc=useCallback'), 'controle de VC ausente');
 must(kit.includes('const useSummonAction=useCallback'), 'acoes da invocacao ausentes');
+must(kit.includes('const storeSummon=useCallback'), 'acao Guardar ausente');
 write(kitFile, kit);
 
 // Invocacoes liberadas fora de combate continuam persistentes e entram na
@@ -435,19 +531,25 @@ const newSummon=id=>({id,nome:'',ameaca:'Baixa',hp:10,hp_bonus:0,forca:0,agilida
 const newSummonAttack=()=>({id:Date.now()+Math.random(),nome:'',dano:'',desc:'',custo:1});
 
 function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
-  const {combat,combatState,summons,useSummonAbility,updateSummonHp,useSummonAction}=useExperience();
+  const {combatState,summons,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon}=useExperience();
   const [attackDraft,setAttackDraft]=useState(newSummonAttack());
   const [busy,setBusy]=useState(false);
   const change=(key,value)=>onChange({...summon,[key]:value});
   const threat=summon.ameaca||'Baixa';
   const required=summonRequiredAbility(threat);
   const initiative=Array.isArray(combatState?.initiative)?combatState.initiative:[];
-  const activeSummon=(Array.isArray(summons)?summons:[]).find(row=>row.type==='summon'
+  const activeRecord=(Array.isArray(summons)?summons:[]).find(row=>row.type==='summon'
     && String(row.ownerSheetId||'')===String(ownerSheet?.id||'')
     && String(row.summonMemoryId||'')===String(summon.id||''));
+  const configuredMaxHp=Math.max(1,Math.floor(Number(summon.hp||10)+Math.max(0,Number(summon.hp_bonus||0))));
+  const activeSummon=activeRecord?{
+    ...activeRecord,
+    maxHp:configuredMaxHp,
+    hp:Number(activeRecord.hp||0)>=Number(activeRecord.maxHp||1)&&configuredMaxHp>Number(activeRecord.maxHp||1)?configuredMaxHp:Math.min(configuredMaxHp,Number(activeRecord.hp||0)),
+  }:null;
   const currentTurn=initiative[Number(combatState?.turnIdx||0)];
   const isSummonTurn=Boolean(activeSummon&&String(currentTurn?.id||'')===String(activeSummon.id||''));
-  const actionsAvailable=Boolean(activeSummon&&(!combat?.active||isSummonTurn));
+  const actionsAvailable=Boolean(activeSummon);
   const currentVc=Math.max(0,Math.min(3,Number(activeSummon?.vigos??3)));
 
   const addAttack=()=>{
@@ -462,20 +564,39 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
     try{
       const accepted=await useSummonAbility({name:required},summon);
       if(!accepted)pushToast('A invocação não pôde ser liberada agora.',SUMMON_ICON,color);
-    }finally{setBusy(false);}
+    }catch(error){console.error('Falha ao liberar invocação:',error);pushToast('Falha ao sincronizar a invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
   };
   const adjustHp=async delta=>{
     if(!activeSummon||busy)return;
     setBusy(true);
-    try{await updateSummonHp(activeSummon.id,delta);}finally{setBusy(false);}
+    try{
+      const accepted=await updateSummonHp(activeSummon.id,delta,configuredMaxHp);
+      if(!accepted)pushToast('Não foi possível alterar a vida da invocação.',SUMMON_ICON,color);
+    }catch(error){console.error('Falha ao alterar HP da invocação:',error);pushToast('Falha ao sincronizar a vida da invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
+  };
+  const adjustVc=async delta=>{
+    if(!activeSummon||busy)return;
+    setBusy(true);
+    try{
+      const accepted=await updateSummonVc(activeSummon.id,delta);
+      if(!accepted)pushToast('Não foi possível alterar o Vigor Cósmico.',SUMMON_ICON,color);
+    }catch(error){console.error('Falha ao alterar VC da invocação:',error);pushToast('Falha ao sincronizar o Vigor Cósmico.',SUMMON_ICON,color);}finally{setBusy(false);}
   };
   const useAction=async action=>{
     if(!activeSummon||busy)return;
     setBusy(true);
     try{
       const accepted=await useSummonAction(activeSummon.id,action);
-      if(!accepted)pushToast('A ação exige VC disponível e, em combate, o turno da invocação.',SUMMON_ICON,color);
-    }finally{setBusy(false);}
+      if(!accepted)pushToast('A ação exige vida e VC disponíveis.',SUMMON_ICON,color);
+    }catch(error){console.error('Falha ao usar ação da invocação:',error);pushToast('Falha ao sincronizar a ação da invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
+  };
+  const store=async()=>{
+    if(!activeSummon||busy)return;
+    setBusy(true);
+    try{
+      const accepted=await storeSummon(activeSummon.id);
+      if(!accepted)pushToast('A invocação não pôde ser guardada.',SUMMON_ICON,color);
+    }catch(error){console.error('Falha ao guardar invocação:',error);pushToast('Falha ao sincronizar a invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
   };
 
   if(masterMode){
@@ -491,11 +612,11 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
   const canRelease=Boolean(!activeSummon&&!busy);
   return <div className={'summon-memory-slot player-summon-card '+(activeSummon?'is-active':'is-revealed')} style={{'--summon-color':color}}>
     <header><div><span>{SUMMON_ICON} MEMÓRIA REVELADA</span><strong>{summon.nome||'Invocação não nomeada'}</strong></div><div className="summon-threat"><b>Ameaça {threat}</b><small>{required}</small></div></header>
-    <div className="summon-readonly-stats">{SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}</div>
-    {!activeSummon?<div className="summon-release-row"><div><b>3 VC ao ser conjurada</b><small>Autorizada pelo Mestre. Pode ser liberada agora.</small></div><button className="summon-release-button is-pulsing" onClick={release} disabled={!canRelease}>{busy?'Liberando...':'Liberar'}</button></div>
-    :<div className="summon-live-controls">
-      <div className="summon-vitals"><div><small>VIDA</small><span><button onClick={()=>adjustHp(-1)} disabled={busy||Number(activeSummon.hp||0)<=0}>−</button><b>{Number(activeSummon.hp||0)}/{Number(activeSummon.maxHp||1)}</b><button onClick={()=>adjustHp(1)} disabled={busy||Number(activeSummon.hp||0)>=Number(activeSummon.maxHp||1)}>+</button></span></div><div><small>VIGOR CÓSMICO</small><b>{currentVc}/3 VC</b></div></div>
-      <div className="summon-turn-state">{!combat?.active?'Invocação livre · ações disponíveis':isSummonTurn?'Turno da invocação · ações liberadas':'Aguardando o turno da invocação'}</div>
+    {activeSummon&&<div className="summon-readonly-stats">{SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}</div>}
+    <div className={'summon-release-row '+(activeSummon?'summon-store-row':'')}><div><b>{activeSummon?'Invocação em campo':'3 VC ao ser conjurada'}</b><small>{activeSummon?'Guarde para recolher a ficha e conjurar novamente depois.':'Autorizada pelo Mestre. Pode ser liberada agora.'}</small></div><button className={activeSummon?'summon-store-button':'summon-release-button is-pulsing'} onClick={activeSummon?store:release} disabled={activeSummon?busy:!canRelease}>{busy?(activeSummon?'Guardando...':'Liberando...'):(activeSummon?'Guardar':'Liberar')}</button></div>
+    {activeSummon&&<div className="summon-live-controls">
+      <div className="summon-vitals"><div><small>VIDA</small><span><button onClick={()=>adjustHp(-1)} disabled={busy||Number(activeSummon.hp||0)<=0}>−</button><b>{Number(activeSummon.hp||0)}/{configuredMaxHp}</b><button onClick={()=>adjustHp(1)} disabled={busy||Number(activeSummon.hp||0)>=configuredMaxHp}>+</button></span></div><div><small>VIGOR CÓSMICO</small><span><button onClick={()=>adjustVc(-1)} disabled={busy||currentVc<=0}>−</button><b>{currentVc}/3 VC</b><button onClick={()=>adjustVc(1)} disabled={busy||currentVc>=3}>+</button></span></div></div>
+      <div className="summon-turn-state">Invocação liberada · controle do necromante{isSummonTurn?' · turno atual':''}</div>
       <div className="summon-player-actions">{(activeSummon.ataques||[]).map(action=>{const cost=Math.max(0,Math.min(3,Number(action.custo??1)));return <button key={action.id||action.nome} disabled={!actionsAvailable||busy||currentVc<cost||Number(activeSummon.hp||0)<=0} onClick={()=>useAction(action)}><span><b>{action.nome||'Ação'}</b><small>{action.dano||'Sem dano definido'}</small></span><em>{cost} VC</em>{action.desc&&<p>{action.desc}</p>}</button>})}{!(activeSummon.ataques||[]).length&&<div className="summon-no-actions">O Mestre ainda não cadastrou ações.</div>}</div>
     </div>}
   </div>;
@@ -535,6 +656,7 @@ if (!css.includes('/* NECROMANCER SUMMON CONTROL 2026-09-28 */')) css += `
 if (!css.includes('/* SUMMON RELEASE READY PULSE 2026-09-28 */')) css += `
 /* SUMMON RELEASE READY PULSE 2026-09-28 */
 .summon-release-button.is-pulsing:not(:disabled){animation:summonReleaseReady 1.25s ease-in-out infinite;will-change:transform,box-shadow}
+.summon-store-row{margin-bottom:8px;border-color:color-mix(in srgb,var(--summon-color) 36%,transparent);background:linear-gradient(90deg,color-mix(in srgb,var(--summon-color) 9%,transparent),rgba(0,0,0,.14))}.summon-store-button{border-color:rgba(232,160,32,.46)!important;background:rgba(232,160,32,.1)!important;color:#f0c879!important}
 @keyframes summonReleaseReady{0%,100%{transform:scale(1);border-color:color-mix(in srgb,var(--summon-color) 42%,transparent);box-shadow:0 0 0 0 color-mix(in srgb,var(--summon-color) 0%,transparent)}50%{transform:scale(1.055);border-color:color-mix(in srgb,var(--summon-color) 88%,#fff);box-shadow:0 0 0 5px color-mix(in srgb,var(--summon-color) 8%,transparent),0 0 24px color-mix(in srgb,var(--summon-color) 42%,transparent)}}
 @media(prefers-reduced-motion:reduce){.summon-release-button.is-pulsing:not(:disabled){animation:none}}
 `;
