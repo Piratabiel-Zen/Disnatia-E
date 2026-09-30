@@ -261,7 +261,7 @@ write(cssFile, css);
 
 for (const [file, markers] of [
   [kitFile, ['function CombatResourceOrb', 'function CombatHotkeys', 'function FloatingDamageLayer', '<FloatingDamageLayer/>', 'aria-keyshortcuts={i<4?String(i+1):undefined}', 'combat-action-pulse compact']],
-  [gameFile, ['function CombatVitalFx', 'function SessionUpdateNotice', "!isMyTurn||combat?.active"]],
+  [gameFile, ['function CombatVitalFx', "!isMyTurn||combat?.active"]],
   [realtimeFile, ["!(e.type==='ability'&&e.source==='ability')"]],
   [battleFile, ['data-combat-entity-id=', 'data-token-id=']],
   [cssFile, ['COMBAT VISIBLE RUNTIME HOTFIX 2026-09-22', '.combat-floating-damage-layer', '@keyframes combatOrbWave']],

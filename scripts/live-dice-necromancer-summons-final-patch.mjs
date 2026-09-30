@@ -534,6 +534,7 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
   const {combatState,summons,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon}=useExperience();
   const [attackDraft,setAttackDraft]=useState(newSummonAttack());
   const [busy,setBusy]=useState(false);
+  const [optimisticVitals,setOptimisticVitals]=useState(null);
   const change=(key,value)=>onChange({...summon,[key]:value});
   const threat=summon.ameaca||'Baixa';
   const required=summonRequiredAbility(threat);
@@ -551,6 +552,12 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
   const isSummonTurn=Boolean(activeSummon&&String(currentTurn?.id||'')===String(activeSummon.id||''));
   const actionsAvailable=Boolean(activeSummon);
   const currentVc=Math.max(0,Math.min(3,Number(activeSummon?.vigos??3)));
+  const displayedHp=Math.max(0,Math.min(configuredMaxHp,Number(optimisticVitals?.hp??activeSummon?.hp??0)));
+  const displayedVc=Math.max(0,Math.min(3,Number(optimisticVitals?.vc??currentVc)));
+  useEffect(()=>{
+    if(!activeSummon){setOptimisticVitals(null);return;}
+    if(optimisticVitals&&Number(activeSummon.hp||0)===optimisticVitals.hp&&Number(activeSummon.vigos??3)===optimisticVitals.vc)setOptimisticVitals(null);
+  },[activeSummon?.id,activeSummon?.hp,activeSummon?.vigos,optimisticVitals]);
 
   const addAttack=()=>{
     if(!attackDraft.nome.trim())return;
@@ -567,20 +574,24 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
     }catch(error){console.error('Falha ao liberar invocação:',error);pushToast('Falha ao sincronizar a invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
   };
   const adjustHp=async delta=>{
-    if(!activeSummon||busy)return;
-    setBusy(true);
+    if(!activeSummon)return;
+    const nextHp=Math.max(0,Math.min(configuredMaxHp,displayedHp+Number(delta||0)));
+    if(nextHp===displayedHp)return;
+    setOptimisticVitals(current=>({hp:nextHp,vc:Number(current?.vc??displayedVc)}));
     try{
       const accepted=await updateSummonHp(activeSummon.id,delta,configuredMaxHp);
       if(!accepted)pushToast('Não foi possível alterar a vida da invocação.',SUMMON_ICON,color);
-    }catch(error){console.error('Falha ao alterar HP da invocação:',error);pushToast('Falha ao sincronizar a vida da invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
+    }catch(error){console.error('Falha ao alterar HP da invocação:',error);pushToast('Falha ao sincronizar a vida da invocação.',SUMMON_ICON,color);}
   };
   const adjustVc=async delta=>{
-    if(!activeSummon||busy)return;
-    setBusy(true);
+    if(!activeSummon)return;
+    const nextVc=Math.max(0,Math.min(3,displayedVc+Number(delta||0)));
+    if(nextVc===displayedVc)return;
+    setOptimisticVitals(current=>({hp:Number(current?.hp??displayedHp),vc:nextVc}));
     try{
       const accepted=await updateSummonVc(activeSummon.id,delta);
       if(!accepted)pushToast('Não foi possível alterar o Vigor Cósmico.',SUMMON_ICON,color);
-    }catch(error){console.error('Falha ao alterar VC da invocação:',error);pushToast('Falha ao sincronizar o Vigor Cósmico.',SUMMON_ICON,color);}finally{setBusy(false);}
+    }catch(error){console.error('Falha ao alterar VC da invocação:',error);pushToast('Falha ao sincronizar o Vigor Cósmico.',SUMMON_ICON,color);}
   };
   const useAction=async action=>{
     if(!activeSummon||busy)return;
@@ -615,9 +626,9 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
     {activeSummon&&<div className="summon-readonly-stats">{SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}</div>}
     <div className={'summon-release-row '+(activeSummon?'summon-store-row':'')}><div><b>{activeSummon?'Invocação em campo':'3 VC ao ser conjurada'}</b><small>{activeSummon?'Guarde para recolher a ficha e conjurar novamente depois.':'Autorizada pelo Mestre. Pode ser liberada agora.'}</small></div><button className={activeSummon?'summon-store-button':'summon-release-button is-pulsing'} onClick={activeSummon?store:release} disabled={activeSummon?busy:!canRelease}>{busy?(activeSummon?'Guardando...':'Liberando...'):(activeSummon?'Guardar':'Liberar')}</button></div>
     {activeSummon&&<div className="summon-live-controls">
-      <div className="summon-vitals"><div><small>VIDA</small><span><button onClick={()=>adjustHp(-1)} disabled={busy||Number(activeSummon.hp||0)<=0}>−</button><b>{Number(activeSummon.hp||0)}/{configuredMaxHp}</b><button onClick={()=>adjustHp(1)} disabled={busy||Number(activeSummon.hp||0)>=configuredMaxHp}>+</button></span></div><div><small>VIGOR CÓSMICO</small><span><button onClick={()=>adjustVc(-1)} disabled={busy||currentVc<=0}>−</button><b>{currentVc}/3 VC</b><button onClick={()=>adjustVc(1)} disabled={busy||currentVc>=3}>+</button></span></div></div>
+      <div className="summon-vitals"><div><small>VIDA</small><span><button onClick={()=>adjustHp(-1)} disabled={displayedHp<=0}>−</button><b>{displayedHp}/{configuredMaxHp}</b><button onClick={()=>adjustHp(1)} disabled={displayedHp>=configuredMaxHp}>+</button></span></div><div><small>VIGOR CÓSMICO</small><span><button onClick={()=>adjustVc(-1)} disabled={displayedVc<=0}>−</button><b>{displayedVc}/3 VC</b><button onClick={()=>adjustVc(1)} disabled={displayedVc>=3}>+</button></span></div></div>
       <div className="summon-turn-state">Invocação liberada · controle do necromante{isSummonTurn?' · turno atual':''}</div>
-      <div className="summon-player-actions">{(activeSummon.ataques||[]).map(action=>{const cost=Math.max(0,Math.min(3,Number(action.custo??1)));return <button key={action.id||action.nome} disabled={!actionsAvailable||busy||currentVc<cost||Number(activeSummon.hp||0)<=0} onClick={()=>useAction(action)}><span><b>{action.nome||'Ação'}</b><small>{action.dano||'Sem dano definido'}</small></span><em>{cost} VC</em>{action.desc&&<p>{action.desc}</p>}</button>})}{!(activeSummon.ataques||[]).length&&<div className="summon-no-actions">O Mestre ainda não cadastrou ações.</div>}</div>
+      <div className="summon-player-actions">{(activeSummon.ataques||[]).map(action=>{const cost=Math.max(0,Math.min(3,Number(action.custo??1)));return <button key={action.id||action.nome} disabled={!actionsAvailable||busy||displayedVc<cost||displayedHp<=0} onClick={()=>useAction(action)}><span><b>{action.nome||'Ação'}</b><small>{action.dano||'Sem dano definido'}</small></span><em>{cost} VC</em>{action.desc&&<p>{action.desc}</p>}</button>})}{!(activeSummon.ataques||[]).length&&<div className="summon-no-actions">O Mestre ainda não cadastrou ações.</div>}</div>
     </div>}
   </div>;
 }

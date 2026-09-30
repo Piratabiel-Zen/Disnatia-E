@@ -119,30 +119,11 @@ write(accessFile, access);
 // local, sem alterar HP, turno ou histórico da campanha.
 const gameFile = 'src/experience/GameExperience3.adventure.jsx';
 let game = read(gameFile);
-const noticeComponent = `
-const VISUAL_UPDATE_SESSION_KEY='dinastia_visual_update_2026_09_22_v2';
-
-function SessionUpdateNotice({ready,combat,onClose}){
-  const [visible,setVisible]=useState(()=>{try{return sessionStorage.getItem(VISUAL_UPDATE_SESSION_KEY)!=='seen';}catch(_){return true;}});
-  useEffect(()=>{
-    if(!ready||!visible)return undefined;
-    const timer=window.setTimeout(()=>{
-      try{sessionStorage.setItem(VISUAL_UPDATE_SESSION_KEY,'seen');}catch(_){}
-      setVisible(false);onClose?.();
-    },7200);
-    return()=>window.clearTimeout(timer);
-  },[ready,visible,onClose]);
-  if(!ready||!visible)return null;
-  const dismiss=()=>{try{sessionStorage.setItem(VISUAL_UPDATE_SESSION_KEY,'seen');}catch(_){}setVisible(false);onClose?.();};
-  return <aside className={'g3-update-notice '+(combat?'combat':'')} aria-live="polite">
-    <button onClick={dismiss} aria-label="Fechar aviso">{'\\u00D7'}</button>
-    <small>{combat?'COMBATE CINEMATOGR\\u00C1FICO':'MESA SINCRONIZADA'}</small>
-    <strong>Experi\\u00EAncia visual ativa</strong>
-    <div><span>{'\\u2694'} Turnos</span><span>{'\\u2665'} Dano e cura</span><span>{'\\u25C9'} Orbes</span><span>1-4 Atalhos</span></div>
-  </aside>;
-}
-`;
-game = replaceOnce(game, '\n\nfunction WorldParticles(', `${noticeComponent}\nfunction WorldParticles(`, 'aviso visual da sessão');
+const noticeComponent = ``;
+// Mantido como string vazia para que builds antigos que importam este patch
+// continuem compatíveis sem inserir o aviso na tela.
+// O aviso de atualização visual era apenas uma prova de interface e ficava
+// sobreposto ao conteúdo ao entrar na mesa. Não o montamos mais.
 game = replaceOnce(
   game,
   `<span className="g3-presence-label"><i/> {rows.length} online</span>`,
@@ -188,7 +169,6 @@ game = replaceOnce(
   `    <CombatVitalFx ownSheetId={access?.role==='player'?String(access?.sheetId||selectedSheet?.id||''):''}/>
     <TopContext`,
   `    <CombatVitalFx ownSheetId={access?.role==='player'?String(access?.sheetId||selectedSheet?.id||''):''}/>
-    <SessionUpdateNotice ready={gameReady} combat={Boolean(combat?.active)}/>
     <TopContext`,
   'montagem do aviso visual',
 );
@@ -218,7 +198,7 @@ write(gameCssFile, gameCss);
 
 for (const [file, markers] of [
   [accessFile, ['readAccessRoster', 'Fichas sincronizadas em tempo real', 'Sincronizando ficha...']],
-  [gameFile, ['function SessionUpdateNotice', 'TEMPO REAL', 'onPreviewFx={previewCombatFx}']],
+  [gameFile, ['TEMPO REAL', 'onPreviewFx={previewCombatFx}']],
   [accessCssFile, ['VISIBLE ACCESS SYNC 2026-09-22', '.access-roster-skeleton']],
   [gameCssFile, ['VISIBLE UPDATE PROOF 2026-09-22', '.g3-fx-preview']],
 ]) {
