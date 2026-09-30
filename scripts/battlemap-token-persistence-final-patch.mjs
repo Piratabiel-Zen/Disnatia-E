@@ -71,5 +71,50 @@ for (const marker of ['Erro no realtime canônico dos tokens:', 'Nunca substitui
 if (src.includes('incomingTs < knownTs') || src.includes('incomingTs >= knownTs')) {
   throw new Error('comparação por relógio local ainda presente no listener de tokens');
 }
+// A stale participant must never erase tokens absent from its local list.
+src = src.replace('collection,deleteDoc,doc,getDocFromServer,', 'collection,deleteDoc,doc,getDocFromServer,runTransaction,');
+const writerStart = src.indexOf('  const writeLiveTokens = async');
+const writerEnd = src.indexOf('\n  const writeLivePosition', writerStart);
+must(writerStart >= 0 && writerEnd > writerStart, 'writer ausente');
+src = src.slice(0, writerStart) + `  const writeLiveTokens = async (mapId, tokens, persistArchive = false, removedIds = []) => {
+    const id = String(mapId);
+    if (!persistArchive) return true;
+    await runTransaction(db, async transaction => {
+      const ref = doc(db, 'battlemap_tokens', id);
+      const snapshot = await transaction.get(ref);
+      const data = snapshot.exists() ? snapshot.data() : {};
+      const deleted = new Set([...(data.deletedTokenIds || []), ...removedIds].map(String));
+      const merged = new Map((data.tokens || []).map(token => [String(token.id), token]));
+      for (const token of tokens) {
+        if (!deleted.has(String(token.id))) merged.set(String(token.id), token);
+      }
+      for (const tokenId of deleted) merged.delete(tokenId);
+      transaction.set(ref, { ...data, tokens: [...merged.values()], deletedTokenIds: [...deleted], updatedAt: Date.now() });
+    });
+    return true;
+  };
+` + src.slice(writerEnd);
+const deleteStart = src.indexOf('  const deleteToken = id => {');
+const deleteEnd = src.indexOf('\n  const onTokenPointerDown', deleteStart);
+must(deleteStart >= 0 && deleteEnd > deleteStart, 'delete ausente');
+src = src.slice(0, deleteStart) + `  const deleteToken = id => {
+    if (!currentMap || !masterMode) return;
+    const mapId = String(currentMap.id);
+    const tokens = (mapTokensRef.current[mapId] || currentMap.tokens || []).filter(token => String(token.id) !== String(id));
+    mapTokensRef.current = { ...mapTokensRef.current, [mapId]: tokens };
+    setMapTokens(prev => ({ ...prev, [mapId]: tokens }));
+    writeLiveTokens(mapId, tokens, true, [String(id)]).catch(error => {
+      console.error('Erro ao excluir token:', error);
+      pushToast('Não foi possível excluir o token. Tente novamente.', '\\u26A0', '#E8193C');
+    });
+    if (selectedId === id) setSelectedId(null);
+  };
+` + src.slice(deleteEnd);
+// Collection snapshots are authoritative; an overlapping one-shot read can
+// resolve after a newer snapshot and rewind the roster every eight seconds.
+const refreshStart = src.indexOf('        if (tokenSnap.exists()) {');
+const refreshEnd = src.indexOf('\n      } catch (_) {}', refreshStart);
+must(refreshStart >= 0 && refreshEnd > refreshStart, 'refresh ausente');
+src = src.slice(0, refreshStart) + src.slice(refreshEnd);
 fs.writeFileSync(file, src);
 console.log('Dinastia E: tokens canônicos sem bloqueio por relógio local e sem sobrescrita por replay transitório.');
