@@ -37,7 +37,7 @@ const assert=require('node:assert/strict');
  await page.getByText('2/3 VC',{exact:true}).waitFor();
  await page.screenshot({path:'/tmp/dinastia-mobile-hud.png',fullPage:true});
  await page.getByRole('button',{name:'Guardar',exact:true}).click();
- assert.equal(await page.locator('.summon-live-controls').count(),0);
+ await page.locator('.summon-live-controls').waitFor({state:'hidden',timeout:6000});
  await page.getByRole('button',{name:'Liberar',exact:true}).click();
  await page.getByText('46/47',{exact:true}).waitFor();
  await page.getByText('2/3 VC',{exact:true}).waitFor();

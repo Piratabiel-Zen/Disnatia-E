@@ -55,6 +55,9 @@ export function createTokenOutbox() {
           }
         } catch (error) {
           const current = entries.get(key);
+          if (error.code === 'token-control-lost' && current?.operation.mutationId === operation.mutationId) {
+            entries.delete(key); emit(); throw error;
+          }
           if (current) { current.status = 'failed'; current.error = error; }
           emit(); throw error;
         }
@@ -70,7 +73,7 @@ export function createTokenOutbox() {
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     operations(mapId) { return [...entries.values()].filter(entry => entry.operation.mapId === String(mapId)).map(entry => entry.operation); },
     status(mapId) {
-      const values = [...entries.values()].filter(entry => entry.operation.mapId === String(mapId));
+      const values = [...entries.values()].filter(entry => mapId == null || entry.operation.mapId === String(mapId));
       return { count: values.length, failed: values.some(entry => entry.status === 'failed') };
     },
     acknowledge(record) {
@@ -89,7 +92,7 @@ export function createTokenOutbox() {
     async retry(mapId) {
       const work = [];
       for (const [key, entry] of entries) {
-        if (entry.operation.mapId !== String(mapId) || entry.status !== 'failed') continue;
+        if ((mapId != null && entry.operation.mapId !== String(mapId)) || entry.status !== 'failed') continue;
         entry.status = 'queued'; work.push(flush(key));
       }
       await Promise.all(work);
