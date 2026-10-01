@@ -1,0 +1,59 @@
+/* One player interaction surface; loaded after historical rules. */
+.player-dock{display:none}
+.game3-root .g3-actionbar.combat{display:flex!important;pointer-events:auto;gap:12px;max-width:min(1040px,calc(100vw - var(--grim-w,76px) - 110px));bottom:16px!important}
+.game3-root .g3-actionbar:not(.combat){display:none!important}
+.g3-action-shortcuts,.combat-action-hud,.combat-hud,.turn-ribbon,.journal-fab,.atlas-overlay{display:none!important}
+.game3-root .g3-utility-rail{top:50%!important;transform:translateY(-50%)!important;right:12px!important;max-height:calc(100dvh - 150px);overflow-y:auto}
+.g3-utility-rail:hover,.g3-utility-rail:focus-within{width:126px!important}
+.g3-utility-rail:hover small,.g3-utility-rail:focus-within small{display:inline!important;opacity:1!important}
+.game3-root .g3-feedback-stack{right:78px!important;top:210px!important;pointer-events:none;max-width:280px}
+.g3-feedback{animation:playerFeedback .2s ease-out;box-shadow:0 8px 24px #0005}
+.game3-root .g3-hotbar{min-width:0;overflow-x:auto}
+.game3-root .g3-hotbar button{min-width:135px;min-height:62px;position:relative}
+.g3-hotbar button small{white-space:normal;line-height:1.3}
+.g3-hotbar kbd{display:block!important;opacity:.7}
+.g3-hotbar button:disabled{opacity:.55;cursor:not-allowed}
+.g3-hotbar button:focus-visible,.g3-utility-rail button:focus-visible,.player-dock button:focus-visible,.g3-right-drawer button:focus-visible{outline:2px solid #58d9ff;outline-offset:2px}
+.game3-root .g3-right-drawer{z-index:var(--g3-z-modal,720);max-height:calc(100dvh - 100px);animation:playerPanel .18s ease-out}
+.player-comfort{display:grid;gap:18px;padding:8px;color:#d8cee3}
+.player-comfort p{font:17px/1.6 'Crimson Text',serif;margin:0;color:#bfb0cd}
+.player-comfort label{display:grid;gap:8px;font:12px 'Cinzel',serif}
+.player-comfort select{min-height:44px;background:#161022;border:1px solid #a855f74d;color:#eee;padding:8px;border-radius:8px;font-size:15px}
+.player-comfort label>span{display:flex;gap:12px;align-items:center}.player-comfort input{flex:1;min-width:0;accent-color:#a855f7}.player-comfort output{min-width:45px;text-align:right}
+.player-comfort summary{cursor:pointer;min-height:44px;padding:12px 0}.player-comfort dl{display:grid;grid-template-columns:55px 1fr;gap:12px;font-size:16px}.player-comfort dd{margin:0}.player-comfort dt{color:#58d9ff}
+.player-more-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.player-more-grid button{min-height:48px;text-align:left;padding:12px;background:#a855f70c;border:1px solid #a855f733;color:#ddcfe8;border-radius:8px}
+.ad-connection{display:inline-flex;align-items:center;gap:6px;font-size:11px!important;white-space:nowrap}.ad-connection i{width:6px;height:6px;border-radius:50%;background:#E8A020}.ad-connection.live i{background:#4ADE80}.ad-connection.error i,.ad-connection.offline i{background:#E8193C}.ad-connection button{min-height:32px;color:#E8A020;background:transparent;border:1px solid #E8A02044;border-radius:6px}
+.token-collaborator{position:absolute;top:-28px;left:50%;transform:translateX(-50%);padding:4px 8px;border-radius:6px;background:#080812ed;border:1px solid #58d9ff66;color:#b5eeff;font:11px 'Cinzel',serif;white-space:nowrap;pointer-events:none;z-index:90}
+.map-interaction-help{position:absolute;left:12px;top:12px;padding:8px 10px;border:1px solid #58d9ff33;background:#080812dc;border-radius:8px;font-size:12px;color:#bedee9;pointer-events:none;z-index:60}
+html[data-text-size=large] .g3-drawer-scroll p,html[data-text-size=large] .ad-story p,html[data-text-size=large] .chronicles-story p{font-size:20px!important;line-height:1.7!important}
+html[data-effects=subtle] .g3-environment,html[data-effects=subtle] .cosmic-living-bg{opacity:var(--player-effect-opacity)}
+html[data-effects=reduced] .cosmic-living-bg *,html[data-effects=reduced] .g3-environment *,html[data-effects=reduced] .g3-orb-wave{animation:none!important}
+html[data-effects=reduced] .g3-environment,html[data-effects=reduced] .cosmic-shooting-stars,html[data-quality=light] .g3-environment{display:none!important}
+.g3-sync-state{display:none!important}
+.ambient-mute-button,.g3-portrait:not(.active),.ad-quality{animation:none!important}
+html[data-away=true] .g3-environment *,html[data-away=true] .g3-orb-wave{animation-play-state:paused!important}
+@keyframes playerPanel{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes playerFeedback{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.g3-right-drawer,.g3-feedback,.g3-orb-wave{animation:none!important}}
+@media(max-width:900px){
+ .access-player .mobile-dock,.access-player .g3-mobile-session-hub,.access-player .g3-mobile-hud-toggle,.access-player .g3-utility-rail{display:none!important}
+ .player-dock{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:8px;right:8px;bottom:calc(6px + env(safe-area-inset-bottom,0px));height:64px;z-index:610;background:#0a0815f5;border:1px solid #a855f744;border-radius:16px;padding:4px;box-shadow:0 6px 24px #0008;pointer-events:auto}
+ .player-dock button{display:grid;place-content:center;gap:4px;background:transparent;border:0;border-radius:10px;color:#a594b9;min-height:48px}.player-dock button[aria-pressed=true]{background:#a855f721;color:#ebd7ff}.player-dock span{font-size:20px}.player-dock small{font:10px 'Cinzel',serif}
+ .access-player .game3-root .g3-actionbar.combat{bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;max-height:190px!important;padding:8px;display:grid!important;grid-template-columns:1fr;overflow:hidden!important}
+ .access-player .g3-action-character{min-height:42px;justify-content:center}.access-player .g3-action-character .g3-portrait-lg{width:42px!important;height:42px!important}.access-player .g3-action-character>span:last-child{max-width:140px}.access-player .g3-action-character>span>b{font-size:12px}
+ .access-player .game3-root .g3-actionbar.combat .g3-action-character{grid-template-columns:38px 42px 38px minmax(0,1fr)!important;gap:8px!important;width:100%;text-align:left}
+ .access-player .game3-root .g3-actionbar.combat .g3-action-character>span:last-child{display:block!important;max-width:150px;overflow:hidden}
+ .access-player .g3-resource-orb{width:38px!important;height:45px!important}.access-player .g3-resource-orb b{font-size:9px!important}.access-player .g3-resource-orb small{font-size:7px!important}
+ .access-player .g3-hotbar{display:flex!important;width:100%;gap:8px;overflow-x:auto!important}.access-player .g3-hotbar button{flex:0 0 130px;min-height:60px!important;font-size:11px}
+ .access-player .game3-root .g3-right-drawer{top:auto!important;left:0!important;right:0!important;bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;width:100%!important;max-width:100%!important;height:auto!important;max-height:calc(100dvh - 150px)!important;border-radius:20px 20px 0 0!important;overflow:hidden;display:flex;flex-direction:column;pointer-events:auto}
+ .access-player .g3-drawer-scroll{overflow:auto;min-height:0;padding-bottom:16px}.access-player .g3-drawer-head{min-height:64px;flex-shrink:0}.access-player .g3-drawer-head button{min-width:44px;min-height:44px}.access-player .g3-drawer-head h2{font-size:21px}
+ .access-player .immersive-content{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))!important}.access-player .ad-connection{font-size:9px!important;max-width:105px!important;overflow:hidden}.access-player .ad-connection.error,.access-player .ad-connection.saving{color:#E8A020}
+ .access-player .top-actions .ambient-track-pill,.access-player .ambient-playlist-button{display:none!important}.access-player .ambient-mute-button{width:32px!important;height:32px!important}.access-player .ad-quality{max-width:70px!important;font-size:9px!important}
+ .access-player .game3-root .g3-feedback-stack{right:8px!important;top:auto!important;bottom:calc(280px + env(safe-area-inset-bottom,0px))!important;max-width:260px}
+ .access-player .game3-root:not(.game3-mode-combat) .g3-feedback-stack{bottom:100px!important}
+ .access-player .game3-root .g3-top-context{top:64px!important;left:8px!important;right:8px!important;pointer-events:none}.access-player .g3-context-card{display:none!important}.access-player .g3-turn-strip{max-height:52px;overflow:hidden}
+ .access-player .game3-root .g3-actionbar.combat:has(~.g3-right-drawer){visibility:hidden}
+ .access-player .game3-root .g3-actionbar.combat:has(~.g3-right-drawer){pointer-events:none}
+ html[data-token-dragging=true] .player-dock,html[data-token-dragging=true] .g3-actionbar{opacity:.12!important;pointer-events:none!important;transition:opacity .12s ease-out}
+ .map-interaction-help{font-size:10px;max-width:220px}.token-collaborator{font-size:10px}
+}

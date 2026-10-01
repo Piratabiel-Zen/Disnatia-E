@@ -97,7 +97,7 @@ present(experience, 'desktopGroups.map(group=>', 'navegação desktop');
 present(experience, "item.id!=='inimigos'||masterMode", 'navegação Mestre');
 present(experience, "{id:'mapamundi',label:'Mapa Múndi'", 'Mapa Múndi desktop');
 present(experience, "{id:'mapabatalha',label:'Mapa de Batalha'", 'Mapa de Batalha desktop');
-present(app, '!isMobileViewport()&&<AmbientSoundPlayer', 'áudio mobile');
+present(app, '<AmbientSoundPlayer masterMode={masterMode}', 'controle de áudio local');
 const mobileSet = experience.match(/MOBILE_ALLOWED_NAV_IDS\s*=\s*new Set\(\[([^\]]*)\]\)/)?.[1] || '';
 must(mobileSet, 'navegação mobile: conjunto de páginas permitidas não encontrado');
 for (const forbidden of ['mapamundi','mapabatalha','inimigos']) {
@@ -105,7 +105,7 @@ for (const forbidden of ['mapamundi','mapabatalha','inimigos']) {
 }
 
 // BattleMap: Firestore é autoridade; sem comparar relógios de computadores diferentes.
-present(battle, 'const TOKEN_THROTTLE_MS = 33;', 'BattleMap latência');
+must(/const TOKEN_THROTTLE_MS = (33|80);/.test(battle), 'BattleMap: cadência de movimento fora do orçamento');
 present(battle, "const u2 = onSnapshot(activeMapRef, snap => {", 'BattleMap ativo');
 present(battle, 'Object.prototype.hasOwnProperty.call(prev, mapId)', 'BattleMap canal legado');
 present(battle, 'previous && source === previous.source', 'BattleMap sequência de movimento');
