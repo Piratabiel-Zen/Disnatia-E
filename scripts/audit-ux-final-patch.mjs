@@ -97,7 +97,7 @@ must(battle.includes('undoTokenHp'),'undo de HP ausente');
 must(!battle.includes('battlemap_motion_'),'canal espelho de movimento reapareceu');
 
 const broadcasts=fs.readFileSync(path.join(root,'src','experience','RealtimeBroadcasts.jsx'),'utf8');
-must(!broadcasts.includes('includeMetadataChanges: true'),'metadata duplicada reapareceu');
+must(broadcasts.includes('createLiveEventGate')&&broadcasts.includes('includeMetadataChanges: true'),'baseline autoritativa ausente');
 must(!broadcasts.includes('hasPendingWrites'),'espelhamento de evento reapareceu');
 
 console.log('Dinastia E: feed durável, habilidade com feedback, iniciativa drag, anel/undo de HP e realtime sem duplicação validados.');

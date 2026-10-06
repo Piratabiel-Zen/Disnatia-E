@@ -229,7 +229,6 @@ const hookEnd = '\n\nfunction DiceBroadcastQueue({ events }) {';
 const durableHook = `function useDurableChannel({ collectionName, kind, ttl }) {
   const [events, setEvents] = useState([]);
   const seenRef = useRef(new Set());
-  const primedRef = useRef(false);
 
   const ingest = useCallback((payload) => {
     if (!payload) return;
@@ -243,20 +242,14 @@ const durableHook = `function useDurableChannel({ collectionName, kind, ttl }) {
   }, [kind, ttl]);
 
   useEffect(() => {
-    primedRef.current = false;
+    const gate = createLiveEventGate();
     const feedQuery = query(collection(db, collectionName), orderBy('ts', 'desc'), limit(20));
     return onSnapshot(feedQuery, { includeMetadataChanges:true }, snap => {
-      if (!primedRef.current) {
-        primedRef.current = true;
-        snap.docs.forEach(d => seenRef.current.add(eventId({ _feedId:d.id, ...(d.data()||{}) }, kind)));
-        return;
-      }
-      snap.docChanges().forEach(change => {
-        if (change.type !== 'added') return;
-        const payload={ _feedId:change.doc.id, ...(change.doc.data()||{}) };
-        if(Date.now()-Number(payload.ts||0)>Math.min(ttl,8000))return;
-        ingest(payload);
+      const entries = snap.docs.map(d => {
+        const payload={ _feedId:d.id, ...(d.data()||{}) };
+        return {key:eventId(payload,kind),value:payload};
       });
+      gate(snap,entries).forEach(entry=>ingest(entry.value));
     }, error => console.error('Falha no feed realtime:', collectionName, error));
   }, [collectionName, ingest, kind, ttl]);
 

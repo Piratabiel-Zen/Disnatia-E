@@ -33,13 +33,13 @@ const singleFeedFn = `export async function publishDiceResult(result) {
 combat = combat.slice(0, fnStart) + singleFeedFn + combat.slice(fnEnd);
 fs.writeFileSync(combatFile, combat);
 
-// ── 2) BROADCAST GLOBAL: feed-only, sem metadata/pending-write ─────────────
+// ── 2) BROADCAST GLOBAL: feed-only, com baseline autoritativa ─────────────
 const broadcastsFile = path.join(root, 'src', 'experience', 'RealtimeBroadcasts.jsx');
 let broadcasts = fs.readFileSync(broadcastsFile, 'utf8');
 if (!broadcasts.includes('function useDurableChannel({ collectionName, kind, ttl })')) {
   throw new Error('Global realtime patch: hook feed-only não encontrado.');
 }
-if (broadcasts.includes('includeMetadataChanges: true')) throw new Error('Global realtime patch: metadata listener duplicado ainda presente.');
+if (!broadcasts.includes('createLiveEventGate') || !broadcasts.includes('includeMetadataChanges: true')) throw new Error('Global realtime patch: baseline autoritativa do feed ausente.');
 if (broadcasts.includes('hasPendingWrites')) throw new Error('Global realtime patch: ponte por pending write ainda presente.');
 if (broadcasts.includes("configId: 'public_dice_roll'")) throw new Error('Global realtime patch: config legado de dados ainda presente.');
 
@@ -81,7 +81,7 @@ fs.writeFileSync(battleFile, battle);
 for (const [source, marker, label] of [
   [combat, "public_dice_events', String(payload.rollId)", 'publicação única de dados'],
   [broadcasts, '_receivedAt: Date.now()', 'TTL por recebimento'],
-  [broadcasts, 'snap.docChanges().forEach', 'feed incremental'],
+  [broadcasts, 'gate(snap,entries).forEach', 'feed autoritativo incremental'],
   [publicDice, 'dicePrimedRef', 'overlay legado sem relógio absoluto'],
   [battle, 'lastRemotePingId', 'ping global deduplicado'],
   [battle, 'setTimeout(() => setBattlePing(null), 5200)', 'vida local do ping'],

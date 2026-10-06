@@ -12,6 +12,7 @@ import { hpColor } from "../../core/ui";
 import { resolveEquipIcon,HabilidadesPanel,StatusPanel,VigosWithLocked,newSheet } from "../sheets/SheetComponents";
 import { FloatingEnemyPanel } from "../../experience/BattleMapEnemySheet.jsx";
 import useMapFullscreen from '../../experience/useMapFullscreen';
+import { fitMapWithReference } from '../../adventure/mapFit.mjs';
 import '../../experience/map-fullscreen.css';
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
@@ -187,6 +188,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0, pointerId: null });
   const naturalSizeRef = useRef({ w: 0, h: 0 });
+  const normalFrameRef = useRef(null);
   const recomputeFit = () => {
     const frame = frameRef.current;
     const nat = naturalSizeRef.current;
@@ -195,8 +197,10 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const frameH = frame.clientHeight;
     if (!frameW || !frameH) return;
     // Ajusta a imagem inteira dentro da área disponível, sem cortar as bordas.
-    const scale = Math.min(frameW / nat.w, frameH / nat.h);
-    setBaseSize({ w: nat.w * scale, h: nat.h * scale });
+    if (!document.documentElement.classList.contains('dinastia-map-fullscreen')) {
+      normalFrameRef.current = { w: frameW, h: frameH };
+    }
+    setBaseSize(fitMapWithReference(nat, { w: frameW, h: frameH }, normalFrameRef.current));
   };
   const handleMapImgLoad = (e) => {
     naturalSizeRef.current = { w: e.target.naturalWidth, h: e.target.naturalHeight };
@@ -1151,10 +1155,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     await writeLiveTokens(currentMap.id,[token],true); setSelectedId(token.id); setShowTokenLibrary(false);
   };
   const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(doc(db,'battlemap_token_library',String(id))); };
-  const publishTokenEffect = async (token,text,color='#C8A8E8') => {
-    const fx={id:`${Date.now()}_${Math.random()}`,mapId:String(currentMap?.id||''),tokenId:token.id,text,color,ts:Date.now()};
-    await setDoc(doc(db,'config','battlemap_effect'),fx);
-  };
+
 
   const addToken = () => {
     if (!formNome.trim() || !formFoto || !currentMap) return;
@@ -1605,16 +1606,20 @@ const TOKEN_THROTTLE_MS = 80;
     toggleFloatingSheet(String(s.id));
   };
 
+  const mapUnitScale = baseSize.normalW > 0 ? baseSize.w / baseSize.normalW : 1;
+  const tokenScale = zoom * mapUnitScale;
+
   const zoomBtnStyle = { width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 13, lineHeight: 1, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 8px 8px' }}>
 
       {/* CABEÇALHO COMPACTO */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', flexShrink: 0 }}>
+      <div className="battlemap-heading" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', flexShrink: 0, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14 }}>🗡️</span>
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 14, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>Mapa de Batalha</h2>
         {currentMap?.nome && <span style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif' }}>· {currentMap.nome}</span>}
+        {masterMode && currentMap?.img && !mapScreen.expanded && <button type="button" className="battlemap-screen-button in-heading" aria-pressed={false} onClick={mapScreen.toggle}>Preencher tela completa</button>}
       </div>
 
       {pwTarget && (
@@ -1637,7 +1642,7 @@ const TOKEN_THROTTLE_MS = 80;
 
       {loaded && (
         <div className="battlemap-viewport" style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#04060F' }}>
-          {currentMap?.img&&<button className="battlemap-screen-button" aria-pressed={mapScreen.expanded} onClick={()=>{setZoom(1);mapScreen.toggle();}}>{mapScreen.expanded?'Sair da tela cheia':'Preencher tela completa'}</button>}
+          {currentMap?.img&&(!masterMode||mapScreen.expanded)&&<button type="button" className="battlemap-screen-button" aria-pressed={mapScreen.expanded} onClick={mapScreen.toggle}>{mapScreen.expanded?'Sair da tela cheia':'Preencher tela completa'}</button>}
           {mapScreen.notice&&<div className="battlemap-screen-notice" role="status">{mapScreen.notice}</div>}
 
           {/* BARRA FLUTUANTE DO MESTRE — não empurra o mapa */}
@@ -1790,13 +1795,13 @@ const TOKEN_THROTTLE_MS = 80;
                 }}
               >
                 <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
-                {ruler && (()=>{const dx=(ruler.end.x-ruler.start.x)/100*(baseSize.w||1)*zoom;const dy=(ruler.end.y-ruler.start.y)/100*(baseSize.h||1)*zoom;const meters=Math.sqrt(dx*dx+dy*dy)/(pixelsPerMeter*zoom);return <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:24,overflow:'visible'}}><line x1={`${ruler.start.x}%`} y1={`${ruler.start.y}%`} x2={`${ruler.end.x}%`} y2={`${ruler.end.y}%`} stroke='#58D9FF' strokeWidth={2*zoom} strokeDasharray={`${7*zoom} ${5*zoom}`}/><circle cx={`${ruler.start.x}%`} cy={`${ruler.start.y}%`} r={4*zoom} fill='#58D9FF'/><circle cx={`${ruler.end.x}%`} cy={`${ruler.end.y}%`} r={4*zoom} fill='#58D9FF'/><text x={`${(ruler.start.x+ruler.end.x)/2}%`} y={`${(ruler.start.y+ruler.end.y)/2}%`} fill='#D7F7FF' fontSize={12*zoom} textAnchor='middle' style={{paintOrder:'stroke',stroke:'#02040A',strokeWidth:4*zoom,fontFamily:'Cinzel,serif'}}>{meters.toFixed(1)} m</text></svg>;})()}
+                {ruler && (()=>{const dx=(ruler.end.x-ruler.start.x)/100*(baseSize.w||1)*zoom;const dy=(ruler.end.y-ruler.start.y)/100*(baseSize.h||1)*zoom;const meters=Math.sqrt(dx*dx+dy*dy)/(pixelsPerMeter*tokenScale);return <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:24,overflow:'visible'}}><line x1={`${ruler.start.x}%`} y1={`${ruler.start.y}%`} x2={`${ruler.end.x}%`} y2={`${ruler.end.y}%`} stroke='#58D9FF' strokeWidth={2*zoom} strokeDasharray={`${7*zoom} ${5*zoom}`}/><circle cx={`${ruler.start.x}%`} cy={`${ruler.start.y}%`} r={4*zoom} fill='#58D9FF'/><circle cx={`${ruler.end.x}%`} cy={`${ruler.end.y}%`} r={4*zoom} fill='#58D9FF'/><text x={`${(ruler.start.x+ruler.end.x)/2}%`} y={`${(ruler.start.y+ruler.end.y)/2}%`} fill='#D7F7FF' fontSize={12*zoom} textAnchor='middle' style={{paintOrder:'stroke',stroke:'#02040A',strokeWidth:4*zoom,fontFamily:'Cinzel,serif'}}>{meters.toFixed(1)} m</text></svg>;})()}
                 {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const controller=tokenControllers[String(token.id)]||'';
                   const isSelected = selectedId === token.id;
                   const canDrag = masterMode || !token.locked;
-                  const dispSize = (token.size || 70) * zoom;
+                  const dispSize = (token.size || 70) * tokenScale;
                   const linkedEnemyVitals = token.enemyId ? enemies.find(e => String(e.id) === String(token.enemyId)) : null;
                   const linkedSheetVitals = token.sheetId ? sheetVitals[String(token.sheetId)] : null;
                   const independentVitals = hasIndividualHp(token) ? enemyTokenVitals(token,enemyTemplateForToken(token)) : null;
@@ -1813,15 +1818,15 @@ const TOKEN_THROTTLE_MS = 80;
                       style={{
                         position: 'absolute', left: `${token.x}%`, top: `${token.y}%`,
                         transform: 'translate(-50%, -50%)', cursor: controller ? 'wait' : canDrag ? 'grab' : 'not-allowed',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * zoom,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * tokenScale,
                         zIndex: draggingId === token.id ? 80 : isSelected ? 15 : 5,
                         touchAction: 'none',
                         transition: draggingId === token.id ? 'none' : 'left 28ms linear, top 28ms linear',
                         willChange: draggingId === token.id ? 'left, top' : 'auto',
                       }}
                     >
-                     {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*zoom,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*zoom,borderRadius:'50%',border:`${1.5*zoom}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
-                     {displayMaxHp>0 && <>{(masterMode || !hasIndividualHp(token)) && (<div style={{fontSize:9*zoom,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*zoom,padding:`${1*zoom}px ${6*zoom}px`,marginBottom:1*zoom,textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*zoom,dispSize),height:5*zoom,borderRadius:5*zoom,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*zoom}px solid rgba(255,255,255,.2)`,marginBottom:1*zoom}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/></div></>}
+                     {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,borderRadius:'50%',border:`${1.5*tokenScale}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
+                     {displayMaxHp>0 && <>{(masterMode || !hasIndividualHp(token)) && (<div style={{fontSize:9*tokenScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*tokenScale,padding:`${1*tokenScale}px ${6*tokenScale}px`,marginBottom:1*tokenScale,textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*tokenScale,dispSize),height:5*tokenScale,borderRadius:5*tokenScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*tokenScale}px solid rgba(255,255,255,.2)`,marginBottom:1*tokenScale}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/></div></>}
                      <div style={{
                       width: dispSize, height: dispSize,
                       background: 'transparent', overflow: 'visible',
@@ -1834,15 +1839,15 @@ const TOKEN_THROTTLE_MS = 80;
                               transform: `rotate(${Number(token.rotation || 0)}deg)`, transformOrigin: '50% 50%',
                               /* HP HEALTH CONTOUR 2026-09-17 */
                               filter: draggingId === token.id
-                                ? `drop-shadow(0 0 1px rgba(255,255,255,.98)) drop-shadow(0 0 ${Math.max(7,9*zoom)}px ${info.color})`
+                                ? `drop-shadow(0 0 1px rgba(255,255,255,.98)) drop-shadow(0 0 ${Math.max(7,9*tokenScale)}px ${info.color})`
                                 : isSelected
-                                  ? `drop-shadow(0 0 1px rgba(255,255,255,.96)) drop-shadow(0 0 ${Math.max(5,7*zoom)}px ${info.color})`
-                                  : (displayMaxHp>0 ? `drop-shadow(0 0 1px ${healthRingColor}) drop-shadow(0 0 ${Math.max(3,4*zoom)}px ${healthRingColor}99) drop-shadow(0 2px 4px rgba(0,0,0,.68))` : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))'),
+                                  ? `drop-shadow(0 0 1px rgba(255,255,255,.96)) drop-shadow(0 0 ${Math.max(5,7*tokenScale)}px ${info.color})`
+                                  : (displayMaxHp>0 ? `drop-shadow(0 0 1px ${healthRingColor}) drop-shadow(0 0 ${Math.max(3,4*tokenScale)}px ${healthRingColor}99) drop-shadow(0 2px 4px rgba(0,0,0,.68))` : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))'),
                               transition: (draggingId === token.id || rotatingId === token.id) ? 'none' : 'filter .14s ease, transform .12s linear',
                             }} />
                           : <span style={{ fontSize: dispSize * 0.4, filter: isSelected ? `drop-shadow(0 0 6px ${info.color})` : 'none', transform:`rotate(${Number(token.rotation || 0)}deg)`, transition:rotatingId===token.id?'none':'transform .12s linear' }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                       </div>
-                      <div style={{ fontSize: 10 * zoom, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * zoom, padding: `${1 * zoom}px ${7 * zoom}px`, whiteSpace: 'nowrap', maxWidth: 90 * zoom, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 10 * tokenScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * tokenScale, padding: `${1 * tokenScale}px ${7 * tokenScale}px`, whiteSpace: 'nowrap', maxWidth: 90 * tokenScale, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
                       {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && (
@@ -1865,8 +1870,8 @@ const TOKEN_THROTTLE_MS = 80;
                           <span style={{fontSize:Math.max(13,Math.min(17,dispSize*.16)),lineHeight:1,color:'rgba(255,255,255,.9)',pointerEvents:'none',transform:'translateY(-.5px)'}}>↻</span>
                         </div>
                       )}
-                      {token.status && Object.entries(token.status).some(([,v])=>v) && <div style={{display:'flex',gap:2*zoom,flexWrap:'wrap',justifyContent:'center',maxWidth:100*zoom}}>{STATUS_LIST.filter(st=>token.status?.[st.id]).map(st=><span key={st.id} title={st.label} style={{fontSize:10*zoom,filter:'drop-shadow(0 0 3px #000)'}}>{st.icon}</span>)}</div>}
-                      {floatingEffects.filter(f=>String(f.mapId)===String(currentMap.id)&&String(f.tokenId)===String(token.id)).map(f=><div key={f.id} style={{position:'absolute',left:'50%',top:-8*zoom,color:f.color||'#fff',fontFamily:'Cinzel Decorative,serif',fontWeight:900,fontSize:16*zoom,textShadow:'0 2px 6px #000,0 0 10px currentColor',whiteSpace:'nowrap',pointerEvents:'none',animation:'floatingCombatText 2.7s ease-out forwards',zIndex:50}}>{f.text}</div>)}
+                      {token.status && Object.entries(token.status).some(([,v])=>v) && <div style={{display:'flex',gap:2*tokenScale,flexWrap:'wrap',justifyContent:'center',maxWidth:100*tokenScale}}>{STATUS_LIST.filter(st=>token.status?.[st.id]).map(st=><span key={st.id} title={st.label} style={{fontSize:10*tokenScale,filter:'drop-shadow(0 0 3px #000)'}}>{st.icon}</span>)}</div>}
+                      {floatingEffects.filter(f=>String(f.mapId)===String(currentMap.id)&&String(f.tokenId)===String(token.id)).map(f=><div key={f.id} style={{position:'absolute',left:'50%',top:-8*tokenScale,color:f.color||'#fff',fontFamily:'Cinzel Decorative,serif',fontWeight:900,fontSize:16*tokenScale,textShadow:'0 2px 6px #000,0 0 10px currentColor',whiteSpace:'nowrap',pointerEvents:'none',animation:'floatingCombatText 2.7s ease-out forwards',zIndex:50}}>{f.text}</div>)}
                     </div>
                   );
                 })}
@@ -1928,9 +1933,7 @@ const TOKEN_THROTTLE_MS = 80;
                 {vital.kind==='individual'&&<p style={{fontSize:9,color:'#b69dbe',margin:'5px 0 0'}}>Vida exclusiva deste inimigo.</p>}{linked&&<div style={{marginTop:5,fontSize:8,color:'#665A70',fontFamily:'Cinzel,serif'}}>HP máximo vem da ficha vinculada.</div>}
               </div>})()}
               <label style={{display:'flex',alignItems:'center',gap:7,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:9}}>Área/alcance <input type='range' min='0' max='30' step='1' value={selectedToken.rangeMeters||0} onChange={e=>updateToken(selectedToken.id,{rangeMeters:Number(e.target.value)})} style={{flex:1}}/><b style={{color:'#58D9FF'}}>{selectedToken.rangeMeters||0}m</b></label>
-              <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
-                {[['-8 HP','#E8193C'],['Sangrando','#E8193C'],['Crítico!','#4ADE80'],['Esquiva!','#58D9FF']].map(([txt,c])=><button key={txt} onClick={()=>publishTokenEffect(selectedToken,txt,c)} style={{padding:'4px 7px',borderRadius:6,border:`1px solid ${c}44`,background:`${c}12`,color:c,cursor:'pointer',fontSize:9,fontFamily:'Cinzel,serif'}}>{txt}</button>)}
-              </div>
+
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => updateToken(selectedToken.id, { locked: !selectedToken.locked })} style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${selectedToken.locked ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`, background: selectedToken.locked ? 'rgba(232,160,32,0.1)' : 'rgba(255,255,255,0.02)', color: selectedToken.locked ? '#E8A020' : '#8A7A6A', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>{selectedToken.locked ? '🔒 Travado' : '🔓 Livre'}</button>
                 <button onClick={() => deleteToken(selectedToken.id)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>🗑</button>
