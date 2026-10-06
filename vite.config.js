@@ -84,7 +84,8 @@ function dinastiaModularBuild() {
         "scripts/live-dice-necromancer-summons-final-patch.mjs",
         "scripts/chronicles-mobile-reliability-patch.mjs",
         "scripts/install-canonical-runtime.mjs",
-        "scripts/sandalier-artifact-patch.mjs"
+        "scripts/sandalier-artifact-patch.mjs",
+        "scripts/ability-vigor-patch.mjs"
       ])
     },
   }

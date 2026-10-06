@@ -6,6 +6,8 @@ import GameExperience3 from '../../.generated/src/experience/GameExperience3.adv
 import {ArtifactSheetPanel} from '../../.generated/src/experience/ArtifactPowers.jsx';
 import Livro from '../../.generated/src/features/livro/LivroPage.jsx';
 import {useExperience} from '../../.generated/src/experience/ExperienceKit.generated.jsx';
+import SheetsSection from '../../.generated/src/features/sheets/SheetsPage.jsx';
+import {applyRoundAutomation} from '../../.generated/src/experience/combatRoundEngine.js';
 import {SummonCard} from '../../.generated/src/features/sheets/SheetComponents.jsx';
 import '../../.generated/src/styles/global.css';
 import '../../.generated/src/experience/experience.css';
@@ -26,6 +28,16 @@ if(combat){window.__testStore.set('config/combat',{active:true});window.__testSt
 if(params.has('map-summons'))window.__testStore.set('sheets/necro',{id:'necro',nome:'Necromante',classe:'necromante',nivel:10,hp:40,vigos:8,invocacoes:[{id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,ataques:[{id:1,nome:'Bicada',custo:1}]}]});
 const summon={id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,forca:8,ataques:[{id:1,nome:'Bicada',custo:1}]};
 const render=async()=>{
+if(params.has('abilities')){
+ if(!window.__testStore.get('config/abilityFixture')){
+  window.__testStore.set('sheets/necro',{id:'necro',nome:'Personagem de teste',classe:params.has('custom')?'personalizado':'fogo',nivel:22,hp:40,vigos:7,cooldowns:{'skill-1':2}});
+  window.__testStore.set('config/customAbilities',{necro:[{id:'skill-1',nome:'Raio de teste',descricao:'Descrição original',custo:2,cooldown:'3 rodadas',dano:'1D8',req:1,tipoHab:'especial',lore:'Preservar'},{id:'skill-2',nome:'Aura de teste',descricao:'Passiva',tipoHab:'passiva',custo:0,req:1},{id:'skill-3',nome:'Golpe de teste',descricao:'Normal',tipoHab:'normal',custo:1,req:1}],other:[{id:'other',nome:'Não alterar'}]});
+  window.__testStore.set('config/abilityFixture',{ready:true});
+ }
+ window.__roundAutomation=applyRoundAutomation;
+ createRoot(document.getElementById('root')).render(<ExperienceProvider playerSheetId="necro" access={{role:master?'master':'player',sheetId:'necro'}} masterMode={master} tab="fichas"><SheetsSection masterMode={master} playerSheetId="necro" access={{role:master?'master':'player',sheetId:'necro'}}/></ExperienceProvider>);
+ return;
+}
 if(params.has('artifact')){
  const sheet={id:'necro',nome:'Portador de teste',classe:'magos',nivel:10,hp:40,vigos:8,agilidade:8,percepcao:4,artefato_id:'artefato-2'};
  window.__testStore.set('sheets/necro',sheet);

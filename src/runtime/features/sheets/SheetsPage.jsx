@@ -33,7 +33,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
   const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
   const add=()=>{if(sheets.length>=15)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
   const upd=(id,data)=>{if(data===null){if(!masterMode)return;deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}const current=sheets.find(s=>String(s.id)===String(id));const safeData=!masterMode&&current?{...data,classe:current.classe,audience:current.audience||'player',visitorId:current.visitorId||''}:data;setSheets(prev=>prev.map(s=>s.id===id?safeData:s));saveSheet(safeData);};
-  const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
+  const saveCustom=async(sheetId,abilities)=>{if(!masterMode)throw new Error('Apenas o Mestre pode editar habilidades.');await setDoc(doc(db,'config','customAbilities'),{[String(sheetId)]:abilities},{merge:true});};
 
   const handleTabClick = (s) => {
     const sid = String(s.id);
@@ -124,7 +124,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
               onChange={d=>upd(activeSheet.id,d)}
               masterMode={masterMode}
               customAbilities={customAbilities[activeSheet.id] || []}
-              onSaveCustomAbilities={(novas) => saveCustom({ ...customAbilities, [activeSheet.id]: novas })}
+              onSaveCustomAbilities={(novas) => saveCustom(activeSheet.id, novas)}
               revealedArtefatos={revealedArtefatos}
               artefatosHabs={artefatosHabsState}
             />

@@ -1,3 +1,4 @@
+import {characterMaxVigor} from '../adventure/characterResources.mjs';
 import { onSnapshot } from '../adventure/sharedSnapshot';
 import { createLiveEventGate } from '../adventure/liveEventGate.mjs';
 import {
@@ -855,7 +856,7 @@ function CombatHud({ onNavigate }){
   const hp=Number(selectedSheet.hp||0);
   const hpPct=clamp((hp/Math.max(1,maxHp))*100,0,100);
   const vc=Number(selectedSheet.vigos||0);
-  const maxVc=Math.max(8,Number(selectedSheet.vigos_max||selectedSheet.maxVigos||8));
+  const maxVc=characterMaxVigor(selectedSheet);
   const current=combatState?.initiative?.[Number(combatState.turnIdx||0)];
   const isMyTurn=current?.type==='player'&&String(current?.id||'').replace(/^p_/,'')===String(selectedSheet.id);
   const classNormal=Array.isArray(selectedClass?.normal)?selectedClass.normal:[];
