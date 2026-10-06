@@ -12,6 +12,7 @@ import './game-experience-3.css';
 import './player-experience.css';
 import SummonCombatRack from './SummonCombatRack';
 import TableCameras from './TableCameras';
+import {ArtifactPowerControls} from './ArtifactPowers';
 import { ComfortPanel, MorePanel, PlayerDock } from './PlayerComfort';
 import { abilityAvailability, isTyping } from '../adventure/playerPreferences.mjs';
 /* SESSION OPENING CINEMATIC 2026-09-10 */
@@ -344,6 +345,7 @@ function AbilityDrawer({sheet,cls,customAbilities,onClose,onAbility,combat,myTur
         {expanded&&<div className="g3-ability-script"><p>{script}</p><button className="g3-use-ability" disabled={!!reason} title={reason||'Usar esta habilidade'} onClick={()=>onAbility(a)}>{reason||'Manifestar habilidade'}</button></div>}
       </article>;
     }):<div className="g3-empty">Nenhuma habilidade registrada para esta ficha.</div>}</div></section>
+    <ArtifactPowerControls sheet={sheet}/>
   </DrawerShell>;
 }
 
