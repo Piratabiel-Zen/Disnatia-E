@@ -1,0 +1,38 @@
+{
+  "corvos": {
+    "Precisão Celestial": {
+      "dano": "Dano do disparo + PER",
+      "desc": "Disparo crítico perfurante no primeiro alvo e nos demais que estejam na mesma trajetória. Soma o bônus de PER ao dano do disparo. O(s) inimigo(s) atingido(s) perde −2 de vida por rodada pelos 3 turnos seguintes."
+    },
+    "Chuva Mortal": {
+      "dano": "3D8 + INT",
+      "desc": "Canaliza calmamente sua arma atual com uma precisão fora do comum, disparando múltiplos acertos simultâneos em uma área de 10–13 metros ao redor. Soma o bônus de INT ao dano. Não atinge aliados."
+    }
+  },
+  "magos": {
+    "Fluxo de Magia": {
+      "dano": "+2 + INT de dano",
+      "desc": "Distribui parte da sua magia entre aliados em até 2m ao redor, aumentando o dano deles em +2 + INT por 4 rodadas. INT corresponde ao bônus de Inteligência do mago."
+    },
+    "Fortitude Ígnia": {
+      "dano": "+3 + SOR de defesa",
+      "desc": "Um personagem aliado recebe +3 + SOR de defesa por 2 rodadas. SOR corresponde ao bônus de Sorte do mago. 1 uso por combate por jogador."
+    }
+  },
+  "marfim": {
+    "Seringa da Juventude": {
+      "dano": "Cura: 2 + INT (alvo) / 3 + INT (em si)",
+      "desc": "Aplica uma seringa que cura 2 + INT de vida ao alvo, concede +2 Vigor Cósmico e reduz o tempo de recarga de uma das suas habilidades em 2 rodadas. Caso o Cientista use a seringa em si mesmo, cura 3 + INT de vida, ganha 3 Vigor Cósmico e reduz o tempo de recarga de uma de suas habilidades em 3 rodadas, exceto \"Seringa da Juventude\". INT corresponde ao bônus de Inteligência do Cientista."
+    },
+    "O 1° Alquimista": {
+      "dano": "1D6 + SOR",
+      "desc": "Combina 4 a 5 itens criando algo novo e poderoso. Pode também disparar 1 tiro de tesla caso tenha algum objeto metálico ou condutor de energia, atordoando o alvo por 1 rodada. O dano recebe o bônus de SOR."
+    }
+  },
+  "escarlate": {
+    "Investida Ágil": {
+      "dano": "+4 de dano",
+      "desc": "Troca resistência por velocidade: você avança até 3 passos em 1 ação. O peso da investida garante +4 de dano no seu ataque durante este avanço. O esforço extremo desestabiliza sua base: você sofre -3 de Defesa por 3 rodadas imediatamente após o uso."
+    }
+  }
+}
