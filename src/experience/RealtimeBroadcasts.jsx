@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import PhysicalDiceTray from './PhysicalDiceTray';
+import { createLiveEventGate } from '../adventure/liveEventGate.mjs';
 
 const DICE_TTL = 16000;
 const COSMIC_TTL = 22000;
@@ -24,13 +25,12 @@ function getDiceClientId() {
 
 function eventId(payload, kind) {
   if (!payload) return '';
-  return String(payload.rollId || payload.id || `${kind}_${payload.ts || 0}`);
+  return String(payload.rollId || payload.id || payload._feedId || `${kind}_${payload.ts || 0}`);
 }
 
 function useDurableChannel({ collectionName, kind, ttl }) {
   const [events, setEvents] = useState([]);
   const seenRef = useRef(new Set());
-  const primedRef = useRef(false);
 
   const ingest = useCallback((payload) => {
     if (!payload) return;
@@ -49,18 +49,14 @@ function useDurableChannel({ collectionName, kind, ttl }) {
   }, [kind, ttl]);
 
   useEffect(() => {
-    primedRef.current = false;
+    const gate = createLiveEventGate();
     const feedQuery = query(collection(db, collectionName), orderBy('ts', 'desc'), limit(20));
-    return onSnapshot(feedQuery, snap => {
-      if (!primedRef.current) {
-        primedRef.current = true;
-        snap.docs.forEach(d => seenRef.current.add(eventId({ _feedId:d.id, ...(d.data()||{}) }, kind)));
-        return;
-      }
-      snap.docChanges().forEach(change => {
-        if (change.type === 'removed') return;
-        ingest({ _feedId:change.doc.id, ...(change.doc.data()||{}) });
+    return onSnapshot(feedQuery, { includeMetadataChanges: true }, snap => {
+      const entries = snap.docs.map(d => {
+        const payload = { _feedId:d.id, ...(d.data()||{}) };
+        return { key:eventId(payload,kind), value:payload };
       });
+      gate(snap,entries).forEach(entry=>ingest(entry.value));
     }, error => console.error('Falha no feed realtime:', collectionName, error));
   }, [collectionName, ingest, kind]);
 

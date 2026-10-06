@@ -1,4 +1,5 @@
 import { onSnapshot } from '../adventure/sharedSnapshot';
+import { createLiveEventGate } from '../adventure/liveEventGate.mjs';
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
@@ -112,7 +113,11 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     unsubscribers.push(onSnapshot(doc(db,'config','session'),{includeMetadataChanges:true},snap=>{const next=normalizeDoc(snap,{active:false,title:'',location:'',objective:'',subtitle:''});writeSessionCache(next);setSession(next);}));
     unsubscribers.push(onSnapshot(doc(db,'config','ambient'),snap=>setAmbient(normalizeDoc(snap,{}))));
     unsubscribers.push(onSnapshot(doc(db,'config','soundscape'),snap=>setSoundscapeState({...SOUNDSCAPE_PRESETS.silencio,...normalizeDoc(snap,{})})));
-    unsubscribers.push(onSnapshot(doc(db,'config','cosmic_event'),snap=>{ if(snap.exists()) setCosmicEvent(snap.data()); }));
+    const cosmicGate = createLiveEventGate();
+    unsubscribers.push(onSnapshot(doc(db,'config','cosmic_event'),{includeMetadataChanges:true},snap=>{
+      const value = snap.exists() ? snap.data() : null;
+      cosmicGate(snap,value?.id ? [{key:String(value.id),value}] : []).forEach(entry=>setCosmicEvent(entry.value));
+    }));
     unsubscribers.push(onSnapshot(doc(db,'config','battlemap_active'),snap=>setActiveMapState(normalizeDoc(snap,{activeId:''}))));
     const journalQuery=query(collection(db,'session_journal'),orderBy('ts','desc'),limit(JOURNAL_LIMIT));
     unsubscribers.push(onSnapshot(journalQuery,snap=>setJournal(snap.docs.map(d=>({id:d.id,...d.data()})))));
@@ -930,18 +935,14 @@ function CombatHud({ onNavigate }){
 
 function CombatActionPulse(){
   const [event,setEvent]=useState(null);
-  const first=useRef(true);
-  const joinedAt=useRef(Date.now());
-  useEffect(()=>onSnapshot(doc(db,'config','combat_action'),snap=>{
-    if(!snap.exists())return;
-    const next=snap.data()||{};
-    if(first.current){
-      first.current=false;
-      if(Number(next.ts||0)<joinedAt.current-1200)return;
-    }
-    if(!next.id)return;
-    setEvent(next);
-  },()=>{}),[]);
+  useEffect(()=>{
+    const gate = createLiveEventGate();
+    return onSnapshot(doc(db,'config','combat_action'),{includeMetadataChanges:true},snap=>{
+      const next = snap.exists() ? snap.data() : null;
+      const entries = next?.id ? [{key:String(next.id),value:next}] : [];
+      gate(snap,entries).forEach(entry=>setEvent(entry.value));
+    },()=>{});
+  },[]);
   useEffect(()=>{if(!event?.id)return undefined;const timer=window.setTimeout(()=>setEvent(null),2100);return()=>window.clearTimeout(timer);},[event?.id]);
   if(!event)return null;
   return <div className="combat-action-pulse compact" style={{'--action-color':event.color||'#A855F7'}}>

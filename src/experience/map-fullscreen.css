@@ -8,3 +8,9 @@ html.dinastia-map-fullscreen,html.dinastia-map-fullscreen body{overflow:hidden!i
 .dinastia-map-fullscreen .table-camera-menu{top:12px;right:12px}
 .dinastia-map-fullscreen .summon-combat-rack{left:12px;top:100px}
 @media(max-width:600px){.battlemap-screen-button{bottom:64px;max-width:170px;font-size:10px}.dinastia-map-fullscreen .battlemap-screen-button{bottom:12px}.dinastia-map-fullscreen .game3-root .g3-actionbar.combat{bottom:52px!important}}
+
+/* Master entry stays outside the map; fullscreen exit clears the sheet strip. */
+.battlemap-screen-button.in-heading{position:static;margin-left:auto;flex-shrink:0;box-shadow:none}
+.dinastia-map-fullscreen .battlemap-screen-button{left:auto;right:12px;bottom:56px}
+.dinastia-map-fullscreen .battlemap-screen-notice{left:auto;right:12px;bottom:100px}
+@media(max-width:600px){.battlemap-screen-button.in-heading{max-width:none}.dinastia-map-fullscreen .battlemap-screen-button{bottom:100px}.dinastia-map-fullscreen .battlemap-screen-notice{bottom:144px}}
