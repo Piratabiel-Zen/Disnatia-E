@@ -1,3 +1,4 @@
+import {characterMaxVigor} from '../adventure/characterResources.mjs';
 import { doc, runTransaction } from 'firebase/firestore';
 import { db } from '../core/firebase';
 
@@ -23,7 +24,7 @@ const reduceCooldowns = cooldowns => {
   return next;
 };
 
-const playerMaxVigor = sheet => 5 + (asNumber(sheet?.nivel, 1) >= 8 ? 1 : 0) + (asNumber(sheet?.nivel, 1) >= 18 ? 1 : 0);
+const playerMaxVigor = characterMaxVigor;
 const enemyMaxVigor = enemy => Math.max(0, Math.min(10, asNumber(enemy?.vigos_max, 10)));
 
 const participantRef = combatant => {

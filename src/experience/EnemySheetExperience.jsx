@@ -1,3 +1,4 @@
+import AbilityTypeBadge from './AbilityTypeBadge';
 import { useEffect, useRef, useState } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
@@ -92,7 +93,7 @@ function AbilityCard({ enemy, ability, onChange, onDelete }) {
   return (
     <div className="enemy-ability-card" style={{'--ability-color':color}}>
       <header>
-        <span style={{color}}>{ability.tipoHab==='especial'?'✦':ability.tipoHab==='passiva'?'◇':'⚔'}</span>
+        <AbilityTypeBadge ability={ability}/>
         <b>{ability.nome || ability.name || 'Habilidade'}</b>
         <small>{ability.source === 'classe' ? 'CLASSE' : 'PRÓPRIA'}</small>
       </header>

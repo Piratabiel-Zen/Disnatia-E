@@ -24,7 +24,7 @@ const assert=require('node:assert/strict');
  await page.getByText('Aguarde seu turno',{exact:true}).first().waitFor();
  await page.keyboard.press('1');assert.equal(await page.locator('.g3-target-backdrop').count(),0);
  await page.getByRole('button',{name:'Habilidades',exact:true}).click();
- await page.locator('.g3-ability-heading').first().click();
+ await page.locator('.g3-immersive-ability').filter({hasNot:page.locator('.ability-type-passiva')}).first().locator('.g3-ability-heading').click();
  assert.equal(await page.getByRole('button',{name:'Aguarde seu turno',exact:true}).isDisabled(),true);
  await page.keyboard.press('Escape');
  const widths=[];for(const width of [360,390,430,768,1280]){

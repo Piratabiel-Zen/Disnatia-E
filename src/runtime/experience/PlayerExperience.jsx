@@ -1,3 +1,5 @@
+import AbilityTypeBadge from './AbilityTypeBadge';
+import {characterMaxVigor} from '../adventure/characterResources.mjs';
 import { onSnapshot } from '../adventure/sharedSnapshot';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as ReactDOM from 'react-dom';
@@ -81,7 +83,7 @@ function initials(value){
 function listAbilities(cls,sheet){
   const buckets=[
     cls?.normal,cls?.normais,cls?.habilidades,cls?.abilities,cls?.skills,
-    cls?.especial,cls?.especiais,cls?.special,cls?.campanha,cls?.campaign,
+    ...( [cls?.especial,cls?.especiais,cls?.special,cls?.specials].map(bucket=>Array.isArray(bucket)?bucket.map(a=>({...a,tipoHab:a.tipoHab||'especial'})):bucket) ),cls?.campanha,cls?.campaign,
     sheet?.normal,sheet?.normais,sheet?.habilidades,sheet?.abilities,sheet?.skills,
     sheet?.especial,sheet?.especiais,sheet?.special,sheet?.campanha,sheet?.campaign,
   ];
@@ -266,7 +268,7 @@ function ActionBar({mode,selectedSheet,selectedClass,combat,combatState,onNaviga
   const maxHp=getSheetMaxHp(selectedSheet);
   const hp=Number(selectedSheet.hp||0);
   const vc=Number(selectedSheet.vigos||0);
-  const maxVc=Math.max(8,Number(selectedSheet.vigos_max||selectedSheet.maxVigos||8));
+  const maxVc=characterMaxVigor(selectedSheet);
   const current=Array.isArray(combatState?.initiative)?combatState.initiative[Number(combatState?.turnIdx||0)]:null;
   const myTurn=current?.type==='player'&&String(current?.id||'').replace(/^p_/,'')===String(selectedSheet.id);
   const combatUi=mode==='combat'||combat?.active;
@@ -317,7 +319,7 @@ function UtilityRail({tab,panel,setPanel,masterMode,onNavigate,preset,setPreset,
 function CharacterDrawer({sheet,cls,onClose,onNavigate}){
   if(!sheet) return <DrawerShell title="Ficha rápida" kicker="PERSONAGEM" onClose={onClose}><div className="g3-empty">Nenhuma ficha selecionada.</div></DrawerShell>;
   const maxHp=getSheetMaxHp(sheet);
-  const maxVc=Math.max(8,Number(sheet.vigos_max||sheet.maxVigos||8));
+  const maxVc=characterMaxVigor(sheet);
   const statuses=activeStatusEntries(sheet);
   const attrs=[['FOR','forca'],['AGI','agilidade'],['INT','inteligencia'],['PER','percepcao'],['VIG','vigor'],['CAR','carisma']].filter(([,key])=>sheet[key]!=null);
   return <DrawerShell title={sheet.nome||'Personagem'} kicker={cls?.name||'FICHA E ATRIBUTOS'} onClose={onClose}>
@@ -331,7 +333,7 @@ function CharacterDrawer({sheet,cls,onClose,onNavigate}){
 
 function AbilityDrawer({sheet,cls,customAbilities,onClose,onAbility,combat,myTurn,busy}){
   const [openId,setOpenId]=useState('');
-  const base=listAbilities(cls,sheet);
+  const base=[...(cls?.passive?[{...cls.passive,tipoHab:'passiva'}]:[]),...listAbilities(cls,sheet)];
   const extra=Array.isArray(customAbilities?.[String(sheet?.id)])?customAbilities[String(sheet?.id)]:[];
   const abilities=[...base,...extra.map(a=>({...a,_campaign:true}))].filter((a,i,rows)=>rows.findIndex(x=>String(x.id||x.name||x.nome)===String(a.id||a.name||a.nome))===i);
   if(!sheet) return <DrawerShell title="Habilidades" kicker="CÓDICE DA COMPANHIA" onClose={onClose}><div className="g3-empty">Nenhuma ficha selecionada.</div></DrawerShell>;
@@ -341,7 +343,7 @@ function AbilityDrawer({sheet,cls,customAbilities,onClose,onAbility,combat,myTur
       const id=String(a.id||a.name||a.nome||('ability-'+index)); const expanded=openId===id; const cd=Number(sheet.cooldowns?.[abilityKey(a)]||0); const cost=abilityCost(a); const reason=abilityAvailability(a,sheet,{combat,myTurn,busy});
       const script=String(a.script||a.roteiro||a.lore||a.desc||a.descricao||a.efeito||a.effect||'A energia se reúne ao redor do gesto do personagem, aguardando o instante certo para se manifestar.');
       return <article key={id} className={'g3-immersive-ability '+(expanded?'expanded':'')} style={{'--g3-c':cls?.color||'#a855f7'}}>
-        <button className="g3-ability-heading" onClick={()=>setOpenId(expanded?'':id)} aria-expanded={expanded}><span className="g3-ability-index">{String(index+1).padStart(2,'0')}</span><span><b>{abilityName(a)}</b><small>{a._campaign?'Poder da campanha':'Técnica da classe'}{cost?' · '+cost+' VC':''}{cd?' · CD '+cd:''}</small></span><em>{expanded?'−':'+'}</em></button>
+        <button className="g3-ability-heading" onClick={()=>setOpenId(expanded?'':id)} aria-expanded={expanded}><span className="g3-ability-index">{String(index+1).padStart(2,'0')}</span><span><b>{abilityName(a)}</b><AbilityTypeBadge ability={a}/><small>{a._campaign?'Poder da campanha':'Técnica da classe'}{cost?' · '+cost+' VC':''}{cd?' · CD '+cd:''}</small></span><em>{expanded?'−':'+'}</em></button>
         {expanded&&<div className="g3-ability-script"><p>{script}</p><button className="g3-use-ability" disabled={!!reason} title={reason||'Usar esta habilidade'} onClick={()=>onAbility(a)}>{reason||'Manifestar habilidade'}</button></div>}
       </article>;
     }):<div className="g3-empty">Nenhuma habilidade registrada para esta ficha.</div>}</div></section>

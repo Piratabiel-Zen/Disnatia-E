@@ -1449,8 +1449,8 @@ const TOKEN_THROTTLE_MS = 80;
   };
   const updSheet = (id, data) => { setSheets(prev => prev.map(s => s.id === id ? data : s)); saveSheet(data); };
   const saveCustomAb = async (sheetId, novas) => {
-    const updated = { ...customAbilities, [sheetId]: novas };
-    try { await setDoc(doc(db, 'config', 'customAbilities'), updated); setCustomAbilities(updated); } catch (e) { console.error(e); }
+    if(!masterMode)throw new Error('Apenas o Mestre pode editar habilidades.');
+    await setDoc(doc(db, 'config', 'customAbilities'), {[String(sheetId)]:novas}, {merge:true});
   };
 
   const toggleFloatingSheet = (sid) => {
