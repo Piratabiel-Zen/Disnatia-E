@@ -85,7 +85,8 @@ function dinastiaModularBuild() {
         "scripts/chronicles-mobile-reliability-patch.mjs",
         "scripts/install-canonical-runtime.mjs",
         "scripts/sandalier-artifact-patch.mjs",
-        "scripts/ability-vigor-patch.mjs"
+        "scripts/ability-vigor-patch.mjs",
+        "scripts/class-ability-scaling-patch.mjs"
       ])
     },
   }
