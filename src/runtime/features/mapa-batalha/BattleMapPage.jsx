@@ -1,3 +1,4 @@
+import { hasIndividualHp, enemyTokenVitals, initializeEnemyToken } from '../../adventure/tokenVitals.mjs';
 import { createLeaseTracker } from '../../adventure/tokenLease.mjs';
 import { tokenChanges, resolveTokenRoster, tokenOutbox } from '../../adventure/tokenPersistence.mjs';
 import { onSnapshot, onSnapshot as liveSnapshot } from '../../adventure/sharedSnapshot';
@@ -1144,7 +1145,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   };
   const addLibraryToken = async (tpl) => {
     if(!currentMap) return;
-    const token={...newToken(Date.now()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',enemyId:tpl.enemyId||''};
+    const token=initializeEnemyToken({...newToken(Date.now()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',enemyId:tpl.enemyId||''},enemyTemplateForToken(tpl));
     const tokens=[...(currentMap.tokens||[]),token];
     setMapTokens(prev=>({...prev,[String(currentMap.id)]:tokens}));
     await writeLiveTokens(currentMap.id,[token],true); setSelectedId(token.id); setShowTokenLibrary(false);
@@ -1157,14 +1158,17 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
 
   const addToken = () => {
     if (!formNome.trim() || !formFoto || !currentMap) return;
-    const nt = { ...newToken(Date.now()), nome: formNome.trim(), tipo: formTipo, foto: formFoto, sheetId: formSheetId || '', enemyId: formEnemyId || '' };
+    const nt = initializeEnemyToken({ ...newToken(Date.now()), nome: formNome.trim(), tipo: formTipo, foto: formFoto, sheetId: formSheetId || '', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
     updCurrentMap({ tokens: [...(currentMap.tokens || []), nt] });
     setFormNome(''); setFormFoto(''); setFormSheetId(''); setFormEnemyId(''); setShowAddForm(false);
   };
 
   const updateToken = (id, data) => {
     if (!currentMap) return;
-    updCurrentMap({ tokens: (currentMap.tokens || []).map(t => t.id === id ? { ...t, ...data } : t) });
+    const current = mapTokensRef.current[String(currentMap.id)] || currentMap.tokens || [];
+    const previous = current.find(token => String(token.id) === String(id));
+    if (!previous) return;
+    updCurrentMap({ tokens: current.map(t => String(t.id) === String(id) ? { ...t, ...data } : t) });
   };
   const rotationFromPointer = (e, element) => {
     const rect = element.getBoundingClientRect();
@@ -1481,24 +1485,49 @@ const TOKEN_THROTTLE_MS = 80;
     saveEnemyFromMap(data);
   };
   const enemyMaxHpForToken = enemy => Math.max(1, Number(enemy?.hp_max ?? Math.max(10, Number(enemy?.hp || 10))) + Math.max(0, Number(enemy?.hp_bonus || 0)));
-  const tokenVitalState = token => {
+  const enemyTemplateForToken = token => {
     const enemy = token?.enemyId ? enemies.find(e => String(e.id) === String(token.enemyId)) : null;
-    if (enemy) return { kind:'enemy', entity:enemy, hp:Number(enemy.hp||0), maxHp:enemyMaxHpForToken(enemy) };
+    if (enemy) return {hp:Number(enemy.hp||0),maxHp:enemyMaxHpForToken(enemy)};
+    return token?.sheetId ? sheetVitals[String(token.sheetId)] : null;
+  };
+  const tokenVitalState = token => {
+    if (hasIndividualHp(token)) return enemyTokenVitals(token,enemyTemplateForToken(token));
     const sheet = token?.sheetId ? sheets.find(s => String(s.id) === String(token.sheetId)) : null;
     if (sheet) return { kind:'sheet', entity:sheet, hp:Number(sheet.hp||0), maxHp:getSheetMaxHp(sheet) };
     return { kind:'manual', entity:null, hp:Number(token?.hp||0), maxHp:Number(token?.maxHp||0) };
   };
+  // Snapshot legacy enemy health once. Persist only this token's HP fields through
+  // the existing outbox; never rewrite the map roster or the shared enemy sheet.
+  useEffect(() => {
+    if (!masterMode || !currentMap) return;
+    const mapId=String(currentMap.id), tokens=mapTokensRef.current[mapId]||currentMap.tokens||[];
+    const patches=tokens.flatMap(token=>{
+      const next=initializeEnemyToken(token,enemyTemplateForToken(token));
+      return next===token?[]:[{id:token.id,hp:next.hp,maxHp:next.maxHp,hpMode:'individual'}];
+    });
+    if (!patches.length) return;
+    const byId=new Map(patches.map(patch=>[String(patch.id),patch]));
+    const next=tokens.map(token=>({...token,...byId.get(String(token.id))}));
+    mapTokensRef.current={...mapTokensRef.current,[mapId]:next};
+    setMapTokens(previous=>({...previous,[mapId]:next}));
+    writeLiveTokens(mapId,patches,true).catch(()=>{});
+  },[masterMode,currentMapId,mapTokens,enemies,sheetVitals]);
   const lastHpChangeRef = useRef(null);
   const applyTokenLinkedHp = (token, nextHp, recordHistory = true) => {
-    const vital = tokenVitalState(token);
+    const latest=(mapTokensRef.current[String(currentMap?.id)]||[]).find(item=>String(item.id)===String(token.id))||token;
+    const vital = tokenVitalState(latest);
     const raw = Math.max(0, Number(nextHp)||0);
     const hp = vital.kind === 'manual' ? raw : Math.min(Math.max(1, vital.maxHp || 1), raw);
     if (recordHistory && hp !== vital.hp) lastHpChangeRef.current = { tokenId:String(token.id), hp:vital.hp };
-    if (vital.kind === 'enemy') { updEnemyFromMap(vital.entity.id, { ...vital.entity, hp }); return; }
+    if (vital.kind === 'individual') { updateToken(token.id, { hp, maxHp:vital.maxHp, hpMode:'individual' }); return; }
     if (vital.kind === 'sheet') { updSheet(vital.entity.id, { ...vital.entity, hp }); return; }
     updateToken(token.id, { hp });
   };
   const setTokenLinkedHp = (token, nextHp) => applyTokenLinkedHp(token, nextHp, true);
+  const adjustTokenHp = (token, delta) => {
+    const latest=(mapTokensRef.current[String(currentMap?.id)]||[]).find(item=>String(item.id)===String(token.id))||token;
+    applyTokenLinkedHp(latest,tokenVitalState(latest).hp+delta,true);
+  };
   const undoTokenHp = token => {
     const last = lastHpChangeRef.current;
     if (!last || String(last.tokenId) !== String(token?.id)) return;
@@ -1700,7 +1729,7 @@ const TOKEN_THROTTLE_MS = 80;
                   </div>
                 </div>
               </div>
-              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Vincular vida<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
+              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={saveTokenToLibrary} disabled={!formNome.trim() || !formFoto} style={{padding:'8px 10px',borderRadius:8,border:'1px solid rgba(168,85,247,.4)',background:'rgba(168,85,247,.12)',color:'#C8A8E8',cursor:(formNome.trim()&&formFoto)?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:11}}>📚 Salvar</button>
                 <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
@@ -1770,9 +1799,9 @@ const TOKEN_THROTTLE_MS = 80;
                   const dispSize = (token.size || 70) * zoom;
                   const linkedEnemyVitals = token.enemyId ? enemies.find(e => String(e.id) === String(token.enemyId)) : null;
                   const linkedSheetVitals = token.sheetId ? sheetVitals[String(token.sheetId)] : null;
-                  const linkedEnemyMaxHp = linkedEnemyVitals ? Math.max(1, Number(linkedEnemyVitals.hp_max ?? Math.max(10, Number(linkedEnemyVitals.hp || 10))) + Math.max(0, Number(linkedEnemyVitals.hp_bonus || 0))) : 0;
-                  const displayHp = linkedEnemyVitals ? Number(linkedEnemyVitals.hp||0) : (linkedSheetVitals ? Number(linkedSheetVitals.hp||0) : Number(token.hp||0));
-                  const displayMaxHp = linkedEnemyVitals ? linkedEnemyMaxHp : (linkedSheetVitals ? Number(linkedSheetVitals.maxHp||1) : Number(token.maxHp||0));
+                  const independentVitals = hasIndividualHp(token) ? enemyTokenVitals(token,enemyTemplateForToken(token)) : null;
+                  const displayHp = independentVitals ? independentVitals.hp : (linkedSheetVitals ? Number(linkedSheetVitals.hp||0) : Number(token.hp||0));
+                  const displayMaxHp = independentVitals ? independentVitals.maxHp : (linkedSheetVitals ? Number(linkedSheetVitals.maxHp||1) : Number(token.maxHp||0));
                   const healthRingColor = displayMaxHp > 0 ? hpColor(displayHp, displayMaxHp) : 'transparent';
                   return (
                     <div
@@ -1792,7 +1821,7 @@ const TOKEN_THROTTLE_MS = 80;
                       }}
                     >
                      {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*zoom,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*zoom,borderRadius:'50%',border:`${1.5*zoom}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
-                     {displayMaxHp>0 && <>{(masterMode || !linkedEnemyVitals) && (<div style={{fontSize:9*zoom,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*zoom,padding:`${1*zoom}px ${6*zoom}px`,marginBottom:1*zoom,textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*zoom,dispSize),height:5*zoom,borderRadius:5*zoom,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*zoom}px solid rgba(255,255,255,.2)`,marginBottom:1*zoom}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/></div></>}
+                     {displayMaxHp>0 && <>{(masterMode || !hasIndividualHp(token)) && (<div style={{fontSize:9*zoom,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*zoom,padding:`${1*zoom}px ${6*zoom}px`,marginBottom:1*zoom,textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*zoom,dispSize),height:5*zoom,borderRadius:5*zoom,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*zoom}px solid rgba(255,255,255,.2)`,marginBottom:1*zoom}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/></div></>}
                      <div style={{
                       width: dispSize, height: dispSize,
                       background: 'transparent', overflow: 'visible',
@@ -1863,7 +1892,7 @@ const TOKEN_THROTTLE_MS = 80;
 
           {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}
           {selectedToken && masterMode && (
-            <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 41, width: 280, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
+            <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 10, right: 10, zIndex: 41, width: 280, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
                   {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
@@ -1871,7 +1900,7 @@ const TOKEN_THROTTLE_MS = 80;
                 <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 12 }} />
                 <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
               </div>
-              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Vida vinculada<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';updateToken(selectedToken.id,{sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>O HP do token acompanha a ficha escolhida em tempo real.</span></label>
+              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Ficha de referência<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};const next={...selectedToken,...patch};const source=enemyTemplateForToken(next);updateToken(selectedToken.id,{...patch,...(hasIndividualHp(next)&&source?{hp:source.hp,maxHp:source.maxHp,hpMode:'individual'}:{})});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Inimigos têm HP individual. A ficha fornece a vida inicial; alterar este token não altera os demais.</span></label>
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho do token</span>
@@ -1885,18 +1914,18 @@ const TOKEN_THROTTLE_MS = 80;
                 <input type="range" min={10} max={400} step={5} value={selectedToken.size || 70} onChange={e => updateToken(selectedToken.id, { size: Number(e.target.value) })} style={{ width: '100%' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 8, color: '#51465D', fontFamily: 'Cinzel,serif' }}><span>Muito pequeno</span><span>Muito grande</span></div>
               </div>
-              {(()=>{const vital=tokenVitalState(selectedToken);const linked=vital.kind!=='manual';return <div style={{marginBottom:10,padding:8,borderRadius:8,border:'1px solid rgba(255,255,255,.07)',background:'rgba(255,255,255,.018)'}}>
+              {(()=>{const vital=tokenVitalState(selectedToken);const linked=vital.kind==='sheet';return <div style={{marginBottom:10,padding:8,borderRadius:8,border:'1px solid rgba(255,255,255,.07)',background:'rgba(255,255,255,.018)'}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,marginBottom:7,flexWrap:'wrap'}}>
-                  {[-10,-5,-1].map(v=><button key={v} onClick={()=>setTokenLinkedHp(selectedToken,vital.hp+v)} style={{padding:'3px 7px',borderRadius:6,border:'1px solid rgba(232,25,60,.3)',background:'rgba(232,25,60,.09)',color:'#E8193C',cursor:'pointer',fontSize:9}}>{v}</button>)}
+                  {[-10,-5,-1].map(v=><button key={v} onClick={()=>adjustTokenHp(selectedToken,v)} style={{padding:'3px 7px',borderRadius:6,border:'1px solid rgba(232,25,60,.3)',background:'rgba(232,25,60,.09)',color:'#E8193C',cursor:'pointer',fontSize:9}}>{v}</button>)}
                   <b style={{minWidth:62,textAlign:'center',font:'800 12px Cinzel,serif',color:hpColor(vital.hp,Math.max(1,vital.maxHp))}}>❤ {vital.hp}/{vital.maxHp}</b>
-                  {[1,5,10].map(v=><button key={v} onClick={()=>setTokenLinkedHp(selectedToken,vital.hp+v)} style={{padding:'3px 7px',borderRadius:6,border:'1px solid rgba(74,222,128,.3)',background:'rgba(74,222,128,.09)',color:'#4ADE80',cursor:'pointer',fontSize:9}}>+{v}</button>)}
+                  {[1,5,10].map(v=><button key={v} onClick={()=>adjustTokenHp(selectedToken,v)} style={{padding:'3px 7px',borderRadius:6,border:'1px solid rgba(74,222,128,.3)',background:'rgba(74,222,128,.09)',color:'#4ADE80',cursor:'pointer',fontSize:9}}>+{v}</button>)}
                 </div>
                 {masterMode&&lastHpChangeRef.current&&String(lastHpChangeRef.current.tokenId)===String(selectedToken.id)&&<button onClick={()=>undoTokenHp(selectedToken)} style={{width:'100%',margin:'0 0 7px',padding:'5px 8px',borderRadius:7,border:'1px solid rgba(232,160,32,.28)',background:'rgba(232,160,32,.08)',color:'#E8A020',cursor:'pointer',font:'700 8px Cinzel,serif'}}>↩ Desfazer última mudança de HP</button>}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7}}>
                   <label style={{fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>HP<input type='number' value={vital.hp} onChange={e=>setTokenLinkedHp(selectedToken,Number(e.target.value))} style={{width:'100%',fontSize:11,marginTop:3}}/></label>
-                  <label style={{fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>HP Máx.<input type='number' value={vital.maxHp} disabled={linked} onChange={e=>updateToken(selectedToken.id,{maxHp:Math.max(0,Number(e.target.value)||0)})} style={{width:'100%',fontSize:11,marginTop:3,opacity:linked?.62:1}}/></label>
+                  <label style={{fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>HP Máx.<input type='number' value={vital.maxHp} disabled={linked} onChange={e=>updateToken(selectedToken.id,{maxHp:Math.max(0,Number(e.target.value)||0),...(hasIndividualHp(selectedToken)?{hp:Math.min(vital.hp,Math.max(0,Number(e.target.value)||0)),hpMode:'individual'}:{})})} style={{width:'100%',fontSize:11,marginTop:3,opacity:linked?.62:1}}/></label>
                 </div>
-                {linked&&<div style={{marginTop:5,fontSize:8,color:'#665A70',fontFamily:'Cinzel,serif'}}>HP máximo vem da ficha vinculada.</div>}
+                {vital.kind==='individual'&&<p style={{fontSize:9,color:'#b69dbe',margin:'5px 0 0'}}>Vida exclusiva deste inimigo.</p>}{linked&&<div style={{marginTop:5,fontSize:8,color:'#665A70',fontFamily:'Cinzel,serif'}}>HP máximo vem da ficha vinculada.</div>}
               </div>})()}
               <label style={{display:'flex',alignItems:'center',gap:7,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:9}}>Área/alcance <input type='range' min='0' max='30' step='1' value={selectedToken.rangeMeters||0} onChange={e=>updateToken(selectedToken.id,{rangeMeters:Number(e.target.value)})} style={{flex:1}}/><b style={{color:'#58D9FF'}}>{selectedToken.rangeMeters||0}m</b></label>
               <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>

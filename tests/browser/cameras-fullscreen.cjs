@@ -7,6 +7,8 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  first.on('console',message=>{if(message.type()==='error')console.log('browser:',message.text());});second.on('console',message=>{if(message.type()==='error')console.log('browser:',message.text());});
  for(const page of [first,second]){page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));}
  await first.goto('http://127.0.0.1:4179/?map&master');
+ await first.addStyleTag({content:require('node:fs').readFileSync(require('node:path').join(__dirname,'../../.generated/src/experience/performance-smooth.css'),'utf8')});
+ await first.evaluate(()=>document.documentElement.classList.add('opera-gx-safe'));
  await first.evaluate(()=>{
   const canvas=document.createElement('canvas');canvas.width=1600;canvas.height=600;canvas.getContext('2d').fillStyle='#384c65';canvas.getContext('2d').fillRect(0,0,1600,600);
   window.__testStore.set('battlemaps/m',{id:'m',nome:'Mapa isolado',img:canvas.toDataURL()});
@@ -28,28 +30,41 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  assert.equal(await first.evaluate(()=>document.documentElement.classList.contains('dinastia-map-fullscreen')),false);
  await second.goto('http://127.0.0.1:4179/?map');
  for(const page of [first,second]){await page.getByRole('button',{name:'Câmeras da mesa',exact:true}).click();await page.getByRole('button',{name:'Entrar nas câmeras',exact:true}).click();}
+ await first.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();
  await first.getByRole('button',{name:'Ativar minha câmera',exact:true}).waitFor();
  assert.equal(await first.evaluate(()=>window.__getMediaCount),0);
- for(const page of [first,second])await page.getByRole('button',{name:'Ativar minha câmera',exact:true}).click();
+ for(const page of [first,second]){await page.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();await page.getByRole('button',{name:'Ativar minha câmera',exact:true}).click();}
  try{await first.waitForFunction(()=>document.querySelector('[aria-label="Vídeo de Necromante"]')?.videoWidth>0,{},{timeout:7000});}catch(error){for(const page of [first,second])console.log(JSON.stringify(await page.evaluate(async()=>({peers:await Promise.all(window.__rtc.map(async pc=>({connection:pc.connectionState,ice:pc.iceConnectionState,signaling:pc.signalingState,local:!!pc.localDescription,remote:!!pc.remoteDescription,gather:pc.iceGatheringState,localMedia:pc.localDescription?.sdp.match(/a=(sendrecv|recvonly|inactive|sendonly)|m=video [^ ]+/g),remoteMedia:pc.remoteDescription?.sdp.match(/a=(sendrecv|recvonly|inactive|sendonly)|m=video [^ ]+/g),candidates:(pc.localDescription?.sdp.match(/a=candidate/g)||[]).length,stats:[...await pc.getStats()].filter(([,s])=>s.type==='outbound-rtp'||s.type==='inbound-rtp').map(([,s])=>({type:s.type,frames:s.framesEncoded||s.framesDecoded,bytes:s.bytesSent||s.bytesReceived}))}))),videos:[...document.querySelectorAll('video')].map(v=>({label:v.getAttribute('aria-label'),width:v.videoWidth,stream:!!v.srcObject,tracks:v.srcObject?.getTracks().map(t=>({state:t.readyState,enabled:t.enabled,muted:t.muted}))})),signals:JSON.parse(localStorage.getItem('dinastia-isolated-store')||'[]').filter(([key])=>key.startsWith('table_camera_calls/')).map(([key,value])=>({key,offer:!!value.offer,answer:!!value.answer,left:value.leftIce?.length,right:value.rightIce?.length})),text:document.querySelector('.table-camera-controls')?.textContent})),null,2));await first.screenshot({path:'/tmp/dinastia-camera-failure.png'});throw error;}
  await second.waitForFunction(()=>document.querySelector('[aria-label="Vídeo de Mestre"]')?.videoWidth>0,{},{timeout:7000});
+ // The original Opera blanket video rule must not hide camera frames.
+ for(const label of ['Vídeo de Mestre','Vídeo de Necromante'])assert.equal(await first.locator('video[aria-label="'+label+'"]').evaluate(video=>getComputedStyle(video).display),'block');
+ await first.mouse.click(600,120);
+ assert.equal(await first.locator('.table-camera-controls').isVisible(),false);
+ const collapsed=await first.getByRole('button',{name:'Câmeras da mesa',exact:true}).boundingBox();assert.ok(collapsed.width<=40&&collapsed.x>1200&&collapsed.y<100);
+ await first.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();assert.equal(await first.locator('.table-camera-controls').isVisible(),true);
+ // A browser-denied autoplay has a usable, explicit resume action.
+ await first.evaluate(()=>{const video=document.querySelector('[aria-label="Vídeo de Necromante"]');window.__originalVideoPlay=video.play.bind(video);video.play=()=>Promise.reject(new DOMException('autoplay','NotAllowedError'));document.dispatchEvent(new Event('visibilitychange'));});
+ await first.getByRole('button',{name:'Reproduzir vídeo',exact:true}).waitFor();
+ await first.evaluate(()=>{document.querySelector('[aria-label="Vídeo de Necromante"]').play=window.__originalVideoPlay;});
+ await first.getByRole('button',{name:'Reproduzir vídeo',exact:true}).click();
+ await first.getByRole('button',{name:'Reproduzir vídeo',exact:true}).waitFor({state:'detached'});
  // Moving a camera is a local preference, with pointer and keyboard controls.
  const handle=first.getByRole('button',{name:'Mover câmera de Necromante',exact:true});const box=await handle.boundingBox();
  await first.mouse.move(box.x+30,box.y+12);await first.mouse.down();await first.mouse.move(box.x+260,box.y-90,{steps:8});await first.mouse.up();
  await handle.focus();await first.keyboard.press('ArrowRight');
  const moved=await first.locator('[aria-label="Câmera de Necromante"]').boundingBox();assert.ok(moved.x>100);
  await first.screenshot({path:'/tmp/dinastia-table-cameras.png'});
- await second.getByRole('button',{name:'Desligar minha câmera',exact:true}).click();
+ await second.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();await second.getByRole('button',{name:'Desligar minha câmera',exact:true}).click();
  await first.waitForFunction(()=>document.querySelector('[aria-label="Câmera de Necromante"] video').style.visibility==='hidden');
  for(const width of [390,768,1280]){await first.setViewportSize({width,height:900});assert.ok(await first.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}
- await second.getByRole('button',{name:'Sair das câmeras',exact:true}).click();await first.locator('[aria-label="Câmera de Necromante"]').waitFor({state:'detached'});
+ await second.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();await second.getByRole('button',{name:'Sair das câmeras',exact:true}).click();await first.locator('[aria-label="Câmera de Necromante"]').waitFor({state:'detached'});
  const tracks=await first.evaluate(()=>[...document.querySelectorAll('video')].flatMap(video=>video.srcObject?.getTracks()||[]).map(track=>track.readyState));assert.ok(tracks.includes('live'));
- await first.getByRole('button',{name:'Desligar minha câmera',exact:true}).click();
+ await first.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();await first.getByRole('button',{name:'Desligar minha câmera',exact:true}).click();
  await first.evaluate(()=>{navigator.mediaDevices.getUserMedia=()=>new Promise((resolve,reject)=>{window.__rejectPendingCamera=()=>reject(Object.assign(new Error('blocked'),{name:'NotAllowedError'}));});});
- await first.getByRole('button',{name:'Ativar minha câmera',exact:true}).click();
+ await first.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();await first.getByRole('button',{name:'Ativar minha câmera',exact:true}).click();
  await first.getByRole('button',{name:'Sair das câmeras',exact:true}).click();
  await first.getByRole('button',{name:'Entrar nas câmeras',exact:true}).click();
- await first.getByRole('button',{name:'Ativar minha câmera',exact:true}).waitFor();
+ await first.getByRole('button',{name:'Câmeras da mesa',exact:true}).hover();await first.getByRole('button',{name:'Ativar minha câmera',exact:true}).waitFor();
  await first.evaluate(()=>window.__rejectPendingCamera());
  assert.equal(await first.locator('.table-camera-controls [role=alert]').count(),0);
  await first.getByRole('button',{name:'Fechar câmeras',exact:true}).click();assert.equal(await first.locator('.table-camera-tile').count(),0);

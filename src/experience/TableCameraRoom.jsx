@@ -1,4 +1,5 @@
 import { useEffect,useRef,useState } from 'react';
+import { createPortal } from 'react-dom';
 import { collection,deleteDoc,doc,limit,onSnapshot,orderBy,query,serverTimestamp,setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { activeCameraMembers,CAMERA_LIMIT,CAMERA_VIDEO,cameraName,cameraPosition,createCameraPeer,timestampMs } from '../adventure/cameraPeer.mjs';
@@ -13,12 +14,26 @@ function VideoTile({row,stream,state,index,local,layoutVersion}){
     const columns=Math.max(1,Math.floor((window.innerWidth-startX-12)/(width+12)));
     return cameraPosition(saved||{x:startX+(index%columns)*(width+12),y:window.innerHeight-205-Math.floor(index/columns)*146},window.innerWidth,window.innerHeight,width);
   };
-  const [pos,setPos]=useState(initial);
+  const [pos,setPos]=useState(initial),[playback,setPlayback]=useState('waiting');
   useEffect(()=>{setPos(initial());},[layoutVersion,index]);
+  const playVideo=()=>{
+    const node=video.current;if(!node?.srcObject)return;
+    node.muted=true;node.defaultMuted=true;
+    node.play().then(()=>{if(node.readyState>=2)setPlayback('playing');}).catch(()=>setPlayback('blocked'));
+  };
   useEffect(()=>{
-    const node=video.current;if(!node)return;node.srcObject=stream||null;
-    if(stream)node.play().catch(()=>{});
-    return()=>{node.srcObject=null;};
+    const node=video.current;if(!node)return;
+    setPlayback('waiting');node.srcObject=stream||null;
+    if(!stream)return;
+    let active=true;
+    const ready=()=>{if(active){node.play().catch(()=>{if(active)setPlayback('blocked');});}};
+    const playing=()=>{if(active)setPlayback('playing');};
+    const visible=()=>{if(!document.hidden)ready();};
+    node.muted=true;node.defaultMuted=true;
+    node.addEventListener('loadedmetadata',ready);node.addEventListener('canplay',ready);node.addEventListener('playing',playing);
+    document.addEventListener('visibilitychange',visible);ready();
+    const deadline=setTimeout(()=>{if(active&&node.readyState<2)setPlayback('stalled');},15000);
+    return()=>{active=false;clearTimeout(deadline);node.removeEventListener('loadedmetadata',ready);node.removeEventListener('canplay',ready);node.removeEventListener('playing',playing);document.removeEventListener('visibilitychange',visible);node.srcObject=null;};
   },[stream]);
   useEffect(()=>{
     const resize=()=>setPos(previous=>cameraPosition(previous,innerWidth,innerHeight,tile.current?.offsetWidth,tile.current?.offsetHeight));
@@ -34,13 +49,13 @@ function VideoTile({row,stream,state,index,local,layoutVersion}){
   const end=()=>{if(drag.current){save(drag.current.next||pos);drag.current=null;}};
   const key=event=>{const offsets={ArrowLeft:[-12,0],ArrowRight:[12,0],ArrowUp:[0,-12],ArrowDown:[0,12]};if(!offsets[event.key])return;event.preventDefault();const [dx,dy]=offsets[event.key];save(cameraPosition({x:pos.x+dx,y:pos.y+dy},innerWidth,innerHeight,tile.current.offsetWidth,tile.current.offsetHeight));};
   return <article ref={tile} className={'table-camera-tile'+(local?' own':'')} style={{left:pos.x,top:pos.y}} aria-label={'Câmera de '+row.name}>
-    <video ref={video} autoPlay playsInline muted aria-label={'Vídeo de '+row.name} style={{visibility:row.cameraOn&&stream?'visible':'hidden'}}/>
-    {(!row.cameraOn||!stream)&&<div className="table-camera-placeholder">{!row.cameraOn?'Câmera desligada':state==='failed'?'Conexão indisponível':'Conectando vídeo...'}</div>}
+    <video ref={video} autoPlay playsInline muted disablePictureInPicture disableRemotePlayback aria-label={'Vídeo de '+row.name} style={{visibility:row.cameraOn&&stream?'visible':'hidden'}}/>
+    {(!row.cameraOn||!stream||playback==='blocked'||playback==='stalled')&&<div className="table-camera-placeholder">{!row.cameraOn?'Câmera desligada':playback==='blocked'?<button onClick={playVideo}>Reproduzir vídeo</button>:state==='failed'||playback==='stalled'?'Vídeo indisponível. Reconecte as câmeras.':'Conectando vídeo...'}</div>}
     <div className="table-camera-name" role="button" tabIndex={0} aria-label={'Mover câmera de '+row.name} title="Arraste para reposicionar; use as setas quando selecionado" onKeyDown={key} onPointerDown={event=>{if(event.button!==0)return;event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);drag.current={...pos,px:event.clientX,py:event.clientY};}} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}><span>{row.name}{local?' · você':''}</span><small>{'\u283F'}</small></div>
   </article>;
 }
 
-export default function TableCameraRoom({access,selectedSheet,masterMode,onClose}){
+export default function TableCameraRoom({access,selectedSheet,masterMode,onClose,onJoined}){
   const [joined,setJoined]=useState(false),[busy,setBusy]=useState(false),[cameraOn,setCameraOn]=useState(false),[error,setError]=useState('');
   const [members,setMembers]=useState([]),[streams,setStreams]=useState({}),[states,setStates]=useState({}),[layoutVersion,setLayoutVersion]=useState(0);
   const session=useRef(null),localStream=useRef(null),live=useRef(true),operation=useRef(0);
@@ -51,11 +66,12 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
   const leave=()=>{
     operation.current++;stopMedia();const room=session.current;session.current=null;
     if(room){clearInterval(room.heartbeat);room.unsubscribe?.();room.peers.forEach(peer=>peer.close());room.calls.forEach(ref=>deleteDoc(ref).catch(()=>{}));deleteDoc(room.ref).catch(()=>{});}
-    if(live.current){setJoined(false);setCameraOn(false);setMembers([]);setStreams({});setStates({});setBusy(false);}
+    if(live.current){setJoined(false);onJoined?.(false);setCameraOn(false);setMembers([]);setStreams({});setStates({});setBusy(false);}
   };
   useEffect(()=>{live.current=true;const pagehide=()=>leave();window.addEventListener('pagehide',pagehide);return()=>{live.current=false;leave();window.removeEventListener('pagehide',pagehide);};},[]);
   useEffect(()=>{if(session.current)setDoc(session.current.ref,{name,userKey},{merge:true}).catch(()=>setIssue('Não foi possível atualizar seu nome na chamada.'));},[name,userKey]);
-  const join=async()=>{
+  const join=async event=>{
+    const pointer=event?.detail>0;
     if(busy||session.current)return;
     if(!globalThis.RTCPeerConnection){setError('Este navegador não oferece suporte a vídeo WebRTC.');return;}
     setBusy(true);setError('');const generation=++operation.current;
@@ -64,7 +80,7 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
     try{
       await setDoc(ref,{...identity.current,online:true,cameraOn:false,updatedAt:serverTimestamp()});
       if(session.current!==room||generation!==operation.current){await deleteDoc(ref);return;}
-      setJoined(true);
+      setJoined(true);onJoined?.(true);if(pointer)document.activeElement?.blur();
       let iceServers=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
       // Optional relay settings must use restricted/short-lived credentials; no secrets shipped by default.
       try{const configured=JSON.parse(import.meta.env.VITE_CAMERA_ICE_SERVERS||'null');if(Array.isArray(configured))iceServers=configured;}catch{setIssue('Configuração de vídeo inválida. Usando conexão direta.');}
@@ -110,7 +126,7 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
         if(!navigator.mediaDevices?.getUserMedia)throw Object.assign(new Error(),{name:'Unsupported'});
         const stream=await navigator.mediaDevices.getUserMedia({video:CAMERA_VIDEO,audio:false});
         if(session.current!==room||generation!==operation.current){stream.getTracks().forEach(track=>track.stop());return;}
-        localStream.current=stream;const track=stream.getVideoTracks()[0];
+        localStream.current=stream;setCameraOn(true);setStreams(previous=>({...previous,[room.id]:stream}));const track=stream.getVideoTracks()[0];
         track.onended=()=>{if(session.current!==room)return;stopMedia();setCameraOn(false);setStreams(previous=>({...previous,[room.id]:null}));room.peers.forEach(peer=>peer.setTrack(null).catch(()=>{}));setDoc(room.ref,{cameraOn:false},{merge:true}).catch(()=>{});};
         await Promise.all([...room.peers.values()].map(peer=>peer.setTrack(track)));
         if(session.current!==room||generation!==operation.current)return;
@@ -120,19 +136,19 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
       }
     }catch(problem){
       if(session.current!==room||generation!==operation.current)return;
-      stopMedia();setCameraOn(false);room.peers.forEach(peer=>peer.setTrack(null).catch(()=>{}));setDoc(room.ref,{cameraOn:false},{merge:true}).catch(()=>{});
+      stopMedia();setCameraOn(false);setStreams(previous=>({...previous,[room.id]:null}));room.peers.forEach(peer=>peer.setTrack(null).catch(()=>{}));setDoc(room.ref,{cameraOn:false},{merge:true}).catch(()=>{});
       setIssue(problem.name==='NotAllowedError'?'Câmera bloqueada. Permita a câmera para este site nas configurações do navegador.':problem.name==='NotFoundError'?'Nenhuma câmera foi encontrada.':problem.name==='NotReadableError'?'A câmera está ocupada por outro programa.':'Não foi possível ativar a câmera. Confira o dispositivo e tente novamente.');
     }finally{if(live.current&&generation===operation.current)setBusy(false);}
   };
   const reset=()=>{members.forEach(row=>{try{localStorage.removeItem('dinastia_camera_position_'+(row.userKey||row.id));}catch{}});setLayoutVersion(value=>value+1);};
   return <>
-    <section className="table-camera-controls" aria-label="Câmeras da mesa">
+    <section id="table-camera-options" className="table-camera-controls" aria-label="Câmeras da mesa" onClick={event=>{if(event.detail>0)event.target.closest('button')?.blur();}}>
       <strong>Câmeras da mesa{joined?` · ${members.length}/${CAMERA_LIMIT}`:''}</strong>
       {!joined?<><p>Entre para ver a mesa. Sua câmera começa desligada; você decide quando compartilhá-la.</p><button disabled={busy} onClick={join}>{busy?'Conectando...':'Entrar nas câmeras'}</button></>:<><button disabled={busy} onClick={toggleCamera}>{busy?'Aguarde...':cameraOn?'Desligar minha câmera':'Ativar minha câmera'}</button><button onClick={reset}>Organizar câmeras</button><button onClick={leave}>Sair das câmeras</button></>}
       <button onClick={()=>{leave();onClose();}} aria-label="Fechar câmeras">{'\u00D7'}</button>
       {error&&<p role="alert">{error}</p>}
       {Object.values(states).some(state=>state==='failed'||state==='disconnected')&&<p role="status">Um vídeo não conectou. Saia e entre novamente. Redes restritas podem precisar de um servidor de retransmissão.</p>}
     </section>
-    {joined&&members.map((row,index)=><VideoTile key={row.id} row={row} index={index} stream={streams[row.id]} state={states[row.id]} local={row.id===session.current?.id} layoutVersion={layoutVersion}/>)}
+    {joined&&createPortal(<div className="table-cameras-surface">{members.map((row,index)=><VideoTile key={row.id} row={row} index={index} stream={streams[row.id]} state={states[row.id]} local={row.id===session.current?.id} layoutVersion={layoutVersion}/>)}</div>,document.body)}
   </>;
 }
