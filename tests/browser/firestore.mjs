@@ -27,8 +27,8 @@ export const runTransaction=async(_db,callback)=>navigator.locks.request('dinast
 export async function getDocs(ref){window.__reads=(window.__reads||[]).concat(typeof ref==='string'?ref:ref.ref);return snap(ref);}
 function notify(key){listeners.forEach(({name,fn})=>{if(name===key||name===key.split('/')[0])queueMicrotask(fn);});}
 function merge(left,right){const next={...left};for(const [key,value] of Object.entries(right)){next[key]=value&&typeof value==='object'&&!Array.isArray(value)?merge(next[key]||{},value):value;}return next;}
-export async function setDoc(key,data,options){rows.set(key,options?.merge?merge(rows.get(key)||{},data):data);window.__writes=(window.__writes||[]).concat(key);publish(key);}
-export async function deleteDoc(key){rows.delete(key);publish(key);}
+export async function setDoc(key,data,options){return navigator.locks.request('dinastia-fixture-write',()=>{restore();rows.set(key,options?.merge?merge(rows.get(key)||{},data):data);window.__writes=(window.__writes||[]).concat(key);publish(key);});}
+export async function deleteDoc(key){return navigator.locks.request('dinastia-fixture-write',()=>{restore();rows.delete(key);publish(key);});}
 export function writeBatch(){const changes=[];return {set:(key,data)=>changes.push([key,data]),commit:async()=>{for(const [key,data] of changes)await setDoc(key,data);}};}
 window.__testStore={set:(key,value)=>{rows.set(key,value);publish(key)},get:key=>rows.get(key)};
 export const queryEqual=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
