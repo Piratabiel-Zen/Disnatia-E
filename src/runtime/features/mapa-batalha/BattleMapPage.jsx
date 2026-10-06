@@ -10,6 +10,8 @@ import { CLASSES,ATTRS,SHEET_COLORS,STATUS_LIST,getSheetMaxHp } from "../../data
 import { hpColor } from "../../core/ui";
 import { resolveEquipIcon,HabilidadesPanel,StatusPanel,VigosWithLocked,newSheet } from "../sheets/SheetComponents";
 import { FloatingEnemyPanel } from "../../experience/BattleMapEnemySheet.jsx";
+import useMapFullscreen from '../../experience/useMapFullscreen';
+import '../../experience/map-fullscreen.css';
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
 // causava ReferenceError ao abrir a aba e deixava a aplicação totalmente branca.
@@ -178,6 +180,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [formEnemyId, setFormEnemyId] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const mapScreen=useMapFullscreen();
   const [baseSize, setBaseSize] = useState({ w: 0, h: 0 });
   const frameRef = useRef(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -1604,7 +1607,9 @@ const TOKEN_THROTTLE_MS = 80;
       {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o campo de batalha...</div>}
 
       {loaded && (
-        <div style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#04060F' }}>
+        <div className="battlemap-viewport" style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#04060F' }}>
+          {currentMap?.img&&<button className="battlemap-screen-button" aria-pressed={mapScreen.expanded} onClick={()=>{setZoom(1);mapScreen.toggle();}}>{mapScreen.expanded?'Sair da tela cheia':'Preencher tela completa'}</button>}
+          {mapScreen.notice&&<div className="battlemap-screen-notice" role="status">{mapScreen.notice}</div>}
 
           {/* BARRA FLUTUANTE DO MESTRE — não empurra o mapa */}
           {masterMode && (

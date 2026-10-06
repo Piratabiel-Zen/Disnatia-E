@@ -25,3 +25,17 @@ Validate with `npm run build`, `npm test` and the isolated
 `tests/browser/visitors-summons.cjs` fixture. Fixture actions never use the real
 Firebase campaign. Browser checks cover visitor account creation, multiple owned
 characters, revoked access and summon release/resources/actions/store.
+
+### Optional tabletop cameras and map fullscreen
+
+`TableCameras` is a small launcher; `TableCameraRoom` and the native WebRTC engine load only when opened. Joining starts as a viewer with no media permission request. Only **Ativar minha câmera** calls `getUserMedia`, always with `audio:false`, 320×180 ideal and 15fps. There is no recording. Eight joined participants is the mesh budget; each sender is limited to 200kbps per peer. More participants or relay guarantees need a managed SFU/relay service rather than expanding the mesh.
+
+Firestore carries ephemeral participant records (`table_cameras`, latest 32, server timestamp heartbeat, 90-second expiry in UI) and SDP/ICE for uniquely identified peer sessions (`table_camera_calls`). It does not carry video. Leaving, closing the panel, changing authenticated session or pagehide closes peer connections, stops tracks and removes this client's records best effort. Old session IDs are never reused. The existing browser-only authentication limitations apply to signaling too; this does not establish server-enforced room membership.
+
+Default ICE uses the Google STUN endpoints from the official WebRTC guide. Restricted NAT/firewalls can require TURN. Optional `VITE_CAMERA_ICE_SERVERS` accepts an RTCIceServer array, but credentials delivered to a browser are visible: use constrained/short-lived credentials. No account, billable provider, secret or TURN server has been provisioned. WAN connectivity must be tested with the actual participants' networks before claiming full coverage.
+
+Camera positions are personal localStorage preferences. Names follow the selected player sheet, visitor account name or Mestre. The name strip below each video is draggable by pointer and movable with arrow keys; Organizar câmeras resets positions.
+
+Map fullscreen requests the document root so dice portals, summon controls and optional cameras remain available. CSS expands only `.battlemap-viewport`; it does not alter maps/tokens or image coordinates. The image is contained without cropping/stretching and unused screen area has a static ambient background. Native denial/unsupported devices use browser expansion with an explicit notice. **Sair da tela cheia**, Escape, native exit and route unmount restore the view.
+
+Validation: `tests/camera-peer.test.mjs` checks peer signaling/cleanup, identity and presence expiry; `tests/browser/cameras-fullscreen.cjs` exercises actual Chromium WebRTC with synthetic camera devices in the isolated Firestore fixture, pointer/keyboard placement, camera off/leave and native/fallback fullscreen. This never accesses a real webcam or campaign records.

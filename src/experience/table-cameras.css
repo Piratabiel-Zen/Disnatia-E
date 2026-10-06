@@ -1,0 +1,12 @@
+.table-cameras-surface{position:fixed;inset:0;z-index:340;pointer-events:none;font-family:'Crimson Text',serif;color:#e8d8c0}
+.table-camera-launch,.table-camera-controls,.table-camera-tile{pointer-events:auto}
+.table-camera-launch{position:absolute;left:92px;bottom:108px;background:#090d18;border:1px solid #b99ad966;color:#e8d8c0;border-radius:8px;padding:10px 14px;font:11px 'Cinzel',serif;cursor:pointer}
+.table-camera-controls{position:fixed;top:152px;right:78px;max-width:min(360px,calc(100vw - 24px));padding:10px;display:flex;flex-wrap:wrap;gap:7px;background:#090d18f5;border:1px solid #b99ad944;border-radius:10px;box-shadow:0 6px 24px #0006}
+.table-camera-controls strong{width:100%;font:11px 'Cinzel',serif}.table-camera-controls p{width:100%;margin:0;font-size:14px;line-height:1.3}.table-camera-controls p[role=alert],.table-camera-controls p[role=status]{color:#ffbd86}
+.table-camera-controls button{border:1px solid #b99ad944;background:#171224;color:#e8d8c0;padding:8px;border-radius:6px;cursor:pointer;font:10px 'Cinzel',serif}.table-camera-controls button:disabled{opacity:.55;cursor:wait}
+.table-camera-tile{position:fixed;width:176px;height:134px;border:1px solid #b99ad966;border-radius:9px;overflow:hidden;background:#080a13;box-shadow:0 5px 18px #0006;contain:layout paint}
+.table-camera-tile video{display:block;width:100%;height:104px;object-fit:cover}.table-camera-tile.own video{transform:scaleX(-1)}
+.table-camera-placeholder{position:absolute;inset:0 0 30px;display:grid;place-items:center;text-align:center;color:#ad9dbb;font-size:13px;padding:8px;background:radial-gradient(ellipse,#241731,#080a13)}
+.table-camera-name{height:30px;display:flex;align-items:center;gap:5px;justify-content:space-between;padding:0 8px;background:#110e1b;color:#e8d8c0;cursor:grab;touch-action:none;user-select:none;font:10px 'Cinzel',serif}.table-camera-name span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.table-camera-name:active{cursor:grabbing}
+.table-camera-controls button:focus-visible,.table-camera-launch:focus-visible,.table-camera-name:focus-visible{outline:2px solid #58d9ff;outline-offset:-2px}
+@media(max-width:600px){.table-camera-launch{left:12px;bottom:calc(286px + env(safe-area-inset-bottom,0px))}.table-camera-controls{right:12px;top:120px}.table-camera-tile{width:140px;height:112px}.table-camera-tile video{height:82px}}

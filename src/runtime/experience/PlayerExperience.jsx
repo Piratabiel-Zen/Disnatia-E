@@ -11,6 +11,7 @@ import { useExperience } from './ExperienceKit.generated';
 import './game-experience-3.css';
 import './player-experience.css';
 import SummonCombatRack from './SummonCombatRack';
+import TableCameras from './TableCameras';
 import { ComfortPanel, MorePanel, PlayerDock } from './PlayerComfort';
 import { abilityAvailability, isTyping } from '../adventure/playerPreferences.mjs';
 /* SESSION OPENING CINEMATIC 2026-09-10 */
@@ -849,6 +850,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
 
   return <div className={`game3-root game3-mode-${effectiveMode} game3-preset-${preset} game3-tab-${tab} ${mobileHudOpen?'g3-mobile-hud-open':'g3-mobile-hud-closed'}`} data-game3-mode={effectiveMode}>
     <SummonCombatRack access={access} tab={tab}/>
+    <TableCameras access={access} selectedSheet={selectedSheet} masterMode={masterMode}/>
     <WorldParticles type={game?.environment?.type||'none'} intensity={game?.environment?.intensity||45}/>
     <TopContext mode={effectiveMode} session={session} presence={activePresence} combat={combat} combatState={combatState} selectedSheet={selectedSheet} masterMode={masterMode} onCompleteObjective={completeObjective}/>
     <UtilityRail tab={tab} panel={panel} setPanel={setPanel} masterMode={masterMode} onNavigate={onNavigate} preset={preset} setPreset={setPreset} onPing={()=>setPingOpen(true)}/>
