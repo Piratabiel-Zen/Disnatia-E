@@ -10,10 +10,11 @@ import {
 import { db } from '../core/firebase';
 import { applyRoundAutomation } from './combatRoundEngine';
 import {
-  ATMOSPHERES, CLASSES, SHEET_COLORS, STATUS_LIST, getSheetMaxHp,
+  ATMOSPHERES, CLASSES, SHEET_COLORS, STATUS_LIST, getSheetMaxHp, ARTEFATOS_DATA,
 } from '../data/gameData';
 import { mergeSessionContext, readSessionCache, writeSessionCache } from '../adventure/sessionCache';
 
+import {artifactAbilities,artifactUseReason} from '../adventure/artifactRules.mjs';
 import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
 
 const ExperienceContext = createContext(null);
@@ -318,26 +319,40 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     await addJournal(`${name} foi registrado no Atlas como ${entry.status==='visitado'?'visitado':entry.status==='descoberto'?'descoberto':'rumor'}.`,'world',{icon:'🌍',color:'#6D28D9'});
   },[session.title,addJournal]);
 
-  const useQuickAbility=useCallback(async ability=>{
-    if(!selectedSheet || !ability) return false;
-    const level=Number(selectedSheet.nivel||1);
+  const useQuickAbility=useCallback(async (ability,artifactSheet)=>{
+    const actingSheet=ability?._artifactId&&artifactSheet?artifactSheet:selectedSheet;
+    if(!actingSheet || !ability) return false;
+    if(ability._artifactId&&!masterMode&&String(actingSheet.id)!==String(playerSheetId||selectedSheet?.id))return false;
+    const actingClass=CLASSES.find(row=>row.id===actingSheet.classe);
+    const level=Number(actingSheet.nivel||1);
     const req=Number(ability.req||1);
     const passive=ability.tipoHab==='passiva';
     if(passive || ability._locked || req>level) return false;
     const abilityId=String(ability.id||ability.name||ability.nome||'');
-    const cost=Number(ability.cost||ability.custo||0);
-    const turns=parseCooldown(ability.cooldown||ability.tempo);
+    let cost=Math.max(0,Number(ability.cost??ability.custo??0)||0);
+    let turns=parseCooldown(ability.cooldown||ability.tempo);
     const accepted=await runTransaction(db,async transaction=>{
-      const sheetRef=doc(db,'sheets',String(selectedSheet.id));
+      const sheetRef=doc(db,'sheets',String(actingSheet.id));
       const snapshot=await transaction.get(sheetRef);
       const stateSnapshot=await transaction.get(doc(db,'config','combat_state'));
       const combatSnapshot=await transaction.get(doc(db,'config','combat'));
       if(!snapshot.exists())return false;
       const latest=snapshot.data();
+      if(ability._artifactId){
+        const artifact=ARTEFATOS_DATA.find(row=>row.id===ability._artifactId);
+        const visibility=await transaction.get(doc(db,'config','artefatos'));
+        const powers=await transaction.get(doc(db,'config','artefatos_habilidades'));
+        if(!visibility.data()?.unlocked?.[artifact?.id]||artifactUseReason(artifact,latest))return false;
+        const registered=artifactAbilities(artifact,powers.data()||{}).find(row=>row.id===abilityId);
+        if(!registered||registered.tipoHab==='passiva')return false;
+        if(artifact.id==='artefato-2'&&registered.nome==='Intocável'&&(latest.status?.atordoado||latest.status?.incapacitado))return false;
+        cost=Math.max(0,Number(registered.cost??registered.custo??0)||0);
+        turns=parseCooldown(registered.cooldown||registered.tempo);
+      }
       if(combatSnapshot.data()?.active&&!masterMode){
         const state=stateSnapshot.data()||{};
         const actor=state.initiative?.[Number(state.turnIdx||0)];
-        if(actor?.type!=='player'||String(actor.id||'').replace(/^p_/,'')!==String(selectedSheet.id))return false;
+        if(actor?.type!=='player'||String(actor.id||'').replace(/^p_/,'')!==String(actingSheet.id))return false;
       }
       const vigor=Number(latest.vigos||0),cooldowns=latest.cooldowns||{};
       if(vigor<cost||Number(cooldowns[abilityId]||0)>0)return false;
@@ -346,17 +361,17 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     });
     if(!accepted)return false;
     const abilityEvent={
-      id:nowId('ability'),type:'ability',text:`${selectedSheet.nome||'Personagem'} usou ${ability.name||ability.nome||'Habilidade'}`,ts:Date.now(),
-      color:selectedClass?.color||'#A855F7',icon:selectedClass?.icon||'⚡',soft:true,source:'ability',sheetId:String(selectedSheet.id),
+      id:nowId('ability'),type:'ability',text:`${actingSheet.nome||'Personagem'} usou ${ability.name||ability.nome||'Habilidade'}`,ts:Date.now(),
+      color:actingClass?.color||'#A855F7',icon:actingClass?.icon||'\u2726',soft:true,source:'ability',sheetId:String(actingSheet.id),
     };
     const broadcasts=await Promise.allSettled([
-      addJournal(`${selectedSheet.nome||'Personagem'} usou ${ability.name||ability.nome}.`,'ability',{icon:'⚡',color:selectedClass?.color||'#A855F7'}),
+      addJournal(`${actingSheet.nome||'Personagem'} usou ${ability.name||ability.nome}.`,'ability',{icon:'\u2726',color:actingClass?.color||'#A855F7'}),
       setDoc(doc(db,'config','cosmic_event'),abilityEvent),
       setDoc(doc(db,'cosmic_events',abilityEvent.id),abilityEvent,{merge:true}),
     ]);
     if(broadcasts.some(row=>row.status==='rejected'))console.warn('Habilidade utilizada; anúncio aguardando confirmação.');
     return true;
-  },[selectedSheet,selectedClass,masterMode,addJournal]);
+  },[selectedSheet,selectedClass,masterMode,playerSheetId,addJournal]);
 
   const useSummonAbility=useCallback(async(ability,summon)=>{
     if(!selectedSheet||!summon||summon.revealed!==true)return false;

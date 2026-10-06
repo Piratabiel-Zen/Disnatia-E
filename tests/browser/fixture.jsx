@@ -3,6 +3,9 @@ import {createRoot} from 'react-dom/client';
 import Cronicas from '../../.generated/src/features/cronicas/CronicasPage.jsx';
 import {ExperienceProvider,ImmersiveNavigation,ExperienceLayer} from '../../.generated/src/experience/ExperienceKit.generated.jsx';
 import GameExperience3 from '../../.generated/src/experience/GameExperience3.adventure.jsx';
+import {ArtifactSheetPanel} from '../../.generated/src/experience/ArtifactPowers.jsx';
+import Livro from '../../.generated/src/features/livro/LivroPage.jsx';
+import {useExperience} from '../../.generated/src/experience/ExperienceKit.generated.jsx';
 import {SummonCard} from '../../.generated/src/features/sheets/SheetComponents.jsx';
 import '../../.generated/src/styles/global.css';
 import '../../.generated/src/experience/experience.css';
@@ -23,6 +26,16 @@ if(combat){window.__testStore.set('config/combat',{active:true});window.__testSt
 if(params.has('map-summons'))window.__testStore.set('sheets/necro',{id:'necro',nome:'Necromante',classe:'necromante',nivel:10,hp:40,vigos:8,invocacoes:[{id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,ataques:[{id:1,nome:'Bicada',custo:1}]}]});
 const summon={id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,forca:8,ataques:[{id:1,nome:'Bicada',custo:1}]};
 const render=async()=>{
+if(params.has('artifact')){
+ const sheet={id:'necro',nome:'Portador de teste',classe:'magos',nivel:10,hp:40,vigos:8,agilidade:8,percepcao:4,artefato_id:'artefato-2'};
+ window.__testStore.set('sheets/necro',sheet);
+ if(!window.__testStore.get('config/artefatos'))window.__testStore.set('config/artefatos',{unlocked:{'artefato-2':true}});
+ window.__testStore.set('config/artefatos_habilidades',{'artefato-2':[{id:'flight',nome:'Voo de Serafim',custo:'0',descricao:'Movimentação de teste'},{id:'dodge',nome:'Intocável',custo:'3',cooldown:'3',descricao:'Esquiva de teste'}]});
+ const ArtifactView=()=>{const {sheets,useQuickAbility}=useExperience();window.__artifactUse=useQuickAbility;return <ArtifactSheetPanel sheet={sheets.find(s=>s.id==='necro')||sheet} onChange={next=>window.__testStore.set('sheets/necro',next)} revealedArtefatos={window.__artifacts||[]}/>;};
+ const {ARTEFATOS_DATA}=await import('../../.generated/src/data/gameData.jsx');window.__artifacts=ARTEFATOS_DATA.filter(a=>a.id==='artefato-2');
+ createRoot(document.getElementById('root')).render(<ExperienceProvider playerSheetId="necro" access={{role:'player',sheetId:'necro'}} masterMode={false} tab="fichas"><main style={{padding:20,maxWidth:800,background:'#010207',minHeight:'100vh'}}>{params.has('book')?<Livro masterMode={false}/>:<ArtifactView/>}</main><GameExperience3 access={{role:'player',sheetId:'necro'}} masterMode={false} tab="session" onNavigate={()=>{}}/></ExperienceProvider>);
+ return;
+}
 if(params.has('visitors')||params.has('visitor-admin')){
  window.__testStore.set('visitors/guest-a',{id:'guest-a',name:'Convidado A',active:true,authVersion:1,password:await passwordRecord('Senha123')});
  window.__testStore.set('visitors/guest-b',{id:'guest-b',name:'Convidado B',active:true,authVersion:1,password:await passwordRecord('Outra123')});
