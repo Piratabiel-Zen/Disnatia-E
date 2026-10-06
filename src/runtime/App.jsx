@@ -1,5 +1,5 @@
 import { onSnapshot } from './adventure/sharedSnapshot';
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { doc} from "firebase/firestore";
 import { db } from "./core/firebase";
 import { ATMOSPHERES } from "./data/gameData";
@@ -28,6 +28,7 @@ import SessionLink from './adventure/SessionLink';
 import { usePerformance } from './adventure/usePerformance';
 import './adventure/adventure.css';
 import AbilityFeedbackBridge from "./experience/AbilityFeedbackBridge";
+import { VisitorSessionGuard, VisitorCharacterPicker } from './experience/VisitorSession';
 import { PreferenceSurface } from './experience/PlayerComfort';
 import InterfaceFeedback from './experience/InterfaceFeedback';
 import GameExperience3 from "./experience/GameExperience3.adventure";
@@ -47,7 +48,7 @@ import {
 const TAB_LABELS = {
   session:'Sessão Atual', prologo:'Prólogo', classes:'Classes', fichas:'Fichas',
   personagens:'Personagens', inimigos:'Inimigos', bestiario:'Bestiário', regras:'Regras',
-  livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
+  visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
 };
 
 // MOBILE ALLOWED PAGES 2026-09-10
@@ -55,6 +56,7 @@ const MOBILE_ALLOWED_PAGES = new Set(['session','fichas','bestiario','personagen
 const isMobileViewport = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
 
 const pageLoaders = {
+  visitantes:  () => import('./experience/VisitorsPage'),
   prologo:      () => import("./features/prologue/ProloguePage"),
   classes:      () => import("./features/classes/ClassesPage"),
   fichas:       () => import("./features/sheets/SheetsPage"),
@@ -106,6 +108,7 @@ export default function App(){
 
   const mobileBattleMapBlocked = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
   const navigate = id => {
+    if(id==='visitantes'&&access?.role!=='master'&&access?.role!=='visitor')return;
     // MOBILE MAPS HIDDEN 2026-09-15
     if (isMobileViewport() && (id==='mapamundi' || id==='mapabatalha')) return;
     prefetch(id);
@@ -121,14 +124,14 @@ export default function App(){
     return()=>window.removeEventListener('resize', keepMobileOutOfMaps);
   },[tab]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearStoredAccess();
     setAccess(null);
     setMasterMode(false);
     setTab('session');
-  };
+  },[]);
 
-  const accessReady = !!access && (access.role === 'player' || masterMode);
+  const accessReady = !!access && (access.role === 'player' || access.role === 'visitor' || masterMode);
   if (!accessReady) {
     return (
       <div style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
@@ -142,13 +145,14 @@ export default function App(){
   }
 
   return(
-    <ExperienceProvider key={`${access.role}:${playerSheetId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId}>
+    <ExperienceProvider key={`${access.role}:${playerSheetId || access.visitorId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId} access={access}>
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         <CosmicLivingBackground quality={quality}/>
         <ToastContainer/>
         <RealtimeBroadcasts/>
         <SharedDiceReplay access={access}/>
         <DiceCriticalFx/>
+        <VisitorSessionGuard access={access} onLogout={logout}/>
         <PreferenceSurface/><InterfaceFeedback/>
         <SessionLink masterMode={masterMode} onNavigate={navigate}/>
         <AbilityFeedbackBridge/>
@@ -169,6 +173,7 @@ export default function App(){
               <SessionConnection/>
               <button className="ad-quality" title="Alternar entre fundo estático e atmosfera imersiva com estrelas cadentes" aria-pressed={quality==='light'} onClick={()=>setQuality(quality==='light'?'cinematic':'light')}>{quality==='light'?'◈ Leve':'✦ Imersivo'}</button>
               <AmbientSoundPlayer masterMode={masterMode}/>
+              <VisitorCharacterPicker access={access}/>
               <PlayerIdentityChip access={access} onLogout={logout}/>
               {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>} 
             </div>
@@ -180,7 +185,7 @@ export default function App(){
                 <AdventureSession onNavigate={navigate} masterMode={masterMode} access={access}/>
               ) : (
                 <Suspense fallback={<PageSkeleton/>}>
-                  <ActivePage masterMode={masterMode} playerSheetId={playerSheetId}/>
+                  <ActivePage masterMode={masterMode} playerSheetId={playerSheetId} access={access}/>
                 </Suspense>
               )}
             </div>

@@ -4,7 +4,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  collection, deleteDoc, doc, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc,
+  collection, deleteDoc, doc, limit, orderBy, query, where, runTransaction, serverTimestamp, setDoc, updateDoc,
 } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { applyRoundAutomation } from './combatRoundEngine';
@@ -12,6 +12,8 @@ import {
   ATMOSPHERES, CLASSES, SHEET_COLORS, STATUS_LIST, getSheetMaxHp,
 } from '../data/gameData';
 import { mergeSessionContext, readSessionCache, writeSessionCache } from '../adventure/sessionCache';
+
+import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
 
 const ExperienceContext = createContext(null);
 const JOURNAL_LIMIT = 40;
@@ -21,7 +23,7 @@ const NAV_GROUPS = [
   { id:'character', label:'Personagem', icon:'◆', items:[{id:'fichas',label:'Fichas',icon:'📋'},{id:'classes',label:'Classes',icon:'⚔️'}] },
   { id:'world', label:'Mundo', icon:'◈', items:[{id:'mapamundi',label:'Mapa Múndi',icon:'🌍'},{id:'personagens',label:'Personagens',icon:'👤'},{id:'bestiario',label:'Bestiário',icon:'🐉'}] },
   { id:'knowledge', label:'Conhecimento', icon:'◇', items:[{id:'livro',label:'Livro da Mandíbula',icon:'✦'},{id:'cronicas',label:'Crônicas',icon:'🗒️'},{id:'regras',label:'Regras',icon:'📖'},{id:'prologo',label:'Prólogo',icon:'📜'}] },
-  { id:'table', label:'Mesa', icon:'⚔', items:[{id:'mapabatalha',label:'Mapa de Batalha',icon:'🗡️'},{id:'inimigos',label:'Inimigos',icon:'💀'}] },
+  { id:'table', label:'Mesa', icon:'⚔', items:[{id:'mapabatalha',label:'Mapa de Batalha',icon:'🗡️'},{id:'inimigos',label:'Inimigos',icon:'💀'},{id:'visitantes',label:'Visitantes',icon:'\u2726'}] },
 ];
 
 const SOUNDSCAPE_PRESETS = {
@@ -61,7 +63,7 @@ function clamp(v,min,max){ return Math.min(max,Math.max(min,Number(v)||0)); }
 function parseCooldown(value){ const n=parseInt(String(value||'').replace(/\D/g,''),10); return Number.isFinite(n)?n:0; }
 function nowId(prefix='evt'){ return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`; }
 
-export function ExperienceProvider({ children, tab, masterMode, playerSheetId='' }) {
+export function ExperienceProvider({ children, tab, masterMode, playerSheetId='', access=null }) {
   const [sheets,setSheets]=useState([]);
   const [summons,setSummons]=useState([]);
   const [customAbilities,setCustomAbilities]=useState({});
@@ -83,8 +85,8 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
 
   useEffect(()=>{
     const unsubscribers=[];
-    unsubscribers.push(onSnapshot(collection(db,'sheets'),snap=>{
-      const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    unsubscribers.push(onSnapshot(access?.role==='visitor'?query(collection(db,'sheets'),where('visitorId','==',String(access.visitorId||'invalid'))):collection(db,'sheets'),snap=>{
+      const rows=visibleSheets(snap.docs.map(d=>({id:d.id,...d.data()})),access,masterMode);
       const nextHp=new Map();
       rows.forEach(sheet=>{
         const id=String(sheet.id||'');
@@ -115,7 +117,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     const journalQuery=query(collection(db,'session_journal'),orderBy('ts','desc'),limit(JOURNAL_LIMIT));
     unsubscribers.push(onSnapshot(journalQuery,snap=>setJournal(snap.docs.map(d=>({id:d.id,...d.data()})))));
     return()=>unsubscribers.forEach(fn=>fn());
-  },[]);
+  },[access?.role,access?.visitorId,masterMode]);
 
   useEffect(()=>{
     if(!(tab==='mapabatalha' || (masterMode && tab==='session'))) { setMaps([]); return; }
@@ -125,7 +127,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
   useEffect(()=>{
     if(!(tab==='mapamundi' || tab==='session')) { setAtlas([]); return; }
     return onSnapshot(collection(db,'atlas_discoveries'),snap=>{
-      const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const rows=visibleSheets(snap.docs.map(d=>({id:d.id,...d.data()})),access,masterMode);
       rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
       setAtlas(rows);
     });
@@ -143,9 +145,10 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
 
   const setSelectedSheetId=useCallback(id=>{
     const value=String(!masterMode&&playerSheetId?playerSheetId:id||'');
+    if(access?.role==='visitor'&&!sheets.some(sheet=>String(sheet.id)===value&&ownsVisitorSheet(sheet,access)))return;
     setSelectedSheetIdState(value);
     safeLocalStorage.set('dinastia_player_sheet',value);
-  },[masterMode,playerSheetId]);
+  },[masterMode,playerSheetId,access,sheets]);
 
   const selectedSheet=useMemo(()=>sheets.find(s=>String(s.id)===String(!masterMode&&playerSheetId?playerSheetId:selectedSheetId))||null,[sheets,selectedSheetId,masterMode,playerSheetId]);
   const selectedClass=useMemo(()=>CLASSES.find(c=>c.id===selectedSheet?.classe)||null,[selectedSheet?.classe]);
@@ -586,12 +589,12 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
   },[summons,masterMode,selectedSheet?.id,addJournal]);
 
   const value=useMemo(()=>({
-    tab,masterMode,sheets,summons,customAbilities,selectedSheetId,setSelectedSheetId,selectedSheet,selectedClass,
+    tab,masterMode,access,sheets,summons,customAbilities,selectedSheetId,setSelectedSheetId,selectedSheet,selectedClass,
     combat,combatState,session,ambient,soundscape,cosmicEvent,journal,maps,atlas,activeMap,
     updateSession,startSession,endSession,setAtmosphere,setSoundscape,applySoundscapePreset,
     triggerCosmicEvent,setActiveMap,nextTurn,reorderInitiative,endCombat,addJournal,updateJournal,deleteJournal,addAtlasDiscovery,useQuickAbility,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon,
   }),[
-    tab,masterMode,sheets,summons,customAbilities,selectedSheetId,setSelectedSheetId,selectedSheet,selectedClass,combat,combatState,
+    tab,masterMode,access,sheets,summons,customAbilities,selectedSheetId,setSelectedSheetId,selectedSheet,selectedClass,combat,combatState,
     session,ambient,soundscape,cosmicEvent,journal,maps,atlas,activeMap,updateSession,startSession,endSession,
     setAtmosphere,setSoundscape,applySoundscapePreset,triggerCosmicEvent,setActiveMap,nextTurn,reorderInitiative,endCombat,
     addJournal,updateJournal,deleteJournal,addAtlasDiscovery,useQuickAbility,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon,
@@ -612,28 +615,28 @@ const MOBILE_ALLOWED_NAV_IDS = new Set(['session','fichas','bestiario','personag
 // DESKTOP FULL NAV 2026-09-11
 export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterMode=false }){
   const [mobileMenu,setMobileMenu]=useState(false);
-  const { combat, selectedSheet }=useExperience();
+  const { combat, selectedSheet, access }=useExperience();
   const desktopGroups = NAV_GROUPS.map(group=>({
     ...group,
-    items:group.items.filter(item=>item.id!=='inimigos'||masterMode),
+    items:group.items.filter(item=>(item.id!=='inimigos'||masterMode)&&(item.id!=='visitantes'||masterMode)).map(item=>access?.role==='visitor'&&item.id==='fichas'?{...item,label:'Meus personagens'}:item),
   })).filter(group=>group.items.length);
   const go=id=>{ onNavigate(id); setMobileMenu(false); };
   // MOBILE CLEAN NAV 2026-09-15
   const mobileMain=[
     {id:'session',label:'Início',icon:'⌂'},
-    {id:'fichas',label:'Ficha',icon:'📋'},
+    {id:'fichas',label:access?.role==='visitor'?'Personagens':'Ficha',icon:'📋'},
     {id:'cronicas',label:'Crônicas',icon:'🗒️'},
     {id:'livro',label:'Livro',icon:'✦'},
   ];
   const mobileAllowedGroups20260910 = NAV_GROUPS.map(group=>({ ...group, items:group.items.filter(item=>MOBILE_ALLOWED_NAV_IDS.has(item.id)) })).filter(group=>group.items.length);
-  const mobileGroups=NAV_GROUPS.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
+  const mobileGroups=desktopGroups.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
   return <>
     <aside className="grim-nav">
       <button className="grim-brand" onClick={()=>go('session')} title="Dinastia E"><span>DE</span><b>Dinastia E</b></button>
       <div className="grim-groups">
         {desktopGroups.map(group=><div className="grim-group" key={group.id}>
           <div className="grim-group-title"><span>{group.icon}</span><b>{group.label}</b></div>
-          {group.items.map(item=><button key={item.id} onClick={()=>go(item.id)} className={`grim-link ${tab===item.id?'active':''}`} style={{'--accent':accent}} title={item.label}>
+          {group.items.map(item=><button key={item.id} onClick={()=>go(item.id)} className={`grim-link ${tab===item.id?'active':''}`} style={{'--accent':accent}} title={item.label} aria-label={item.label}>
             <span className="grim-icon">{item.icon}</span><span className="grim-label">{item.label}</span>
             {item.id==='mapabatalha'&&combat?.active&&<i className="grim-live"/>}
           </button>)}

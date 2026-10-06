@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 const files = {
   'App.jsx': 'App.generated.jsx',
+  'experience/PlayerAccess.jsx': 'experience/PlayerAccess.jsx',
+  'features/sheets/SheetsPage.jsx': 'features/sheets/SheetsPage.jsx',
   'experience/PlayerExperience.jsx': 'experience/GameExperience3.adventure.jsx',
   'experience/ExperienceProvider.jsx': 'experience/ExperienceKit.generated.jsx',
   'experience/EnhancedSoundscape.jsx': 'experience/EnhancedSoundscape.jsx',
