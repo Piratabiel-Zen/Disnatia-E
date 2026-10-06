@@ -154,7 +154,7 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
   );
 }
 
-function BattleMapSection({ masterMode, playerSheetId }) {
+function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [maps, setMaps] = useState([]);
   // BATTLEMAP ORIGINAL QUALITY 2026-09-12
   const [originalMapImages, setOriginalMapImages] = useState({});
@@ -444,7 +444,7 @@ function BattleMapSection({ masterMode, playerSheetId }) {
     const u2 = onSnapshot(activeMapRef, snap => {
       if (snap.exists()) applyActiveMap(snap.data());
     }, err => console.error('Erro ao sincronizar mapa ativo:', err));
-    const u3 = onSnapshot(collection(db, 'sheets'), snap => {
+    const u3 = onSnapshot(access?.role==='visitor'?query(collection(db,'sheets'),where('visitorId','==',String(access.visitorId||'invalid'))):collection(db,'sheets'), snap => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const vitals = {};
       all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });
@@ -1521,7 +1521,7 @@ const TOKEN_THROTTLE_MS = 80;
   const closeFloatingEnemy = eid => setFloatingEnemies(prev => prev.filter(p => p.enemyId !== eid));
   const handleSelectSheet = (s) => {
     const sid = String(s.id);
-    if (masterMode || (playerSheetId && String(playerSheetId) === sid) || !s.senha || unlockedIds[sid]) { toggleFloatingSheet(sid); return; }
+    if (masterMode || access?.role==='visitor'&&String(s.visitorId)===String(access.visitorId) || (playerSheetId && String(playerSheetId) === sid) || !s.senha || unlockedIds[sid]) { toggleFloatingSheet(sid); return; }
     setPwTarget(sid); setPwInput(''); setPwError(false);
   };
   const tryPassword = () => {

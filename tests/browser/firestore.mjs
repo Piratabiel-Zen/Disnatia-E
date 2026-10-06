@@ -31,3 +31,5 @@ export async function setDoc(key,data,options){rows.set(key,options?.merge?merge
 export async function deleteDoc(key){rows.delete(key);publish(key);}
 export function writeBatch(){const changes=[];return {set:(key,data)=>changes.push([key,data]),commit:async()=>{for(const [key,data] of changes)await setDoc(key,data);}};}
 window.__testStore={set:(key,value)=>{rows.set(key,value);publish(key)},get:key=>rows.get(key)};
+export const queryEqual=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+export const refEqual=(a,b)=>a===b;
