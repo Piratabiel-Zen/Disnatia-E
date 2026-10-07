@@ -107,13 +107,18 @@ for (const forbidden of ['mapamundi','mapabatalha','inimigos']) {
 // BattleMap: Firestore é autoridade; sem comparar relógios de computadores diferentes.
 must(/const TOKEN_THROTTLE_MS = (33|80);/.test(battle), 'BattleMap: cadência de movimento fora do orçamento');
 present(battle, "const u2 = onSnapshot(activeMapRef, snap => {", 'BattleMap ativo');
-// Canonical membership replaces the historical bootstrap/previous-render union.
-// Retaining that union resurrected removed tokens across browser sessions.
-present(battle, 'canonicalRosterReadyRef.current', 'BattleMap snapshot canônico');
-present(battle, 'const legacy = (incoming[mapId] || []).filter', 'BattleMap quantidade canônica');
-present(battle, 'tokenOutbox.operations(mapId)', 'BattleMap operações pendentes');
-absent(battle, "onSnapshot(doc(db, 'config', 'battlemap_live_tokens')", 'BattleMap bootstrap histórico');
-absent(battle, 'const legacy = new Map((prev[mapId]', 'BattleMap ressurreição de tokens');
+if (process.argv.includes('--legacy-generation')) {
+  // This pass precedes install-canonical-runtime in the seed generation pipeline.
+  present(battle, 'Object.prototype.hasOwnProperty.call(prev, mapId)', 'BattleMap seed legado');
+} else {
+  // The final generated application must replace historical/previous membership.
+  // Retaining that union resurrected removed tokens across browser sessions.
+  present(battle, 'canonicalRosterReadyRef.current', 'BattleMap snapshot canônico');
+  present(battle, 'const legacy = (incoming[mapId] || []).filter', 'BattleMap quantidade canônica');
+  present(battle, 'tokenOutbox.operations(mapId)', 'BattleMap operações pendentes');
+  absent(battle, "onSnapshot(doc(db, 'config', 'battlemap_live_tokens')", 'BattleMap bootstrap histórico');
+  absent(battle, 'const legacy = new Map((prev[mapId]', 'BattleMap ressurreição de tokens');
+}
 present(battle, 'previous && source === previous.source', 'BattleMap sequência de movimento');
 absent(battle, 'updatedAt < previous.updatedAt', 'BattleMap relógio local');
 absent(battle, 'incomingTs < knownTs', 'BattleMap relógio estrutural');

@@ -66,7 +66,7 @@ function dinastiaModularBuild() {
         "scripts/tabletop-critical-hotfix-2026-09-19.mjs",
         "scripts/immersive-combat-dice-motion-hotfix-2026-09-19.mjs",
         "scripts/combat-action-hud-patch.mjs",
-        "scripts/final-stability-guard.mjs",
+        ["scripts/final-stability-guard.mjs", "--legacy-generation"],
         "scripts/adventure-session-patch.mjs",
         "scripts/player-experience-controls-patch.mjs",
         "scripts/dice-physical-critical-public-patch.mjs",
