@@ -92,8 +92,8 @@ test('generated canonical receiver keeps both clients consistent despite stale l
     let state = {};
     const outbox = createTokenOutbox();
     const ref = { current: {} };
-    const attach = new Function('liveSnapshot', 'collection', 'db', 'tokenOutbox', 'resolveTokenRoster', 'mergeIncomingTokenState', 'setMapTokens', 'mapTokensRef', source.slice(start, end));
-    attach((_, options, callback) => { receive = callback; return () => {}; }, () => {}, {}, outbox, resolveTokenRoster, (_, tokens) => tokens, update => { state = update(state); }, ref);
+    const attach = new Function('liveSnapshot', 'collection', 'db', 'tokenOutbox', 'resolveTokenRoster', 'mergeIncomingTokenState', 'setMapTokens', 'mapTokensRef', 'canonicalRosterReadyRef', source.slice(start, end));
+    attach((_, options, callback) => { receive = callback; return () => {}; }, () => {}, {}, outbox, resolveTokenRoster, (_, tokens) => tokens, update => { state = update(state); }, ref, {current:false});
     return { outbox, snapshot: rows => receive({ docs: rows.map(([id, data]) => ({ id, data: () => data, metadata: { hasPendingWrites: false, fromCache: false } })) }), roster: () => resolveTokenRoster(state.m || [], [], outbox.operations('m')) };
   };
   const a = createClient(), b = createClient();
@@ -113,4 +113,46 @@ test('generated canonical receiver keeps both clients consistent despite stale l
   for (const client of [a, b]) client.snapshot([old, deleted]);
   assert.deepEqual(b.roster().map(token => token.id), [1]);
   assert.deepEqual(a.roster().map(token => token.id), [1, 3]);
+});
+
+test('token identity comes from its record, while separate instances of the same enemy stay separate',()=>{
+  const legacy=[{id:'a',enemyId:'glass',nome:'Vidro'},{id:'b',enemyId:'glass',nome:'Vidro'}];
+  const result=resolveTokenRoster(legacy,[{tokenId:'a',token:{id:'b',hp:7}}]);
+  assert.deepEqual(result.map(token=>token.id),['a','b']);
+  assert.equal(result[0].hp,7);
+  assert.equal(resolveTokenRoster(legacy,[],[{tokenId:'a',token:{id:'b',hp:5}}])[0].id,'a');
+});
+
+test('authoritative snapshots replace boot ghosts and do not resurrect deleted or absent instances',async()=>{
+  const source=fs.readFileSync('.generated/src/features/mapa-batalha/BattleMapPage.jsx','utf8');
+  const start=source.indexOf('    const u1b = liveSnapshot('),end=source.indexOf('    // Canal leve de sincronização ao vivo.',start);
+  const clients=Array.from({length:7},()=>{
+    let receive,state={m:[{id:'ghost',nome:'Old boot copy'}]};const ref={current:state},outbox=createTokenOutbox();
+    new Function('liveSnapshot','collection','db','tokenOutbox','resolveTokenRoster','mergeIncomingTokenState','setMapTokens','mapTokensRef','canonicalRosterReadyRef',source.slice(start,end))
+      ((_,options,callback)=>{receive=callback;return()=>{};},()=>{}, {},outbox,resolveTokenRoster,(_,tokens)=>tokens,update=>{state=update(state);},ref,{current:false});
+    return {outbox,roster:()=>state.m,snapshot:(rows,cached=false)=>receive({metadata:{fromCache:cached},docs:rows.map(([id,data])=>({id,data:()=>data,metadata:{hasPendingWrites:false,fromCache:cached}}))})};
+  });
+  const roster=Array.from({length:8},(_,id)=>({id:String(id),enemyId:id<6?'glass':'vampire',nome:id<6?'Vidro':'Vampiro',x:id*8,y:50}));
+  const legacy=['m',{tokens:roster}];
+  for(const client of clients){
+    client.snapshot([legacy]);assert.deepEqual(client.roster(),roster);
+    client.snapshot([['m',{tokens:[]}]],true);assert.equal(client.roster().length,8);
+    client.snapshot([legacy,['v2',{recordType:'token-v2',mapId:'m',tokenId:'4',token:{id:'4'},deleted:true}]]);
+    assert.equal(client.roster().length,7);assert.ok(!client.roster().some(t=>t.id==='4'));
+    client.snapshot([]);assert.deepEqual(client.roster(),[]);
+  }
+  await assert.rejects(clients[0].outbox.enqueue('m','pending',{id:'pending',nome:'New instance'},false,async()=>{throw Error('offline');}));
+  clients[0].snapshot([]);assert.deepEqual(clients[0].roster().map(t=>t.id),['pending']);
+});
+
+test('a rapid double activation of the library creates one token; later intentional additions stay distinct',async()=>{
+  const source=fs.readFileSync('.generated/src/features/mapa-batalha/BattleMapPage.jsx','utf8');
+  const start=source.indexOf('  const addLibraryToken = async (tpl) => {'),end=source.indexOf('  const deleteLibraryToken',start);
+  let release,state={},selected;const writes=[],ref={current:{m:[]}};
+  const add=new Function('currentMap','addingLibraryTokenRef','initializeEnemyToken','newToken','enemyTemplateForToken','mapTokensRef','setMapTokens','writeLiveTokens','setSelectedId','setShowTokenLibrary',source.slice(start,end)+'return addLibraryToken;')
+    ({id:'m',tokens:[]},{current:false},token=>token,id=>({id}),()=>({}),ref,fn=>{state=fn(state);},async(mapId,tokens)=>{writes.push(tokens);if(writes.length===1)await new Promise(resolve=>{release=resolve;});},id=>{selected=id;},()=>{});
+  const first=add({nome:'Vampiro',enemyId:'vampire'});await add({nome:'Vampiro',enemyId:'vampire'});
+  assert.equal(writes.length,1);assert.equal(state.m.length,1);assert.equal(selected,state.m[0].id);
+  release();await first;await add({nome:'Vampiro',enemyId:'vampire'});
+  assert.equal(writes.length,2);assert.equal(state.m.length,2);assert.notEqual(state.m[0].id,state.m[1].id);
 });

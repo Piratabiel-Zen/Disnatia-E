@@ -19,12 +19,12 @@ export function resolveTokenRoster(legacy = [], records = [], pending = []) {
   for (const record of records) {
     const id = String(record.tokenId);
     if (record.deleted) { deleted.add(id); tokens.delete(id); }
-    else tokens.set(id, { ...tokens.get(id), ...record.token, id: record.token?.id ?? id });
+    else tokens.set(id, { ...tokens.get(id), ...record.token, id: String(record.token?.id) === id ? record.token.id : id });
   }
   for (const operation of pending) {
     const id = String(operation.tokenId);
     if (operation.deleted) { deleted.add(id); tokens.delete(id); }
-    else if (!deleted.has(id)) tokens.set(id, { ...tokens.get(id), ...operation.token });
+    else if (!deleted.has(id)) tokens.set(id, { ...tokens.get(id), ...operation.token, id: String(operation.token?.id) === id ? operation.token.id : id });
   }
   for (const id of deleted) tokens.delete(id);
   return [...tokens.values()];

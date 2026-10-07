@@ -347,6 +347,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
 
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
+  const canonicalRosterReadyRef = useRef(false);
+  const addingLibraryTokenRef = useRef(false);
   const liveTokenVersionRef = useRef({});
   // Canal ultraleve por token: transmite somente x/y durante o arraste.
   // Isso evita regravar o array completo de tokens a cada movimento do mouse.
@@ -399,12 +401,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       setMaps(sortBattleMaps(data)); setLoaded(true);
     });
     const u1b = liveSnapshot(collection(db, 'battlemap_tokens'), { includeMetadataChanges: true }, snap => {
+      if (snap.metadata?.fromCache && canonicalRosterReadyRef.current) return;
+      if (!snap.metadata?.fromCache) canonicalRosterReadyRef.current = true;
       const incoming = {};
       const records = {};
       const deletedByMap = {};
       snap.docs.forEach(entry => {
         const data = entry.data() || {};
-        if (data.recordType === 'token-v2' && data.mapId && data.tokenId) {
+        if (data.recordType === 'token-v2' && data.mapId != null && data.tokenId != null) {
           (records[String(data.mapId)] ||= []).push(data);
           if (!entry.metadata.hasPendingWrites && !entry.metadata.fromCache) tokenOutbox.acknowledge(data);
         } else if (Array.isArray(data.tokens)) {
@@ -414,11 +418,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       });
       setMapTokens(prev => {
         const next = { ...prev };
-        for (const mapId of new Set([...Object.keys(incoming), ...Object.keys(records)])) {
-          const legacy = new Map((prev[mapId] || []).map(token => [String(token.id), token]));
-          for (const token of incoming[mapId] || []) legacy.set(String(token.id), token);
-          for (const id of deletedByMap[mapId] || []) legacy.delete(id);
-          const tokens = resolveTokenRoster([...legacy.values()], records[mapId] || [], tokenOutbox.operations(mapId));
+        for (const mapId of new Set([...Object.keys(prev), ...Object.keys(incoming), ...Object.keys(records)])) {
+          // Previous render/boot data supplies positions only, never roster membership.
+          // The complete canonical snapshot and explicit pending edits own the count.
+          const legacy = (incoming[mapId] || []).filter(token => !(deletedByMap[mapId] || []).includes(String(token.id)));
+          const tokens = resolveTokenRoster(legacy, records[mapId] || [], tokenOutbox.operations(mapId));
           next[mapId] = mergeIncomingTokenState(mapId, tokens, prev[mapId] || []);
         }
         mapTokensRef.current = next;
@@ -427,21 +431,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     }, error => console.error('Erro no realtime canônico dos tokens:', error));
     // Canal leve de sincronização ao vivo. O documento contém apenas o mapa ativo
     // e as posições dos tokens, sem carregar novamente a imagem do mapa.
-    const uLive = onSnapshot(doc(db, 'config', 'battlemap_live_tokens'), snap => {
-      if (!snap.exists()) return;
-      const data = snap.data() || {};
-      if (!data.mapId || !Array.isArray(data.tokens)) return;
-      const mapId = String(data.mapId);
-      // O canal leve serve para movimento/boot. Nunca substitui um documento
-      // canônico já recebido, evitando que um snapshot antigo faça inimigos
-      // desaparecerem para os demais jogadores.
-      setMapTokens(prev => {
-        if (Object.prototype.hasOwnProperty.call(prev, mapId)) return prev;
-        const next = { ...prev, [mapId]: data.tokens };
-        mapTokensRef.current = next;
-        return next;
-      });
-    }, error => console.error('Erro no canal ao vivo dos tokens:', error));
+    // Historical battlemap_live_tokens is not a roster authority. Movement stays
+    // on battlemap_live_positions; archived boot arrays can contain removed copies.
 
     const activeMapRef = doc(db, 'config', 'battlemap_active');
     const applyActiveMap = (data) => {
@@ -479,7 +470,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       setFloatingEffects(prev=>[...prev.filter(x=>x.id!==fx.id),fx]);
       setTimeout(()=>setFloatingEffects(prev=>prev.filter(x=>x.id!==fx.id)),2800);
     });
-    return () => { u1(); u1b(); uLive(); u2(); u3(); u4(); uEnemies(); uFog(); uLibrary(); uFx(); };
+    return () => { u1(); u1b(); u2(); u3(); u4(); uEnemies(); uFog(); uLibrary(); uFx(); };
   }, []);
 
 
@@ -1148,18 +1139,25 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     pushToast('Token salvo na biblioteca','📚','#A855F7');
   };
   const addLibraryToken = async (tpl) => {
-    if(!currentMap) return;
-    const token=initializeEnemyToken({...newToken(Date.now()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',enemyId:tpl.enemyId||''},enemyTemplateForToken(tpl));
-    const tokens=[...(currentMap.tokens||[]),token];
-    setMapTokens(prev=>({...prev,[String(currentMap.id)]:tokens}));
-    await writeLiveTokens(currentMap.id,[token],true); setSelectedId(token.id); setShowTokenLibrary(false);
+    if (!currentMap || addingLibraryTokenRef.current) return;
+    addingLibraryTokenRef.current = true;
+    const mapId = String(currentMap.id);
+    const token=initializeEnemyToken({...newToken(crypto.randomUUID()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',enemyId:tpl.enemyId||''},enemyTemplateForToken(tpl));
+    const tokens=[...(mapTokensRef.current[mapId] || currentMap.tokens || []),token];
+    mapTokensRef.current = {...mapTokensRef.current,[mapId]:tokens};
+    setMapTokens(prev=>({...prev,[mapId]:tokens}));
+    setSelectedId(token.id); setShowTokenLibrary(false);
+    try { await writeLiveTokens(mapId,[token],true); }
+    catch { /* The outbox keeps this exact token visible and retryable. */ }
+    finally { addingLibraryTokenRef.current = false; }
   };
+
   const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(doc(db,'battlemap_token_library',String(id))); };
 
 
   const addToken = () => {
     if (!formNome.trim() || !formFoto || !currentMap) return;
-    const nt = initializeEnemyToken({ ...newToken(Date.now()), nome: formNome.trim(), tipo: formTipo, foto: formFoto, sheetId: formSheetId || '', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
+    const nt = initializeEnemyToken({ ...newToken(crypto.randomUUID()), nome: formNome.trim(), tipo: formTipo, foto: formFoto, sheetId: formSheetId || '', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
     updCurrentMap({ tokens: [...(currentMap.tokens || []), nt] });
     setFormNome(''); setFormFoto(''); setFormSheetId(''); setFormEnemyId(''); setShowAddForm(false);
   };

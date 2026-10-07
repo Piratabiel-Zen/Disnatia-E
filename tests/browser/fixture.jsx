@@ -24,10 +24,13 @@ const hud=params.has('hud')||params.has('combat')||params.has('map');
 const master=params.has('master');
 const combat=params.has('combat');
 import BattleMap from '../../.generated/src/features/mapa-batalha/BattleMapPage.jsx';
+import TableCameras from '../../.generated/src/experience/TableCameras.jsx';
 if(combat){window.__testStore.set('config/combat',{active:true});window.__testStore.set('config/combat_state',{initiative:[{id:'p_necro',nome:'Necromante',type:'player'}],turnIdx:0,round:1});}
 if(params.has('map-summons'))window.__testStore.set('sheets/necro',{id:'necro',nome:'Necromante',classe:'necromante',nivel:10,hp:40,vigos:8,invocacoes:[{id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,ataques:[{id:1,nome:'Bicada',custo:1}]}]});
 const summon={id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,forca:8,ataques:[{id:1,nome:'Bicada',custo:1}]};
 const render=async()=>{
+if(params.has('cameras')){const name=params.get('name')||'Jogador de teste';createRoot(document.getElementById('root')).render(<div style={{minHeight:'100vh',background:'#010207'}}><TableCameras access={{role:'player',sheetId:name}} selectedSheet={{id:name,nome:name}} masterMode={false}/></div>);return;}
+
 if(params.has('abilities')){
  if(!window.__testStore.get('config/abilityFixture')){
   window.__testStore.set('sheets/necro',{id:'necro',nome:'Personagem de teste',classe:params.has('custom')?'personalizado':'fogo',nivel:22,hp:40,vigos:7,cooldowns:{'skill-1':2}});

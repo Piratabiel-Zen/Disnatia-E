@@ -10,7 +10,7 @@ export function prepareBuild(steps) {
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'dinastia-build-'));
   try {
     for(const name of ['App.jsx','scripts','src','public'])fs.cpSync(path.join(root,name),path.join(temp,name),{recursive:true});
-    for(const script of steps)execFileSync(process.execPath,[script],{cwd:temp,stdio:'inherit'});
+    for(const script of steps)execFileSync(process.execPath,Array.isArray(script)?script:[script],{cwd:temp,stdio:'inherit'});
     const output=path.join(root,'.generated');
     fs.mkdirSync(output,{recursive:true});
     fs.cpSync(path.join(temp,'src'),path.join(output,'src'),{recursive:true});
