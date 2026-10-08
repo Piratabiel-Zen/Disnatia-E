@@ -33,6 +33,9 @@
     "Investida Ágil": {
       "dano": "+4 de dano",
       "desc": "Troca resistência por velocidade: você avança até 3 passos em 1 ação. O peso da investida garante +4 de dano no seu ataque durante este avanço. O esforço extremo desestabiliza sua base: você sofre -3 de Defesa por 3 rodadas imediatamente após o uso."
+    },
+    "Modo Berserker": {
+      "desc": "Troca resistência por dano e força massivos. Ao usar, perde 3 de Durabilidade (DUR), equivalente a menos 6 pontos de vida temporariamente, por 2 rodadas. Fica imparável — mas exausto, gastando mais 1VC para realizar ações na próxima rodada."
     }
   }
 }
