@@ -47,3 +47,21 @@ The legacy Opera hardening rule formerly hid **all** video elements. It now targ
 Enemy tokens (enemyId or tipo=inimigo) own hp/maxHp with hpMode=individual. Enemy sheets remain templates, and player tokens keep their live sheet binding. The master snapshots legacy enemy HP once from the referenced sheet, preserving legacy explicit maxHp/HP including zero, via per-token field patches in the existing durable outbox. No map roster rewrite, expiry or deletion is introduced. Edits and undo touch only the selected token. Template changes and reloads do not reset token health. Master-only controls allow HP and maximum HP edits; players still receive the shared health bars.
 
 Tests: token-vitals unit coverage plus tests/browser/enemy-token-hp.cjs verify six instances, two browser pages, HP/maxHP editing, rapid adjustments, undo, unchanged enemy template, persistence after reload and player read-only controls. The camera browser regression uses the generated Opera safe CSS with two synthetic camera streams, compact menu, autoplay recovery, media cleanup and full-screen map. This verifies the site's Opera-safe path in Chromium; it is not a claim that a physical Opera GX installation or a real user's camera permissions were tested.
+
+### Deferred session loading
+
+`App.jsx` owns the access screen and navigation state. `AuthenticatedSession.jsx`
+loads after access is accepted and mounts the existing provider and interactive
+surfaces together. The master battle console is a separate lazy chunk, requested
+only for the master on the combat map. Keep the live listeners inside the session
+boundary; do not preload the session from the gate or move event subscriptions
+outside that boundary.
+
+Vite-generated, content-hashed `/assets/` files use immutable browser caching.
+This directory must remain reserved for generated assets with versioned names;
+unversioned media stays in `/media/`. HTML retains Vercel's revalidation policy so
+new releases select new asset URLs. No Firestore documents are cached by this rule.
+
+Run `tests/browser/deferred-session.cjs` against the isolated fixture server to
+check that login defers the session, players defer master controls, dice physics
+stays on demand, and logout unmounts the HUD on desktop and mobile.
