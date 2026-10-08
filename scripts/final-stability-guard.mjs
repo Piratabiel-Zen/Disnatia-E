@@ -73,7 +73,11 @@ for (const [label, rel] of Object.entries(files)) {
   must(fs.existsSync(path.join(root, rel)), `${label}: arquivo gerado ausente (${rel})`);
 }
 
-const app = read(files.app);
+const appEntry = read(files.app);
+const sessionPath = 'src/AuthenticatedSession.jsx';
+const hasSessionSplit = appEntry.includes("import('./AuthenticatedSession')");
+if (hasSessionSplit) must(fs.existsSync(path.join(root, sessionPath)), 'sessão sob demanda ausente');
+const app = appEntry + (hasSessionSplit ? '\n' + read(sessionPath) : '');
 const experience = read(files.experience);
 const game = read(files.game);
 const gameCss = read(files.gameCss);
