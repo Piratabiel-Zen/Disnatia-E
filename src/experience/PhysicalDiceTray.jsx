@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './physical-dice.css';
 
+const OPERA_GX_SAFE = typeof navigator !== 'undefined' && (/OPR\//i.test(navigator.userAgent || '') || /OPRGX/i.test(navigator.userAgent || '') || /Opera GX/i.test(navigator.userAgent || '') || /Opera\//i.test(navigator.userAgent || '') || (typeof location !== 'undefined' && new URLSearchParams(location.search).has('safe')));
+
 const clampSide = value => [4, 6, 8, 10, 12, 20].includes(Number(value)) ? Number(value) : 20;
 
 export default function PhysicalDiceTray({
@@ -67,6 +69,12 @@ export default function PhysicalDiceTray({
     const run = async () => {
       setPhase('loading');
       setFallback(false);
+      if (OPERA_GX_SAFE) {
+        setFallback(true);
+        setPhase('rolling');
+        fallbackTimer = window.setTimeout(settleFallback, 780);
+        return;
+      }
       try {
         const mod = await import('@3d-dice/dice-box-threejs');
         if (cancelled || !hostRef.current) return;

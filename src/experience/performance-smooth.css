@@ -46,3 +46,34 @@
   content-visibility:auto;
   contain-intrinsic-size:auto 320px;
 }
+
+
+/* OPERA GX SAFE GRAPHICS · 2026-09-13 */
+html.opera-gx-safe .cosmic-loop-video{display:none!important}
+html.opera-gx-safe .cosmic-lite-nebula,
+html.opera-gx-safe .cosmic-lite-stars-far,
+html.opera-gx-safe .cosmic-lite-stars-near,
+html.opera-gx-safe .cosmic-bright-star,
+html.opera-gx-safe .immersive-topbar::after,
+html.opera-gx-safe .session-sigil,
+html.opera-gx-safe .grim-live,
+html.opera-gx-safe .access-sigil,
+html.opera-gx-safe .access-panel::before{animation:none!important;will-change:auto!important}
+html.opera-gx-safe .cosmic-lite-nebula{transform:none!important;opacity:.90!important}
+html.opera-gx-safe .cosmic-lite-vortex,
+html.opera-gx-safe .cosmic-shooting-stars{display:none!important}
+html.opera-gx-safe .access-gate::before,
+html.opera-gx-safe .access-gate::after{animation:none!important;filter:none!important;opacity:.18!important}
+html.opera-gx-safe .access-panel,
+html.opera-gx-safe .grim-nav,
+html.opera-gx-safe .mobile-dock,
+html.opera-gx-safe .immersive-topbar,
+html.opera-gx-safe .combat-hud,
+html.opera-gx-safe .master-battle-console,
+html.opera-gx-safe .journal-drawer,
+html.opera-gx-safe .floating-sheet{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.opera-gx-safe .cosmic-living-bg,
+html.opera-gx-safe .cosmic-dark-space,
+html.opera-gx-safe .cosmic-lite-nebula,
+html.opera-gx-safe .cosmic-living-vignette{mix-blend-mode:normal!important;filter:none!important}
+html.opera-gx-safe .session-card{content-visibility:visible!important;contain-intrinsic-size:auto!important}

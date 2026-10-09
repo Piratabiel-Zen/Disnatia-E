@@ -1,5 +1,7 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
+import Personagens from '../../.generated/src/features/personagens/PersonagensPage.jsx';
+import Bestiario from '../../.generated/src/features/bestiario/BestiarioPage.jsx';
 import Cronicas from '../../.generated/src/features/cronicas/CronicasPage.jsx';
 import {ExperienceProvider,ImmersiveNavigation,ExperienceLayer} from '../../.generated/src/experience/ExperienceKit.generated.jsx';
 import GameExperience3 from '../../.generated/src/experience/GameExperience3.adventure.jsx';
@@ -29,6 +31,7 @@ if(combat){window.__testStore.set('config/combat',{active:true});window.__testSt
 if(params.has('map-summons'))window.__testStore.set('sheets/necro',{id:'necro',nome:'Necromante',classe:'necromante',nivel:10,hp:40,vigos:8,invocacoes:[{id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,ataques:[{id:1,nome:'Bicada',custo:1}]}]});
 const summon={id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,forca:8,ataques:[{id:1,nome:'Bicada',custo:1}]};
 const render=async()=>{
+if(params.has('gallery')){createRoot(document.getElementById('root')).render(<main style={{minHeight:'100vh',background:'#010207'}}>{params.get('gallery')==='bestiary'?<Bestiario masterMode={master}/>:<Personagens masterMode={master}/>}</main>);return;}
 if(params.has('cameras')){const name=params.get('name')||'Jogador de teste';createRoot(document.getElementById('root')).render(<div style={{minHeight:'100vh',background:'#010207'}}><TableCameras access={{role:'player',sheetId:name}} selectedSheet={{id:name,nome:name}} masterMode={false}/></div>);return;}
 
 if(params.has('abilities')){
@@ -60,6 +63,6 @@ if(params.has('visitors')||params.has('visitor-admin')){
  createRoot(document.getElementById('root')).render(params.has('visitor-admin')?<ExperienceProvider access={{role:'master'}} masterMode={true} tab='visitantes'><VisitorsPage masterMode={true}/></ExperienceProvider>:<App/>);
  return;
 }
-createRoot(document.getElementById('root')).render(<div className="adventure-shell access-player" style={{background:'#010207',minHeight:'100vh',color:'#eee'}}>{hud?<ExperienceProvider tab={params.has('map')?'mapabatalha':'session'} masterMode={master} playerSheetId="necro"><ImmersiveNavigation tab="session" onNavigate={()=>{}}/><main style={{marginLeft:params.has('map')?76:0,height:params.has('map')?'calc(100vh - 100px)':undefined,display:params.has('map')?'flex':undefined,flexDirection:'column',padding:'70px 12px 170px'}}>{params.has('map')?<BattleMap masterMode={master} playerSheetId="necro"/>:<SummonCard summon={summon} ownerSheet={{id:'necro'}} color="#a855f7" masterMode={false} onChange={()=>{}}/>}</main>{params.has('live-events')&&<><ExperienceLayer onNavigate={()=>{}}/><RealtimeBroadcasts/></>}<PreferenceSurface/><GameExperience3 access={{role:'player',sheetId:'necro'}} masterMode={master} tab={params.has('map')?'mapabatalha':'session'} onNavigate={()=>{}}/></ExperienceProvider>:<Cronicas masterMode={true}/>}</div>);
+createRoot(document.getElementById('root')).render(<div className={'adventure-shell access-'+(master?'master':'player')} style={{background:'#010207',minHeight:'100vh',color:'#eee'}}>{hud?<ExperienceProvider tab={params.has('map')?'mapabatalha':'session'} masterMode={master} playerSheetId="necro"><ImmersiveNavigation tab="session" masterMode={master} onNavigate={()=>{}}/><main style={{marginLeft:params.has('map')?76:0,height:params.has('map')?'calc(100vh - 100px)':undefined,display:params.has('map')?'flex':undefined,flexDirection:'column',padding:'70px 12px 170px'}}>{params.has('map')?<BattleMap masterMode={master} playerSheetId="necro"/>:<SummonCard summon={summon} ownerSheet={{id:'necro'}} color="#a855f7" masterMode={false} onChange={()=>{}}/>}</main>{params.has('live-events')&&<><ExperienceLayer onNavigate={()=>{}}/><RealtimeBroadcasts/></>}<PreferenceSurface/><GameExperience3 access={{role:master?'master':'player',sheetId:'necro'}} masterMode={master} tab={params.has('map')?'mapabatalha':'session'} onNavigate={()=>{}}/></ExperienceProvider>:<Cronicas masterMode={true}/>}</div>);
 
 };render();

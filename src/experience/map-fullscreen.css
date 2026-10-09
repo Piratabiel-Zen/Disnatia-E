@@ -1,16 +1,36 @@
-.battlemap-screen-button{position:absolute;left:12px;bottom:16px;z-index:48;border:1px solid #b99ad966;border-radius:8px;background:#090d18ed;color:#e8d8c0;font:11px 'Cinzel',serif;min-height:36px;padding:8px 12px;cursor:pointer;box-shadow:0 4px 16px #0005}
+.battlemap-screen-button{position:absolute;right:16px;bottom:70px;z-index:48;border:1px solid #b99ad966;border-radius:8px;background:#090d18ed;color:#e8d8c0;font:11px 'Cinzel',serif;min-height:36px;padding:8px 12px;cursor:pointer;box-shadow:0 4px 16px #0005}
 .battlemap-screen-button:focus-visible{outline:2px solid #58d9ff;outline-offset:2px}
-.battlemap-screen-notice{position:absolute;left:12px;bottom:58px;z-index:48;max-width:min(360px,calc(100% - 24px));background:#090d18f5;color:#e8d8c0;border:1px solid #b99ad944;border-radius:6px;padding:8px;font-size:13px;pointer-events:none}
+.battlemap-screen-notice{position:absolute;right:16px;bottom:114px;z-index:48;max-width:min(360px,calc(100% - 24px));background:#090d18f5;color:#e8d8c0;border:1px solid #b99ad944;border-radius:6px;padding:8px;font-size:13px;pointer-events:none}
 html.dinastia-map-fullscreen,html.dinastia-map-fullscreen body{overflow:hidden!important}
 .dinastia-map-fullscreen .adventure-shell,.dinastia-map-fullscreen .immersive-stage,.dinastia-map-fullscreen .immersive-content,.dinastia-map-fullscreen .page-stage{transform:none!important;filter:none!important;animation:none!important;contain:none!important;overflow:visible!important}
 .dinastia-map-fullscreen .battlemap-viewport{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;z-index:230!important;border:0!important;border-radius:0!important;background:radial-gradient(ellipse at center,#21142f 0%,#0b101c 65%,#03050b 100%)!important}
 .dinastia-map-fullscreen .immersive-topbar,.dinastia-map-fullscreen .grim-nav,.dinastia-map-fullscreen .grim-sidebar,.dinastia-map-fullscreen .mobile-dock,.dinastia-map-fullscreen .mobile-nav,.dinastia-map-fullscreen .visitor-character-picker,.dinastia-map-fullscreen .g3-top-context,.dinastia-map-fullscreen .g3-utility-rail,.dinastia-map-fullscreen .g3-master-quickbar,.dinastia-map-fullscreen .player-dock,.dinastia-map-fullscreen .g3-mobile-hud-toggle,.dinastia-map-fullscreen .g3-mobile-session-hub{display:none!important}
 .dinastia-map-fullscreen .table-camera-menu{top:12px;right:12px}
 .dinastia-map-fullscreen .summon-combat-rack{left:12px;top:100px}
-@media(max-width:600px){.battlemap-screen-button{bottom:64px;max-width:170px;font-size:10px}.dinastia-map-fullscreen .battlemap-screen-button{bottom:12px}.dinastia-map-fullscreen .game3-root .g3-actionbar.combat{bottom:52px!important}}
+@media(max-width:600px){.battlemap-screen-button{max-width:170px;font-size:10px}.dinastia-map-fullscreen .game3-root .g3-actionbar.combat{bottom:52px!important}}
 
 /* Master entry stays outside the map; fullscreen exit clears the sheet strip. */
 .battlemap-screen-button.in-heading{position:static;margin-left:auto;flex-shrink:0;box-shadow:none}
-.dinastia-map-fullscreen .battlemap-screen-button{left:auto;right:12px;bottom:56px}
-.dinastia-map-fullscreen .battlemap-screen-notice{left:auto;right:12px;bottom:100px}
-@media(max-width:600px){.battlemap-screen-button.in-heading{max-width:none}.dinastia-map-fullscreen .battlemap-screen-button{bottom:100px}.dinastia-map-fullscreen .battlemap-screen-notice{bottom:144px}}
+.dinastia-map-fullscreen .battlemap-screen-button{left:auto;right:12px;top:70px;bottom:auto}
+.dinastia-map-fullscreen .battlemap-screen-notice{left:auto;right:12px;top:114px;bottom:auto}
+@media(max-width:600px){.battlemap-screen-button.in-heading{max-width:none}.battlemap-master-mark>span:last-child{display:none}}
+
+/* Two compact launchers, one shared popover. No persistent enemy portrait strip. */
+.map-sheet-dock{position:absolute;left:16px;bottom:16px;z-index:46;display:flex;gap:8px;align-items:center;pointer-events:auto}
+.map-dock-trigger{position:relative;display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;padding:0;border:1px solid #a855f777;border-radius:50%;background:#090c17f5;color:#d4bce7;box-shadow:0 5px 18px #0005;cursor:pointer}
+.map-dock-trigger>img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.map-dock-trigger.enemies{border-color:#E8193C88;color:#ed9eab}
+.map-dock-trigger[aria-expanded=true]{border-color:currentColor;background:#252031}
+.map-dock-trigger>small{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:1px 3px;border:1px solid #9b4655;border-radius:9px;background:#1e0b14;color:#f8d3da;font:10px 'Cinzel',serif}
+.map-dock-trigger:focus-visible,.map-sheet-picker button:focus-visible{outline:2px solid #d5b676;outline-offset:2px}
+.map-sheet-picker{position:absolute;left:0;bottom:54px;width:min(285px,calc(100vw - 40px));max-height:min(360px,55vh);display:flex;flex-direction:column;border:1px solid #a855f74d;border-radius:12px;background:#090c17fa;color:#e1d5c7;box-shadow:0 12px 32px #0008;overflow:hidden}
+.map-sheet-picker.enemies{border-color:#E8193C55}
+.map-sheet-picker>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 14px;border-bottom:1px solid #ffffff10;font:600 10px 'Cinzel',serif;letter-spacing:.12em}
+.map-sheet-picker>header>button{width:32px;height:32px;border:0;border-radius:6px;background:transparent;color:#c9b9d4;font-size:20px;cursor:pointer}
+.map-sheet-picker-list{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:6px}
+.map-sheet-picker-list>button{width:100%;display:flex;align-items:center;gap:10px;padding:8px;text-align:left;border:1px solid transparent;border-radius:8px;background:transparent;color:#e1d5c7;cursor:pointer;min-height:48px}
+.map-sheet-picker-list>button:is(:hover,.open){border-color:color-mix(in srgb,var(--class-color) 35%,transparent);background:color-mix(in srgb,var(--class-color) 8%,transparent)}
+.map-picker-portrait{width:32px;height:32px;flex-shrink:0;display:grid;place-items:center;border:1px solid var(--class-color);border-radius:8px;color:var(--class-color);overflow:hidden}.map-picker-portrait img{width:100%;height:100%;object-fit:cover}
+.map-sheet-picker-list>button>span:nth-child(2){min-width:0;display:grid;gap:4px;flex:1}.map-sheet-picker-list b{font:600 11px 'Cinzel',serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.map-sheet-picker-list small{font:11px 'Crimson Text',serif;color:#a393ad}.map-sheet-picker-list i{font-style:normal;color:var(--class-color)}.map-sheet-picker-list p{padding:10px;color:#a393ad}
+.map-picker-create{padding:12px;border:0;border-top:1px solid #ffffff15;background:transparent;color:#d4bce7;font:11px 'Cinzel',serif;cursor:pointer}
+@media(max-width:600px){.map-sheet-dock{left:10px;bottom:12px;gap:6px}.battlemap-zoom-controls{right:10px!important;bottom:12px!important}.battlemap-zoom-controls>span:last-child{display:none!important}.map-sheet-picker{max-height:50vh}}

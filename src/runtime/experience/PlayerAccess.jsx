@@ -204,8 +204,8 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 export function PlayerIdentityChip({ access, onLogout }) {
   if (!access) return null;
   return (
-    <button className="player-identity-chip" onClick={onLogout} title="Trocar usuário">
-      <span>{access.photo ? <img src={access.photo} alt="" /> : access.role === 'master' ? '✦' : (access.name?.[0] || '?')}</span>
+    <button className={'player-identity-chip'+(access.role==='master'?' is-master':'')} onClick={onLogout} title="Trocar usuário">
+      <span>{access.role === 'master' ? 'M' : access.photo ? <img src={access.photo} alt="" /> : (access.name?.[0] || '?')}</span>
       <div><b>{access.name || (access.role === 'master' ? 'Mestre' : 'Jogador')}</b><small>{access.role === 'master' ? 'Mesa do Mestre' : 'Trocar usuário'}</small></div>
     </button>
   );

@@ -664,8 +664,8 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
         </div>)}
       </div>
       <div className="grim-player-mini">
-        <div className="grim-avatar">{selectedSheet?.foto?<img src={selectedSheet.foto}/>:<span>{selectedSheet?.nome?.[0]||'?'}</span>}</div>
-        <div><b>{selectedSheet?.nome||'Escolha sua ficha'}</b><small>{combat?.active?'Em combate':'Explorando Cosmum'}</small></div>
+        <div className={masterMode?"grim-avatar master-sigil":"grim-avatar"}>{masterMode?'M':selectedSheet?.foto?<img src={selectedSheet.foto}/>:<span>{selectedSheet?.nome?.[0]||'?'}</span>}</div>
+        <div><b>{masterMode?'Mestre':selectedSheet?.nome||'Escolha sua ficha'}</b><small>{masterMode?'Conduzindo a mesa':combat?.active?'Em combate':'Explorando Cosmum'}</small></div>
       </div>
     </aside>
 

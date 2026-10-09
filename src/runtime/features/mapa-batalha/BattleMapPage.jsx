@@ -1,3 +1,4 @@
+import MapSheetDock from '../../experience/MapSheetDock';
 import { hasIndividualHp, enemyTokenVitals, initializeEnemyToken } from '../../adventure/tokenVitals.mjs';
 import { createLeaseTracker } from '../../adventure/tokenLease.mjs';
 import { tokenChanges, resolveTokenRoster, tokenOutbox } from '../../adventure/tokenPersistence.mjs';
@@ -221,7 +222,6 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
 
   const [sheets, setSheets] = useState([]);
   const [sheetVitals, setSheetVitals] = useState({});
-  const [showSheetPicker, setShowSheetPicker] = useState(false);
   const [customAbilities, setCustomAbilities] = useState({});
   const [floatingSheets, setFloatingSheets] = useState([]); // {sheetId, x, y, z}
   const [enemies, setEnemies] = useState([]);
@@ -1614,8 +1614,9 @@ const TOKEN_THROTTLE_MS = 80;
 
       {/* CABEÇALHO COMPACTO */}
       <div className="battlemap-heading" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', flexShrink: 0, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 14 }}>🗡️</span>
+        <span style={{ fontSize: 14 }}>{'\u2694'}</span>
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 14, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>Mapa de Batalha</h2>
+        {masterMode&&<div className="battlemap-master-mark" aria-label="Acesso do Mestre"><span className="master-sigil" aria-hidden="true">M</span><span>MESTRE<small>Conduzindo a mesa</small></span></div>}
         {currentMap?.nome && <span style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif' }}>· {currentMap.nome}</span>}
         {masterMode && currentMap?.img && !mapScreen.expanded && <button type="button" className="battlemap-screen-button in-heading" aria-pressed={false} onClick={mapScreen.toggle}>Preencher tela completa</button>}
       </div>
@@ -2014,37 +2015,8 @@ const TOKEN_THROTTLE_MS = 80;
               />
             );
           })}
-          {masterMode && enemies.length > 0 && <div className="enemy-map-strip" style={{position:'absolute',left:70,bottom:16,zIndex:46,maxWidth:'calc(100% - 250px)',display:'flex',alignItems:'center',gap:7,overflowX:'auto',padding:'2px 4px'}}>
-            <span className="enemy-map-divider" title="Inimigos"/>
-            {enemies.map(enemy => {
-              const cls = CLASSES.find(c => c.id === enemy.classe);
-              const color = cls ? (SHEET_COLORS[cls.id] || cls.color || '#FF4F65') : ({Baixo:'#4ADE80','Médio':'#E8A020',Alto:'#FF6B35',Extremo:'#E8193C'}[enemy.perigo] || '#FF4F65');
-              const isOpen = floatingEnemies.some(p => p.enemyId === String(enemy.id));
-              return (
-                <button key={`enemy_${enemy.id}`} className={`enemy-map-bubble ${isOpen?'open':''}`} style={{'--enemy-color':color}} onClick={() => toggleFloatingEnemy(String(enemy.id))} title={`Inimigo: ${enemy.nome || 'Sem nome'}`}>
-                  {enemy.foto ? <img src={enemy.foto} alt=""/> : <span>{cls?.icon || '💀'}</span>}
-                </button>
-              );
-            })}
-          </div>}
-          {/* FICHA DO MAPA — uma única bolinha; Mestre expande a lista */}
-          <div className="battlemap-sheet-launcher" style={{position:'absolute',left:16,bottom:16,zIndex:46}}>
-            <button
-              onClick={()=>{
-                if(!masterMode){ const own=sheets[0]; if(own){ handleSelectSheet(own); setShowSheetPicker(false); } return; }
-                setShowSheetPicker(v=>!v);
-              }}
-              title={masterMode?'Fichas dos personagens':(sheets[0]?.nome||'Minha ficha')}
-              style={{width:46,height:46,borderRadius:'50%',padding:0,border:'2px solid rgba(168,85,247,.45)',background:'rgba(6,8,18,.92)',color:'#C8A8E8',cursor:'pointer',overflow:'hidden',display:'grid',placeItems:'center',boxShadow:'0 5px 18px rgba(0,0,0,.58),0 0 14px rgba(168,85,247,.14)',backdropFilter:'none'}}
-            >
-              {!masterMode&&sheets[0]?.foto?<img src={sheets[0].foto} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:20}}>👤</span>}
-            </button>
-            {masterMode&&showSheetPicker&&<div style={{position:'absolute',left:0,bottom:54,width:220,maxHeight:280,overflowY:'auto',padding:8,borderRadius:12,border:'1px solid rgba(168,85,247,.24)',background:'rgba(7,5,17,.97)',boxShadow:'0 14px 34px rgba(0,0,0,.7)',backdropFilter:'none'}}>
-              <div style={{fontFamily:'Cinzel,serif',fontSize:8,letterSpacing:'.18em',color:'#756284',padding:'3px 5px 8px'}}>FICHAS DA MESA</div>
-              {sheets.map(s=>{const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];const sc=SHEET_COLORS[s.classe]||cls.color;return <button key={s.id} onClick={()=>{handleSelectSheet(s);setShowSheetPicker(false)}} style={{width:'100%',display:'flex',alignItems:'center',gap:8,padding:'7px 8px',marginBottom:4,borderRadius:8,border:'1px solid rgba(255,255,255,.055)',background:'rgba(255,255,255,.02)',color:'#C8B8A0',cursor:'pointer',textAlign:'left'}}>{s.foto?<img src={s.foto} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1px solid ${sc}55`}}/>:<span style={{width:28,height:28,borderRadius:'50%',display:'grid',placeItems:'center',background:`${sc}12`}}>{cls.icon}</span>}<span style={{fontFamily:'Cinzel,serif',fontSize:9,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.nome||'Personagem'}</span></button>})}
-              {sheets.length<15&&<button onClick={()=>{quickAddSheet();setShowSheetPicker(false)}} style={{width:'100%',padding:7,borderRadius:8,border:'1px dashed rgba(255,255,255,.18)',background:'transparent',color:'#7A6985',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:8}}>＋ Criar ficha</button>}
-            </div>}
-          </div>
+          <MapSheetDock masterMode={masterMode} sheets={sheets} enemies={enemies} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet}/>
+
 
         </div>
       )}
@@ -2097,7 +2069,7 @@ function FloatingSheetPanel({ sheet, color, pos, zIndex, customAbilities, onSave
   }, [onDrag, onClose]);
 
   return (
-    <div className="floating-sheet" onPointerDown={onFocus} style={{ position: 'fixed', left: pos.x, top: pos.y, width: 320, maxHeight: '68vh', zIndex, background: 'rgba(8,10,22,0.98)', border: `1px solid ${color}55`, borderRadius: 12, boxShadow: '0 14px 44px rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="floating-sheet" onPointerDown={onFocus} style={{ '--class-color':color, position: 'fixed', left: pos.x, top: pos.y, width: 320, maxHeight: '68vh', zIndex, background: 'rgba(8,10,22,0.98)', border: `1px solid ${color}55`, borderRadius: 12, boxShadow: '0 14px 44px rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div
         onPointerDown={onHeaderDown}
         onTouchStart={onHeaderDown}
