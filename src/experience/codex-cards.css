@@ -1,0 +1,22 @@
+.codex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:18px;align-items:stretch}
+.codex-card{position:relative;display:flex;flex-direction:column;width:100%;min-width:0;padding:0;overflow:hidden;text-align:left;cursor:pointer;border:1px solid color-mix(in srgb,var(--codex-color) 30%,#202030);border-radius:12px;background:#090b15;color:#ece0ce;box-shadow:0 6px 20px #0003;transition:transform .22s ease,border-color .22s ease;isolation:isolate}
+.codex-card-art{display:block;position:relative;width:100%;aspect-ratio:16/11;overflow:hidden;background:radial-gradient(ellipse at 30% 15%,color-mix(in srgb,var(--codex-color) 15%,#10101d),#050710)}
+.codex-card-art>img{width:100%;height:100%;object-fit:cover;object-position:center 25%;display:block;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.codex-card-placeholder{height:100%;display:grid;place-items:center;font:56px 'Cinzel Decorative',serif;color:var(--codex-color);opacity:.3}
+.codex-card-shade{position:absolute;inset:0;background:linear-gradient(180deg,#04061177,transparent 30%,#07091455 55%,#090b15 100%);pointer-events:none}
+.codex-card-category,.codex-card-badge{position:absolute;top:12px;font:600 9px 'Cinzel',serif;letter-spacing:.1em;text-transform:uppercase}
+.codex-card-category{left:12px;color:#ddd0bb;background:#080913ac;border:1px solid #ffffff20;padding:5px 7px;border-radius:4px}
+.codex-card-badge{right:12px;max-width:55%;color:var(--codex-color);background:#080913e8;border:1px solid color-mix(in srgb,var(--codex-color) 45%,transparent);padding:5px 7px;border-radius:4px}
+.codex-card-identity{position:absolute;bottom:10px;left:16px;right:16px;display:grid;gap:5px}
+.codex-card-identity strong{font:600 clamp(16px,1.5vw,20px)/1.3 'Cinzel',serif;overflow-wrap:anywhere}
+.codex-card-identity small{font:11px 'Crimson Text',serif;color:#c3b3c9;line-height:1.4}
+.codex-card-body{display:flex;flex-direction:column;flex:1;gap:14px;padding:2px 16px 14px}
+.codex-card-description{color:#a99aad;font:15px/1.55 'Crimson Text',serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:3.1em}
+.codex-card-action{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto;border-top:1px solid #ffffff0e;padding-top:11px;color:var(--codex-color);font:600 10px 'Cinzel',serif}
+.codex-card-action>span{font-size:17px;transition:transform .22s ease}
+.codex-card:focus-visible{outline:2px solid var(--codex-color);outline-offset:3px}
+@media(hover:hover) and (pointer:fine){.codex-card:hover{transform:translateY(-3px);border-color:var(--codex-color)}.codex-card:hover .codex-card-art>img{transform:scale(1.04)}.codex-card:hover .codex-card-action>span{transform:translate(2px,-2px)}}
+@media(max-width:600px){.codex-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.codex-card-art{aspect-ratio:4/5}.codex-card-identity{left:10px;right:10px}.codex-card-identity strong{font-size:14px}.codex-card-body{padding:2px 10px 12px;gap:9px}.codex-card-category{left:8px;top:8px;font-size:8px;padding:4px}.codex-card-badge{top:34px;left:8px;right:auto;max-width:calc(100% - 16px);font-size:8px}.codex-card-description{font-size:13px}.codex-card-action{font-size:9px}}
+@media(max-width:350px){.codex-grid{grid-template-columns:1fr}}
+html[data-quality=light] .codex-card,html[data-quality=light] .codex-card *,html[data-effects=reduced] .codex-card,html[data-effects=reduced] .codex-card *{animation:none!important;transition:none!important;transform:none!important}
+@media(prefers-reduced-motion:reduce){.codex-card,.codex-card *{animation:none!important;transition:none!important;transform:none!important}}

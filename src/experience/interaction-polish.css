@@ -1,0 +1,32 @@
+/* Small paint areas; effects start only on intentional hover or keyboard focus. */
+@property --ability-turn{syntax:'<angle>';initial-value:0deg;inherits:false}
+:is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"]){position:relative;isolation:isolate}
+:is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;border:1px solid var(--class-color,var(--g3-c,var(--summon-color,var(--combat-accent,#a855f7))));transition:opacity .18s ease}
+:is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"]):focus-visible{outline:2px solid var(--class-color,var(--g3-c,var(--summon-color,var(--combat-accent,#a855f7))));outline-offset:3px}
+@supports (mask-composite:exclude){
+ :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{border:0;padding:2px;background:conic-gradient(from var(--ability-turn),transparent 62%,var(--class-color,var(--g3-c,var(--summon-color,var(--combat-accent,#a855f7)))) 85%,#fff5 94%,transparent);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+}
+@keyframes abilityContour{to{--ability-turn:360deg}}
+@media(hover:hover) and (pointer:fine){
+ :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"]):not(:disabled):is(:hover,:focus-visible)::after{opacity:1;animation:abilityContour 1.65s linear infinite}
+ .g3-utility-rail button>span,.g3-master-quickbar button>span{transition:transform .18s ease}
+ .g3-utility-rail button:hover>span,.g3-master-quickbar button:hover>span{transform:translateY(-2px)}
+ .g3-primary-wide,.g3-director-row button,.map-dock-trigger{transition:transform .18s ease,border-color .18s ease}
+ .g3-primary-wide:hover,.g3-director-row button:hover{border-color:#d6b977;transform:translateY(-1px)}
+ .map-dock-trigger:hover{transform:translateY(-2px)}
+}
+.g3-primary-wide:active,.g3-director-row button:active,.map-dock-trigger:active{transform:scale(.97)}
+.master-sigil{display:inline-grid;place-items:center;flex-shrink:0;width:34px;height:38px;position:relative;border:1px solid #b99249;border-radius:8px 8px 12px 12px;background:linear-gradient(140deg,#342412,#10101a 65%);color:#f6d797;font:900 24px/1 'Cinzel Decorative',serif;text-shadow:0 1px 2px #000;box-shadow:inset 0 0 0 3px #c5a66313}
+.master-sigil::after{content:'';position:absolute;inset:4px;border:1px solid #d4af6240;border-radius:5px 5px 9px 9px;pointer-events:none}
+.g3-presence-avatar.master{width:34px;height:36px;border-radius:8px;border-color:#b99249;background:#100e15;color:#f6d797}
+.g3-presence-avatar.master>b{font:900 22px 'Cinzel Decorative',serif!important;color:#f6d797}
+.player-identity-chip.is-master>span{width:34px;height:36px;border:1px solid #b99249;border-radius:8px;background:linear-gradient(140deg,#342412,#10101a);color:#f6d797;font:900 23px 'Cinzel Decorative',serif}
+.battlemap-master-mark{display:flex;align-items:center;gap:8px;margin-right:3px}
+.battlemap-master-mark>span:last-child{display:grid;gap:3px;font:700 9px 'Cinzel',serif;letter-spacing:.08em;color:#e5ca8d}.battlemap-master-mark small{font:9px 'Crimson Text',serif;letter-spacing:0;color:#99b59b}
+.grim-avatar.master-sigil{width:36px;height:40px;border-radius:8px!important}
+html[data-quality=light] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after,
+html[data-effects=reduced] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation:none!important;transition:none!important}
+html[data-quality=light] :is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger),html[data-effects=reduced] :is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger){transition:none!important;transform:none!important}
+html[data-effects=subtle] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation-iteration-count:1!important}
+html[data-away=true] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){:is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation:none!important;transition:none!important}:is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger){transition:none!important;transform:none!important}}

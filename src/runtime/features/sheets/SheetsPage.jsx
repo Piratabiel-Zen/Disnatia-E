@@ -1,3 +1,4 @@
+import CodexCard from '../../experience/CodexCard';
 import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,setDoc,query,where } from "firebase/firestore";
@@ -56,7 +57,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
 
   const activeSheet=sheets.find(s=>String(s.id)===activeId);
   return(
-    <div style={{maxWidth:1360,margin:'0 auto',padding:'20px 14px 80px'}}>
+    <div style={{'--class-color':SHEET_COLORS[activeSheet?.classe]||CLASSES.find(c=>c.id===activeSheet?.classe)?.color||'#a855f7',maxWidth:1360,margin:'0 auto',padding:'20px 14px 80px'}}>
       <div style={{textAlign:'center',marginBottom:20}}>
         <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Os Portadores do Destino</div>
         <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:22,color:'#E8D8C0',fontWeight:700,margin:0}}>{visitorId||access?.role==='visitor'?'Personagens do visitante':'Fichas dos Personagens'}</h2>
@@ -82,7 +83,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
       )}
       {loaded&&(<>
         <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:18}}>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'center',alignItems:'center'}}>
+        <div className={activeSheet?'sheet-portrait-selector':'codex-grid'} style={activeSheet?{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'center',alignItems:'center'}:undefined}>
           {sheets.map(s=>{
             const cls=CLASSES.find(c=>c.id===s.classe)||CLASSES[0];
             const sc=SHEET_COLORS[s.classe]||cls.color;
@@ -90,6 +91,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
             const hasPts=(s.attrPoints||0)>0;
             const locked=!masterMode&&access?.role!=='visitor'&&s.senha&&String(playerSheetId||'')!==String(s.id)&&!unlockedIds[String(s.id)];
             const hasCooldown=masterMode&&Object.values(s.cooldowns||{}).some(v=>v>0);
+            if(!activeSheet)return <CodexCard key={s.id} name={s.nome} photo={s.foto} color={sc} category="Personagem" meta={cls.name+' · Nv '+(s.nivel||1)} badge={locked?'Protegida':undefined} description={hasPts?'Há pontos de atributo disponíveis.':'Atributos, recursos e habilidades da sua ficha.'} action="Abrir ficha" onClick={()=>handleTabClick(s)}/>;
             return(
               <button key={s.id} onClick={()=>handleTabClick(s)} title={s.nome||'Sem nome'} aria-label={s.nome||'Sem nome'} style={{
                 flexShrink:0, width:54, height:54, borderRadius:'50%', padding:0,
