@@ -16,7 +16,11 @@ const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.
     const image=c.toDataURL();
     window.__testStore.set('battlemaps/test',{id:'test',nome:'Campo isolado',img:image});
     window.__testStore.set('config/battlemap_active',{activeId:'test'});
-    window.__testStore.set('battlemap_tokens/test',{tokens:[{id:'t',nome:'Teste',tipo:'inimigo',x:50,y:50,size:70,hp:20,maxHp:20}]});
+    window.__testStore.set('sheets/necro',{id:'necro',nome:'Kenai de teste',classe:'fogo',hp:18,hp_max:20});
+    window.__testStore.set('battlemap_tokens/test',{tokens:[
+      {id:'t',nome:'Inimigo oculto',tipo:'inimigo',x:50,y:50,size:70,hp:20,maxHp:20},
+      {id:'own',nome:'Kenai',tipo:'jogador',sheetId:'necro',x:30,y:50,size:70,hp:18,maxHp:20}
+    ]});
     for(let n=0;n<16;n++)window.__testStore.set('enemies/e'+n,{id:'e'+n,nome:'Inimigo '+n,hp:20,hp_max:20,perigo:'Médio'});
     window.__testStore.set('presence/remote-master',{role:'master',name:'Mestre',online:true,photo:image,updatedAt:Date.now()});
    });
@@ -24,10 +28,18 @@ const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.
    await page.mouse.move(600,50);
    await page.waitForFunction(()=>document.querySelector('.grim-nav').getBoundingClientRect().width<80);
    assert.equal(await page.locator('.enemy-map-strip').count(),0);
+   const enemyTokenText=await page.locator('[data-token-id="t"]').textContent();
+   const ownTokenText=await page.locator('[data-token-id="own"]').textContent();
+   if(master){assert.match(enemyTokenText,/20\\/20/);assert.match(ownTokenText,/18\\/20/);}
+   else {assert.doesNotMatch(enemyTokenText,/20\\/20/);assert.match(ownTokenText,/18\\/20/);}
    assert.equal(await page.locator('.g3-presence-avatar.master img').count(),0);
    assert.equal(await page.locator('.g3-presence-avatar.master b').first().textContent(),'M');
    assert.equal(await page.locator('.map-dock-trigger').count(),master?2:1);
    if(master){
+    assert.equal(await page.locator('.mbc-setup-summary strong').textContent(),'0');
+    await page.getByRole('button',{name:'Escolher participantes',exact:true}).click();
+    assert.equal(await page.locator('.mbc-picker-col>button.selected').count(),0);
+    await page.getByRole('button',{name:'Ocultar seleção',exact:true}).click();
     assert.equal(await page.locator('.battlemap-master-mark .master-sigil').textContent(),'M');
     assert.equal(await page.locator('.grim-avatar img').count(),0);
     await page.getByRole('button',{name:'Fichas dos inimigos',exact:true}).click();

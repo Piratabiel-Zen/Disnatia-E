@@ -73,12 +73,16 @@ export default function MasterBattleConsole() {
   },[]);
 
   useEffect(()=>{
-    if (!selectedPlayers.length && sheets.length) setSelectedPlayers(sheets.map(s=>asId(s.id)));
-  },[sheets]);
-
-  useEffect(()=>{
     if (combat.active) { setSetupOpen(false); setConfirmEnd(false); }
+    else {
+      // Every new preparation starts clean: the Mestre chooses only the
+      // characters and enemies that will actually participate this time.
+      setSelectedPlayers([]);
+      setSelectedEnemies([]);
+    }
   },[combat.active]);
+
+
 
   const initiative=Array.isArray(state.initiative)?state.initiative:[];
   const turnIdx=Math.max(0,Math.min(initiative.length-1,Number(state.turnIdx||0)));
