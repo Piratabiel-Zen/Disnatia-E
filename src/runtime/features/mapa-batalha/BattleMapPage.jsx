@@ -1806,6 +1806,10 @@ const TOKEN_THROTTLE_MS = 80;
                   const independentVitals = hasIndividualHp(token) ? enemyTokenVitals(token,enemyTemplateForToken(token)) : null;
                   const displayHp = independentVitals ? independentVitals.hp : (linkedSheetVitals ? Number(linkedSheetVitals.hp||0) : Number(token.hp||0));
                   const displayMaxHp = independentVitals ? independentVitals.maxHp : (linkedSheetVitals ? Number(linkedSheetVitals.maxHp||1) : Number(token.maxHp||0));
+                  // Players see exact HP only for the token linked to their own
+                  // sheet. Everyone else sees the tactical bar without numbers.
+                  const isOwnLinkedToken = !!token.sheetId && !!playerSheetId && String(token.sheetId) === String(playerSheetId);
+                  const canSeeTokenHp = masterMode || isOwnLinkedToken;
                   const healthRingColor = displayMaxHp > 0 ? hpColor(displayHp, displayMaxHp) : 'transparent';
                   return (
                     <div
@@ -1825,7 +1829,7 @@ const TOKEN_THROTTLE_MS = 80;
                       }}
                     >
                      {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,borderRadius:'50%',border:`${1.5*tokenScale}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
-                     {displayMaxHp>0 && <>{(masterMode || !hasIndividualHp(token)) && (<div style={{fontSize:9*tokenScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*tokenScale,padding:`${1*tokenScale}px ${6*tokenScale}px`,marginBottom:1*tokenScale,textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*tokenScale,dispSize),height:5*tokenScale,borderRadius:5*tokenScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*tokenScale}px solid rgba(255,255,255,.2)`,marginBottom:1*tokenScale}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/></div></>}
+                     {displayMaxHp>0 && <>{canSeeTokenHp && (<div style={{fontSize:9*tokenScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*tokenScale,padding:`${1*tokenScale}px ${6*tokenScale}px`,marginBottom:1*tokenScale,textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*tokenScale,dispSize),height:5*tokenScale,borderRadius:5*tokenScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${.7*tokenScale}px solid rgba(255,255,255,.2)`,marginBottom:1*tokenScale}}><div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/></div></>}
                      <div style={{
                       width: dispSize, height: dispSize,
                       background: 'transparent', overflow: 'visible',
