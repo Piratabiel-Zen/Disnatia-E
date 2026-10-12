@@ -1,0 +1,15 @@
+.acquired-knowledge{max-width:1240px;margin:24px auto 0;padding:28px 16px 60px;border-top:1px solid #a597bb40;color:#ded5e9}
+.acquired-knowledge>header{margin-bottom:28px}.acquired-knowledge h3{font:600 25px Cinzel,serif;margin:8px 0}.acquired-knowledge p{font-size:17px;line-height:1.65;margin:8px 0}.acquired-kicker{font:600 10px Cinzel,serif;text-transform:uppercase;color:#cba0ef}
+.acquired-spell{display:grid;grid-template-columns:90px minmax(0,1fr);gap:24px;padding:32px;border:1px solid #a56cdb70;border-radius:8px;background:#170e25;box-shadow:inset 3px 0 #b68ce9}
+.acquired-spell h4{font:600 23px Cinzel,serif;color:#f0ddff;margin:8px 0 16px}.acquired-spell-rune{align-self:start;font-size:64px;text-align:center;color:#cfa8ff;text-shadow:0 0 26px #a855f770;animation:acquiredGlow 5s ease-in-out infinite}
+.acquired-spell dl{display:flex;flex-wrap:wrap;gap:24px;margin:24px 0 0}.acquired-spell dt{font:600 10px Cinzel,serif;color:#b6a4c8}.acquired-spell dd{font-size:19px;color:#f2dfff;margin:6px 0 0}
+.acquired-files{border-top-color:#c08b8144}.acquired-files .acquired-kicker{color:#d8a399}.acquired-files>header p{font-size:13px;color:#afaba7}.acquired-file-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px}
+.acquired-file{padding:0;overflow:hidden;text-align:left;border:1px solid #75696275;border-radius:5px;background:#121318;color:#e7ded4;cursor:zoom-in;transition:border-color .2s,transform .2s}.acquired-file-image{aspect-ratio:1103/1426;overflow:hidden;background:#08090c}.acquired-file img{width:100%;height:100%;object-fit:contain;display:block}
+.acquired-file-caption{display:flex;flex-direction:column;gap:7px;padding:16px}.acquired-file small{color:#a6a1a0;font:600 10px Cinzel,serif}.acquired-file strong{font:600 14px Cinzel,serif;line-height:1.5;overflow-wrap:anywhere}.acquired-file em{align-self:flex-start;font:600 9px Cinzel,serif;color:#e6a39a;border:1px solid #a24f4f;padding:3px 7px;text-transform:uppercase}
+@media(hover:hover){.acquired-file:hover{border-color:#d8a399;transform:translateY(-3px)}}
+@keyframes acquiredGlow{50%{opacity:.65;text-shadow:0 0 14px #a855f730}}
+@media(max-width:600px){.acquired-knowledge{padding:20px 4px 60px}.acquired-spell{grid-template-columns:1fr;padding:22px;gap:8px}.acquired-spell-rune{font-size:38px;text-align:left}.acquired-spell h4{font-size:21px}.acquired-file-grid{gap:14px}}
+@media(prefers-reduced-motion:reduce){.acquired-spell-rune{animation:none}.acquired-file{transition:none}}
+html[data-quality=light] .acquired-spell-rune,html[data-effects=reduced] .acquired-spell-rune{animation:none}
+.adventure-shell .livro-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));align-items:stretch;overflow:visible;gap:10px;padding:0;margin-bottom:20px;max-width:100%}
+.adventure-shell .livro-tab{flex:0 1 auto;min-width:0;min-height:44px;white-space:normal;padding:10px 14px}

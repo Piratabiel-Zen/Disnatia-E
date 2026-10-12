@@ -16,6 +16,7 @@ import '../../.generated/src/experience/experience.css';
 import '../../.generated/src/experience/site-polish.css';
 import '../../src/experience/mobile-player-polish.css';
 import App from '../../.generated/src/App.generated.jsx';
+import AuthenticatedSession from '../../.generated/src/AuthenticatedSession.jsx';
 import VisitorsPage from '../../.generated/src/experience/VisitorsPage.jsx';
 import {passwordRecord} from '../../src/adventure/visitorAccess.mjs';
 import '../../.generated/src/experience/visitor-summons.css';
@@ -31,6 +32,11 @@ if(combat){window.__testStore.set('config/combat',{active:true});window.__testSt
 if(params.has('map-summons'))window.__testStore.set('sheets/necro',{id:'necro',nome:'Necromante',classe:'necromante',nivel:10,hp:40,vigos:8,invocacoes:[{id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,ataques:[{id:1,nome:'Bicada',custo:1}]}]});
 const summon={id:'bird',nome:'Corvo',hp:40,hp_bonus:7,revealed:true,forca:8,ataques:[{id:1,nome:'Bicada',custo:1}]};
 const render=async()=>{
+if(params.has('knowledge')||params.has('header-check')){
+ const tab=params.has('knowledge')?'livro':params.has('map')?'mapabatalha':'cronicas';
+ createRoot(document.getElementById('root')).render(<AuthenticatedSession access={{role:master?'master':'player',sheetId:'necro'}} playerSheetId="necro" tab={tab} masterMode={master} quality="light" setQuality={()=>{}} atm={{bg:'#010207',accent:'#a855f7'}} logout={()=>{}} navigate={()=>{}} prefetch={()=>{}} lockPageScroll={false} ActivePage={tab==='livro'?Livro:tab==='mapabatalha'?BattleMap:Cronicas} setMasterMode={()=>{}} TAB_LABELS={{livro:'Livro da Mandíbula',cronicas:'Crônicas',mapabatalha:'Mapa de Batalha'}}/>);
+ return;
+}
 if(params.has('gallery')){createRoot(document.getElementById('root')).render(<main style={{minHeight:'100vh',background:'#010207'}}>{params.get('gallery')==='bestiary'?<Bestiario masterMode={master}/>:<Personagens masterMode={master}/>}</main>);return;}
 if(params.has('cameras')){const name=params.get('name')||'Jogador de teste';createRoot(document.getElementById('root')).render(<div style={{minHeight:'100vh',background:'#010207'}}><TableCameras access={{role:'player',sheetId:name}} selectedSheet={{id:name,nome:name}} masterMode={false}/></div>);return;}
 

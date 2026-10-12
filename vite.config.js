@@ -86,7 +86,8 @@ function dinastiaModularBuild() {
         "scripts/install-canonical-runtime.mjs",
         "scripts/sandalier-artifact-patch.mjs",
         "scripts/ability-vigor-patch.mjs",
-        "scripts/class-ability-scaling-patch.mjs"
+        "scripts/class-ability-scaling-patch.mjs",
+        "scripts/acquired-knowledge-patch.mjs"
       ])
     },
   }

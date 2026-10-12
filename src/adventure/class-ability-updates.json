@@ -1,4 +1,9 @@
 {
+  "necromante": {
+    "Corte do Silêncio": {
+      "desc": "O primeiro corte certeiro marca um local específico do corpo do inimigo com uma runa negra. O alvo sofre 2 de dano por rodada + SOR durante 2 rodadas. Se acertar novamente o mesmo local marcado com Corte do Silêncio, o membro atingido fica inutilizado por 2 rodadas; se o local marcado for uma região crítica, o alvo fica atordoado (stun) por 2 rodadas. O primeiro acerto apenas marca e aplica o dano contínuo, sem inutilizar o membro nem atordoar."
+    }
+  },
   "corvos": {
     "Precisão Celestial": {
       "dano": "Dano do disparo + PER",
