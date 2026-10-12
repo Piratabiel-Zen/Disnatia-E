@@ -1,0 +1,21 @@
+/* Shared clearance follows the actual header, including wrapped master tools. */
+.adventure-shell .game3-root:has(.g3-right-drawer){z-index:900}
+.adventure-shell :is(.game3-tab-livro,.game3-tab-cronicas) :is(.g3-utility-rail,.g3-master-quickbar){display:none!important}
+.adventure-shell .immersive-topbar{height:auto!important;flex-shrink:0;flex-wrap:wrap;gap:8px;padding-top:8px!important;padding-bottom:8px!important}
+.adventure-shell .immersive-topbar .brand-line{flex-shrink:0;min-width:0}
+.adventure-shell .immersive-topbar .top-actions{min-width:0;max-width:100%;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.adventure-shell .immersive-content{scroll-padding-top:16px}
+.adventure-shell .g3-right-drawer{top:calc(var(--de-header-bottom,58px) + 12px)!important;max-height:calc(100dvh - var(--de-header-bottom,58px) - 108px)!important;display:flex;flex-direction:column}
+.adventure-shell .g3-drawer-head{height:auto;min-height:62px;flex-shrink:0;gap:12px;padding-top:12px;padding-bottom:12px}
+.adventure-shell .g3-drawer-head>div{min-width:0}.adventure-shell .g3-drawer-head h2{white-space:normal;overflow-wrap:anywhere}.adventure-shell .g3-drawer-head>button{flex-shrink:0;min-width:40px;min-height:40px}
+.adventure-shell .g3-drawer-scroll{height:auto;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.adventure-shell .master-battle-console{max-height:calc(100dvh - var(--de-header-bottom,58px) - 120px)!important;overflow:auto!important;overscroll-behavior:contain}
+.adventure-shell .mbc-head{position:sticky;top:0;z-index:2;flex-shrink:0;background:#0d0918;min-height:48px}
+.adventure-shell .g3-director-row{flex-wrap:wrap}.adventure-shell .g3-director-row>*{min-width:0}
+@media(max-width:900px){
+ .adventure-shell .immersive-topbar{flex-wrap:wrap!important;padding-right:12px!important}
+ .adventure-shell .immersive-topbar .top-actions{flex:1 1 100%;justify-content:flex-start}
+ .adventure-shell .g3-right-drawer{left:8px!important;right:8px!important;width:auto!important;bottom:78px!important;max-height:calc(100dvh - var(--de-header-bottom,58px) - 90px)!important}
+ .adventure-shell .master-battle-console{max-height:calc(100dvh - var(--de-header-bottom,58px) - 120px)!important}
+ .adventure-shell .g3-top-context{top:calc(var(--de-header-bottom,58px) + 8px)!important}
+}

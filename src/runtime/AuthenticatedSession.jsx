@@ -1,4 +1,6 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef } from 'react';
+import useHeaderClearance from './experience/useHeaderClearance';
+import './experience/interface-clearance.css';
 import { ToastContainer } from './core/toast';
 import RealtimeBroadcasts from './experience/RealtimeBroadcasts';
 import MasterToggle from './shell/MasterToggle';
@@ -29,6 +31,8 @@ function PageSkeleton(){
 }
 
 export default function AuthenticatedSession({access,playerSheetId,tab,masterMode,quality,setQuality,atm,logout,navigate,prefetch,lockPageScroll,ActivePage,setMasterMode,TAB_LABELS}){
+  const headerRef=useRef(null);
+  useHeaderClearance(headerRef);
   return(
     <ExperienceProvider key={`${access.role}:${playerSheetId || access.visitorId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId} access={access}>
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
@@ -46,7 +50,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
         <ImmersiveNavigation tab={tab} onNavigate={navigate} onPrefetch={prefetch} accent={atm.accent} masterMode={masterMode}/>
 
         <div className="immersive-stage">
-          <header className="immersive-topbar">
+          <header ref={headerRef} className="immersive-topbar">
             <div className="brand-line">
               <span className="brand-mark">✦</span>
               <div>
