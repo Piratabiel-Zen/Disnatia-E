@@ -37,6 +37,7 @@ html[data-away=true] .g3-environment *,html[data-away=true] .g3-orb-wave{animati
 @media(prefers-reduced-motion:reduce){.g3-right-drawer,.g3-feedback,.g3-orb-wave{animation:none!important}}
 @media(max-width:900px){
  .access-player .mobile-dock,.access-player .g3-mobile-session-hub,.access-player .g3-mobile-hud-toggle,.access-player .g3-utility-rail{display:none!important}
+ .game3-root .g3-utility-rail{display:none!important}
  .player-dock{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:8px;right:8px;bottom:calc(6px + env(safe-area-inset-bottom,0px));height:64px;z-index:610;background:#0a0815f5;border:1px solid #a855f744;border-radius:16px;padding:4px;box-shadow:0 6px 24px #0008;pointer-events:auto}
  .player-dock button{display:grid;place-content:center;gap:4px;background:transparent;border:0;border-radius:10px;color:#a594b9;min-height:48px}.player-dock button[aria-pressed=true]{background:#a855f721;color:#ebd7ff}.player-dock span{font-size:20px}.player-dock small{font:10px 'Cinzel',serif}
  .access-player .game3-root .g3-actionbar.combat{bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;max-height:190px!important;padding:8px;display:grid!important;grid-template-columns:1fr;overflow:hidden!important}
