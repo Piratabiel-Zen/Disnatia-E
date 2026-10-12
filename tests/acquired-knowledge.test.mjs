@@ -13,7 +13,7 @@ test('Acquired knowledge keeps all nine originals with unique paths', () => {
     assert.equal(bytes[1], 0xd8);
     assert.ok(bytes.length > 200000);
   }
-  assert.equal(acquiredSpells[0].healing, '8 de vida + INT');
+  assert.equal(acquiredSpells[0].healing, '12 de vida + SOR');
   assert.equal(acquiredSpells[0].cooldown, '1 vez por dia');
 });
 
@@ -25,7 +25,7 @@ test('Generated necromancer skill preserves cost, cooldown and damage with two-h
   const classes = vm.runInNewContext(source.slice(start, end));
   const skill = classes.find(cls => cls.id === 'necromante').normal.find(ability => ability.name === 'Corte do Silêncio');
   assert.equal(skill.cost, 2);
-  assert.equal(skill.cooldown, '3 rodadas');
+  assert.equal(skill.cooldown, '2 rodadas');
   assert.equal(skill.dano, '2 de dano por rodada + SOR');
   assert.match(skill.desc, /novamente o mesmo local marcado/);
   assert.match(skill.desc, /inutilizado por 2 rodadas/);

@@ -1,8 +1,8 @@
 export const acquiredSpells = [{
   id: 'restauracao-completa',
   name: 'Restauração Completa',
-  description: 'Quando conjurada, cura cada integrante do grupo em 8 pontos de vida + INT (bônus de Inteligência de quem conjura). Pode ser utilizada uma vez a cada dia da campanha.',
-  healing: '8 de vida + INT',
+  description: 'Quando conjurada, cura cada integrante do grupo em 12 pontos de vida + SOR (bônus de Sorte de quem conjura). Pode ser utilizada uma vez a cada dia da campanha.',
+  healing: '12 de vida + SOR',
   cooldown: '1 vez por dia',
 }];
 
