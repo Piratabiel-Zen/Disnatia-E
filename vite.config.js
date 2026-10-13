@@ -87,7 +87,8 @@ function dinastiaModularBuild() {
         "scripts/sandalier-artifact-patch.mjs",
         "scripts/ability-vigor-patch.mjs",
         "scripts/class-ability-scaling-patch.mjs",
-        "scripts/acquired-knowledge-patch.mjs"
+        "scripts/acquired-knowledge-patch.mjs",
+        "scripts/final-families-guard.mjs"
       ])
     },
   }
