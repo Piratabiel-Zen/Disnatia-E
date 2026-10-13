@@ -1900,7 +1900,7 @@ const TOKEN_THROTTLE_MS = 80;
 
           {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}
           {selectedToken && masterMode && (
-            <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 10, right: 10, zIndex: 41, width: 280, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
+            <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 'calc(84px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 41, width: 'min(280px, calc(100vw - 28px))', maxHeight: 'calc(100% - 108px)', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
                   {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}

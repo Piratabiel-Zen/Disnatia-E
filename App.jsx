@@ -3879,7 +3879,7 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
   );
 }
 
-const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1});
+const newCustomAbility=()=>({id:Date.now()+Math.random(),nome:'',custo:2,cooldown:'—',dano:'',descricao:'',tipoHab:'normal',req:1,aliadoRequerido:'',amplificacao:''});
 
 function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName }) {
   const cd = sheetCooldowns?.[abilityId] || 0;
@@ -3956,28 +3956,30 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   };
 
   const color=cls.color;
-  const tipoLabel={normal:'Normal',especial:'Especial',passiva:'Passiva'};
-  const tipoBadgeColor={normal:'rgba(255,255,255,0.5)',especial:color,passiva:'rgba(168,85,247,0.8)'};
+  const tipoLabel={normal:'Normal',especial:'Especial',passiva:'Passiva',combinada:'Combinada'};
+  const tipoBadgeColor={normal:'rgba(255,255,255,0.5)',especial:color,passiva:'rgba(168,85,247,0.8)',combinada:'#FFE58A'};
 
   const abilityRow=(a,isSpecial,isCustom,locked)=>{
     if(!a) return null;
     const danoValue=String(a.dano||a.roll||'');
     const abilityId = String(a.id||a.name||'');
     const isPassiva = isCustom && a.tipoHab === 'passiva';
+    const isCombined = isCustom && a.tipoHab === 'combinada';
     const cdText = a.cooldown || a.tempo || '—';
     const hasCd = cdText && cdText !== '—' && cdText !== '';
     return(
-    <div key={abilityId} style={{ background:isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)', border:`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`, borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start', opacity:locked?0.45:1, position:'relative', transition: 'opacity 0.2s' }}>
+    <div key={abilityId} style={{ background:isCombined?'radial-gradient(ellipse at 12% 0%,rgba(255,225,125,.19),transparent 62%),linear-gradient(125deg,rgba(64,30,104,.32),rgba(18,12,32,.96))':(isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)'), border:isCombined?'1px solid rgba(255,225,125,.78)':`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`, borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start', opacity:locked?0.45:1, position:'relative', transition: 'opacity 0.2s', boxShadow:isCombined?'0 0 10px rgba(255,216,115,.35), inset 0 0 18px rgba(168,85,247,.14)':undefined, animation:isCombined?'bannerGlow 2.2s ease-in-out infinite':undefined }}>
       {(sheetCooldowns?.[abilityId]||0) > 0 && !isPassiva && <div style={{ position:'absolute',inset:0,borderRadius:8,pointerEvents:'none', background:'rgba(232,100,0,0.06)', border:'1px solid rgba(232,100,0,0.25)', zIndex:0 }}/>}
       <div style={{flex:1,position:'relative',zIndex:1}}>
         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
           {(isSpecial||isCustom)&&<span style={{fontSize:10,color}}>✦</span>}
-          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:'#C8B8A0',fontWeight:600}}>{String(a.name||a.nome||'')}</span>
+          <span style={{fontFamily:'Cinzel,serif',fontSize:12,color:isCombined?'#FFF0B4':'#C8B8A0',fontWeight:700,textShadow:isCombined?'0 0 10px rgba(255,224,140,.8)':undefined}}>{String(a.name||a.nome||'')}</span>
           {locked&&<span style={{fontSize:9,color:'rgba(255,200,0,0.5)',fontFamily:'Cinzel,serif'}}>🔒 Nv {Number(a.req)||1}+</span>}
           {isCustom&&a.tipoHab&&<span style={{fontSize:8,color:tipoBadgeColor[a.tipoHab]||color,fontFamily:'Cinzel,serif',letterSpacing:'0.12em',background:`${color}14`,borderRadius:3,padding:'1px 5px',border:`1px solid ${color}33`}}>{(tipoLabel[a.tipoHab]||'Nova').toUpperCase()}</span>}
           {danoValue&&<span style={{fontSize:10,color:'rgba(255,200,80,0.85)',fontFamily:'Cinzel,serif',letterSpacing:'0.05em',background:'rgba(255,200,80,0.08)',border:'1px solid rgba(255,200,80,0.22)',borderRadius:4,padding:'1px 6px'}}>⚔ {danoValue}</span>}
         </div>
         <div style={{fontSize:13,color:'#7A6A5A',lineHeight:1.65}}>{String(a.desc||a.descricao||'')}</div>
+        {isCombined&&<div style={{marginTop:7,padding:'7px 9px',borderRadius:7,border:'1px solid rgba(255,225,125,.34)',background:'rgba(255,220,120,.07)',boxShadow:'0 0 12px rgba(168,85,247,.13)'}}><div style={{fontFamily:'Cinzel,serif',fontSize:9,letterSpacing:'.13em',fontWeight:800,color:'#FFE58A',textShadow:'0 0 8px rgba(255,225,125,.55)'}}>✧ HABILIDADE SUPREMA · COMBINADA</div>{a.aliadoRequerido&&<div style={{fontSize:11,color:'#E3D2FF',marginTop:4}}>Aliado necessário: {a.aliadoRequerido}</div>}{a.amplificacao&&<div style={{fontSize:11,color:'#FFE8AD',marginTop:3}}>Amplificação: {a.amplificacao}</div>}<div style={{fontSize:10,color:'rgba(235,220,255,.72)',marginTop:4}}>O aliado participante consome 1 VC para realizar a combinação.</div></div>}
       </div>
       <div style={{flexShrink:0,textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,position:'relative',zIndex:1}}>
         <div style={{fontSize:11,color:`${color}BB`,fontFamily:'Cinzel,serif'}}>{Number(a.cost||a.custo||0)} VC</div>
@@ -4061,7 +4063,8 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
               <div style={{fontSize:9,letterSpacing:'0.35em',color:`${color}AA`,fontFamily:'Cinzel,serif',marginBottom:12,textTransform:'uppercase'}}>✦ Adicionar Habilidade Nova · {cls.name}</div>
               <div style={{display:'flex',flexDirection:'column',gap:9}}>
                 <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Nome da Habilidade</label><input value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Golpe Cósmico" style={{width:'100%'}}/></div>
-                <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.22em'}}>Tipo de Habilidade</label><div style={{display:'flex',gap:6}}><TipoBtn val="normal" label="Normal"/><TipoBtn val="especial" label="Especial"/><TipoBtn val="passiva" label="Passiva"/></div></div>
+                <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.22em'}}>Tipo de Habilidade</label><div style={{display:'flex',gap:6,flexWrap:'wrap'}}><TipoBtn val="normal" label="Normal"/><TipoBtn val="especial" label="Especial"/><TipoBtn val="passiva" label="Passiva"/><TipoBtn val="combinada" label="✧ Combinada"/></div></div>
+                {form.tipoHab==='combinada'&&<div style={{padding:10,borderRadius:8,border:'1px solid rgba(255,225,125,.34)',background:'linear-gradient(125deg,rgba(255,225,125,.08),rgba(168,85,247,.10))'}}><div style={{fontFamily:'Cinzel,serif',fontSize:9,color:'#FFE58A',letterSpacing:'.16em',marginBottom:8}}>✧ CONFIGURAÇÃO DA HABILIDADE SUPREMA</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><div><label style={{fontSize:9,color:'#D9C4FF',fontFamily:'Cinzel,serif',display:'block',marginBottom:3}}>ALIADO / CONDIÇÃO NECESSÁRIA</label><input value={form.aliadoRequerido||''} onChange={e=>setForm(f=>({...f,aliadoRequerido:e.target.value}))} placeholder="Ex.: Assassino do Fogo Azul" style={{width:'100%'}}/></div><div><label style={{fontSize:9,color:'#FFE58A',fontFamily:'Cinzel,serif',display:'block',marginBottom:3}}>AMPLIFICAÇÃO</label><input value={form.amplificacao||''} onChange={e=>setForm(f=>({...f,amplificacao:e.target.value}))} placeholder="Ex.: dano dobrado ou +2 de dano" style={{width:'100%'}}/></div></div><div style={{fontSize:10,color:'rgba(235,220,255,.72)',marginTop:7}}>O aliado participante consome 1 VC. Descreva a amplificação acima.</div></div>}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div><label style={{fontSize:9,color:'rgba(255,200,80,0.5)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Dano / Efeito</label><input value={form.dano} onChange={e=>setForm(f=>({...f,dano:e.target.value}))} placeholder="Ex: 1D8, 3D4, +2 vida" style={{width:'100%'}}/></div>
                   <div><label style={{fontSize:9,color:'rgba(255,255,255,0.3)',fontFamily:'Cinzel,serif',display:'block',marginBottom:3,textTransform:'uppercase',letterSpacing:'0.22em'}}>Custo VC</label><input type="number" min={0} value={form.custo} onChange={e=>setForm(f=>({...f,custo:+e.target.value}))} style={{width:'100%'}}/></div>
@@ -4182,7 +4185,51 @@ function InvocacoesPanel({ sheet, onChange, sheetColor, masterMode }) {
   );
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[]});
+
+const newFamiliar = id => ({ id, nome: '', hp: 10, hpMax: 10, habilidades: [] });
+function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
+  const familiares = Array.isArray(sheet.familiares) ? sheet.familiares : [];
+  const limite = sheet.classe === 'corvos' ? 3 : 1;
+  const save = next => onChange({ ...sheet, familiares: next });
+  const update = (id, patch) => save(familiares.map(f => String(f.id) === String(id) ? { ...f, ...patch } : f));
+  const remove = id => { if (familiares.length > 1) save(familiares.filter(f => String(f.id) !== String(id))); };
+  const add = () => { if (familiares.length < limite) save([...familiares, newFamiliar(Date.now() + Math.random())]); };
+  const updateAbility = (f, id, patch) => update(f.id, { habilidades: (f.habilidades || []).map(a => String(a.id) === String(id) ? { ...a, ...patch } : a) });
+  const addAbility = f => update(f.id, { habilidades: [...(f.habilidades || []), { id: Date.now() + Math.random(), nome: '', efeito: '', descricao: '' }] });
+  const removeAbility = (f, id) => update(f.id, { habilidades: (f.habilidades || []).filter(a => String(a.id) !== String(id)) });
+  return <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, flexWrap:'wrap' }}>
+      <div style={{ fontSize:10, color:'#8E7AA8', fontFamily:'Cinzel,serif' }}>Cada personagem pode ter 1 familiar; Corvos do Horizonte podem ter até 3. {familiares.length}/{limite}</div>
+      {masterMode && familiares.length < limite && <button onClick={add} style={{ border:'1px solid rgba(168,85,247,.48)', borderRadius:7, background:'rgba(168,85,247,.12)', color:'#D9BCFF', padding:'6px 10px', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10 }}>＋ Adicionar familiar</button>}
+    </div>
+    {!familiares.length && <div style={{ border:'1px dashed rgba(255,255,255,.08)', borderRadius:8, padding:14, textAlign:'center', color:'#665878', fontFamily:'Cinzel,serif', fontSize:11 }}>{masterMode?'Defina o familiar deste personagem.':'O Mestre ainda não definiu um familiar.'}</div>}
+    {familiares.map((f, index) => {
+      const skills = Array.isArray(f.habilidades) ? f.habilidades : [];
+      const hp = Math.max(0, Number(f.hp ?? 10) || 0);
+      const hpMax = Math.max(1, Number(f.hpMax ?? 10) || 10);
+      return <article key={f.id ?? index} style={{ border:'1px solid '+color+'44', borderRadius:10, padding:11, background:'linear-gradient(145deg,'+color+'0B,rgba(8,5,18,.88))' }}>
+        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:9 }}>
+          <span style={{ fontSize:18 }}>🐾</span>
+          {masterMode?<input value={f.nome||''} onChange={e=>update(f.id,{nome:e.target.value})} placeholder="Nome do familiar" aria-label="Nome do familiar" style={{flex:1,minWidth:0}}/>:<strong style={{flex:1,color:color,fontFamily:'Cinzel,serif'}}>{f.nome||'Familiar'}</strong>}
+          {masterMode&&familiares.length>1&&<button onClick={()=>remove(f.id)} title="Remover familiar" aria-label="Remover familiar" style={{border:'1px solid rgba(232,25,60,.28)',background:'rgba(232,25,60,.1)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 7px'}}>✕</button>}
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,alignItems:'end',marginBottom:10}}>
+          <label style={{fontSize:9,color:'#8E7AA8',fontFamily:'Cinzel,serif'}}>PONTOS DE VIDA{masterMode?<input type="number" min="0" value={hp} onChange={e=>update(f.id,{hp:Math.max(0,Number(e.target.value)||0)})} style={{width:'100%',marginTop:4}}/>:<div style={{color:'#E8D8C0',fontSize:14,marginTop:4}}>{hp} / {hpMax} HP</div>}</label>
+          {masterMode&&<label style={{fontSize:9,color:'#8E7AA8',fontFamily:'Cinzel,serif'}}>HP MÁXIMO<input type="number" min="1" value={hpMax} onChange={e=>update(f.id,{hpMax:Math.max(1,Number(e.target.value)||1)})} style={{width:'100%',marginTop:4}}/></label>}
+        </div>
+        <div style={{fontSize:9,letterSpacing:'.2em',color:'#8E7AA8',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Habilidades</div>
+        {!skills.length&&<div style={{fontSize:11,color:'#62566E',fontStyle:'italic',marginBottom:masterMode?8:0}}>Nenhuma habilidade cadastrada.</div>}
+        {skills.map(a=><div key={a.id} style={{borderTop:'1px solid rgba(255,255,255,.06)',padding:'7px 0',display:'grid',gridTemplateColumns:'1fr auto',gap:6,alignItems:'start'}}>
+          {masterMode?<div style={{display:'grid',gap:5}}><input value={a.nome||''} onChange={e=>updateAbility(f,a.id,{nome:e.target.value})} placeholder="Nome da habilidade"/><input value={a.efeito||''} onChange={e=>updateAbility(f,a.id,{efeito:e.target.value})} placeholder="Dano ou efeito (opcional)"/><textarea value={a.descricao||''} onChange={e=>updateAbility(f,a.id,{descricao:e.target.value})} placeholder="Descrição (opcional)" rows={2} style={{resize:'vertical'}}/></div>:<div><strong style={{color:'#D8C6EA',fontSize:11}}>{a.nome||'Habilidade'}</strong>{a.efeito&&<span style={{color:'#FFE08A',fontSize:10,marginLeft:6}}>⚔ {a.efeito}</span>}{a.descricao&&<div style={{color:'#A89BAF',fontSize:11,lineHeight:1.5,marginTop:3}}>{a.descricao}</div>}</div>}
+          {masterMode&&<button onClick={()=>removeAbility(f,a.id)} title="Remover habilidade" aria-label="Remover habilidade" style={{border:'1px solid rgba(232,25,60,.25)',background:'rgba(232,25,60,.08)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 6px'}}>✕</button>}
+        </div>)}
+        {masterMode&&<button onClick={()=>addAbility(f)} style={{width:'100%',border:'1px dashed rgba(168,85,247,.35)',borderRadius:6,background:'rgba(168,85,247,.06)',color:'#C8A8E8',padding:6,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10}}>＋ Adicionar habilidade (opcional)</button>}
+      </article>;
+    })}
+  </div>;
+}
+
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[], familiares:[newFamiliar(Date.now()+Math.random())]});
 
 function useIsMobile(breakpoint = 700) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= breakpoint);
@@ -4289,7 +4336,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
 
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
-          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe,familiares:classe==='corvos'?(sheet.familiares||[]):(sheet.familiares||[]).slice(0,1)};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
 
@@ -4433,6 +4480,10 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
           <EquipamentoPanel sheet={sheet} onChange={onChange} sheetColor={sheetColor}/>
         </CollapsibleSection>
 
+        
+        <CollapsibleSection icon="🐦‍⬛" label="Familiares" color={sheetColor}>
+          <FamiliaresPanel sheet={sheet} onChange={onChange} masterMode={masterMode} color={sheetColor}/>
+        </CollapsibleSection>
         <CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
           <ArtefatoFichaPanel
             sheet={sheet}
@@ -4477,6 +4528,10 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
         </>)}
 
         {sheetTab==='lore' && (<>
+        
+        <CollapsibleSection icon="🐦‍⬛" label="Familiares" color={sheetColor}>
+          <FamiliaresPanel sheet={sheet} onChange={onChange} masterMode={masterMode} color={sheetColor}/>
+        </CollapsibleSection>
         <CollapsibleSection icon="◆" label="Artefato Portado" color="#E8A020">
           <ArtefatoFichaPanel
             sheet={sheet}
@@ -4670,7 +4725,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           {/* Nome + Classe */}
           <div style={{display:'flex',gap:7,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
             <div style={{flex:1,minWidth:90}}><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome..." style={{width:'100%',fontSize:12}}/></div>
-            <div><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}} style={{fontSize:11}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+            <div><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe,familiares:classe==='corvos'?(sheet.familiares||[]):(sheet.familiares||[]).slice(0,1)};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}} style={{fontSize:11}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           </div>
 
           {/* HP */}
