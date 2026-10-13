@@ -4197,9 +4197,9 @@ const FAMILIAR_TYPES = [
 const newFamiliar = id => ({ id, tipo:'cachorro', nome:'', hp:10, hpMax:10, vigos:2, habilidades:[] });
 function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
   const saved = Array.isArray(sheet.familiares) ? sheet.familiares : [];
-  const familiares = saved.length ? saved : [newFamiliar('familiar-'+sheet.id)];
   const limite = sheet.classe === 'corvos' ? 3 : 1;
-  useEffect(()=>{if(sheet.classe!=='corvos'&&saved.length>1)onChange({...sheet,familiares:saved.slice(0,1)});},[sheet.classe]);
+  // Limita a exibição também nas fichas antigas que já tenham mais familiares que o permitido.
+  const familiares = saved.length ? saved.slice(0,limite) : [newFamiliar('familiar-'+sheet.id)];
   const save = next => onChange({ ...sheet, familiares: next });
   const update = (id, patch) => save(familiares.map(f => String(f.id) === String(id) ? { ...f, ...patch } : f));
   const remove = id => { if (familiares.length > 1) save(familiares.filter(f => String(f.id) !== String(id))); };

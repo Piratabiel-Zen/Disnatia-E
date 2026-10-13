@@ -1,12 +1,22 @@
 import CodexCard from '../../experience/CodexCard';
 import { onSnapshot } from '../../adventure/sharedSnapshot';
-import { useEffect,useRef,useState } from "react";
+import { Component,useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,setDoc,query,where } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { ARTEFATOS_DATA,CLASSES,SHEET_COLORS } from "../../data/gameData";
 import { SheetFull,newSheet } from "./SheetComponents";
 import { visibleSheets } from '../../adventure/visitorAccess.mjs';
 import CombatMode from "./CombatMode";
+class SheetRenderBoundary extends Component {
+  constructor(props){super(props);this.state={error:null};}
+  static getDerivedStateFromError(error){return {error};}
+  componentDidCatch(error,info){console.error('Erro ao abrir ficha:',error,info);}
+  render(){
+    if(this.state.error)return <div role="alert" style={{maxWidth:760,margin:'24px auto',padding:22,border:'1px solid rgba(232,25,60,.45)',borderRadius:12,background:'rgba(40,8,18,.72)',color:'#F2D6DC',fontFamily:'Cinzel,serif'}}><strong style={{display:'block',marginBottom:8}}>Não foi possível carregar esta ficha.</strong><span style={{fontSize:12,color:'#D9B9C0',fontFamily:'Crimson Text,serif'}}>{String(this.state.error?.message||this.state.error)}</span><div><button onClick={()=>this.setState({error:null})} style={{marginTop:12,padding:'7px 12px',borderRadius:6,border:'1px solid rgba(232,25,60,.4)',background:'rgba(232,25,60,.1)',color:'#F2D6DC',cursor:'pointer'}}>Tentar novamente</button></div></div>;
+    return this.props.children;
+  }
+}
+
 function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
   const[sheets,setSheets]=useState([]);const[loaded,setLoaded]=useState(false);const[activeId,setActiveId]=useState(null);
   const[customAbilities,setCustomAbilities]=useState({});
@@ -121,7 +131,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
         {activeSheet&&<div style={{textAlign:'center',fontSize:12,color:'rgba(255,255,255,0.35)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>{activeSheet.nome||'Sem nome'} · Nv {activeSheet.nivel||1}</div>}
       </div>
         {activeSheet
-          ?<SheetFull
+          ?<SheetRenderBoundary key={String(activeSheet.id)}><SheetFull
               sheet={activeSheet}
               onChange={d=>upd(activeSheet.id,d)}
               masterMode={masterMode}
@@ -129,7 +139,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
               onSaveCustomAbilities={(novas) => saveCustom(activeSheet.id, novas)}
               revealedArtefatos={revealedArtefatos}
               artefatosHabs={artefatosHabsState}
-            />
+            /></SheetRenderBoundary>
           :<div style={{textAlign:'center',padding:44,border:'1px dashed rgba(255,255,255,0.06)',borderRadius:14}}><div style={{fontSize:32,marginBottom:10,opacity:0.2}}>📋</div><div style={{fontFamily:'Cinzel,serif',fontSize:13,color:'#6A5A7A'}}>Selecione um personagem acima para ver sua ficha.</div></div>
         }
       </>)}

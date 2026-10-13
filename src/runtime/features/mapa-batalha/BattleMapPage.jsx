@@ -2019,7 +2019,7 @@ const TOKEN_THROTTLE_MS = 80;
               />
             );
           })}
-          <MapSheetDock masterMode={masterMode} sheets={sheets} enemies={enemies} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet}/>
+          <MapSheetDock masterMode={masterMode} sheets={sheets} enemies={enemies} floatingSheets={floatingSheets} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet} onChangeSheet={sheet=>updSheet(sheet.id,sheet)}/>
 
 
         </div>
