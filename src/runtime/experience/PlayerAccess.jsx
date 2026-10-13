@@ -4,7 +4,7 @@ import { db } from '../core/firebase';
 import { isVisitorSheet, verifyVisitorPassword } from '../adventure/visitorAccess.mjs';
 import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
-import PasswordVisibilityInput from '../../experience/PasswordVisibilityInput';
+import PasswordVisibilityInput from './PasswordVisibilityInput';
 
 const ACCESS_KEY = 'dinastia_access_v1';
 const PLAYER_SHEET_KEY = 'dinastia_player_sheet';
