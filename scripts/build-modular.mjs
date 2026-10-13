@@ -161,7 +161,7 @@ try {
   if (!generatedSheets.includes('playerSheetId') || !generatedSheets.includes('all.filter')) {
     throw new Error('Filtro de ficha por jogador não foi aplicado em SheetsPage.jsx.');
   }
-  const sheetComponents = fs.readFileSync(path.join(cwd, 'src', 'features', 'sheets', 'SheetComponents.jsx'), 'utf8');
+  const sheetComponents = fs.readFileSync(path.join(temp, 'src', 'features', 'sheets', 'SheetComponents.jsx'), 'utf8');
   if (!/\bfunction FamiliaresPanel\s*\(/.test(sheetComponents)) {
     throw new Error('Painel de familiares ausente no módulo publicado das fichas.');
   }
