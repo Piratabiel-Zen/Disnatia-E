@@ -4,6 +4,7 @@ import { db } from '../core/firebase';
 import { isVisitorSheet, verifyVisitorPassword } from '../adventure/visitorAccess.mjs';
 import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
+import PasswordVisibilityInput from '../../experience/PasswordVisibilityInput';
 
 const ACCESS_KEY = 'dinastia_access_v1';
 const PLAYER_SHEET_KEY = 'dinastia_player_sheet';
@@ -175,7 +176,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
             )}
 
             {selected?.senha ? (
-              <label className="access-field">Senha da ficha<input type="password" value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterPlayer()} placeholder="Digite sua senha..." autoFocus /></label>
+              <label className="access-field">Senha da ficha<PasswordVisibilityInput value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterPlayer()} placeholder="Digite sua senha..." autoFocus /></label>
             ) : (
               <div className="access-open-note">Esta ficha não possui senha definida e pode ser acessada diretamente.</div>
             )}
@@ -183,13 +184,13 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
             <button className="access-enter" disabled={!selected} onClick={enterPlayer}>Entrar como {selected?.nome || 'Jogador'} <span>→</span></button>
           </>
         ) : mode === 'visitor' ? (
-          <div className="access-visitor-login"><h2>Entrada de visitantes</h2><p>Entre pelo seu nome. Seus personagens são definidos pelo Mestre.</p><label className="access-field">Nome do visitante<select aria-label="Nome do visitante" value={visitorId} onChange={event=>{setVisitorId(event.target.value);setPin('');setError('');}}><option value="">Selecione seu nome</option>{visitors.map(visitor=><option key={visitor.id} value={visitor.id}>{visitor.name}</option>)}</select></label><label className="access-field">Senha do visitante<input type="password" value={pin} onChange={event=>{setPin(event.target.value);setError('');}} onKeyDown={event=>event.key==='Enter'&&enterVisitor()} autoComplete="current-password"/></label><button className="access-enter" disabled={busy||!visitorId||!pin} onClick={enterVisitor}>{busy?'Verificando...':'Entrar como visitante'}</button>{!visitorsLoaded&&<p>Consultando visitantes...</p>}{visitorsLoaded&&!visitors.length&&<p>O Mestre ainda não cadastrou visitantes.</p>}</div>
+          <div className="access-visitor-login"><h2>Entrada de visitantes</h2><p>Entre pelo seu nome. Seus personagens são definidos pelo Mestre.</p><label className="access-field">Nome do visitante<select aria-label="Nome do visitante" value={visitorId} onChange={event=>{setVisitorId(event.target.value);setPin('');setError('');}}><option value="">Selecione seu nome</option>{visitors.map(visitor=><option key={visitor.id} value={visitor.id}>{visitor.name}</option>)}</select></label><label className="access-field">Senha do visitante<PasswordVisibilityInput value={pin} onChange={event=>{setPin(event.target.value);setError('');}} onKeyDown={event=>event.key==='Enter'&&enterVisitor()} autoComplete="current-password"/></label><button className="access-enter" disabled={busy||!visitorId||!pin} onClick={enterVisitor}>{busy?'Verificando...':'Entrar como visitante'}</button>{!visitorsLoaded&&<p>Consultando visitantes...</p>}{visitorsLoaded&&!visitors.length&&<p>O Mestre ainda não cadastrou visitantes.</p>}</div>
         ) : (
           <div className="access-master-login">
             <div className="access-master-orb">✦</div>
             <h2>Mesa do Mestre</h2>
             <p>Use a senha do Mestre para liberar controles narrativos e administrativos.</p>
-            <label className="access-field">Senha do Mestre<input type="password" value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterMaster()} placeholder="Senha do Mestre..." autoFocus /></label>
+            <label className="access-field">Senha do Mestre<PasswordVisibilityInput value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterMaster()} placeholder="Senha do Mestre..." autoFocus /></label>
             <button className="access-enter master" onClick={enterMaster}>Abrir a Mesa do Mestre <span>→</span></button>
           </div>
         )}

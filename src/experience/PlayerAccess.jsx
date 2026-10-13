@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
+import PasswordVisibilityInput from './PasswordVisibilityInput';
 
 const ACCESS_KEY = 'dinastia_access_v1';
 const PLAYER_SHEET_KEY = 'dinastia_player_sheet';
@@ -151,7 +152,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
             )}
 
             {selected?.senha ? (
-              <label className="access-field">Senha da ficha<input type="password" value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterPlayer()} placeholder="Digite sua senha..." autoFocus /></label>
+              <label className="access-field">Senha da ficha<PasswordVisibilityInput value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterPlayer()} placeholder="Digite sua senha..." autoFocus /></label>
             ) : (
               <div className="access-open-note">Esta ficha não possui senha definida e pode ser acessada diretamente.</div>
             )}
@@ -163,7 +164,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
             <div className="access-master-orb">✦</div>
             <h2>Mesa do Mestre</h2>
             <p>Use a senha do Mestre para liberar controles narrativos e administrativos.</p>
-            <label className="access-field">Senha do Mestre<input type="password" value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterMaster()} placeholder="Senha do Mestre..." autoFocus /></label>
+            <label className="access-field">Senha do Mestre<PasswordVisibilityInput value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterMaster()} placeholder="Senha do Mestre..." autoFocus /></label>
             <button className="access-enter master" onClick={enterMaster}>Abrir a Mesa do Mestre <span>→</span></button>
           </div>
         )}
