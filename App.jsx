@@ -4189,7 +4189,7 @@ function InvocacoesPanel({ sheet, onChange, sheetColor, masterMode }) {
 const newFamiliar = id => ({ id, nome: '', hp: 10, hpMax: 10, habilidades: [] });
 function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
   const familiares = Array.isArray(sheet.familiares) ? sheet.familiares : [];
-  const limite = sheet.classe === 'corvos' ? 3 : 1;
+  const limite = sheet.classe === 'corvos' ? 3 : 1; useEffect(()=>{if(sheet.classe!=='corvos'&&familiares.length>1)onChange({...sheet,familiares:familiares.slice(0,1)});},[sheet.classe]);
   const save = next => onChange({ ...sheet, familiares: next });
   const update = (id, patch) => save(familiares.map(f => String(f.id) === String(id) ? { ...f, ...patch } : f));
   const remove = id => { if (familiares.length > 1) save(familiares.filter(f => String(f.id) !== String(id))); };
@@ -4336,7 +4336,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
 
         <div className="nome-classe-row" style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:120}}><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome do personagem" style={{width:'100%'}}/></div>
-          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe,familiares:classe==='corvos'?(sheet.familiares||[]):(sheet.familiares||[]).slice(0,1)};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+          <div><label style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:5,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           {masterMode&&<button onClick={()=>onChange(null)} style={{background:'rgba(232,25,60,0.12)',border:'1px solid rgba(232,25,60,0.35)',color:'#E8193C',borderRadius:6,cursor:'pointer',padding:'6px 11px',fontSize:12}}>✕ Excluir</button>}
         </div>
 
@@ -4725,7 +4725,7 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
           {/* Nome + Classe */}
           <div style={{display:'flex',gap:7,alignItems:'flex-end',marginBottom:SPACING,flexWrap:'wrap'}}>
             <div style={{flex:1,minWidth:90}}><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Nome</label><input value={sheet.nome} onChange={e=>f('nome',e.target.value)} placeholder="Nome..." style={{width:'100%',fontSize:12}}/></div>
-            <div><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe,familiares:classe==='corvos'?(sheet.familiares||[]):(sheet.familiares||[]).slice(0,1)};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}} style={{fontSize:11}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+            <div><label style={{fontSize:9,letterSpacing:'0.25em',color:'#5A5070',fontFamily:'Cinzel,serif',display:'block',marginBottom:4,textTransform:'uppercase'}}>Classe</label><select value={sheet.classe} onChange={e=>{const classe=e.target.value;const next={...sheet,classe};onChange({...next,hp:Math.min(sheet.hp||0,getSheetMaxHp(next))});}} style={{fontSize:11}}>{CLASSES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
           </div>
 
           {/* HP */}
