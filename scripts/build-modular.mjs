@@ -55,24 +55,24 @@ try {
   // evita que uma alteração anterior no App.jsx deixe a ficha sem o componente.
   const generatedComponentsPath = path.join(temp, 'src', 'features', 'sheets', 'SheetComponents.jsx');
   let generatedComponents = fs.readFileSync(generatedComponentsPath, 'utf8');
-  if (!/\\bfunction FamiliaresPanel\\s*\\(/.test(generatedComponents)) {
+  if (!/\bfunction FamiliaresPanel\s*\(/.test(generatedComponents)) {
     const familyStart = source.indexOf('const FAMILIAR_TYPES = [');
     const panelStart = source.indexOf('function FamiliaresPanel(', familyStart);
-    const familyEnd = source.indexOf('\\nconst newSheet', panelStart);
+    const familyEnd = source.indexOf('\nconst newSheet', panelStart);
     if (familyStart < 0 || panelStart < 0 || familyEnd < 0) {
       throw new Error('Painel de familiares não encontrado no App.jsx de origem.');
     }
     const familyBlock = (generatedComponents.includes('const FAMILIAR_TYPES')
       ? source.slice(panelStart, familyEnd)
       : source.slice(familyStart, familyEnd));
-    const exportAnchor = '\\nexport {';
+    const exportAnchor = '\nexport {';
     const exportIndex = generatedComponents.lastIndexOf(exportAnchor);
     generatedComponents = exportIndex >= 0
       ? generatedComponents.slice(0, exportIndex) + '\\n' + familyBlock + generatedComponents.slice(exportIndex)
       : generatedComponents + '\\n' + familyBlock + '\\n';
     fs.writeFileSync(generatedComponentsPath, generatedComponents);
   }
-  if (!/\\bfunction FamiliaresPanel\\s*\\(/.test(generatedComponents)) {
+  if (!/\bfunction FamiliaresPanel\s*\(/.test(generatedComponents)) {
     throw new Error('FamiliaresPanel não foi incluído no módulo das fichas.');
   }
 
@@ -162,7 +162,7 @@ try {
     throw new Error('Filtro de ficha por jogador não foi aplicado em SheetsPage.jsx.');
   }
   const sheetComponents = fs.readFileSync(path.join(cwd, 'src', 'features', 'sheets', 'SheetComponents.jsx'), 'utf8');
-  if (!/\\bfunction FamiliaresPanel\\s*\\(/.test(sheetComponents)) {
+  if (!/\bfunction FamiliaresPanel\s*\(/.test(sheetComponents)) {
     throw new Error('Painel de familiares ausente no módulo publicado das fichas.');
   }
   const generatedBattle = fs.readFileSync(battlePath, 'utf8');
