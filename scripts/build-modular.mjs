@@ -68,8 +68,8 @@ try {
     const exportAnchor = '\nexport {';
     const exportIndex = generatedComponents.lastIndexOf(exportAnchor);
     generatedComponents = exportIndex >= 0
-      ? generatedComponents.slice(0, exportIndex) + '\\n' + familyBlock + generatedComponents.slice(exportIndex)
-      : generatedComponents + '\\n' + familyBlock + '\\n';
+      ? generatedComponents.slice(0, exportIndex) + '\n' + familyBlock + generatedComponents.slice(exportIndex)
+      : generatedComponents + '\n' + familyBlock + '\n';
     fs.writeFileSync(generatedComponentsPath, generatedComponents);
   }
   if (!/\bfunction FamiliaresPanel\s*\(/.test(generatedComponents)) {
