@@ -3,65 +3,6 @@ import path from 'node:path';
 
 const ambientFile = path.join(process.cwd(), 'src', 'shell', 'AmbientSoundPlayer.jsx');
 let ambient = fs.readFileSync(ambientFile, 'utf8');
-const playlistImport = 'import { doc,getDocFromServer,onSnapshot,setDoc } from "firebase/firestore";';
-const transactionalPlaylistImport = 'import { doc,getDocFromServer,onSnapshot,runTransaction,setDoc } from "firebase/firestore";';
-if (!ambient.includes('runTransaction') && ambient.includes(playlistImport)) {
-  ambient = ambient.replace(playlistImport, transactionalPlaylistImport);
-}
-if (!ambient.includes('const upsertTrackWithTransaction')) {
-  const playlistStart = ambient.indexOf('  const addTrack = async () => {');
-  const playlistEnd = ambient.indexOf('\n\n  const isPlaying', playlistStart);
-  if (playlistStart < 0 || playlistEnd < 0) {
-    throw new Error('Player ambiente: funções de playlist não encontradas para proteção transacional.');
-  }
-  const transactionalPlaylistCode = [
-    '  const upsertTrackWithTransaction = async (categoria, track) => runTransaction(db, async transaction => {',
-    "    const playlistRef = doc(db, 'config', 'ambient_playlists');",
-    '    const snapshot = await transaction.get(playlistRef);',
-    '    const latest = snapshot.exists() ? (snapshot.data() || {}) : {};',
-    '    const atuais = Array.isArray(latest[categoria]) ? latest[categoria] : [];',
-    '    const updated = { ...latest, [categoria]: [...atuais, track] };',
-    '    transaction.set(playlistRef, updated);',
-    '    return updated;',
-    '  });',
-    '',
-    '  const addTrack = async () => {',
-    '    const videoId = extractId(novoLink.trim());',
-    '    if (!videoId || !novoNome.trim()) return;',
-    '    const categoria = activeCategory;',
-    '    const nova = { id: Date.now(), nome: novoNome.trim(), videoId };',
-    '    try {',
-    '      const updated = await upsertTrackWithTransaction(categoria, nova);',
-    '      setPlaylists(updated);',
-    "      setNovoNome(''); setNovoLink('');",
-    '    } catch (error) {',
-    "      console.error('Erro ao salvar música na playlist:', error);",
-    "      pushToast('Não foi possível salvar a música. Tente novamente.', '⚠️', '#E8193C');",
-    '    }',
-    '  };',
-    '',
-    '  const deleteTrack = async (categoria, trackId) => {',
-    "    const playlistRef = doc(db, 'config', 'ambient_playlists');",
-    '    try {',
-    '      const updated = await runTransaction(db, async transaction => {',
-    '        const snapshot = await transaction.get(playlistRef);',
-    '        if (!snapshot.exists()) return {};',
-    '        const latest = snapshot.data() || {};',
-    '        const atuais = Array.isArray(latest[categoria]) ? latest[categoria] : [];',
-    '        const next = { ...latest, [categoria]: atuais.filter(track => String(track.id) !== String(trackId)) };',
-    '        transaction.set(playlistRef, next);',
-    '        return next;',
-    '      });',
-    '      setPlaylists(updated);',
-    '    } catch (error) {',
-    "      console.error('Erro ao excluir música da playlist:', error);",
-    "      pushToast('Não foi possível excluir a música. Tente novamente.', '⚠️', '#E8193C');",
-    '    }',
-    '  };'
-  ].join('\n');
-  ambient = ambient.slice(0, playlistStart) + transactionalPlaylistCode + ambient.slice(playlistEnd);
-}
-
 
 const reactImport = 'import { useEffect,useRef,useState } from "react";';
 if (!ambient.includes('createPortal')) {
