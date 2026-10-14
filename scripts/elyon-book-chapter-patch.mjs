@@ -249,8 +249,8 @@ livro = replaceRequired(
 
 livro = replaceRequired(
   livro,
-  "    {id:'artefatos',label:'Os 6 Artefatos',icon:'◆'},\n    {id:'mestre',label:'Páginas do Mestre',icon:'▤'},",
-  "    {id:'artefatos',label:'Os 6 Artefatos',icon:'◆'},\n    {id:'elyon',label:'O Último Capítulo',icon:'⌛'},\n    {id:'mestre',label:'Páginas do Mestre',icon:'▤'},",
+  "    {id:'artefatos',label:'Relíquias Supremas',icon:'✧'},\n    {id:'mestre',label:'Páginas do Mestre',icon:'▤'},",
+  "    {id:'artefatos',label:'Relíquias Supremas',icon:'✧'},\n    {id:'elyon',label:'O Último Capítulo',icon:'⌛'},\n    {id:'mestre',label:'Páginas do Mestre',icon:'▤'},",
   'aba do capítulo de Elyon'
 );
 
