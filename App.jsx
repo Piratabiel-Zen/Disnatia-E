@@ -4202,7 +4202,7 @@ function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
   const familiares = saved.length ? saved.slice(0,limite) : [newFamiliar('familiar-'+sheet.id)];
   const save = next => onChange({ ...sheet, familiares: next });
   const update = (id, patch) => save(familiares.map(f => String(f.id) === String(id) ? { ...f, ...patch } : f));
-  const remove = id => { if (familiares.length > 1) save(familiares.filter(f => String(f.id) !== String(id))); };
+  const remove = id => { if (masterMode && saved.length) save(familiares.filter(f => String(f.id) !== String(id))); };
   const add = () => { if (familiares.length < limite) save([...familiares, newFamiliar(Date.now() + Math.random())]); };
   const updateAbility = (f, id, patch) => update(f.id, { habilidades: (f.habilidades || []).map(a => String(a.id) === String(id) ? { ...a, ...patch } : a) });
   const addAbility = f => update(f.id, { habilidades: [...(f.habilidades || []), { id: Date.now() + Math.random(), nome: '', efeito: '', descricao: '', custo:0 }] });
@@ -4225,7 +4225,7 @@ function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
           <span style={{ fontSize:21, filter:'drop-shadow(0 0 5px rgba(192,132,252,.55))' }}>{kind.icon}</span>
           {masterMode ? <select value={kind.id} aria-label="Tipo de familiar" onChange={e=>update(f.id,{tipo:e.target.value})} style={{maxWidth:145}}>{FAMILIAR_TYPES.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}</select> : <span style={{color:'#D8C6EA',fontSize:11}}>{kind.label}</span>}
           {masterMode?<input value={f.nome||''} onChange={e=>update(f.id,{nome:e.target.value})} placeholder="Nome do familiar" aria-label="Nome do familiar" style={{flex:1,minWidth:100}}/>:<strong style={{flex:1,color:color,fontFamily:'Cinzel,serif'}}>{f.nome||kind.label}</strong>}
-          {masterMode&&familiares.length>1&&<button onClick={()=>remove(f.id)} title="Remover familiar" aria-label="Remover familiar" style={{border:'1px solid rgba(232,25,60,.28)',background:'rgba(232,25,60,.1)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 7px'}}>✕</button>}
+          {masterMode&&saved.length>0&&<button onClick={()=>remove(f.id)} title="Excluir familiar" aria-label="Excluir familiar" style={{border:'1px solid rgba(232,25,60,.28)',background:'rgba(232,25,60,.1)',color:'#E8193C',borderRadius:5,cursor:'pointer',padding:'3px 7px'}}>✕</button>}
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,alignItems:'end',marginBottom:10}}>
           <label style={{fontSize:9,color:'#8E7AA8',fontFamily:'Cinzel,serif'}}>PONTOS DE VIDA{masterMode?<input type="number" min="0" value={hp} onChange={e=>update(f.id,{hp:Math.min(hpMax,Math.max(0,Number(e.target.value)||0))})} style={{width:'100%',marginTop:4}}/>:<div style={{color:'#E8D8C0',fontSize:14,marginTop:4}}>{hp} / {hpMax} HP</div>}</label>
