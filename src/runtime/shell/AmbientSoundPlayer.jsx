@@ -1,7 +1,7 @@
 import { onSnapshot } from '../adventure/sharedSnapshot';
 import { useEffect,useRef,useState } from "react";
 import { createPortal } from "react-dom";
-import { doc,getDocFromServer,setDoc } from "firebase/firestore";
+import { doc,getDocFromServer,runTransaction,setDoc } from "firebase/firestore";
 import { db } from "../core/firebase";
 import { pushToast } from "../core/toast";
 const SOUND_CATEGORIES = [
@@ -126,19 +126,45 @@ export default function AmbientSoundPlayer({ masterMode }) {
   };
 
   const addTrack = async () => {
-    const id = extractId(novoLink.trim());
-    if (!id || !novoNome.trim()) return;
-    const atuais = playlists[activeCategory] || [];
-    const nova = { id: Date.now(), nome: novoNome.trim(), videoId: id };
-    const updated = { ...playlists, [activeCategory]: [...atuais, nova] };
-    await setDoc(doc(db, 'config', 'ambient_playlists'), updated);
-    setNovoNome(''); setNovoLink('');
+    const videoId = extractId(novoLink.trim());
+    if (!videoId || !novoNome.trim()) return;
+    const categoria = activeCategory;
+    const nova = { id: Date.now(), nome: novoNome.trim(), videoId };
+    const playlistRef = doc(db, 'config', 'ambient_playlists');
+    try {
+      const updated = await runTransaction(db, async transaction => {
+        const snapshot = await transaction.get(playlistRef);
+        const latest = snapshot.exists() ? (snapshot.data() || {}) : {};
+        const atuais = Array.isArray(latest[categoria]) ? latest[categoria] : [];
+        const next = { ...latest, [categoria]: [...atuais, nova] };
+        transaction.set(playlistRef, next);
+        return next;
+      });
+      setPlaylists(updated);
+      setNovoNome(''); setNovoLink('');
+    } catch (error) {
+      console.error('Erro ao salvar música na playlist:', error);
+      pushToast('Não foi possível salvar a música. Tente novamente.', '⚠️', '#E8193C');
+    }
   };
 
   const deleteTrack = async (categoria, trackId) => {
-    const atuais = playlists[categoria] || [];
-    const updated = { ...playlists, [categoria]: atuais.filter(t => t.id !== trackId) };
-    await setDoc(doc(db, 'config', 'ambient_playlists'), updated);
+    const playlistRef = doc(db, 'config', 'ambient_playlists');
+    try {
+      const updated = await runTransaction(db, async transaction => {
+        const snapshot = await transaction.get(playlistRef);
+        if (!snapshot.exists()) return {};
+        const latest = snapshot.data() || {};
+        const atuais = Array.isArray(latest[categoria]) ? latest[categoria] : [];
+        const next = { ...latest, [categoria]: atuais.filter(track => String(track.id) !== String(trackId)) };
+        transaction.set(playlistRef, next);
+        return next;
+      });
+      setPlaylists(updated);
+    } catch (error) {
+      console.error('Erro ao excluir música da playlist:', error);
+      pushToast('Não foi possível excluir a música. Tente novamente.', '⚠️', '#E8193C');
+    }
   };
 
   const isPlaying = current?.playing && current?.videoId && !userMuted;
