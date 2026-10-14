@@ -58,7 +58,7 @@ if (!ambient.includes('const upsertTrackWithTransaction')) {
     "      pushToast('Não foi possível excluir a música. Tente novamente.', '⚠️', '#E8193C');",
     '    }',
     '  };'
-  ].join('\\n');
+  ].join('\n');
   ambient = ambient.slice(0, playlistStart) + transactionalPlaylistCode + ambient.slice(playlistEnd);
 }
 
