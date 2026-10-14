@@ -25,10 +25,16 @@ export default function AmbientSoundPlayer({ masterMode }) {
   const setVolume=value=>updatePreferences({music:value});
   const [novoNome, setNovoNome] = useState('');
   const [novoLink, setNovoLink] = useState('');
+  const [spotifyPlayerOpen, setSpotifyPlayerOpen] = useState(false);
   const iframeRef = useRef(null);
   const lastTs = useRef(0);
   const lastAmbientRevisionRef = useRef(0);
   const [combatActive, setCombatActive] = useState(false);
+
+  useEffect(() => {
+    if (current?.provider === 'spotify' && current?.spotifyUri && current?.playing) setSpotifyPlayerOpen(true);
+    else setSpotifyPlayerOpen(false);
+  }, [current?.provider, current?.spotifyUri, current?.revision, current?.playing]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
@@ -67,9 +73,19 @@ export default function AmbientSoundPlayer({ masterMode }) {
     return () => { unsub(); window.removeEventListener('online', refreshFromServer); window.removeEventListener('focus', refreshFromServer); document.removeEventListener('visibilitychange', onVisible); };
   }, []);
 
-  const extractId = (url) => {
-    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
-    return m ? m[1] : url.trim();
+  const parseMediaLink = (value) => {
+    const raw = value.trim();
+    const spotify = raw.match(/(?:open\.spotify\.com\/(?:embed\/)?)?(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/i)
+      || raw.match(/^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]+)$/i);
+    if (spotify) return { provider: 'spotify', spotifyUri: 'spotify:' + spotify[1].toLowerCase() + ':' + spotify[2] };
+    const youtube = raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+    const videoId = youtube ? youtube[1] : raw;
+    return videoId ? { provider: 'youtube', videoId } : null;
+  };
+
+  const spotifyEmbedSrc = (uri) => {
+    const match = String(uri || '').match(/^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]+)$/);
+    return match ? 'https://open.spotify.com/embed/' + match[1] + '/' + match[2] + '?utm_source=generator&theme=0' : '';
   };
 
   const sendCmd = (func, args = []) => {
@@ -86,7 +102,9 @@ export default function AmbientSoundPlayer({ masterMode }) {
   const playTrack = async (track, categoria) => {
     const now = Date.now();
     const nextAmbient = {
-      videoId: track.videoId,
+      provider: track.provider || (track.spotifyUri ? 'spotify' : 'youtube'),
+      videoId: track.videoId || '',
+      spotifyUri: track.spotifyUri || '',
       nome: track.nome,
       categoria,
       playing: true,
@@ -115,7 +133,7 @@ export default function AmbientSoundPlayer({ masterMode }) {
   const stopAll = async () => {
     const now = Date.now();
     const nextAmbient = {
-      videoId: '', nome: '', categoria: '', playing: false,
+      provider: '', videoId: '', spotifyUri: '', nome: '', categoria: '', playing: false,
       ts: now,
       revision: now * 1000 + Math.floor(Math.random() * 1000),
       commandId: 'ambient_stop_' + now + '_' + Math.random().toString(36).slice(2, 9),
@@ -126,10 +144,10 @@ export default function AmbientSoundPlayer({ masterMode }) {
   };
 
   const addTrack = async () => {
-    const videoId = extractId(novoLink.trim());
-    if (!videoId || !novoNome.trim()) return;
+    const media = parseMediaLink(novoLink);
+    if (!media || !novoNome.trim()) return;
     const categoria = activeCategory;
-    const nova = { id: Date.now(), nome: novoNome.trim(), videoId };
+    const nova = { id: Date.now(), nome: novoNome.trim(), ...media };
     const playlistRef = doc(db, 'config', 'ambient_playlists');
     try {
       const updated = await runTransaction(db, async transaction => {
@@ -167,8 +185,11 @@ export default function AmbientSoundPlayer({ masterMode }) {
     }
   };
 
-  const isPlaying = current?.playing && current?.videoId && !userMuted;
+  const isSpotify = current?.provider === 'spotify' && Boolean(current?.spotifyUri);
+  const hasCurrentMedia = Boolean(current?.videoId || current?.spotifyUri);
+  const isPlaying = current?.playing && hasCurrentMedia && !userMuted;
   const embedSrc = current?.videoId ? `https://www.youtube.com/embed/${current.videoId}?autoplay=1&loop=1&playlist=${current.videoId}&enablejsapi=1&controls=0` : '';
+  const spotifySrc = spotifyEmbedSrc(current?.spotifyUri);
   const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
 
@@ -179,16 +200,26 @@ export default function AmbientSoundPlayer({ masterMode }) {
           <iframe key={`${current?.videoId || 'none'}_${current?.revision || current?.ts || 0}`} ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
         </div>
       )}
+      {isSpotify && spotifyPlayerOpen && spotifySrc && createPortal(
+        <div style={{ position: 'fixed', zIndex: 4800, right: 16, bottom: 'calc(104px + env(safe-area-inset-bottom, 0px))', width: 'min(352px, calc(100vw - 32px))', padding: 8, borderRadius: 14, background: 'rgba(8,10,24,0.98)', border: '1px solid rgba(168,85,247,0.55)', boxShadow: '0 12px 38px rgba(0,0,0,0.65)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 5px 7px', color: '#C4A5FF', font: '11px Cinzel,serif' }}>
+            <span>♫ Spotify · {current.nome || 'Reprodução'}</span>
+            <button onClick={() => setSpotifyPlayerOpen(false)} aria-label="Fechar player do Spotify" style={{ background: 'none', border: 0, color: '#B9A7CC', cursor: 'pointer', fontSize: 16 }}>×</button>
+          </div>
+          <iframe title={`Spotify: ${current.nome || 'música'}`} src={spotifySrc} width="100%" height={/^spotify:(playlist|album|show):/.test(current.spotifyUri) ? 352 : 152} style={{ border: 0, borderRadius: 10, display: 'block' }} allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />
+        </div>,
+        document.body
+      )}
       {!open && (
         <div className="ambient-topbar-closed" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {current?.videoId && (
             <button onClick={() => setUserMuted(m => !m)} title={userMuted ? 'Ativar som' : 'Silenciar para mim'} className="ambient-mute-button" style={{ width: 36, height: 36, borderRadius: '50%', background: isPlaying ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isPlaying ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.14)'}`, color: isPlaying ? '#4ADE80' : '#7A6A8A', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter:'none', boxShadow: isPlaying ? '0 0 18px rgba(74,222,128,0.28)' : 'none', transition: 'all 0.3s', animation: isPlaying ? 'pulse 2.5s ease-in-out infinite' : 'none' }}>{volIcon}</button>
           )}
-          {current?.videoId && (
-            <div className="ambient-track-pill" style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(10,12,28,0.92)', border: `1px solid ${catInfo ? catInfo.color+'44' : 'rgba(74,222,128,0.25)'}`, borderRadius: 24, padding: '6px 14px', backdropFilter:'none', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', maxWidth: 180 }}>
+          {hasCurrentMedia && (
+            <div className="ambient-track-pill" onClick={() => isSpotify && setSpotifyPlayerOpen(true)} title={isSpotify ? 'Abrir player do Spotify' : undefined} style={{ cursor: isSpotify ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(10,12,28,0.92)', border: `1px solid ${catInfo ? catInfo.color+'44' : 'rgba(74,222,128,0.25)'}`, borderRadius: 24, padding: '6px 14px', backdropFilter:'none', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', maxWidth: 180 }}>
               <span style={{ fontSize: 13 }}>{catInfo?.icon || '🎵'}</span>
               <span style={{ fontSize: 11, color: catInfo?.color || '#4ADE80', fontFamily: 'Cinzel,serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.nome || 'Som ambiente'}</span>
-              {isPlaying && (
+              {isPlaying && current?.videoId && (
                 <input type="range" min={0} max={100} step={5} value={volume} onChange={handleVolumeChange} style={{ width: 60, accentColor: catInfo?.color || '#4ADE80', cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }} />
               )}
             </div>
@@ -220,7 +251,7 @@ export default function AmbientSoundPlayer({ masterMode }) {
               <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center', padding: '14px 0', fontStyle:'italic' }}>Nenhuma música nesta categoria ainda.</div>
             )}
             {(playlists[activeCategory] || []).map(track => {
-              const isCurrent = current?.videoId === track.videoId && current?.playing;
+              const isCurrent = current?.playing && (track.spotifyUri ? current?.spotifyUri === track.spotifyUri : current?.videoId === track.videoId);
               const catColor = SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.color || '#4ADE80';
               return (
                 <div key={track.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderRadius:9, background: isCurrent ? `${catColor}18` : 'rgba(255,255,255,0.03)', border:`1px solid ${isCurrent ? catColor+'55' : 'rgba(255,255,255,0.07)'}` }}>
@@ -235,15 +266,15 @@ export default function AmbientSoundPlayer({ masterMode }) {
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, flexShrink:0 }}>
             <label style={{ fontSize: 9, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.65)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Adicionar Música — {SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.label}</label>
             <input value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder="Nome da música/tema..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
-            <input value={novoLink} onChange={e => setNovoLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTrack()} placeholder="Link do YouTube..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
+            <input value={novoLink} onChange={e => setNovoLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTrack()} placeholder="Link do YouTube ou Spotify..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
             <button onClick={addTrack} disabled={!novoNome.trim() || !novoLink.trim()} style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: (novoNome.trim()&&novoLink.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: (novoNome.trim()&&novoLink.trim()) ? 1 : 0.4 }}>✦ Adicionar à Playlist</button>
           </div>
 
-          {current?.videoId && (
+          {hasCurrentMedia && (
             <button onClick={stopAll} style={{ marginTop: 10, width: '100%', padding: '7px', borderRadius: 8, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.08)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11, flexShrink:0 }}>⏹ Parar música para todos</button>
           )}
 
-          <div style={{ marginTop: 10, fontSize: 9, color: '#4A4050', fontFamily: 'Cinzel,serif', lineHeight: 1.6, flexShrink:0 }}>Ao tocar, todos ouvem automaticamente. Cada jogador pode silenciar só pra si no botão de volume.</div>
+          <div style={{ marginTop: 10, fontSize: 9, color: '#4A4050', fontFamily: 'Cinzel,serif', lineHeight: 1.6, flexShrink:0 }}>O YouTube sincroniza e toca para todos. No Spotify, cada jogador inicia a reprodução nos controles do player; a faixa selecionada é compartilhada.</div>
         </div>,
         document.body
       )}
