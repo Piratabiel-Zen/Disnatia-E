@@ -327,7 +327,7 @@ const LIVRO_CSS=`
 .livro-page-count{text-align:center;margin-top:18px;color:#7b637d;font:600 10px 'Cinzel',serif;letter-spacing:.18em;text-transform:uppercase}
 @media(max-width:1100px){.livro-shell{padding-left:62px;padding-right:62px}.livro-tabs{overflow-x:auto;justify-content:flex-start}.livro-tab{min-width:175px}.livro-pages{min-height:570px}.livro-page{padding:34px 30px}.livro-arrow{width:55px;height:55px;font-size:30px}}
 @media(max-width:720px){.livro-shell{padding:18px 12px 74px}.livro-kicker{font-size:8px;letter-spacing:.34em}.livro-tabs{padding:0 4px;margin-bottom:0;gap:5px}.livro-tab{min-width:142px;min-height:48px;padding:9px 10px;font-size:10px}.livro-cover{padding:15px 15px 25px;border-radius:18px}.livro-pages{display:block;min-height:0}.livro-page{display:none;min-height:620px;padding:35px 25px 42px;border-radius:10px!important}.livro-page.mobile-visible{display:block}.livro-gutter{display:none}.livro-arrow{position:fixed;top:auto;bottom:20px;width:48px;height:48px;font-size:27px}.livro-arrow.prev{left:18px}.livro-arrow.next{right:78px}.livro-bookmark{display:none}.livro-info-grid{grid-template-columns:1fr}.livro-engraved:last-child{grid-column:auto}.livro-milestone{grid-template-columns:44px 1fr}.livro-milestone-icon{width:40px;height:40px;font-size:18px}.livro-master-embed{height:auto;max-height:none}.livro-page-count{margin-top:10px}}
-@media(prefers-reduced-motion:reduce){.livro-turning .livro-pages{animation:none!important}.livro-tab,.livro-arrow{transition:none!important}}
+.livro-shell.livro-artifacts-premium .livro-title{color:#f0dcff;text-shadow:0 0 10px rgba(182,105,255,.7),0 0 30px rgba(131,58,224,.5),0 2px 0 #26112f}.livro-shell.livro-artifacts-premium .livro-ornament{background:linear-gradient(90deg,transparent,#b57cff 20%,#f5d58d 50%,#b57cff 80%,transparent);box-shadow:0 0 16px rgba(183,114,255,.45)}.livro-shell.livro-artifacts-premium .livro-ornament:after{color:#f0cfff;text-shadow:0 0 9px #c063ff,0 0 20px #8b3fc7}.livro-shell.livro-artifacts-premium .livro-tab.active{border-color:#c17dff;background:linear-gradient(180deg,rgba(104,45,151,.72),rgba(34,15,53,.96));color:#f6d994;box-shadow:0 0 14px rgba(178,93,255,.55),inset 0 0 18px rgba(205,149,255,.18);text-shadow:0 0 9px rgba(220,178,255,.7)}.livro-shell.livro-artifacts-premium .livro-cover{border-color:#a96be0;background:linear-gradient(110deg,#100b18,#291934 10%,#100b18 49%,#2e1a3a 90%,#0d0914);box-shadow:0 30px 70px rgba(0,0,0,.78),0 0 26px rgba(146,67,207,.42),0 0 52px rgba(211,165,90,.14),inset 0 0 0 5px #170e1d,inset 0 0 0 7px rgba(173,112,216,.5)}.livro-shell.livro-artifacts-premium .livro-record-icon{border-color:rgba(151,82,207,.7);box-shadow:inset 0 0 36px rgba(148,74,190,.24),0 0 26px rgba(173,92,235,.3);background:radial-gradient(circle,rgba(190,127,229,.32),rgba(65,39,80,.12) 66%,transparent)}.livro-shell.livro-artifacts-premium .livro-record-name{color:#5b317c;text-shadow:0 0 12px rgba(169,103,220,.25)}.livro-shell.livro-artifacts-premium .livro-page.right{background-color:#ddc9eb;background-image:radial-gradient(circle at 16% 20%,rgba(104,56,132,.15),transparent 25%),radial-gradient(circle at 82% 80%,rgba(191,144,72,.12),transparent 30%),linear-gradient(100deg,rgba(255,246,230,.6),transparent 25%,rgba(91,48,114,.12) 100%),repeating-linear-gradient(7deg,rgba(82,50,22,.025) 0 1px,transparent 1px 4px)}.livro-shell.livro-artifacts-premium .livro-locked .livro-seal{color:#ae72df;filter:none;opacity:.6;text-shadow:0 0 20px rgba(164,82,226,.75)}.livro-shell.livro-artifacts-premium .livro-page-count{color:#c5a0eb;text-shadow:0 0 12px rgba(173,92,235,.45)}@media(prefers-reduced-motion:reduce){.livro-turning .livro-pages{animation:none!important}.livro-tab,.livro-arrow{transition:none!important}}
 `;
 
 const SHEET_COLORS={fogo:'#1EC8FF',escarlate:'#E8193C',corvos:'#E8A020',magos:'#A855F7',marfim:'#4ADE80',necromante:'#6E6E80',bardo:'#FFD86B',arcanjo:'#5B2C8C',personalizado:'#C0C0C0'};
@@ -1025,9 +1025,9 @@ Mas o tempo não obedece aos fracos, aos desatentos ou aos indignos. Para tocar 
       }
     ]
   },
-  {id:'artefato-4',name:'Artefato IV',icon:'◆',lore:'',fisico:''},
-  {id:'artefato-5',name:'Artefato V',icon:'◆',lore:'',fisico:''},
-  {id:'artefato-6',name:'Artefato VI',icon:'◆',lore:'',fisico:''}
+  {id:'sardas',name:'Sardas',icon:'◉',lore:'Sardas é um manto de pele quase translúcida, passado de campeão em campeão. A tradição atribui sua criação ao primeiro grande campeão da humanidade, conhecido apenas como Titã; seu nome verdadeiro se perdeu na história.\n\nNinguém sabe de onde o manto veio, onde se originou ou quem o criou. Boatos antigos afirmam que foi tecido por uma entidade cujo nome não pode ser pronunciado: ?????? — ⟊⟒⟟ ⟊⟒⟟ ⟟⟒⟊. Os sinais não pertencem a nenhum idioma conhecido.',fisico:'Forma: manto feito de uma pele fina, translúcida e quase viva.\nPortadores conhecidos: campeões escolhidos ao longo das eras.\nOrigem: desconhecida; as versões sobre sua criação se contradizem.',requisitos:{forcaBonus:3,sorteBonus:3,texto:'Exige bônus mínimo de +3 em Força e +3 em Sorte — equivalentes a pelo menos 6 pontos naturais em cada atributo.'},builtInPowers:[{id:'sardas-pele-impenetravel',nome:'Pele do Campeão',custo:0,cooldown:'—',descricao:'A pele do portador absorve completamente ataques cujo resultado final seja inferior a 15 no D20, mesmo quando o teste escala com atributos. O ataque precisa alcançar 15 ou mais para feri-lo. Efeitos avassaladores — como antimatéria, bomba de nêutrons ou tiro de bazuca — ignoram essa absorção.'}]},
+  {id:'oculos-de-cera',name:'Óculos de Cera',icon:'👓',lore:'Relíquia passada de faraó a faraó no Egito antigo, os Óculos de Cera foram criados pelo Homem de Leite, entidade da vida, em um gesto benevolente: trazer vida a este mundo.\n\nEm eras antigas, os óculos absorviam a energia vital dos fiéis, guardando-a nas hastes e, sobretudo, nas lentes. A ambição de príncipes, sacerdotes e faraós acumulou tanta energia na relíquia que ela já não precisa drenar a vida de quem está ao redor. O que nasceu como dádiva tornou-se um reservatório imenso de vida.',fisico:'Forma: óculos antigos, com hastes e lentes impregnadas de energia vital.\nOrigem: Egito antigo; transmitidos de imperador a imperador.\nCriador atribuído: Homem de Leite, entidade da vida.',requisitos:{percepcaoMinimo:2,inteligenciaMinimo:2,sorteMinimo:1,texto:'Exige pelo menos 2 pontos em Percepção, 2 em Inteligência e 1 em Sorte.'},builtInPowers:[{id:'oculos-cera-regeneracao',nome:'Restauração Vital',custo:0,cooldown:'1 vez por combate',descricao:'Uma vez por combate, o portador restaura completamente todos os próprios ferimentos.'},{id:'oculos-cera-visao-futura',nome:'Dois Segundos Adiante',custo:0,cooldown:'A cada 2 ataques recebidos',descricao:'A cada segundo ataque direcionado ao portador, ele enxerga dois segundos no futuro. Se obtiver 11 ou mais no D20, prevê o golpe e consegue esquivá-lo.'}]},
+  {id:'notacao-cientifica-do-leite',name:'Notação Científica do Leite',icon:'🧪',lore:'Os cientistas de eras antigas se intrigavam com o Homem Água: sua presença fazia a vida prosperar e reacendia a esperança dos fiéis, enquanto os doutores tentavam explicar o fenômeno. Um dia, decidiram ir até o Homem de Leite e medir aquilo que acreditavam ser leite.\n\nO experimento terminou em catástrofe. Os que testemunharam ficaram cegos; os que escutaram, surdos; os que gritavam, mudos; e aqueles que sentiam qualquer coisa desapareceram por completo.\n\nDo desastre restou uma pequena molécula branca, parecida com leite, mas desconhecida pela humanidade. Ela foi chamada de elixir da vida — o sopro de esperança que deu origem à Notação Científica do Leite.',fisico:'Forma: uma molécula branca, pequena e desconhecida, preservada como notação científica.\nOrigem: experimento dos antigos doutores junto ao Homem de Leite.\nNatureza: elixir de vida, além da compreensão humana.',requisitos:{inteligenciaBonus:4,sorteBonus:3,percepcaoBonus:2,texto:'Exige bônus mínimo de +4 em Inteligência, +3 em Sorte e +2 em Percepção.'},builtInPowers:[{id:'notacao-criacao-viva',nome:'Gênese de Matéria',custo:0,cooldown:'2 rodadas',descricao:'Com um D20 puro, o portador dá vida a objetos inanimados, flores ou pequenos ramos, que passam a servi-lo como minions. Cada criação comum tem 7 pontos de vida. Com resultado 18 ou maior, ela nasce como um grande golem com 20 pontos de vida.'},{id:'notacao-execucao-criacao',nome:'Execução da Criação',custo:0,cooldown:'—',descricao:'Quando um inimigo está com até 13% de sua vida máxima, qualquer ataque do portador pode executá-lo instantaneamente, desintegrando-o. Esta execução não afeta ameaças de nível Anomalia ou Entidade.'}]}
 ];
 
 function getArtifactPowers(art, artefatosHabs){
@@ -3780,10 +3780,10 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
   const selectedArt = revealedArtefatos.find(a => a.id === selectedId);
   const habs = getArtifactPowers(selectedArt, artefatosHabs);
   const [showHabs, setShowHabs] = useState(false);
-  const intBonus = Math.floor(Math.max(0, Number(sheet.inteligencia) || 0) / 2);
-  const luckBonus = Math.floor(Math.max(0, Number(sheet.sorte) || 0) / 2);
   const req = selectedArt?.requisitos;
-  const meetsRequirements = !req || (intBonus >= (req.inteligenciaBonus || 0) && luckBonus >= (req.sorteBonus || 0));
+  const attributeValues = {forca:Math.max(0,Number(sheet.forca)||0),percepcao:Math.max(0,Number(sheet.percepcao)||0),inteligencia:Math.max(0,Number(sheet.inteligencia)||0),sorte:Math.max(0,Number(sheet.sorte)||0)}, attributeLabels={forca:'Força',percepcao:'Percepção',inteligencia:'Inteligência',sorte:'Sorte'}, attributeBonuses=Object.fromEntries(Object.entries(attributeValues).map(([key,value])=>[key,Math.floor(value/2)]));
+  const requirementsMet = !req || Object.keys(attributeLabels).every(key=>attributeValues[key]>=(req[key+'Minimo']||0)&&attributeBonuses[key]>=(req[key+'Bonus']||0));
+  const requirementCurrent = Object.keys(attributeLabels).filter(key=>(req?.[key+'Minimo']||0)>0||(req?.[key+'Bonus']||0)>0).map(key=>attributeLabels[key]+': '+attributeValues[key]+' pts (bônus +'+attributeBonuses[key]+')').join(' · ');
 
   return (
     <div style={{ marginBottom: showHeader ? 16 : 0 }}>
@@ -3843,11 +3843,11 @@ function ArtefatoFichaPanel({ sheet, onChange, sheetColor, revealedArtefatos, ar
                   background:meetsRequirements?'rgba(74,222,128,.055)':'rgba(232,25,60,.055)'
                 }}>
                   <div style={{fontFamily:'Cinzel,serif',fontSize:10,fontWeight:700,color:meetsRequirements?'#4ADE80':'#E8193C',marginBottom:4}}>
-                    {meetsRequirements?'✓ Requisitos temporais atendidos':'✕ Requisitos temporais insuficientes'}
+                    {requirementsMet?'✓ Requisitos do portador atendidos':'✕ Requisitos do portador insuficientes'}
                   </div>
                   <div style={{fontSize:11,color:'#7A6A5A',lineHeight:1.5}}>
-                    Exige +{req.inteligenciaBonus} Inteligência e +{req.sorteBonus} Sorte pelos atributos.
-                    {' '}Atual: +{intBonus} INT · +{luckBonus} SORTE.
+                    {req.texto || 'Atributos mínimos descritos para esta relíquia.'}
+                    {requirementCurrent && <div style={{marginTop:4,opacity:.82}}>Atual: {requirementCurrent}.</div>}
                   </div>
                 </div>
               )}
@@ -5930,7 +5930,7 @@ function LibroSection({masterMode}){
   const tabs=[
     {id:'marcos',label:'Marcos & Profecia',icon:'▣'},
     {id:'entidades',label:'As Seis Entidades',icon:'◈'},
-    {id:'artefatos',label:'Os 6 Artefatos',icon:'◆'},
+    {id:'artefatos',label:'Relíquias Supremas',icon:'✧'},
     {id:'mestre',label:'Páginas do Mestre',icon:'▤'},
   ];
   const totals={marcos:2,entidades:ENTITIES_DATA.length,artefatos:ARTEFATOS_DATA.length,mestre:1};
@@ -5983,7 +5983,7 @@ function LibroSection({masterMode}){
   ]};
 
   const ArtifactPages=()=>{const art=ARTEFATOS_DATA[spread];const revealed=!!artefatosUnlocked[art.id];const powers=getArtifactPowers(art,artefatosHabs);return [
-    revealed?<div className="livro-record"><div className="livro-record-icon"><ArtifactGlyph art={art} size={96}/></div><div className="livro-record-name">{art.name}</div><div className="livro-status">Artefato revelado</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Selar artefato</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar artefato</button>}</div>,
+    revealed?<div className="livro-record"><div className="livro-record-icon"><ArtifactGlyph art={art} size={96}/></div><div className="livro-record-name">{art.name}</div><div className="livro-status">Artefato revelado</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Selar artefato</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar</button>}</div>,
     revealed?<div>
       <h3 className="livro-page-title">{art.name}</h3>
       <div className="livro-section-label">Descrição & Origem</div>
@@ -6006,8 +6006,8 @@ function LibroSection({masterMode}){
 
   const hasPrev=spread>0||mobileSide===1;
   const hasNext=spread<totals[activeTab]-1||mobileSide===0;
-  return <div className="livro-shell" onTouchStart={e=>touchStart.current=e.touches[0]?.clientX} onTouchEnd={e=>{if(touchStart.current==null)return;const dx=e.changedTouches[0].clientX-touchStart.current;if(Math.abs(dx)>45)turnPage(dx<0?1:-1);touchStart.current=null;}}>
-    <header className="livro-heading"><div className="livro-kicker">O Artefato da Profecia</div><h2 className="livro-title">Livro da Mandíbula</h2><div className="livro-ornament"/></header>
+  return <div className={`livro-shell ${activeTab==='artefatos'?'livro-artifacts-premium':''}`} onTouchStart={e=>touchStart.current=e.touches[0]?.clientX} onTouchEnd={e=>{if(touchStart.current==null)return;const dx=e.changedTouches[0].clientX-touchStart.current;if(Math.abs(dx)>45)turnPage(dx<0?1:-1);touchStart.current=null;}}>
+    <header className="livro-heading"><div className="livro-kicker">{activeTab==='artefatos'?'Relíquias Supremas · Registros Selados':'O Artefato da Profecia'}</div><h2 className="livro-title">Livro da Mandíbula</h2><div className="livro-ornament"/></header>
     <nav className="livro-tabs" aria-label="Seções do Livro da Mandíbula">{tabs.map(t=><button className={`livro-tab ${activeTab===t.id?'active':''}`} key={t.id} onClick={()=>changeTab(t.id)}><span style={{marginRight:9}}>{t.icon}</span>{t.label}</button>)}</nav>
     <div className={`livro-stage ${turning?'livro-turning':''}`} style={{'--flip-dir':`${turnDir*16}deg`}}>
       <button className="livro-arrow prev" onClick={()=>turnPage(-1)} disabled={!hasPrev} aria-label="Página anterior">‹</button>
