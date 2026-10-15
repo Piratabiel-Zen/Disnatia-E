@@ -88,7 +88,7 @@ function dinastiaModularBuild() {
         "scripts/ability-vigor-patch.mjs",
         "scripts/class-ability-scaling-patch.mjs",
         "scripts/acquired-knowledge-patch.mjs",
-        "scripts/final-families-guard.mjs"
+        "scripts/final-families-guard.mjs",\n        "scripts/summon-mini-sheet-token-sync.mjs"
       ])
     },
   }
