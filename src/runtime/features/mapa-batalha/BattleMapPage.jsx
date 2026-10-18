@@ -1606,6 +1606,7 @@ const TOKEN_THROTTLE_MS = 80;
 
   const mapUnitScale = baseSize.normalW > 0 ? baseSize.w / baseSize.normalW : 1;
   const tokenScale = zoom * mapUnitScale;
+  const labelScale = Math.max(0.62, Math.min(1, 1 / Math.sqrt(Math.max(1, tokenScale))));
 
   const zoomBtnStyle = { width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#C8B8A0', cursor: 'pointer', fontSize: 13, lineHeight: 1, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
@@ -1850,7 +1851,7 @@ const TOKEN_THROTTLE_MS = 80;
                             }} />
                           : <span style={{ fontSize: dispSize * 0.4, filter: isSelected ? `drop-shadow(0 0 6px ${info.color})` : 'none', transform:`rotate(${Number(token.rotation || 0)}deg)`, transition:rotatingId===token.id?'none':'transform .12s linear' }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                       </div>
-                      <div style={{ fontSize: 10 * tokenScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: 5 * tokenScale, padding: `${1 * tokenScale}px ${7 * tokenScale}px`, whiteSpace: 'nowrap', maxWidth: 90 * tokenScale, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 10 * labelScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: Math.max(3, 5 * labelScale), padding: `${Math.max(1, labelScale)}px ${Math.max(3, 7 * labelScale)}px`, whiteSpace: 'nowrap', maxWidth: Math.max(56, 90 * labelScale), overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
                       {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && (
