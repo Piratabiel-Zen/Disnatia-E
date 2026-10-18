@@ -392,7 +392,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
       id:`s_${summonId}`,summonDocId:summonId,type:'summon',ownerSheetId:String(selectedSheet.id),
       summonMemoryId:String(summon.id||''),nome:summon.nome||'Invocação',foto:summon.foto||'',
       color:selectedClass?.color||'#6E6E80',threat:summon.ameaca||'Baixa',hp:maxHp,maxHp,
-      vigos:3,maxVigos:3,roll:0,status:{},forca:attr('forca'),agilidade:attr('agilidade'),
+      vigos:Math.max(0,Math.min(3,Number(summon.vigos??3))),maxVigos:3,roll:0,status:{},forca:attr('forca'),agilidade:attr('agilidade'),
       durabilidade:attr('durabilidade'),inteligencia:attr('inteligencia'),percepcao:attr('percepcao'),
       sorte:attr('sorte'),ataques:attacks,
     };
