@@ -38,7 +38,8 @@ fs.writeFileSync(battleFile, battle);
 // 2) Rolagem pública: fechável, some em 4 segundos e fica acima do Diário Vivo.
 const broadcastsFile = path.join(process.cwd(), 'src', 'experience', 'RealtimeBroadcasts.jsx');
 let broadcasts = fs.readFileSync(broadcastsFile, 'utf8');
-broadcasts = replaceRequired(broadcasts, 'const DICE_TTL = 16000;', 'const DICE_TTL = 4000;', 'TTL de quatro segundos do dado');
+if (broadcasts.includes('const DICE_TTL = 16000;')) {
+  broadcasts = replaceRequired(broadcasts, 'const DICE_TTL = 16000;', 'const DICE_TTL = 4000;', 'TTL de quatro segundos do dado');
 broadcasts = replaceRequired(
   broadcasts,
   '  const [revealed, setRevealed] = useState(false);',
@@ -68,6 +69,9 @@ if (!realtimeCss.includes('/* DADO ACIMA DO DIARIO */')) {
   realtimeCss += `\n/* DADO ACIMA DO DIARIO */\n.rt-dice-stack{z-index:20050!important}\n`;
 }
 fs.writeFileSync(realtimeCssFile, realtimeCss);
+} else if (!broadcasts.includes('const COSMIC_TTL = 22000;') || !broadcasts.includes('realtime-cosmic-event')) {
+  throw new Error('Session UI patch: formato do canal realtime não reconhecido.');
+}
 
 // 3) HUD de combate: normais + especiais desbloqueadas + habilidades da campanha.
 const experienceFile = path.join(process.cwd(), 'src', 'experience', 'ExperienceKit.jsx');
