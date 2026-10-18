@@ -34,6 +34,7 @@ const selectedLinkLabels=[
   "              <label style={{display:'block',fontSize:9,color:'#B38BDE',fontFamily:'Cinzel,serif',marginBottom:10}}>Invocação vinculada<select value={selectedToken.summonDocId||''} onChange={e=>{const id=e.target.value;updateToken(selectedToken.id,{summonDocId:id,familiarSheetId:'',familiarId:'',sheetId:'',enemyId:''});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma</option>{combatSummons.filter(row=>row.active!==false).map(row=><option key={row.summonDocId} value={row.summonDocId}>{(sheets.find(sheet=>String(sheet.id)===String(row.ownerSheetId))?.nome||'Necromante')+' — '+(row.nome||'Invocação')+' · '+(row.hp??0)+'/'+(row.maxHp??1)+' HP'}</option>)}</select></label>"
 ];
 if(!map.includes('Familiar vinculado<select value={selectedToken.familiarSheetId'))map=map.slice(0,selectedReferenceEnd+8)+'\n'+selectedLinkLabels.join('\n')+map.slice(selectedReferenceEnd+8);
+map=required(map,"const hp = vital.kind === 'manual' ? raw : Math.min(Math.max(1, vital.maxHp || 1), raw);","const hp = ['manual','familiar','summon'].includes(vital.kind) ? raw : Math.min(Math.max(1, vital.maxHp || 1), raw);","allow linked familiars and summons to reach zero HP");
 fs.writeFileSync(mapPath,map);
 
 // Combined attacks are supported for enemy-owned abilities as well as character abilities.
