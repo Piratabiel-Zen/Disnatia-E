@@ -109,7 +109,9 @@ for (const forbidden of ['mapamundi','mapabatalha','inimigos']) {
 }
 
 // BattleMap: Firestore é autoridade; sem comparar relógios de computadores diferentes.
-must(/const TOKEN_THROTTLE_MS = (33|80);/.test(battle), 'BattleMap: cadência de movimento fora do orçamento');
+// O gerador legado usa 33/80 ms; o runtime canônico persiste no máximo a cada 100 ms.
+const tokenThrottleMs = Number(battle.match(/const TOKEN_THROTTLE_MS\s*=\s*(\d+);/)?.[1]);
+must(tokenThrottleMs >= 33 && tokenThrottleMs <= 100, 'BattleMap: cadência de movimento fora do orçamento');
 present(battle, "const u2 = onSnapshot(activeMapRef, snap => {", 'BattleMap ativo');
 if (process.argv.includes('--legacy-generation')) {
   // This pass precedes install-canonical-runtime in the seed generation pipeline.

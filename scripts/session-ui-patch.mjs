@@ -38,7 +38,9 @@ fs.writeFileSync(battleFile, battle);
 // 2) Rolagem pública: fechável, some em 4 segundos e fica acima do Diário Vivo.
 const broadcastsFile = path.join(process.cwd(), 'src', 'experience', 'RealtimeBroadcasts.jsx');
 let broadcasts = fs.readFileSync(broadcastsFile, 'utf8');
-if (broadcasts.includes('const DICE_TTL = 16000;')) {
+// O canal atual cuida só de eventos cósmicos; o replay dos dados fica em outro módulo.
+// Modificações e validações do card legado devem permanecer no mesmo ramo.
+if (/const DICE_TTL = (?:16000|4000);/.test(broadcasts)) {
   broadcasts = replaceRequired(broadcasts, 'const DICE_TTL = 16000;', 'const DICE_TTL = 4000;', 'TTL de quatro segundos do dado');
 broadcasts = replaceRequired(
   broadcasts,
@@ -69,6 +71,13 @@ if (!realtimeCss.includes('/* DADO ACIMA DO DIARIO */')) {
   realtimeCss += `\n/* DADO ACIMA DO DIARIO */\n.rt-dice-stack{z-index:20050!important}\n`;
 }
 fs.writeFileSync(realtimeCssFile, realtimeCss);
+for (const [source, marker, label] of [
+  [broadcasts, 'const DICE_TTL = 4000;', 'TTL do dado'],
+  [broadcasts, 'rt-dice-close', 'fechar dado'],
+  [realtimeCss, 'z-index:20050', 'dado acima do Diário'],
+]) {
+  if (!source.includes(marker)) throw new Error(`Validação ausente: ${label}`);
+}
 } else if (!broadcasts.includes('const COSMIC_TTL = 22000;') || !broadcasts.includes('realtime-cosmic-event')) {
   throw new Error('Session UI patch: formato do canal realtime não reconhecido.');
 }
@@ -199,9 +208,6 @@ fs.writeFileSync(worldMapFile, worldMap);
 for (const check of [
   [sheets, 'playerSheetId && String(playerSheetId) === sid', 'senha única em Fichas'],
   [battle, 'playerSheetId && String(playerSheetId) === sid', 'senha única no mapa'],
-  [broadcasts, 'const DICE_TTL = 4000;', 'TTL do dado'],
-  [broadcasts, 'rt-dice-close', 'fechar dado'],
-  [realtimeCss, 'z-index:20050', 'dado acima do Diário'],
   [experience, 'classSpecials=', 'habilidades especiais no HUD'],
   [experience, 'campaignAbilities=', 'habilidades da campanha no HUD'],
   [experience, 'abilityRailRef', 'scroll de habilidades'],

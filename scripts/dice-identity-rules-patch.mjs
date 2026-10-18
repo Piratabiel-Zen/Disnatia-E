@@ -63,6 +63,8 @@ fs.writeFileSync(appFile, app);
 // ── Popup público: bloco e pulso usam a cor da classe do personagem ────────
 const broadcastsFile = path.join(process.cwd(), 'src', 'experience', 'RealtimeBroadcasts.jsx');
 let broadcasts = fs.readFileSync(broadcastsFile, 'utf8');
+const legacyDiceBroadcast = broadcasts.includes('function DiceBroadcastQueue(');
+if (legacyDiceBroadcast) {
 broadcasts = replaceRequired(
   broadcasts,
   "  const color = isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8';",
@@ -70,6 +72,14 @@ broadcasts = replaceRequired(
   'cor da ficha no popup público'
 );
 fs.writeFileSync(broadcastsFile, broadcasts);
+} else if (!broadcasts.includes('function CosmicBroadcastQueue(')) {
+  throw new Error('Dice identity/rules patch: canal público não reconhecido.');
+}
+// No canal atual, a cor da rolagem é renderizada pelo replay compartilhado.
+const publicDiceColorSource = legacyDiceBroadcast ? broadcasts : fs.readFileSync(
+  path.join(process.cwd(), 'src', 'experience', 'SharedDiceReplay.jsx'), 'utf8'
+);
+const publicDiceColorMarker = legacyDiceBroadcast ? 'result.rollerColor' : 'active.rollerColor';
 
 const realtimeCssFile = path.join(process.cwd(), 'src', 'experience', 'realtime.css');
 let realtimeCss = fs.readFileSync(realtimeCssFile, 'utf8');
@@ -101,7 +111,7 @@ for (const [source, marker, label] of [
   [dice, 'rollerColor:', 'cor publicada na rolagem'],
   [dice, "doc(db, 'sheets', String(access.sheetId))", 'ficha realtime da rolagem'],
   [app, '<DiceWidget access={access}/>', 'acesso entregue ao dado'],
-  [broadcasts, 'result.rollerColor', 'popup colorido pela classe'],
+  [publicDiceColorSource, publicDiceColorMarker, 'popup colorido pela classe'],
   [realtimeCss, diceIdentityMarker, 'pulso da cor da classe'],
   [gameData, 'no máximo 3 Ataques Normais consecutivos', 'regra dos três ataques'],
 ]) {

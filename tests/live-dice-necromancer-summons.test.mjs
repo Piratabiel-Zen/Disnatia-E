@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createLiveSnapshotGate, isNewLiveDocument } from '../src/experience/liveDiceGate.js';
 
 const vite = fs.readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
 const patch = fs.readFileSync(new URL('../scripts/live-dice-necromancer-summons-final-patch.mjs', import.meta.url), 'utf8');
@@ -12,9 +13,17 @@ test('the session-only replay and summon patch follows realtime fixes', () => {
   assert.ok(vite.indexOf('chronicles-mobile-reliability-patch.mjs') > current);
 });
 
-test('historical dice are rejected both when queued and before playback', () => {
-  assert.match(patch, /isLiveDicePayload\(payload/);
-  assert.match(patch, /liveQueue = queue\.filter/);
+test('historical snapshots are silent and new dice do not depend on the device clock', () => {
+  const gate = createLiveSnapshotGate();
+  assert.equal(gate.shouldDeliver({ fromCache:true }), false);
+  assert.equal(gate.shouldDeliver({ fromCache:false }), false);
+  assert.equal(gate.shouldDeliver({ fromCache:false }), true);
+  assert.equal(isNewLiveDocument({ type:'added', doc:{ ts:1 } }), true);
+  assert.equal(isNewLiveDocument({ type:'modified' }), false);
+  const realtimePatch = fs.readFileSync(new URL('../scripts/live-dice-critical-session-performance-final-patch.mjs', import.meta.url), 'utf8');
+  assert.match(realtimePatch, /createLiveSnapshotGate\(\)/);
+  assert.match(realtimePatch, /isNewLiveDocument\(change\)/);
+  assert.doesNotMatch(patch, /isLiveDicePayload\(payload/);
   assert.match(patch, /slice\(-5\)/);
 });
 

@@ -29,7 +29,7 @@ const getReplayId = payload => String(
 
 const firstNameOf = value => {
   const clean = String(value || 'Jogador').trim();
-  return clean ? clean.split(/\s+)/[0] : 'Jogador';
+  return clean ? clean.split(/\s+/)[0] : 'Jogador';
 };
 
 export default function SharedDiceReplay({ access }) {
@@ -85,15 +85,14 @@ export default function SharedDiceReplay({ access }) {
     }, error => console.error('Falha no feed do replay compartilhado:', error));
 
     const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
+      if (!snap.exists()) { configPrimed = true; return; }
+      const payload = snap.data() || {};
       if (!configPrimed) {
         configPrimed = true;
-        if (!snap.exists()) return;
-        const payload = snap.data() || {};
         remember(getReplayId(payload));
         return;
       }
-      if (!snap.exists()) return;
-      enqueue(snap.data() || {});
+      enqueue(payload);
     }, error => console.error('Falha no fallback compartilhado de dados:', error));
 
     return () => { unsubFeed(); unsubConfig(); };

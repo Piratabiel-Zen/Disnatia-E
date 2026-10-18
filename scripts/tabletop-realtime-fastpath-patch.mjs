@@ -100,7 +100,8 @@ fs.writeFileSync(diceFile, dice);
 // ── 3) REPLAY COMPARTILHADO: Mestre aparece literalmente para os jogadores ──
 let shared = fs.readFileSync(sharedDiceFile, 'utf8');
 
-shared = replaceRequired(
+// O replay atual também atende o autor; só há filtro de ficha na versão legada.
+if (shared.includes('const samePlayerSheet =')) shared = replaceRequired(
   shared,
   "    const samePlayerSheet = !!localSheetId && !!payload.rollerSheetId && String(payload.rollerSheetId) === localSheetId;",
   "    const samePlayerSheet = payload.rollerRole !== 'master' && !!localSheetId && !!payload.rollerSheetId && String(payload.rollerSheetId) === localSheetId;",
@@ -109,8 +110,8 @@ shared = replaceRequired(
 
 shared = replaceRequired(
   shared,
-  "  const firstName = firstNameOf(active.roller);\n\n  return (",
-  "  const firstName = firstNameOf(active.roller);\n  const isMasterRoll = active.rollerRole === 'master' || String(active.roller || '').trim().toLowerCase() === 'mestre';\n\n  return (",
+  "  const firstName = firstNameOf(active.roller);",
+  "  const firstName = firstNameOf(active.roller);\n  const isMasterRoll = active.rollerRole === 'master' || String(active.roller || '').trim().toLowerCase() === 'mestre';",
   'identidade visual do Mestre'
 );
 
@@ -136,13 +137,13 @@ shared = replaceRequired(
 );
 
 for (const marker of [
-  "payload.rollerRole !== 'master'",
   "const isMasterRoll = active.rollerRole === 'master'",
   "rolagem do mestre",
   "{isMasterRoll ? 'Mestre' : firstName}",
 ]) {
   must(shared.includes(marker), `SharedDiceReplay incompleto: ${marker}`);
 }
+must(!shared.includes('const samePlayerSheet =') || shared.includes("payload.rollerRole !== 'master'"), 'Mestre ainda filtrado como própria ficha');
 
 fs.writeFileSync(sharedDiceFile, shared);
 

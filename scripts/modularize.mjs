@@ -4,7 +4,31 @@ import path from 'node:path';
 const src = fs.readFileSync('App.jsx','utf8');
 const lines = src.split(/\r?\n/);
 if(lines.length < 6600 || !src.includes('export default function App(){')) throw new Error('App.jsx inesperado: refatoração abortada para proteger o código atual.');
-const L=(a,b)=>lines.slice(a-1,b).join('\n')+'\n';
+// As edições das fichas mudam o número de linhas de todas as páginas seguintes.
+// Esses módulos usam limites de declarações para nunca cortar JSX ao meio.
+const sectionRanges = {
+  '3372:4957': ['const SHEET_TABS = [', 'function SheetsSection('],
+  '4958:5094': ['function SheetsSection(', "const ENEMY_COLOR="],
+  '5088:5298': ["const ENEMY_COLOR=", 'const newNPC ='],
+  '5299:5408': ['const newNPC =', 'function EnemyGridCard('],
+  '5409:5548': ['function EnemyGridCard(', 'const BESTIARIO_AMEACA_CORES ='],
+  '5549:5714': ['const BESTIARIO_AMEACA_CORES =', 'function RuleBody('],
+  '5715:5847': ['function RuleBody(', 'const newMasterPage='],
+  '5848:6023': ['const newMasterPage=', 'const newEntry='],
+  '6024:6405': ['const newEntry=', 'function CenariosSection('],
+  '6469:6475': ['function MasterToggle(', 'function PlayerCombatBanner('],
+  '6476:6626': ['function PlayerCombatBanner(', 'function PublicDiceOverlay('],
+  '6627:6681': ['function PublicDiceOverlay(', 'function ConnectionStatus('],
+  '6682:6691': ['function ConnectionStatus(', 'export default function App(){'],
+};
+const L=(a,b)=>{
+  const range=sectionRanges[`${a}:${b}`];
+  if(!range)return lines.slice(a-1,b).join('\n')+'\n';
+  const start=src.indexOf('\n'+range[0]);
+  const end=src.indexOf('\n'+range[1],start+1);
+  if(start<0||end<=start)throw new Error(`Limites do módulo não encontrados: ${range.join(' → ')}`);
+  return src.slice(start+1,end)+'\n';
+};
 const W=(file,content)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,content)};
 const tmpl=name=>{const mark='const '+name+'=`';const a=src.indexOf(mark);if(a<0)throw new Error(name+' não encontrado');const start=a+mark.length;const end=src.indexOf('`;',start);if(end<0)throw new Error(name+' sem fechamento');return src.slice(start,end).replace(/^\n/,'').replace(/\n$/,'')};
 

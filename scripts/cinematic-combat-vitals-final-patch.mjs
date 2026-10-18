@@ -225,7 +225,10 @@ write(kitFile, kit);
 const realtimeFile = 'src/experience/RealtimeBroadcasts.jsx';
 let realtime = read(realtimeFile);
 const hookStart = 'function useDurableChannel({ collectionName, kind, ttl }) {';
-const hookEnd = '\n\nfunction DiceBroadcastQueue({ events }) {';
+// O canal cósmico continua válido quando o replay de dados já foi separado.
+const hookEnd = realtime.includes('\n\nfunction DiceBroadcastQueue({ events }) {')
+  ? '\n\nfunction DiceBroadcastQueue({ events }) {'
+  : '\n\nfunction CosmicBroadcastQueue({ events }) {';
 const durableHook = `function useDurableChannel({ collectionName, kind, ttl }) {
   const [events, setEvents] = useState([]);
   const seenRef = useRef(new Set());
