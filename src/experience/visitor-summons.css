@@ -8,3 +8,10 @@
 @media(max-width:900px){.visitor-form{display:grid;grid-template-columns:1fr}.visitor-form label{min-width:0}.visitors-page{padding:16px 10px 110px}.visitor-character-picker{max-width:130px}.summon-combat-rack{left:8px;top:150px;width:min(264px,calc(100vw - 16px))}.summon-mini-sheet button{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.summon-combat-rack *{animation:none!important}}
 .access-gate .access-mode-tabs{grid-template-columns:repeat(3,minmax(76px,1fr));max-width:100%}.access-gate .access-mode-tabs button{min-height:44px;font-size:11px;padding:8px 12px;color:#a899b8}.access-gate .access-mode-tabs button.active{color:#e2caef}
+
+.summon-vigor-dots{display:flex;align-items:center;gap:7px}
+.summon-vigor-dots button{width:19px;min-height:19px;height:19px;padding:0;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(211,184,255,.35);background:transparent;box-shadow:none}
+.summon-vigor-dots button.active{border-color:#c084fc;background:rgba(168,85,247,.25);box-shadow:0 0 9px rgba(168,85,247,.55)}
+.summon-vigor-dots button i{width:8px;height:8px;border-radius:50%;background:transparent}
+.summon-vigor-dots button.active i{background:#e9d5ff;box-shadow:0 0 7px #c084fc}
+.summon-vigor-dots output{margin-left:3px;color:#c9b3df;font-size:11px}
