@@ -712,7 +712,7 @@ const buildCombatants = () => [
       try { await publishDiceResult(result); } catch (e) { console.error('Erro ao publicar dado:', e); }
       const newLog = addLog(`${result.roller} rolou D${diceSides}${diceBonus ? ` +${diceBonus}` : ''}: ${total}${isCrit ? ' — CRÍTICO!' : isFail ? ' — FALHA CRÍTICA!' : ''}`, isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8', isCrit ? '🌟' : isFail ? '💀' : '🎲');
       persist(initiative, round, turnIdx, newLog);
-    }, 700);
+    }, 250);
   };
 
 const handleClose = () => {
@@ -4084,82 +4084,85 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   );
 }
 
-const newSummon = id => ({ id, nome: '', hp: 10, hp_bonus: 0, ataques: [] });
-const newSummonAttack = () => ({ id: Date.now() + Math.random(), nome: '', dano: '', desc: '' });
+const newSummon = id => ({ id, nome: '', hp: 10, hpMax: 10, hp_bonus: 0, vigos: 3, ameaca: 'Baixa', ataques: [] });
+const newSummonAttack = () => ({ id: Date.now() + Math.random(), nome: '', dano: '', desc: '', custo: 1 });
 
 function SummonCard({ summon, onChange, onDelete, masterMode, color }) {
   const f = (k, v) => onChange({ ...summon, [k]: v });
-  const hp = summon.hp || 0;
-  const hpBonus = summon.hp_bonus || 0;
+  const hp = Math.max(0, Number(summon.hp ?? 0));
+  const hpBonus = Math.max(0, Number(summon.hp_bonus ?? 0));
+  const hpMax = Math.max(1, Number(summon.hpMax ?? 10) + hpBonus);
+  const vigor = Math.max(0, Math.min(3, Number(summon.vigos ?? 3)));
   const [formAtk, setFormAtk] = useState(newSummonAttack());
-
+  const setVigor = next => f('vigos', Math.max(0, Math.min(3, next)));
   const addAtk = () => {
     if (!formAtk.nome.trim()) return;
     f('ataques', [...(summon.ataques || []), { ...formAtk, id: Date.now() }]);
     setFormAtk(newSummonAttack());
   };
-  const delAtk = (id) => f('ataques', (summon.ataques || []).filter(a => a.id !== id));
+  const delAtk = id => f('ataques', (summon.ataques || []).filter(a => a.id !== id));
 
   return (
-    <div style={{ border: `1px solid ${color}44`, borderRadius: 12, background: `${color}08`, padding: '14px 16px', marginBottom: 14 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 9, letterSpacing: '0.25em', color: `${color}AA`, fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>Nome da Invocação</label>
-          {masterMode
-            ? <input value={summon.nome} onChange={e => f('nome', e.target.value)} placeholder="Ex: Esqueleto Guerreiro" style={{ width: '100%' }} />
-            : <div style={{ fontFamily: 'Cinzel,serif', fontSize: 14, color, fontWeight: 700 }}>{summon.nome || 'Sem nome'}</div>}
+    <article style={{ border:`1px solid ${color}55`, borderRadius:14, background:'linear-gradient(145deg,rgba(255,255,255,.045),rgba(9,8,18,.94))', boxShadow:`0 10px 28px ${color}12, inset 0 1px rgba(255,255,255,.04)`, padding:14, marginBottom:12 }}>
+      <header style={{ display:'flex', alignItems:'center', gap:10, paddingBottom:10, marginBottom:10, borderBottom:'1px solid rgba(255,255,255,.08)' }}>
+        <span aria-hidden="true" style={{ width:34,height:34,display:'grid',placeItems:'center',borderRadius:10,background:`${color}18`,border:`1px solid ${color}44`,fontSize:18,boxShadow:`0 0 16px ${color}22` }}>☠</span>
+        <div style={{ flex:1,minWidth:0 }}>
+          {masterMode?<input value={summon.nome||''} onChange={e=>f('nome',e.target.value)} placeholder="Nome da invocação" aria-label="Nome da invocação" style={{width:'100%',fontFamily:'Cinzel,serif',fontWeight:700}}/>:<strong style={{fontFamily:'Cinzel,serif',fontSize:14,color:'#F1E8D8'}}>{summon.nome||'Invocação'}</strong>}
+          <div style={{fontSize:9,letterSpacing:'.18em',textTransform:'uppercase',color:`${color}CC`,marginTop:4}}>CONJURAÇÃO NECROMÂNTICA</div>
         </div>
-        {masterMode && <button onClick={onDelete} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.3)', color: '#E8193C', borderRadius: 6, cursor: 'pointer', padding: '6px 10px', fontSize: 11 }}>✕</button>}
-      </div>
+        {masterMode?<label style={{display:'grid',gap:3,fontSize:8,letterSpacing:'.12em',color:'#A89BAF',fontFamily:'Cinzel,serif'}}>AMEAÇA<input value={summon.ameaca||'Baixa'} onChange={e=>f('ameaca',e.target.value)} aria-label="Ameaça da invocação" style={{width:80,fontSize:11,padding:'5px 6px'}}/></label>:<span style={{fontSize:9,padding:'4px 7px',borderRadius:99,color:'#E8D8C0',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)'}}>{summon.ameaca||'Baixa'}</span>}
+        {masterMode&&<button type="button" onClick={onDelete} title="Excluir invocação" aria-label="Excluir invocação" style={{background:'rgba(232,25,60,.1)',border:'1px solid rgba(232,25,60,.28)',color:'#FF7187',borderRadius:7,cursor:'pointer',padding:'6px 9px'}}>✕</button>}
+      </header>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 12px' }}>
-        <button onClick={() => f('hp', Math.max(0, hp - 1))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(232,25,60,0.4)', background: 'rgba(232,25,60,0.15)', color: '#E8193C', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>−</button>
-        <div style={{ textAlign: 'center', minWidth: 60 }}>
-          <div style={{ fontFamily: 'Cinzel,serif', fontSize: 22, fontWeight: 900, color: hpColor(hp, hp + hpBonus || 1) }}>{hp}</div>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)' }}>HP {hpBonus > 0 ? `(+${hpBonus})` : ''}</div>
-        </div>
-        <button onClick={() => f('hp', hp + 1)} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>+</button>
-        {masterMode && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-            <span style={{ fontSize: 9, color: 'rgba(74,222,128,0.6)', fontFamily: 'Cinzel,serif' }}>Bônus</span>
-            <button onClick={() => f('hp_bonus', Math.max(0, hpBonus - 1))} style={{ width: 20, height: 20, borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontSize: 12, padding: 0 }}>−</button>
-            <span style={{ fontSize: 12, color: '#4ADE80', minWidth: 16, textAlign: 'center' }}>{hpBonus}</span>
-            <button onClick={() => f('hp_bonus', hpBonus + 1)} style={{ width: 20, height: 20, borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.08)', color: '#4ADE80', cursor: 'pointer', fontSize: 12, padding: 0 }}>+</button>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:8,marginBottom:12}}>
+        <section style={{borderRadius:10,padding:'9px 10px',background:'rgba(2,4,12,.48)',border:'1px solid rgba(255,255,255,.07)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:7}}>
+            <span style={{fontSize:9,letterSpacing:'.16em',color:'#C88B9A',fontFamily:'Cinzel,serif'}}>VIDA</span>
+            <button type="button" onClick={()=>f('hp',Math.max(0,hp-1))} aria-label="Diminuir vida da invocação" disabled={hp<=0} style={{marginLeft:'auto',width:24,height:24,borderRadius:7,color:'#FF8698',border:'1px solid rgba(232,25,60,.25)',background:'rgba(232,25,60,.08)',cursor:'pointer'}}>−</button>
+            <strong style={{fontFamily:'Cinzel,serif',fontSize:16,color:hpColor(hp,hpMax)}}>{hp}<small style={{fontSize:10,color:'#877B8D'}}> / {hpMax}</small></strong>
+            <button type="button" onClick={()=>f('hp',Math.min(hpMax,hp+1))} aria-label="Aumentar vida da invocação" disabled={hp>=hpMax} style={{width:24,height:24,borderRadius:7,color:'#76E6A0',border:'1px solid rgba(74,222,128,.24)',background:'rgba(74,222,128,.08)',cursor:'pointer'}}>+</button>
           </div>
-        )}
-      </div>
-
-      <div style={{ fontSize: 9, letterSpacing: '0.25em', color: `${color}AA`, fontFamily: 'Cinzel,serif', marginBottom: 7, textTransform: 'uppercase' }}>Ataques</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: masterMode ? 10 : 0 }}>
-        {(summon.ataques || []).length === 0 && (
-          <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>Nenhum ataque cadastrado.</div>
-        )}
-        {(summon.ataques || []).map(a => (
-          <div key={a.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, padding: '7px 10px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-                <span style={{ fontFamily: 'Cinzel,serif', fontSize: 12, color: '#C8B8A0', fontWeight: 600 }}>{a.nome}</span>
-                {a.dano && <span style={{ fontSize: 10, color: 'rgba(255,200,80,0.85)', fontFamily: 'Cinzel,serif', background: 'rgba(255,200,80,0.08)', border: '1px solid rgba(255,200,80,0.22)', borderRadius: 4, padding: '1px 6px' }}>⚔ {a.dano}</span>}
-              </div>
-              {a.desc && <div style={{ fontSize: 12, color: '#7A6A5A', lineHeight: 1.6 }}>{a.desc}</div>}
-            </div>
-            {masterMode && <button onClick={() => delAtk(a.id)} style={{ background: 'rgba(232,25,60,0.1)', border: '1px solid rgba(232,25,60,0.25)', color: '#E8193C', borderRadius: 4, cursor: 'pointer', padding: '1px 6px', fontSize: 10, flexShrink: 0 }}>✕</button>}
+          {masterMode&&<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginTop:7,paddingTop:7,borderTop:'1px solid rgba(255,255,255,.05)'}}>
+            <label style={{fontSize:9,color:'#A89BAF'}}>VIDA MÁXIMA<input type="number" min="1" value={Number(summon.hpMax??10)} onChange={e=>{const value=Math.max(1,Number(e.target.value)||1);f('hpMax',value);f('hp',Math.min(hp,value+hpBonus));}} style={{width:64,marginLeft:6,padding:'3px 5px'}}/></label>
+            <span style={{display:'flex',alignItems:'center',gap:4,fontSize:9,color:'#86CFFA'}}>BÔNUS {hpBonus}
+              <button type="button" onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} aria-label="Diminuir vida bônus" style={{marginLeft:3,width:18,height:18,borderRadius:5,color:'#86CFFA',background:'rgba(60,150,220,.08)',border:'1px solid rgba(100,190,255,.22)',cursor:'pointer'}}>−</button>
+              <button type="button" onClick={()=>f('hp_bonus',hpBonus+1)} aria-label="Aumentar vida bônus" style={{width:18,height:18,borderRadius:5,color:'#86CFFA',background:'rgba(60,150,220,.08)',border:'1px solid rgba(100,190,255,.22)',cursor:'pointer'}}>+</button>
+            </span>
+          </div>}
+        </section>
+        <section style={{borderRadius:10,padding:'9px 10px',background:'rgba(2,4,12,.48)',border:'1px solid rgba(255,255,255,.07)'}}>
+          <div style={{fontSize:9,letterSpacing:'.16em',color:'#CBA8F3',fontFamily:'Cinzel,serif',marginBottom:8}}>VIGOR CÓSMICO</div>
+          <div role="group" aria-label={`Vigor cósmico ${vigor} de 3`} style={{display:'flex',alignItems:'center',gap:7}}>
+            {[0,1,2].map(index=>{const active=index<vigor;const next=active?(index===vigor-1?vigor-1:index+1):index+1;return <button type="button" key={index} disabled={!masterMode} onClick={()=>setVigor(next)} aria-label={`Definir vigor cósmico em ${next}`} aria-pressed={active} style={{width:20,height:20,padding:0,borderRadius:'50%',border:`1.5px solid ${active?'#C084FC':'rgba(255,255,255,.2)'}`,background:active?'rgba(168,85,247,.34)':'transparent',boxShadow:active?'0 0 10px rgba(168,85,247,.5)':'none',cursor:masterMode?'pointer':'default',display:'grid',placeItems:'center'}}>{active&&<i style={{width:8,height:8,borderRadius:'50%',background:'#D8B4FE'}}/>}</button>})}
           </div>
-        ))}
+        </section>
       </div>
 
-      {masterMode && (
-        <div style={{ border: `1px solid ${color}30`, borderRadius: 8, padding: 10, background: `${color}06` }}>
-          <input value={formAtk.nome} onChange={e => setFormAtk(f2 => ({ ...f2, nome: e.target.value }))} placeholder="Nome do ataque..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
-          <input value={formAtk.dano} onChange={e => setFormAtk(f2 => ({ ...f2, dano: e.target.value }))} placeholder="Dano (ex: 1D6+2)" style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
-          <textarea value={formAtk.desc} onChange={e => setFormAtk(f2 => ({ ...f2, desc: e.target.value }))} placeholder="Descrição do ataque..." rows={2} style={{ width: '100%', fontSize: 12, resize: 'vertical', marginBottom: 6 }} />
-          <button onClick={addAtk} disabled={!formAtk.nome.trim()} style={{ width: '100%', padding: '6px', borderRadius: 6, border: `1px solid ${color}55`, background: formAtk.nome.trim() ? `${color}20` : 'rgba(255,255,255,0.03)', color: formAtk.nome.trim() ? color : '#5A5070', cursor: formAtk.nome.trim() ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>+ Adicionar Ataque</button>
-        </div>
-      )}
-    </div>
+      <div style={{display:'flex',alignItems:'center',gap:8,margin:'2px 0 7px'}}>
+        <span style={{fontSize:9,letterSpacing:'.2em',color:`${color}CC`,fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Habilidades</span>
+        <span style={{fontSize:9,color:'#80748B'}}>Ataques e efeitos da invocação</span>
+      </div>
+      <div style={{display:'grid',gap:6,marginBottom:masterMode?10:0}}>
+        {(summon.ataques||[]).length===0&&<div style={{fontSize:11,color:'#62566E',fontStyle:'italic',padding:'7px 2px'}}>Nenhuma habilidade cadastrada.</div>}
+        {(summon.ataques||[]).map((a,index)=><article key={a.id||index} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'8px 9px',borderRadius:9,background:'rgba(255,255,255,.025)',border:'1px solid rgba(255,255,255,.065)'}}>
+          <span aria-hidden="true" style={{color:'#E7C46A',fontSize:13}}>✦</span><div style={{flex:1,minWidth:0}}>
+            {masterMode?<input value={a.nome||''} onChange={e=>f('ataques',(summon.ataques||[]).map(item=>item.id===a.id?{...item,nome:e.target.value}:item))} placeholder="Nome da habilidade" style={{width:'100%',fontSize:11}}/>:<strong style={{fontFamily:'Cinzel,serif',fontSize:11,color:'#E8D8C0'}}>{a.nome||'Habilidade'}</strong>}
+            {masterMode?<div style={{display:'grid',gridTemplateColumns:'minmax(80px,1fr) 70px',gap:5,marginTop:5}}><input value={a.dano||''} onChange={e=>f('ataques',(summon.ataques||[]).map(item=>item.id===a.id?{...item,dano:e.target.value}:item))} placeholder="Dano / efeito"/><label style={{fontSize:8,color:'#BCA8CC'}}>CUSTO VC<input type="number" min="0" max="3" value={Math.max(0,Math.min(3,Number(a.custo??1)))} onChange={e=>f('ataques',(summon.ataques||[]).map(item=>item.id===a.id?{...item,custo:Math.max(0,Math.min(3,Number(e.target.value)||0))}:item))} style={{width:'100%',padding:'3px'}}/></label><textarea value={a.desc||''} onChange={e=>f('ataques',(summon.ataques||[]).map(item=>item.id===a.id?{...item,desc:e.target.value}:item))} placeholder="Descrição (opcional)" rows={2} style={{gridColumn:'1 / -1',resize:'vertical'}}/></div>:<div style={{fontSize:10,color:'#A89BAF',marginTop:3}}>{a.dano&&<span style={{color:'#FFE08A'}}>⚔ {a.dano} · </span>}{a.desc||''}{a.custo!=null&&<span style={{color:'#CBA8F3',marginLeft:6}}>{Math.max(0,Math.min(3,Number(a.custo??1)))} VC</span>}</div>}
+          </div>
+          {masterMode&&<button type="button" onClick={()=>delAtk(a.id)} title="Excluir habilidade" aria-label="Excluir habilidade" style={{background:'rgba(232,25,60,.08)',border:'1px solid rgba(232,25,60,.2)',color:'#F47D8D',borderRadius:6,cursor:'pointer',padding:'3px 6px',fontSize:10}}>✕</button>}
+        </article>)}
+      </div>
+
+      {masterMode&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 70px',gap:6,padding:9,borderRadius:10,background:`${color}08`,border:`1px solid ${color}24`}}>
+        <input value={formAtk.nome} onChange={e=>setFormAtk(current=>({...current,nome:e.target.value}))} placeholder="Nova habilidade" aria-label="Nome da nova habilidade" style={{gridColumn:'1 / -1'}}/>
+        <input value={formAtk.dano} onChange={e=>setFormAtk(current=>({...current,dano:e.target.value}))} placeholder="Dano / efeito" aria-label="Dano ou efeito"/>
+        <input value={formAtk.desc} onChange={e=>setFormAtk(current=>({...current,desc:e.target.value}))} placeholder="Descrição" aria-label="Descrição da habilidade"/>
+        <label style={{fontSize:8,color:'#BCA8CC'}}>CUSTO VC<input type="number" min="0" max="3" value={formAtk.custo??1} onChange={e=>setFormAtk(current=>({...current,custo:Math.max(0,Math.min(3,Number(e.target.value)||0))}))} style={{width:'100%',padding:'3px'}}/></label>
+        <button type="button" onClick={addAtk} disabled={!formAtk.nome.trim()} style={{gridColumn:'1 / -1',padding:7,borderRadius:7,border:`1px solid ${color}55`,background:formAtk.nome.trim()?`${color}20`:'rgba(255,255,255,.03)',color:formAtk.nome.trim()?color:'#5A5070',cursor:formAtk.nome.trim()?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:10}}>＋ Adicionar habilidade</button>
+      </div>}
+    </article>
   );
 }
-
 function InvocacoesPanel({ sheet, onChange, sheetColor, masterMode }) {
   const invocacoes = sheet.invocacoes || [];
   const f = (novas) => onChange({ ...sheet, invocacoes: novas });
@@ -4230,7 +4233,7 @@ function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,alignItems:'end',marginBottom:10}}>
           <label style={{fontSize:9,color:'#8E7AA8',fontFamily:'Cinzel,serif'}}>PONTOS DE VIDA{masterMode?<input type="number" min="0" value={hp} onChange={e=>update(f.id,{hp:Math.min(hpMax,Math.max(0,Number(e.target.value)||0))})} style={{width:'100%',marginTop:4}}/>:<div style={{color:'#E8D8C0',fontSize:14,marginTop:4}}>{hp} / {hpMax} HP</div>}</label>
           {masterMode&&<label style={{fontSize:9,color:'#8E7AA8',fontFamily:'Cinzel,serif'}}>HP MÁXIMO<input type="number" min="1" value={hpMax} onChange={e=>{const v=Math.max(1,Number(e.target.value)||1);update(f.id,{hpMax:v,hp:Math.min(hp,v)});}} style={{width:'100%',marginTop:4}}/></label>}
-          <div style={{fontSize:9,color:'#C8A8E8',fontFamily:'Cinzel,serif'}}>VIGOR CÓSMICO <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>{masterMode&&<button onClick={()=>update(f.id,{vigos:Math.max(0,vigor-1)})} disabled={vigor<=0} aria-label="Reduzir vigor cósmico" style={{cursor:'pointer'}}>−</button>}<strong style={{fontSize:14,color:'#E9D5FF',textShadow:'0 0 9px #A855F7'}}>{vigor} / 2</strong>{masterMode&&<button onClick={()=>update(f.id,{vigos:Math.min(2,vigor+1)})} disabled={vigor>=2} aria-label="Aumentar vigor cósmico" style={{cursor:'pointer'}}>＋</button>}</div></div>
+          <div style={{fontSize:9,color:'#C8A8E8',fontFamily:'Cinzel,serif'}}>VIGOR CÓSMICO <div role="group" aria-label={`Vigor cósmico ${vigor} de 2`} style={{display:'flex',alignItems:'center',gap:6,marginTop:6}}>{[0,1].map(index=>{const active=index<vigor;const next=active?(index===vigor-1?vigor-1:index+1):index+1;return <button key={index} type="button" disabled={!masterMode} onClick={()=>update(f.id,{vigos:next})} aria-label={`Definir vigor cósmico em ${next}`} aria-pressed={active} style={{width:18,height:18,padding:0,borderRadius:'50%',border:`1.5px solid ${active?'#C084FC':'rgba(255,255,255,.18)'}`,background:active?'rgba(168,85,247,.34)':'transparent',boxShadow:active?'0 0 9px rgba(168,85,247,.5)':'none',cursor:masterMode?'pointer':'default',display:'grid',placeItems:'center'}}>{active&&<i style={{width:7,height:7,borderRadius:'50%',background:'#D8B4FE'}}/>}</button>})}</div></div>
         </div>
         <div style={{fontSize:9,letterSpacing:'.2em',color:'#8E7AA8',fontFamily:'Cinzel,serif',marginBottom:6,textTransform:'uppercase'}}>Habilidades opcionais</div>
         {!skills.length&&<div style={{fontSize:11,color:'#62566E',fontStyle:'italic',marginBottom:masterMode?8:0}}>Nenhuma habilidade cadastrada.</div>}
@@ -4977,7 +4980,7 @@ function SheetsSection({masterMode}){
 
   const revealedArtefatos = ARTEFATOS_DATA.filter(a => artefatosUnlockedState[a.id]);
 
-  const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
+  const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},250);};
   const add=()=>{if(sheets.length>=15)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
   const upd=(id,data)=>{if(data===null){deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}setSheets(prev=>prev.map(s=>s.id===id?data:s));saveSheet(data);};
   const saveCustom=async(data)=>{try{await setDoc(doc(db,'config','customAbilities'),data);setCustomAbilities(data);}catch(e){console.error('Erro ao salvar habilidades:',e);}};
