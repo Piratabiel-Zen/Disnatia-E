@@ -34,10 +34,41 @@ export function createTokenOutbox() {
   const entries = new Map();
   const sending = new Map();
   const listeners = new Set();
+  const retryTimers = new Map();
   let sequence = 0;
   const client = Math.random().toString(36).slice(2);
   const emit = () => listeners.forEach(listener => listener());
   const keyOf = (mapId, tokenId) => tokenRecordId(mapId, tokenId);
+  const transientErrorCodes = new Set(['aborted', 'cancelled', 'deadline-exceeded', 'internal', 'resource-exhausted', 'unavailable', 'unknown']);
+  const cancelRetry = key => {
+    const timer = retryTimers.get(key);
+    if (timer && typeof window !== 'undefined') window.clearTimeout(timer);
+    retryTimers.delete(key);
+  };
+  const scheduleRetry = (key, entry) => {
+    if (typeof window === 'undefined' || retryTimers.has(key) || !navigator.onLine) return;
+    const code = String(entry.error?.code || '').split('/').pop();
+    if (!transientErrorCodes.has(code)) return;
+    entry.retryAttempt = (entry.retryAttempt || 0) + 1;
+    const delay = Math.min(30000, 1200 * (2 ** Math.min(entry.retryAttempt - 1, 5)));
+    const timer = window.setTimeout(() => {
+      retryTimers.delete(key);
+      if (entries.get(key) !== entry || entry.status !== 'failed' || !navigator.onLine) return;
+      entry.status = 'queued';
+      emit();
+      flush(key).catch(() => {});
+    }, delay);
+    retryTimers.set(key, timer);
+  };
+  const retryFailed = mapId => {
+    for (const [key, entry] of entries) {
+      if ((mapId != null && entry.operation.mapId !== String(mapId)) || entry.status !== 'failed') continue;
+      cancelRetry(key);
+      entry.status = 'queued';
+      emit();
+      flush(key).catch(() => {});
+    }
+  };
   const flush = async key => {
     if (sending.has(key)) return sending.get(key);
     const work = (async () => {
@@ -51,15 +82,19 @@ export function createTokenOutbox() {
             // The Firestore write promise resolves only after server acceptance.
             // A watch can coalesce this version with another player's write;
             // waiting for the exact mutationId would leave the HUD pending forever.
+            cancelRetry(key);
             entries.delete(key); emit();
           }
         } catch (error) {
           const current = entries.get(key);
           if (error.code === 'token-control-lost' && current?.operation.mutationId === operation.mutationId) {
+            cancelRetry(key);
             entries.delete(key); emit(); throw error;
           }
           if (current) { current.status = 'failed'; current.error = error; }
-          emit(); throw error;
+          emit();
+          if (current) scheduleRetry(key, current);
+          throw error;
         }
       }
     })();
@@ -74,7 +109,11 @@ export function createTokenOutbox() {
     operations(mapId) { return [...entries.values()].filter(entry => entry.operation.mapId === String(mapId)).map(entry => entry.operation); },
     status(mapId) {
       const values = [...entries.values()].filter(entry => mapId == null || entry.operation.mapId === String(mapId));
-      return { count: values.length, failed: values.some(entry => entry.status === 'failed') };
+      return {
+        count: values.length,
+        failed: values.some(entry => entry.status === 'failed'),
+        error: values.find(entry => entry.status === 'failed' && entry.error)?.error || null,
+      };
     },
     acknowledge(record) {
       const key = keyOf(record.mapId, record.tokenId);
@@ -86,6 +125,7 @@ export function createTokenOutbox() {
       const operation = { recordType: 'token-v2', mapId: String(mapId), tokenId: String(tokenId),
         token: { ...prior?.token, ...token }, mutationId: `${client}_${++sequence}`,
         ...(deleted || prior?.deleted ? { deleted: true } : {}), updatedAt: Date.now() };
+      cancelRetry(key);
       entries.set(key, { operation, status: 'queued', write }); emit();
       await flush(key);
     },
@@ -93,7 +133,9 @@ export function createTokenOutbox() {
       const work = [];
       for (const [key, entry] of entries) {
         if ((mapId != null && entry.operation.mapId !== String(mapId)) || entry.status !== 'failed') continue;
-        entry.status = 'queued'; work.push(flush(key));
+        cancelRetry(key);
+        entry.status = 'queued';
+        work.push(flush(key));
       }
       await Promise.all(work);
     },
@@ -102,3 +144,7 @@ export function createTokenOutbox() {
 
 // Survives route changes in the same browser session while Firestore reconnects.
 export const tokenOutbox = createTokenOutbox();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => tokenOutbox.retry().catch(() => {}));
+}
