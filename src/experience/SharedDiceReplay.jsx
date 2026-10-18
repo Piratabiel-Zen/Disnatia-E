@@ -5,7 +5,6 @@ import PhysicalDiceTray from './PhysicalDiceTray';
 import './shared-dice-replay.css';
 
 const TAB_CLIENT_KEY = 'dinastia-dice-tab-id';
-const LOCAL_ROLL_KEY = 'dinastia-local-dice-roll-id';
 let fallbackTabClientId = `dice_tab_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 export function getDiceTabClientId() {
@@ -38,7 +37,6 @@ export default function SharedDiceReplay({ access }) {
   const [queue, setQueue] = useState([]);
   const [active, setActive] = useState(null);
   const [settled, setSettled] = useState(false);
-  const localSheetId = access?.role === 'player' && access?.sheetId ? String(access.sheetId) : '';
 
   const remember = useCallback(id => {
     if (!id) return;
@@ -54,16 +52,9 @@ export default function SharedDiceReplay({ access }) {
     if (!id || seenRef.current.has(id)) return;
     remember(id);
 
-    let localRollId = '';
-    try { localRollId = window.sessionStorage.getItem(LOCAL_ROLL_KEY) || ''; } catch (_) {}
-    const sameRoll = !!localRollId && String(payload.rollId || '') === localRollId;
-    const sameClient = !!payload.sourceClientId && String(payload.sourceClientId) === String(localClientIdRef.current);
-    // O autor já vê a rolagem no DiceWidget da própria aba. As outras abas
-    // e todos os demais jogadores recebem o replay, inclusive se usarem a mesma ficha.
-    if (sameRoll || sameClient) return;
-
+    // Cada cliente, inclusive quem rolou e o mestre, recebe a animação global.
     setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));
-  }, [localSheetId, remember]);
+  }, [remember]);
 
   useEffect(() => {
     let feedPrimed = false;
@@ -83,14 +74,15 @@ export default function SharedDiceReplay({ access }) {
     }, error => console.error('Falha no feed do replay compartilhado:', error));
 
     const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
-      if (!snap.exists()) return;
-      const payload = snap.data() || {};
       if (!configPrimed) {
         configPrimed = true;
+        if (!snap.exists()) return;
+        const payload = snap.data() || {};
         remember(getReplayId(payload));
         return;
       }
-      enqueue(payload);
+      if (!snap.exists()) return;
+      enqueue(snap.data() || {});
     }, error => console.error('Falha no fallback compartilhado de dados:', error));
 
     return () => { unsubFeed(); unsubConfig(); };
