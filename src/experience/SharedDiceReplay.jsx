@@ -29,7 +29,7 @@ const getReplayId = payload => String(
 
 const firstNameOf = value => {
   const clean = String(value || 'Jogador').trim();
-  return clean ? clean.split(/\\s+/)[0] : 'Jogador';
+  return clean ? clean.split(/\s+)/[0] : 'Jogador';
 };
 
 export default function SharedDiceReplay({ access }) {
