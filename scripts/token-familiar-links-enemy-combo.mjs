@@ -1,0 +1,58 @@
+import fs from 'node:fs';
+
+const required=(source,from,to,label)=>{
+  if(source.includes(to))return source;
+  if(!source.includes(from))throw new Error('Patch token/familiar/combo sem âncora: '+label);
+  return source.replace(from,to);
+};
+
+// Familiars attached to character sheets can be selected as token health sources.
+const mapPath='src/runtime/features/mapa-batalha/BattleMapPage.jsx';
+let map=fs.readFileSync(mapPath,'utf8');
+map=required(map,"  const [formSummonDocId, setFormSummonDocId] = useState('');","  const [formSummonDocId, setFormSummonDocId] = useState('');\n  const [formFamiliarSheetId,setFormFamiliarSheetId]=useState('');\n  const [formFamiliarId,setFormFamiliarId]=useState('');","familiar form state");
+map=required(map,"summonDocId: formSummonDocId || '' },enemyTemplateForToken","summonDocId: formSummonDocId || '', familiarSheetId:formFamiliarSheetId||'', familiarId:formFamiliarId||'' },enemyTemplateForToken","token creation familiar link");
+map=required(map,"setFormSummonDocId(''); setShowAddForm(false);","setFormSummonDocId(''); setFormFamiliarSheetId(''); setFormFamiliarId(''); setShowAddForm(false);","reset familiar form");
+map=required(map,"  const tokenVitalState = token => {\n    if (token?.summonDocId)","  const tokenVitalState = token => {\n    if(token?.familiarSheetId&&token?.familiarId){const sheet=sheets.find(row=>String(row.id)===String(token.familiarSheetId));const familiar=(sheet?.familiares||[]).find(row=>String(row.id)===String(token.familiarId));if(sheet&&familiar)return {kind:'familiar',entity:sheet,familiar,hp:Math.max(0,Number(familiar.hp??10)),maxHp:Math.max(1,Number(familiar.hpMax??10))};}\n    if (token?.summonDocId)","familiar vitals");
+map=required(map,"    if (vital.kind === 'summon') { const delta=hp-vital.hp;","    if (vital.kind === 'familiar') { const familiares=(vital.entity.familiares||[]).map(item=>String(item.id)===String(token.familiarId)?{...item,hp}:item); updSheet(vital.entity.id,{...vital.entity,familiares}); return; }\n    if (vital.kind === 'summon') { const delta=hp-vital.hp;","familiar linked hp");
+map=required(map,"setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');","setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');setFormSummonDocId('');setFormFamiliarSheetId('');setFormFamiliarId('');","clear other links on standard reference");
+map=required(map,"setFormSheetId('');setFormEnemyId('');}}}","setFormSheetId('');setFormEnemyId('');setFormFamiliarSheetId('');setFormFamiliarId('');}}}","clear familiar on summon form select");
+map=required(map,"updateToken(selectedToken.id,{summonDocId:id,sheetId:id?'':'',enemyId:id?'':''});","updateToken(selectedToken.id,{summonDocId:id,sheetId:'',enemyId:'',familiarSheetId:'',familiarId:''});","clear other selected links on summon");
+map=required(map,"const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};","const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:'',summonDocId:'',familiarSheetId:'',familiarId:''};","clear other selected links on standard reference");
+
+const familiarLabel=(mode)=>mode==='form'
+ ? "\n              <label style={{display:'block',marginTop:8,fontSize:9,color:'#C4A4FF',fontFamily:'Cinzel,serif'}}>Familiar vinculado<select value={formFamiliarSheetId&&formFamiliarId?'familiar:'+formFamiliarSheetId+':'+formFamiliarId:''} onChange={e=>{const parts=e.target.value.split(':');const linked=parts[0]==='familiar';setFormFamiliarSheetId(linked?parts[1]:'');setFormFamiliarId(linked?parts.slice(2).join(':'):'');if(linked){setFormSummonDocId('');setFormSheetId('');setFormEnemyId('');}}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhum</option>{sheets.flatMap(sheet=>(sheet.familiares||[]).map(familiar=><option key={'family_'+sheet.id+'_'+familiar.id} value={'familiar:'+sheet.id+':'+familiar.id}>{sheet.nome||'Personagem'} — {familiar.nome||familiar.tipo||'Familiar'} · {familiar.hp??10}/{familiar.hpMax??10} HP</option>))}</select></label>"
+ : "\n              <label style={{display:'block',fontSize:9,color:'#C4A4FF',fontFamily:'Cinzel,serif',marginBottom:10}}>Familiar vinculado<select value={selectedToken.familiarSheetId&&selectedToken.familiarId?'familiar:'+selectedToken.familiarSheetId+':'+selectedToken.familiarId:''} onChange={e=>{const parts=e.target.value.split(':');const linked=parts[0]==='familiar';updateToken(selectedToken.id,{familiarSheetId:linked?parts[1]:'',familiarId:linked?parts.slice(2).join(':'):'',summonDocId:'',sheetId:'',enemyId:''});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhum</option>{sheets.flatMap(sheet=>(sheet.familiares||[]).map(familiar=><option key={'family_'+sheet.id+'_'+familiar.id} value={'familiar:'+sheet.id+':'+familiar.id}>{sheet.nome||'Personagem'} — {familiar.nome||familiar.tipo||'Familiar'} · {familiar.hp??10}/{familiar.hpMax??10} HP</option>))}</select></label>";
+const formReferenceEnd=map.indexOf("</label>",map.indexOf("Invocação vinculada<select value={formSummonDocId"));
+if(formReferenceEnd<0)throw new Error('Seletor de invocação do formulário não encontrado');
+if(!map.includes('Familiar vinculado<select value={formFamiliarSheetId')) map=map.slice(0,formReferenceEnd+8)+familiarLabel('form')+map.slice(formReferenceEnd+8);
+const selectedReferenceEnd=map.indexOf("</label>",map.indexOf("Invocação vinculada<select value={selectedToken.summonDocId"));
+if(selectedReferenceEnd<0)throw new Error('Seletor de invocação do token selecionado não encontrado');
+if(!map.includes('Familiar vinculado<select value={selectedToken.familiarSheetId')) map=map.slice(0,selectedReferenceEnd+8)+familiarLabel('selected')+map.slice(selectedReferenceEnd+8);
+fs.writeFileSync(mapPath,map);
+
+// Combined attacks are supported for enemy-owned abilities as well as character abilities.
+const enemyPath='src/experience/EnemySheetExperience.jsx';
+let enemy=fs.readFileSync(enemyPath,'utf8');
+enemy=required(enemy,"nome:'', descricao:'', dano:'', custo:0, cooldown:'—', tipoHab:'normal',","nome:'', descricao:'', dano:'', custo:0, cooldown:'—', tipoHab:'normal', aliadoRequerido:'', amplificacao:'',","enemy ability fields");
+enemy=required(enemy,"const color = ability.tipoHab === 'especial' ? '#A855F7' : ability.tipoHab === 'passiva' ? '#E8A020' : enemyColor(enemy);","const color = ability.tipoHab === 'combinada' ? '#FFE58A' : ability.tipoHab === 'especial' ? '#A855F7' : ability.tipoHab === 'passiva' ? '#E8A020' : enemyColor(enemy);","combined attack color");
+enemy=required(enemy,"      {(ability.descricao || ability.desc) && <p>{ability.descricao || ability.desc}</p>}","      {(ability.descricao || ability.desc) && <p>{ability.descricao || ability.desc}</p>}\n      {ability.tipoHab==='combinada'&&<div className=\"enemy-combined-note\"><b>✧ ATAQUE COMBINADO</b><span>Aliado necessário: {ability.aliadoRequerido||'a definir'}</span><span>Amplificação: {ability.amplificacao||'a definir'}</span><small>O aliado participante consome 1 VC.</small></div>}","combined attack details");
+enemy=required(enemy,'<option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option>','<option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option><option value="combinada">✧ Combinada</option>','combined attack type option');
+enemy=required(enemy,'        <div className="enemy-form-field"><label>Dano / efeito</label>','        {form.tipoHab===\'combinada\'&&<div className="enemy-form-field wide enemy-combined-fields"><b>✧ HABILIDADE SUPREMA · COMBINADA</b><label>Aliado / condição necessária<input value={form.aliadoRequerido||\'\'} onChange={e=>setForm(f=>({...f,aliadoRequerido:e.target.value}))} placeholder="Ex.: outro inimigo aliado"/></label><label>Amplificação<input value={form.amplificacao||\'\'} onChange={e=>setForm(f=>({...f,amplificacao:e.target.value}))} placeholder="Ex.: dano dobrado ou +2 de dano"/></label><small>O aliado participante consome 1 VC.</small></div>}\n        <div className="enemy-form-field"><label>Dano / efeito</label>','combined attack setup');
+fs.writeFileSync(enemyPath,enemy);
+
+const presentationPath='src/adventure/abilityPresentation.mjs';
+let presentation=fs.readFileSync(presentationPath,'utf8');
+presentation=required(presentation,"return type === 'passiva' || type === 'passive' ? 'passiva' : type === 'especial' || type === 'special' ? 'especial' : 'normal';","return type === 'combinada' || type === 'combined' ? 'combinada' : type === 'passiva' || type === 'passive' ? 'passiva' : type === 'especial' || type === 'special' ? 'especial' : 'normal';","combined type mapping");
+fs.writeFileSync(presentationPath,presentation);
+
+const badgePath='src/experience/AbilityTypeBadge.jsx';
+let badge=fs.readFileSync(badgePath,'utf8');
+badge=required(badge,"{type==='passiva'?'\\u25C7':type==='especial'?'\\u2726':'\\u25C6'}</span><b>{type==='passiva'?'Passiva':type==='especial'?'Especial':'Normal'}","{type==='combinada'?'\\u2727':type==='passiva'?'\\u25C7':type==='especial'?'\\u2726':'\\u25C6'}</span><b>{type==='combinada'?'Combinada':type==='passiva'?'Passiva':type==='especial'?'Especial':'Normal'}","combined badge");
+fs.writeFileSync(badgePath,badge);
+
+const cssPath='src/experience/ability-type-badge.css';
+let css=fs.readFileSync(cssPath,'utf8');
+if(!css.includes('.ability-type-combinada{')) css+="\n.ability-type-combinada{border-color:#f7dc87;color:#fff4c2;background:linear-gradient(110deg,#32164b,#39250f,#24122f);text-shadow:0 0 8px #ffe58a;box-shadow:0 0 12px #c084fc88,0 0 18px #ffe58a30;animation:combinedAbilityPulse 2.4s ease-in-out infinite}\n@keyframes combinedAbilityPulse{50%{box-shadow:0 0 18px #c084fccc,0 0 22px #ffe58a66}}\nhtml[data-quality=light] .ability-type-combinada,html[data-effects=reduced] .ability-type-combinada,html[data-effects=subtle] .ability-type-combinada{animation:none}\n@media(prefers-reduced-motion:reduce){.ability-type-combinada{animation:none}}\n";
+css+="\n.enemy-combined-fields{grid-column:1/-1;border:1px solid rgba(255,225,125,.4);border-radius:9px;padding:10px;background:linear-gradient(125deg,rgba(255,225,125,.08),rgba(168,85,247,.12));display:grid;grid-template-columns:1fr 1fr;gap:8px}.enemy-combined-fields>b,.enemy-combined-fields>small{grid-column:1/-1;color:#ffe58a;font:10px Cinzel,serif;letter-spacing:.12em}.enemy-combined-fields label{font:9px Cinzel,serif;color:#e9d5ff}.enemy-combined-note{display:grid;gap:4px;margin:6px 0 10px;padding:8px 10px;border:1px solid #ffe58a55;border-radius:8px;background:linear-gradient(110deg,#a855f71a,#ffe58a10);color:#e9d5ff;font-size:11px}.enemy-combined-note b{font:10px Cinzel,serif;color:#ffe58a;text-shadow:0 0 8px #c084fc}.enemy-combined-note small{color:#bda8cf}\n@media(max-width:620px){.enemy-combined-fields{grid-template-columns:1fr}}\n";
+fs.writeFileSync(cssPath,css);
+console.log('Familiars vinculáveis aos tokens e ataques combinados em fichas de inimigos aplicados.');
