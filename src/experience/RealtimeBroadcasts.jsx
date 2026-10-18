@@ -10,19 +10,6 @@ const DICE_TTL = 16000;
 const COSMIC_TTL = 22000;
 const DICE_CLIENT_KEY = 'dinastia-dice-client-id';
 
-function getDiceClientId() {
-  try {
-    let id = localStorage.getItem(DICE_CLIENT_KEY);
-    if (!id) {
-      id = `dice_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      localStorage.setItem(DICE_CLIENT_KEY, id);
-    }
-    return id;
-  } catch (_) {
-    return 'dice-client';
-  }
-}
-
 function eventId(payload, kind) {
   if (!payload) return '';
   return String(payload.rollId || payload.id || payload._feedId || `${kind}_${payload.ts || 0}`);
@@ -67,15 +54,10 @@ function DiceBroadcastQueue({ events }) {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const queuedRef = useRef(new Set());
-  const localClientIdRef = useRef(getDiceClientId());
   const settleTimerRef = useRef(0);
 
   useEffect(() => {
-    const fresh = events.filter(e =>
-      e?._rtId &&
-      !queuedRef.current.has(e._rtId) &&
-      (!e.sourceClientId || e.sourceClientId !== localClientIdRef.current)
-    );
+    const fresh = events.filter(e => e?._rtId && !queuedRef.current.has(e._rtId));
     if (!fresh.length) return;
     fresh.forEach(e => queuedRef.current.add(e._rtId));
     if (queuedRef.current.size > 240) {
@@ -164,11 +146,33 @@ function CosmicBroadcastQueue({ events }) {
   );
 }
 
+function useMapFullscreenState() {
+  const [state,setState] = useState({ active:false, since:0 });
+  useEffect(() => {
+    const sync = () => {
+      const active = document.documentElement.classList.contains('dinastia-map-fullscreen');
+      setState(previous => previous.active === active
+        ? previous
+        : { active, since: active ? Date.now() : 0 });
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+    document.addEventListener('fullscreenchange',sync);
+    document.addEventListener('webkitfullscreenchange',sync);
+    window.addEventListener('resize',sync);
+    sync();
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('fullscreenchange',sync);
+      document.removeEventListener('webkitfullscreenchange',sync);
+      window.removeEventListener('resize',sync);
+    };
+  },[]);
+  return state;
+}
+
 export default function RealtimeBroadcasts() {
-  // Mantém o canal de dados ativo para espelhar o evento no feed durável, mas a
-  // renderização 3D fica exclusivamente em SharedDiceReplay. Assim não existe um
-  // segundo replay concorrendo com a visão local ou com o replay central.
-  useDurableChannel({
+  const diceEvents = useDurableChannel({
     collectionName: 'public_dice_events',
     kind: 'dice',
     ttl: DICE_TTL,
@@ -178,8 +182,15 @@ export default function RealtimeBroadcasts() {
     kind: 'cosmic',
     ttl: COSMIC_TTL,
   });
+  const fullscreen = useMapFullscreenState();
+  const liveRolls = fullscreen.active
+    ? diceEvents.filter(event => Number(event._receivedAt || 0) >= fullscreen.since)
+    : [];
 
-  return <CosmicBroadcastQueue events={cosmicEvents} />;
+  return <>
+    {fullscreen.active && <DiceBroadcastQueue events={liveRolls} />}
+    <CosmicBroadcastQueue events={cosmicEvents} />
+  </>;
 }
 
 /*
