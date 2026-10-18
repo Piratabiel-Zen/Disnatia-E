@@ -4084,14 +4084,14 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
   );
 }
 
-const newSummon = id => ({ id, nome: '', hp: 10, hpMax: 10, hp_bonus: 0, vigos: 3, ameaca: 'Baixa', ataques: [] });
+const newSummon = id => ({ id, nome: '', hp: 10, hp_bonus: 0, vigos: 3, ameaca: 'Baixa', ataques: [] });
 const newSummonAttack = () => ({ id: Date.now() + Math.random(), nome: '', dano: '', desc: '', custo: 1 });
 
 function SummonCard({ summon, onChange, onDelete, masterMode, color }) {
   const f = (k, v) => onChange({ ...summon, [k]: v });
   const hp = Math.max(0, Number(summon.hp ?? 0));
   const hpBonus = Math.max(0, Number(summon.hp_bonus ?? 0));
-  const hpMax = Math.max(1, Number(summon.hpMax ?? 10) + hpBonus);
+  const hpMax = Math.max(1, hp + hpBonus);
   const vigor = Math.max(0, Math.min(3, Number(summon.vigos ?? 3)));
   const [formAtk, setFormAtk] = useState(newSummonAttack());
   const setVigor = next => f('vigos', Math.max(0, Math.min(3, next)));
@@ -4123,7 +4123,7 @@ function SummonCard({ summon, onChange, onDelete, masterMode, color }) {
             <button type="button" onClick={()=>f('hp',Math.min(hpMax,hp+1))} aria-label="Aumentar vida da invocação" disabled={hp>=hpMax} style={{width:24,height:24,borderRadius:7,color:'#76E6A0',border:'1px solid rgba(74,222,128,.24)',background:'rgba(74,222,128,.08)',cursor:'pointer'}}>+</button>
           </div>
           {masterMode&&<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginTop:7,paddingTop:7,borderTop:'1px solid rgba(255,255,255,.05)'}}>
-            <label style={{fontSize:9,color:'#A89BAF'}}>VIDA MÁXIMA<input type="number" min="1" value={Number(summon.hpMax??10)} onChange={e=>{const value=Math.max(1,Number(e.target.value)||1);f('hpMax',value);f('hp',Math.min(hp,value+hpBonus));}} style={{width:64,marginLeft:6,padding:'3px 5px'}}/></label>
+            <span style={{fontSize:9,color:'#A89BAF'}}>VIDA BASE <b style={{color:'#E8D8C0',marginLeft:4}}>{hp}</b></span>
             <span style={{display:'flex',alignItems:'center',gap:4,fontSize:9,color:'#86CFFA'}}>BÔNUS {hpBonus}
               <button type="button" onClick={()=>f('hp_bonus',Math.max(0,hpBonus-1))} aria-label="Diminuir vida bônus" style={{marginLeft:3,width:18,height:18,borderRadius:5,color:'#86CFFA',background:'rgba(60,150,220,.08)',border:'1px solid rgba(100,190,255,.22)',cursor:'pointer'}}>−</button>
               <button type="button" onClick={()=>f('hp_bonus',hpBonus+1)} aria-label="Aumentar vida bônus" style={{width:18,height:18,borderRadius:5,color:'#86CFFA',background:'rgba(60,150,220,.08)',border:'1px solid rgba(100,190,255,.22)',cursor:'pointer'}}>+</button>
