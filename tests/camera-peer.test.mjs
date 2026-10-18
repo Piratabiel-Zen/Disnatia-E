@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {activeCameraMembers,cameraName,cameraPosition,createCameraPeer,cameraMemberRows,CAMERA_VIDEO} from '../src/adventure/cameraPeer.mjs';
+import {activeCameraMembers,cameraName,cameraPosition,createCameraPeer,cameraMemberRows,CAMERA_VIDEO,CAMERA_LIMIT,cameraProfileForParticipants} from '../src/adventure/cameraPeer.mjs';
 
 test('camera identities, viewport clamping and stale participation',()=>{
+  assert.equal(CAMERA_LIMIT,10);
+  assert.deepEqual(cameraProfileForParticipants(10),{maxBitrate:100000,maxFramerate:12});
+  assert.deepEqual(cameraProfileForParticipants(6),{maxBitrate:150000,maxFramerate:15});
   assert.equal(cameraName({role:'visitor',name:'Ana'},{nome:'NPC'},false),'Ana');
   assert.equal(cameraName({role:'player'},{nome:'Jack'},false),'Jack');
   assert.equal(cameraName({},null,true),'Mestre');

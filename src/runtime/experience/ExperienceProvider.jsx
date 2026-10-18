@@ -88,8 +88,18 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
 
   useEffect(()=>{
     const unsubscribers=[];
-    unsubscribers.push(onSnapshot(access?.role==='visitor'?query(collection(db,'sheets'),where('visitorId','==',String(access.visitorId||'invalid'))):collection(db,'sheets'),snap=>{
-      const rows=visibleSheets(snap.docs.map(d=>({id:d.id,...d.data()})),access,masterMode);
+    const sheetSource=masterMode
+      ?collection(db,'sheets')
+      :access?.role==='visitor'
+        ?query(collection(db,'sheets'),where('visitorId','==',String(access.visitorId||'invalid')))
+        :playerSheetId
+          ?doc(db,'sheets',String(playerSheetId))
+          :null;
+    if(sheetSource)unsubscribers.push(onSnapshot(sheetSource,snap=>{
+      const records=Array.isArray(snap.docs)
+        ?snap.docs.map(d=>({id:d.id,...d.data()}))
+        :snap.exists()?[{id:snap.id,...snap.data()}]:[];
+      const rows=visibleSheets(records,access,masterMode);
       const nextHp=new Map();
       rows.forEach(sheet=>{
         const id=String(sheet.id||'');
@@ -108,7 +118,11 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
       sheetHpPrimedRef.current=true;
       setSheets(rows);
     }));
-    unsubscribers.push(onSnapshot(collection(db,'combat_summons'),snap=>setSummons(snap.docs.map(d=>({summonDocId:d.id,...d.data()})).filter(row=>row.active!==false))));
+    const ownSheetId=String(playerSheetId||selectedSheetId||'');
+    const summonSource=masterMode?collection(db,'combat_summons'):ownSheetId
+      ?query(collection(db,'combat_summons'),where('ownerSheetId','==',ownSheetId)):null;
+    if(summonSource)unsubscribers.push(onSnapshot(summonSource,snap=>setSummons(snap.docs.map(d=>({summonDocId:d.id,...d.data()})).filter(row=>row.active!==false))));
+    else setSummons([]);
     unsubscribers.push(onSnapshot(doc(db,'config','customAbilities'),snap=>setCustomAbilities(normalizeDoc(snap,{}))));
     unsubscribers.push(onSnapshot(doc(db,'config','combat'),snap=>setCombat(normalizeDoc(snap,{active:false}))));
     unsubscribers.push(onSnapshot(doc(db,'config','combat_state'),snap=>setCombatState(normalizeDoc(snap,{initiative:[],turnIdx:0,round:1,log:[]}))));
@@ -124,7 +138,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     const journalQuery=query(collection(db,'session_journal'),orderBy('ts','desc'),limit(JOURNAL_LIMIT));
     unsubscribers.push(onSnapshot(journalQuery,snap=>setJournal(snap.docs.map(d=>({id:d.id,...d.data()})))));
     return()=>unsubscribers.forEach(fn=>fn());
-  },[access?.role,access?.visitorId,masterMode]);
+  },[access?.role,access?.visitorId,masterMode,playerSheetId,selectedSheetId]);
 
   useEffect(()=>{
     if(!(tab==='mapabatalha' || (masterMode && tab==='session'))) { setMaps([]); return; }

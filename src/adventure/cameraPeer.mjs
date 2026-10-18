@@ -1,6 +1,12 @@
 // WebRTC media never passes through Firestore. The transport carries only SDP/ICE.
 export const CAMERA_VIDEO = {width:{ideal:320,max:640},height:{ideal:180,max:360},frameRate:{ideal:15,max:20}};
-export const CAMERA_LIMIT = 8;
+export const CAMERA_LIMIT = 10;
+export function cameraProfileForParticipants(count){
+  const participants=Math.max(1,Number(count)||1);
+  if(participants>=8)return {maxBitrate:100000,maxFramerate:12};
+  if(participants>=5)return {maxBitrate:150000,maxFramerate:15};
+  return {maxBitrate:200000,maxFramerate:15};
+}
 export function cameraName(access,sheet,masterMode){
   return String(masterMode?'Mestre':access?.role==='visitor'?(access.name||sheet?.nome||'Visitante'):(sheet?.nome||access?.name||'Jogador')).slice(0,80);
 }
@@ -22,11 +28,12 @@ export function cameraMemberRows(docs,previous=[]){
 
 const iceFragments=sdp=>new Set([...String(sdp||'').matchAll(/^a=ice-ufrag:(.+)$/gm)].map(match=>match[1].trim()));
 
-export function createCameraPeer({localId,remoteId,iceServers,publish,subscribe,onStream,onState,onIssue=()=>{},Peer=globalThis.RTCPeerConnection,
+export function createCameraPeer({localId,remoteId,iceServers,publish,subscribe,onStream,onState,onIssue=()=>{},maxBitrate=200000,maxFramerate=15,Peer=globalThis.RTCPeerConnection,
   schedule=setTimeout,cancel=clearTimeout,connectionTimeout=20000,recoveryDelays=[800,2500,6000],disconnectGrace=5000}){
   const initiator=localId<remoteId,pc=new Peer({iceServers});
   const epoch=globalThis.crypto?.randomUUID?.()||Math.random().toString(36).slice(2);
   let sender=initiator?pc.addTransceiver('video',{direction:'sendrecv'}).sender:null;
+  let quality={maxBitrate:Math.max(50000,Number(maxBitrate)||200000),maxFramerate:Math.max(8,Number(maxFramerate)||15)};
   let closed=false,desiredTrack=null,queue=Promise.resolve(),mediaQueue=Promise.resolve(),round='',offerSdp='',answerSdp='',attempts=0,offerNumber=0;
   let candidateTimer=null,deadline=null,recoveryTimer=null,signalTimer=null,stopSignals=()=>{},signalAttempts=0;
   let candidates=[],remoteStream=null,lastRequest='',lastFrames=null;
@@ -47,7 +54,7 @@ export function createCameraPeer({localId,remoteId,iceServers,publish,subscribe,
       await sender.replaceTrack(track);
       if(track&&sender.getParameters&&sender.setParameters){
         const parameters=sender.getParameters();if(!parameters.encodings?.length)parameters.encodings=[{}];
-        parameters.encodings.forEach(encoding=>{encoding.maxBitrate=200000;encoding.maxFramerate=20;});
+        parameters.encodings.forEach(encoding=>{encoding.maxBitrate=quality.maxBitrate;encoding.maxFramerate=quality.maxFramerate;});
         try{await sender.setParameters(parameters);}catch{/* Browser-specific sender limits must not stop the call. */}
       }
     });
@@ -168,6 +175,11 @@ export function createCameraPeer({localId,remoteId,iceServers,publish,subscribe,
   return {
     ready,
     setTrack(track){desiredTrack=track;return applyTrack();},
+    setQuality(next={}){
+      const updated={maxBitrate:Math.max(50000,Number(next.maxBitrate)||quality.maxBitrate),maxFramerate:Math.max(8,Number(next.maxFramerate)||quality.maxFramerate)};
+      if(updated.maxBitrate===quality.maxBitrate&&updated.maxFramerate===quality.maxFramerate)return Promise.resolve();
+      quality=updated;return applyTrack();
+    },
     resume(){if(!connected()){attempts=0;cancel(recoveryTimer);recoveryTimer=null;scheduleRecovery(0);}},
     recover(){
       if(closed)return;attempts=0;cancel(recoveryTimer);recoveryTimer=null;

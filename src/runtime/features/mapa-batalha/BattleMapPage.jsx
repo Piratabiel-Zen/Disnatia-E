@@ -175,6 +175,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [editingId, setEditingId] = useState('');
   const [draggingId, setDraggingId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedTokenIds,setSelectedTokenIds]=useState([]);
+  const [multiSelectMode,setMultiSelectMode]=useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formNome, setFormNome] = useState('');
   const [formTipo, setFormTipo] = useState('jogador');
@@ -248,6 +250,9 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const leaseTrackerRef=useRef(createLeaseTracker());
   const leaseTimersRef=useRef(new Map());
   const localLeaseRef=useRef(null);
+  const groupLeaseRef=useRef([]);
+  const groupDragIdsRef=useRef([]);
+  const groupDragStartRef=useRef({});
   const claimRef=useRef(false);
   const mountedMapRef=useRef(true);
   const mapIdentityRef=useRef('');
@@ -1259,10 +1264,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       console.error('Erro ao excluir token:', error);
       pushToast('Não foi possível excluir o token. Tente novamente.', '\u26A0', '#E8193C');
     });
-    if (selectedId === id) setSelectedId(null);
+    if (String(selectedId) === String(id)) setSelectedId(null);
+    setSelectedTokenIds(previous=>previous.filter(tokenId=>String(tokenId)!==String(id)));
   };
 
-  const acquireControl=async(mapId,tokenId)=>{
+  const acquireControl=async(mapId,tokenId,append=false)=>{
     const record=doc(db,'battlemap_live_positions',String(mapId)+'_'+String(tokenId)+'_lease');
     const key=String(mapId)+':'+String(tokenId);
     const clientId=String(liveClientIdRef.current);
@@ -1275,33 +1281,36 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       transaction.set(record,{mapId:String(mapId),tokenId:String(tokenId),channel:'control-lease-v1',clientId,name:masterMode?'Mestre':ownPingName||'Jogador',active:true,version,publishedAt:serverTimestamp()});
       return true;
     });
-    if(acquired)localLeaseRef.current={record,version,clientId};
+    if(acquired){const lease={record,version,clientId,mapId:String(mapId),tokenId:String(tokenId)};localLeaseRef.current=lease;groupLeaseRef.current=append?[...groupLeaseRef.current,lease]:[lease];}
     return acquired;
   };
   const releaseControl=async()=>{
-    const lease=localLeaseRef.current;if(!lease)return;
+    const leases=[...groupLeaseRef.current,...(localLeaseRef.current?[localLeaseRef.current]:[])];
+    const unique=[...new Map(leases.map(lease=>[lease.record.path,lease])).values()];
+    if(!unique.length)return;
     localLeaseRef.current=null;
-    try{await runTransaction(db,async transaction=>{
+    groupLeaseRef.current=[];groupDragIdsRef.current=[];groupDragStartRef.current={};
+    await Promise.allSettled(unique.map(lease=>runTransaction(db,async transaction=>{
       const snapshot=await transaction.get(lease.record);
       if(snapshot.data()?.version===lease.version)transaction.set(lease.record,{active:false,publishedAt:serverTimestamp()},{merge:true});
-    });}catch(error){console.warn('Controle liberado por expiração:',error);}
+    })));
   };
   useEffect(()=>{
     if(!draggingId&&!rotatingId)return;
     document.documentElement.dataset.tokenDragging='true';
     let inFlight=false;
     const renew=async()=>{
-      const lease=localLeaseRef.current;if(!lease||inFlight)return;inFlight=true;
+      const leases=groupLeaseRef.current.length?groupLeaseRef.current:(localLeaseRef.current?[localLeaseRef.current]:[]);if(!leases.length||inFlight)return;inFlight=true;
       try{
-        const renewed=await runTransaction(db,async transaction=>{
+        const renewed=await Promise.all(leases.map(lease=>runTransaction(db,async transaction=>{
           const snapshot=await transaction.get(lease.record);
           if(snapshot.data()?.version!==lease.version)return false;
           const version=lease.clientId+'_'+Math.random().toString(36).slice(2);
           transaction.set(lease.record,{version,publishedAt:serverTimestamp()},{merge:true});
           return version;
-        });
-        if(renewed&&localLeaseRef.current===lease)lease.version=renewed;
-        else if(!renewed){window.dispatchEvent(new Event('pointercancel'));setDraggingId(null);setRotatingId(null);}
+        })));
+        if(renewed.every(Boolean)){renewed.forEach((version,index)=>{leases[index].version=version;});if(groupLeaseRef.current.length)groupLeaseRef.current=[...leases];if(localLeaseRef.current)localLeaseRef.current=groupLeaseRef.current.find(row=>row.tokenId===localLeaseRef.current.tokenId)||localLeaseRef.current;}
+        else {window.dispatchEvent(new Event('pointercancel'));setDraggingId(null);setRotatingId(null);}
       }catch(error){console.warn('Controle sem confirmação:',error);window.dispatchEvent(new Event('pointercancel'));}
       finally{inFlight=false;}
     };
@@ -1309,10 +1318,16 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     return()=>{clearInterval(timer);delete document.documentElement.dataset.tokenDragging;};
   },[draggingId,rotatingId]);
   useEffect(()=>{mountedMapRef.current=true;return()=>{mountedMapRef.current=false;claimRef.current=false;leaseTimersRef.current.forEach(clearTimeout);releaseControl();}},[]);
-  useEffect(()=>{setTokenControllers({});leaseTrackerRef.current.clear();},[currentMapId]);
+  useEffect(()=>{setTokenControllers({});setSelectedTokenIds([]);setMultiSelectMode(false);leaseTrackerRef.current.clear();},[currentMapId]);
   const onTokenPointerDown = async (e, token) => {
     if((token.locked&&!masterMode)||claimRef.current||draggingIdRef.current!=null)return;
     e.stopPropagation();e.preventDefault();
+    if(multiSelectMode||e.shiftKey||e.ctrlKey||e.metaKey){
+      const key=String(token.id);
+      setSelectedTokenIds(previous=>previous.includes(key)?previous.filter(id=>id!==key):[...previous,key]);
+      setSelectedId(token.id);
+      return;
+    }
     if(!navigator.onLine){pushToast('Reconecte para mover tokens com o grupo.','\u26A0','#E8A020');return;}
     const mapId=currentMap.id;
     const element=e.currentTarget,pointerId=e.pointerId;
@@ -1323,13 +1338,24 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     claimRef.current=true;setClaimingToken(String(token.id));
     setSelectedId(token.id);
     try{
-      const acquired=await acquireControl(mapId,token.id);
-      if(!acquired){pushToast('Este token está sendo controlado por outro participante.','\u26BF','#E8A020');return;}
+      const selectedGroup=selectedTokenIds.includes(String(token.id))&&selectedTokenIds.length>1?selectedTokenIds:[String(token.id)];
+      const tokensNow=mapTokensRef.current[String(mapId)]||currentMap.tokens||[];
+      const startById=Object.fromEntries(tokensNow.filter(row=>selectedGroup.includes(String(row.id))).map(row=>[String(row.id),{x:Number(row.x)||0,y:Number(row.y)||0}]));
+      groupLeaseRef.current=[];localLeaseRef.current=null;
+      for(const tokenId of [...selectedGroup].sort()){
+        const row=tokensNow.find(item=>String(item.id)===String(tokenId));
+        if(!row||row.locked&&!masterMode||!await acquireControl(mapId,tokenId,true)){
+          await releaseControl();pushToast('Um dos tokens selecionados está sendo controlado por outro participante ou bloqueado.','\u26BF','#E8A020');return;
+        }
+      }
+      if(!groupLeaseRef.current.length){pushToast('Não foi possível obter controle do grupo selecionado.','\u26BF','#E8A020');return;}
+      localLeaseRef.current=groupLeaseRef.current.find(lease=>String(lease.tokenId)===String(token.id))||groupLeaseRef.current[0];
+      groupDragIdsRef.current=[...selectedGroup];groupDragStartRef.current=startById;
       if(!down||!mountedMapRef.current||String(mapId)!==mapIdentityRef.current){await releaseControl();return;}
       moved.current=false;
       tokenInteractionRef.current={id:token.id,pointerId};
       setDraggingId(token.id);
-    }catch(error){console.error('Falha ao reservar token:',error);pushToast('Não foi possível obter controle. Confira a conexão.','\u26A0','#E8A020');}
+    }catch(error){await releaseControl();console.error('Falha ao reservar token:',error);pushToast('Não foi possível obter controle. Confira a conexão.','\u26A0','#E8A020');}
     finally{claimRef.current=false;setClaimingToken('');window.removeEventListener('pointerup',ended);window.removeEventListener('pointercancel',ended);}
   };
 
@@ -1339,21 +1365,24 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     // TABLETOP REALTIME FAST PATH 2026-09-14
 // OWLBEAR-STYLE INTERACTION PIPELINE 2026-09-13
 const TOKEN_THROTTLE_MS = 100;
+const dragIds=groupDragIdsRef.current.length?groupDragIdsRef.current:[String(draggingId)];
+const dragIdSet=new Set(dragIds.map(String));
+const groupStarts=groupDragStartRef.current;
+const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
       const last = lastTokenWriteRef.current[mapIdAtDragStart] || 0;
       clearTimeout(saveTimeout.current['tok_' + mapIdAtDragStart]);
-      if (now - last >= TOKEN_THROTTLE_MS) {
+      const sendPositions=()=>tokensArr.filter(token=>dragIdSet.has(String(token.id))).forEach(token=>writeLivePosition(mapIdAtDragStart,token.id,token.x,token.y));
+      if (now - last >= writeInterval) {
         lastTokenWriteRef.current[mapIdAtDragStart] = now;
-        const movedToken = tokensArr.find(t => String(t.id) === String(draggingId));
-        if (movedToken) writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
+        sendPositions();
       } else {
         saveTimeout.current['tok_' + mapIdAtDragStart] = setTimeout(() => {
           lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-          const movedToken = tokensArr.find(t => String(t.id) === String(draggingId));
-          if (movedToken) writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
-        }, TOKEN_THROTTLE_MS - (now - last));
+          sendPositions();
+        }, writeInterval - (now - last));
       }
     };
 
@@ -1368,7 +1397,13 @@ const TOKEN_THROTTLE_MS = 100;
       latestPoint = null;
       const prev = mapTokensRef.current;
       const currentTokens = prev[String(mapIdAtDragStart)] || [];
-      const updatedTokens = currentTokens.map(t => t.id === draggingId ? { ...t, x, y } : t);
+      const origin=groupStarts[String(draggingId)]||{x,y};
+      const dx=x-origin.x,dy=y-origin.y;
+      const updatedTokens = currentTokens.map(t => {
+        if(!dragIdSet.has(String(t.id)))return t;
+        const start=groupStarts[String(t.id)]||{x:Number(t.x)||0,y:Number(t.y)||0};
+        return {...t,x:Math.max(0,Math.min(100,start.x+dx)),y:Math.max(0,Math.min(100,start.y+dy))};
+      });
       const next = { ...prev, [String(mapIdAtDragStart)]: updatedTokens };
       mapTokensRef.current = next;
       setMapTokens(next);
@@ -1397,14 +1432,11 @@ const TOKEN_THROTTLE_MS = 100;
       // Um simples clique serve apenas para selecionar. Persistir o array inteiro sem
       // movimento podia sobrescrever a posição que outro cliente ainda estava movendo.
       if (moved.current && latestTokens) {
-        const movedToken = latestTokens.find(t => String(t.id) === String(draggingId));
+        const movedTokens = (latestTokens||[]).filter(t=>dragIdSet.has(String(t.id)));
         const durableWrites = [];
-        if (movedToken) {
-          writeLivePosition(mapIdAtDragStart, movedToken.id, movedToken.x, movedToken.y);
-          durableWrites.push(commitCanonicalTokenPosition(mapIdAtDragStart, movedToken));
-        }
+        movedTokens.forEach(token=>{writeLivePosition(mapIdAtDragStart,token.id,token.x,token.y);durableWrites.push(commitCanonicalTokenPosition(mapIdAtDragStart,token));});
         lastTokenWriteRef.current[mapIdAtDragStart] = Date.now();
-        durableWrites.push(writeLiveTokens(mapIdAtDragStart, movedToken ? [{ id: movedToken.id, x: movedToken.x, y: movedToken.y }] : [], true));
+        durableWrites.push(writeLiveTokens(mapIdAtDragStart, movedTokens.map(token=>({ id:token.id,x:token.x,y:token.y })), true));
         Promise.allSettled(durableWrites).then(results => {
           const rejected = results.filter(result => result.status === 'rejected');
           if (rejected.length) rejected.forEach(result => console.error('Falha em persistência do token:', result.reason));
@@ -1619,6 +1651,10 @@ const TOKEN_THROTTLE_MS = 100;
         <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 14, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>Mapa de Batalha</h2>
         {masterMode&&<div className="battlemap-master-mark" aria-label="Acesso do Mestre"><span className="master-sigil" aria-hidden="true">M</span><span>MESTRE<small>Conduzindo a mesa</small></span></div>}
         {currentMap?.nome && <span style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif' }}>· {currentMap.nome}</span>}
+        {currentMap&&<div role="group" aria-label="Seleção múltipla de tokens" style={{display:'inline-flex',alignItems:'center',gap:5,marginLeft:'auto'}}>
+          <button type="button" aria-pressed={multiSelectMode} title="Ative e clique nos tokens para selecionar; desative e arraste um deles para mover o grupo" onClick={()=>setMultiSelectMode(value=>!value)} style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${multiSelectMode?'rgba(168,85,247,.65)':'rgba(255,255,255,.12)'}`,background:multiSelectMode?'rgba(168,85,247,.18)':'rgba(4,6,15,.55)',color:multiSelectMode?'#D8B7F3':'#9A8AA8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:9}}>{multiSelectMode?'✓ Concluir seleção':'▧ Selecionar vários'}{selectedTokenIds.length?` · ${selectedTokenIds.length}`:''}</button>
+          {selectedTokenIds.length>0&&<button type="button" aria-label="Limpar seleção de tokens" title="Limpar seleção" onClick={()=>{setSelectedTokenIds([]);setSelectedId(null);}} style={{padding:'5px 7px',borderRadius:7,border:'1px solid rgba(255,255,255,.1)',background:'rgba(4,6,15,.55)',color:'#80748c',cursor:'pointer',fontSize:10}}>×</button>}
+        </div>}
         {masterMode && currentMap?.img && !mapScreen.expanded && <button type="button" className="battlemap-screen-button in-heading" aria-pressed={false} onClick={mapScreen.toggle}>Preencher tela completa</button>}
       </div>
 
@@ -1799,7 +1835,7 @@ const TOKEN_THROTTLE_MS = 100;
                 {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const controller=tokenControllers[String(token.id)]||'';
-                  const isSelected = selectedId === token.id;
+                  const isSelected = String(selectedId) === String(token.id) || selectedTokenIds.includes(String(token.id));
                   const canDrag = masterMode || !token.locked;
                   const dispSize = (token.size || 70) * tokenScale;
                   const linkedEnemyVitals = token.enemyId ? enemies.find(e => String(e.id) === String(token.enemyId)) : null;
@@ -1864,7 +1900,7 @@ const TOKEN_THROTTLE_MS = 100;
                       <div style={{ fontSize: 10 * labelScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: Math.max(3, 5 * labelScale), padding: `${Math.max(1, labelScale)}px ${Math.max(3, 7 * labelScale)}px`, whiteSpace: 'nowrap', maxWidth: Math.max(56, 90 * labelScale), overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
-                      {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && (
+                      {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && !multiSelectMode && (
                         <div
                           className="battlemap-facing-dial battlemap-facing-dial-subtle"
                           title="Arraste para girar o token"
@@ -1917,7 +1953,7 @@ const TOKEN_THROTTLE_MS = 100;
                   {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
                 </div>
                 <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 12 }} />
-                <button onClick={() => setSelectedId(null)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
+                <button onClick={() => {setSelectedId(null);setSelectedTokenIds([]);}} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
               </div>
               <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Ficha de referência<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};const next={...selectedToken,...patch};const source=enemyTemplateForToken(next);updateToken(selectedToken.id,{...patch,...(hasIndividualHp(next)&&source?{hp:source.hp,maxHp:source.maxHp,hpMode:'individual'}:{})});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Inimigos têm HP individual. A ficha fornece a vida inicial; alterar este token não altera os demais.</span></label>
               <div style={{ marginBottom: 12 }}>

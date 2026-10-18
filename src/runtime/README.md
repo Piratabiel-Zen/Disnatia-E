@@ -28,7 +28,7 @@ characters, revoked access and summon release/resources/actions/store.
 
 ### Optional tabletop cameras and map fullscreen
 
-`TableCameras` is a small launcher; `TableCameraRoom` and the native WebRTC engine load only when opened. Joining starts as a viewer with no media permission request. Only **Ativar minha câmera** calls `getUserMedia`, always with `audio:false`, 320×180 ideal and 15fps. There is no recording. Eight joined participants is the mesh budget; each sender is limited to 200kbps per peer. More participants or relay guarantees need a managed SFU/relay service rather than expanding the mesh.
+`TableCameras` is a small launcher; `TableCameraRoom` and the native WebRTC engine load only when opened. Joining starts as a viewer with no media permission request. Only **Ativar minha câmera** calls `getUserMedia`, always with `audio:false`, 320×180 ideal and 15fps. There is no recording. The mesh accepts up to 10 participants and lowers each sender to 100kbps/12fps when eight or more people are connected, reducing bandwidth and video processing as the room grows. A managed SFU/relay is still needed for larger rooms or guaranteed connectivity across restrictive networks.
 
 Firestore carries ephemeral participant records (`table_cameras`, latest 32, server timestamp heartbeat, 90-second expiry in UI) and SDP/ICE for uniquely identified peer sessions (`table_camera_calls`). It does not carry video. Leaving, closing the panel, changing authenticated session or pagehide closes peer connections, stops tracks and removes this client's records best effort. Old session IDs are never reused. The existing browser-only authentication limitations apply to signaling too; this does not establish server-enforced room membership.
 

@@ -60,8 +60,8 @@ replaceBattle(
 );
 
 replaceBattle(
-  "    const u3 = onSnapshot(collection(db, 'sheets'), snap => {\n      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));\n      setSheets(!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all);\n    });",
-  "    const u3 = onSnapshot(collection(db, 'sheets'), snap => {\n      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));\n      const vitals = {};\n      all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });\n      setSheetVitals(vitals);\n      setSheets(!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all);\n    });",
+  "    const u3 = masterMode || !playerSheetId\n      ? onSnapshot(collection(db, 'sheets'), snap => setSheets(snap.docs.map(d => ({ id: d.id, ...d.data() }))))\n      : onSnapshot(doc(db, 'sheets', String(playerSheetId)), snap => setSheets(snap.exists() ? [{ id: snap.id, ...snap.data() }] : []));",
+  "    const u3 = masterMode || !playerSheetId\n      ? onSnapshot(collection(db, 'sheets'), snap => {\n          const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));\n          const vitals = {};\n          all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });\n          setSheetVitals(vitals); setSheets(all);\n        })\n      : onSnapshot(doc(db, 'sheets', String(playerSheetId)), snap => {\n          const all = snap.exists() ? [{ id:snap.id, ...snap.data() }] : [];\n          const vitals = {};\n          all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });\n          setSheetVitals(vitals); setSheets(all);\n        });",
   'vitais leves das fichas para tokens'
 );
 

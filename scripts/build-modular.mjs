@@ -75,6 +75,20 @@ try {
   if (!/\bfunction FamiliaresPanel\s*\(/.test(generatedComponents)) {
     throw new Error('FamiliaresPanel não foi incluído no módulo das fichas.');
   }
+  generatedComponents = generatedComponents.replace(
+    'function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName }) {',
+    'function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName, actorId, color }) {'
+  ).replace(
+    '      logAbilityUsed(characterName, abilityName, cost);',
+    "      logAbilityUsed(characterName, abilityName, cost);\n      window.dispatchEvent(new CustomEvent('dinastia:ability-used',{detail:{id:`sheet_ability_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,actorId,actorName:characterName,abilityName,cost,color,icon:'✦'}}));"
+  ).replace(
+    "    characterName={characterName || ''}            ",
+    "    characterName={characterName || ''}\n    actorId={sheet?.id}\n    color={color}            "
+  );
+  if (!generatedComponents.includes("dinastia:ability-used")) {
+    throw new Error('Broadcast global de habilidades da ficha não foi aplicado.');
+  }
+  fs.writeFileSync(generatedComponentsPath, generatedComponents);
 
   // Substitui o placeholder pelo shell React.lazy validado e legível.
   fs.copyFileSync(
@@ -101,7 +115,7 @@ try {
   );
   sheetsSource = sheetsSource.replace(
     "const u1=onSnapshot(collection(db,'sheets'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));setSheets(data);setLoaded(true);});",
-    "const u1=onSnapshot(collection(db,'sheets'),snap=>{const all=snap.docs.map(d=>({id:d.id,...d.data()}));const data=!masterMode&&playerSheetId?all.filter(s=>String(s.id)===String(playerSheetId)):all;setSheets(data);setLoaded(true);});"
+    "const u1=masterMode||!playerSheetId?onSnapshot(collection(db,'sheets'),snap=>{setSheets(snap.docs.map(d=>({id:d.id,...d.data()})));setLoaded(true);}):onSnapshot(doc(db,'sheets',String(playerSheetId)),snap=>{setSheets(snap.exists()?[{id:snap.id,...snap.data()}]:[]);setLoaded(true);});"
   );
   sheetsSource = sheetsSource.replace(
     "return()=>{u1();u2();u3();u4();u5();};\n  },[]);",
@@ -118,7 +132,7 @@ try {
   );
   battleSource = battleSource.replace(
     "const u3 = onSnapshot(collection(db, 'sheets'), snap => {\n      setSheets(snap.docs.map(d => ({ id: d.id, ...d.data() })));\n    });",
-    "const u3 = onSnapshot(collection(db, 'sheets'), snap => {\n      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));\n      setSheets(!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all);\n    });"
+    "const u3 = masterMode || !playerSheetId\n      ? onSnapshot(collection(db, 'sheets'), snap => setSheets(snap.docs.map(d => ({ id: d.id, ...d.data() }))))\n      : onSnapshot(doc(db, 'sheets', String(playerSheetId)), snap => setSheets(snap.exists() ? [{ id: snap.id, ...snap.data() }] : []));"
   );
   fs.writeFileSync(battlePath, battleSource);
 
@@ -158,16 +172,16 @@ try {
   }
 
   const generatedSheets = fs.readFileSync(sheetsPath, 'utf8');
-  if (!generatedSheets.includes('playerSheetId') || !generatedSheets.includes('all.filter')) {
-    throw new Error('Filtro de ficha por jogador não foi aplicado em SheetsPage.jsx.');
+  if (!generatedSheets.includes('playerSheetId') || !generatedSheets.includes("doc(db,'sheets',String(playerSheetId))")) {
+    throw new Error('Listener de ficha individual por jogador não foi aplicado em SheetsPage.jsx.');
   }
   const sheetComponents = fs.readFileSync(path.join(temp, 'src', 'features', 'sheets', 'SheetComponents.jsx'), 'utf8');
   if (!/\bfunction FamiliaresPanel\s*\(/.test(sheetComponents)) {
     throw new Error('Painel de familiares ausente no módulo publicado das fichas.');
   }
   const generatedBattle = fs.readFileSync(battlePath, 'utf8');
-  if (!generatedBattle.includes('playerSheetId') || !generatedBattle.includes('all.filter')) {
-    throw new Error('Filtro de ficha por jogador não foi aplicado em BattleMapPage.jsx.');
+  if (!generatedBattle.includes('playerSheetId') || !generatedBattle.includes("doc(db, 'sheets', String(playerSheetId))")) {
+    throw new Error('Listener de ficha individual por jogador não foi aplicado em BattleMapPage.jsx.');
   }
 
   const generatedSrc = path.join(temp, 'src');

@@ -2,7 +2,7 @@ import { useEffect,useRef,useState } from 'react';
 import { createPortal } from 'react-dom';
 import { collection,deleteDoc,doc,limit,onSnapshot,orderBy,query,serverTimestamp,setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
-import { activeCameraMembers,CAMERA_LIMIT,CAMERA_VIDEO,cameraName,cameraPosition,createCameraPeer,cameraMemberRows,timestampMs } from '../adventure/cameraPeer.mjs';
+import { activeCameraMembers,CAMERA_LIMIT,CAMERA_VIDEO,cameraName,cameraPosition,cameraProfileForParticipants,createCameraPeer,cameraMemberRows,timestampMs } from '../adventure/cameraPeer.mjs';
 
 function VideoTile({row,stream,state,index,local,layoutVersion,onRetry}){
   const video=useRef(null),tile=useRef(null),drag=useRef(null);
@@ -91,14 +91,15 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
         if(session.current!==room)return;
         const active=room.rosterCached&&room.active?room.active:activeCameraMembers(room.rows,Date.now()+room.offset);
         room.active=active;
-        if(active.length>CAMERA_LIMIT){leave();setIssue('A mesa suporta até 8 participantes nas câmeras. Tente novamente quando houver uma vaga.');return;}
+        if(active.length>CAMERA_LIMIT){leave();setIssue(`A mesa suporta até ${CAMERA_LIMIT} participantes nas câmeras. Tente novamente quando houver uma vaga.`);return;}
         setMembers(active);
+        const cameraProfile=cameraProfileForParticipants(active.length);
         const ids=new Set(active.filter(row=>row.id!==id).map(row=>row.id));
         room.peers.forEach((peer,remoteId)=>{if(!ids.has(remoteId)){peer.close();room.peers.delete(remoteId);setStreams(previous=>{const next={...previous};delete next[remoteId];return next;});setStates(previous=>{const next={...previous};delete next[remoteId];return next;});const callRef=room.calls.get(remoteId);room.calls.delete(remoteId);if(callRef)deleteDoc(callRef).catch(()=>{});}});
         active.forEach(row=>{
           if(row.id===id||room.peers.has(row.id))return;
           const callRef=doc(db,'table_camera_calls',[id,row.id].sort().join('_'));room.calls.set(row.id,callRef);
-          const peer=createCameraPeer({localId:id,remoteId:row.id,iceServers,
+          const peer=createCameraPeer({localId:id,remoteId:row.id,iceServers,...cameraProfile,
             publish:data=>setDoc(callRef,{...data,updatedAt:serverTimestamp()},{merge:true}),
             subscribe:(callback,onError)=>onSnapshot(callRef,snap=>{if(snap.exists())callback(snap.data(),snap.metadata);},onError),
             onStream:stream=>{if(session.current===room)setStreams(previous=>({...previous,[row.id]:stream}));},
@@ -107,6 +108,7 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
           });room.peers.set(row.id,peer);
           peer.setTrack(localStream.current?.getVideoTracks()[0]||null).catch(()=>peer.recover());
         });
+        room.peers.forEach(peer=>peer.setQuality(cameraProfile).catch(()=>{}));
       };
       const watchRoster=()=>{
         if(session.current!==room)return;
@@ -177,6 +179,7 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
   return <>
     <section id="table-camera-options" className="table-camera-controls" aria-label="Câmeras da mesa" onClick={event=>{if(event.detail>0)event.target.closest('button')?.blur();}}>
       <strong>Câmeras da mesa{joined?` · ${members.length}/${CAMERA_LIMIT}`:''}</strong>
+      {!joined&&<small className="table-camera-capacity">Até 10 participantes · a qualidade do vídeo se ajusta automaticamente</small>}
       {!joined?<><p>Entre para ver a mesa. Sua câmera começa desligada; você decide quando compartilhá-la.</p><button disabled={busy} onClick={join}>{busy?'Conectando...':'Entrar nas câmeras'}</button></>:<><button disabled={busy} onClick={toggleCamera}>{busy?'Aguarde...':cameraOn?'Desligar minha câmera':'Ativar minha câmera'}</button><button onClick={reset}>Organizar câmeras</button><button onClick={leave}>Sair das câmeras</button></>}
       <button onClick={()=>{leave();onClose();}} aria-label="Fechar câmeras">{'\u00D7'}</button>
       {error&&<p role="alert">{error}</p>}
