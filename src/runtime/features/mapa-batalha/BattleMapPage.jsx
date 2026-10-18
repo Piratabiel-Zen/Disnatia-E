@@ -1808,7 +1808,12 @@ const TOKEN_THROTTLE_MS = 100;
                   const displayHp = independentVitals ? independentVitals.hp : (linkedSheetVitals ? Number(linkedSheetVitals.hp||0) : Number(token.hp||0));
                   const displayMaxHp = independentVitals ? independentVitals.maxHp : (linkedSheetVitals ? Number(linkedSheetVitals.maxHp||1) : Number(token.maxHp||0));
                   const linkedSheetRecord = token.sheetId ? sheets.find(sheet => String(sheet.id) === String(token.sheetId)) : null;
-                  const displayBonusHp = Math.max(0, Number(linkedEnemyVitals?.hp_bonus ?? linkedSheetRecord?.hp_bonus ?? token.hp_bonus ?? 0));
+                  const linkedCompanion = token.summonId
+                    ? (linkedSheetRecord?.invocacoes||[]).find(item=>String(item.id)===String(token.summonId))
+                    : token.familiarId
+                      ? (linkedSheetRecord?.familiares||[]).find(item=>String(item.id)===String(token.familiarId))
+                      : null;
+                  const displayBonusHp = Math.max(0, Number(linkedEnemyVitals?.hp_bonus ?? linkedCompanion?.hp_bonus ?? (linkedCompanion ? 0 : linkedSheetRecord?.hp_bonus) ?? token.hp_bonus ?? 0));
                   const baseHpCapacity = Math.max(1, displayMaxHp - Math.min(displayMaxHp, displayBonusHp));
                   const greenHp = Math.min(Math.max(0, displayHp), baseHpCapacity);
                   const blueHp = Math.min(displayBonusHp, Math.max(0, displayHp - baseHpCapacity));
