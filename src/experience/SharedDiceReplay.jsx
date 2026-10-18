@@ -58,11 +58,9 @@ export default function SharedDiceReplay({ access }) {
     try { localRollId = window.sessionStorage.getItem(LOCAL_ROLL_KEY) || ''; } catch (_) {}
     const sameRoll = !!localRollId && String(payload.rollId || '') === localRollId;
     const sameClient = !!payload.sourceClientId && String(payload.sourceClientId) === String(localClientIdRef.current);
-    const samePlayerSheet = !!localSheetId && !!payload.rollerSheetId && String(payload.rollerSheetId) === localSheetId;
-
-    // Quem originou a rolagem já enxerga a física dentro do DiceWidget no canto
-    // inferior direito. O replay central existe exclusivamente para os demais clientes.
-    if (sameRoll || sameClient || samePlayerSheet) return;
+    // O autor já vê a rolagem no DiceWidget da própria aba. As outras abas
+    // e todos os demais jogadores recebem o replay, inclusive se usarem a mesma ficha.
+    if (sameRoll || sameClient) return;
 
     setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));
   }, [localSheetId, remember]);
