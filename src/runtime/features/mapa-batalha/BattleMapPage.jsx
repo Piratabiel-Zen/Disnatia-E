@@ -869,7 +869,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     state.pending = { x: px, y: py };
 
     const flushLatest = () => {
-      if (!state.pending || state.inFlight >= 3) return;
+      if (!state.pending || state.inFlight >= 2) return;
       const point = state.pending;
       state.pending = null;
       state.inFlight += 1;
@@ -1338,7 +1338,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const mapIdAtDragStart = currentMap.id;
     // TABLETOP REALTIME FAST PATH 2026-09-14
 // OWLBEAR-STYLE INTERACTION PIPELINE 2026-09-13
-const TOKEN_THROTTLE_MS = 50;
+const TOKEN_THROTTLE_MS = 100;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
