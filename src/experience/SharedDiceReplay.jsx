@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { collection, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import PhysicalDiceTray from './PhysicalDiceTray';
@@ -28,7 +29,7 @@ const getReplayId = payload => String(
 
 const firstNameOf = value => {
   const clean = String(value || 'Jogador').trim();
-  return clean ? clean.split(/\s+/)[0] : 'Jogador';
+  return clean ? clean.split(/\\s+/)[0] : 'Jogador';
 };
 
 export default function SharedDiceReplay({ access }) {
@@ -37,6 +38,7 @@ export default function SharedDiceReplay({ access }) {
   const [queue, setQueue] = useState([]);
   const [active, setActive] = useState(null);
   const [settled, setSettled] = useState(false);
+  const [overlayTarget, setOverlayTarget] = useState(null);
 
   const remember = useCallback(id => {
     if (!id) return;
@@ -55,6 +57,15 @@ export default function SharedDiceReplay({ access }) {
     // Cada cliente, inclusive quem rolou e o mestre, recebe a animação global.
     setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));
   }, [remember]);
+
+  useEffect(() => {
+    const updateOverlayTarget = () => {
+      setOverlayTarget(document.fullscreenElement || document.body);
+    };
+    updateOverlayTarget();
+    document.addEventListener('fullscreenchange', updateOverlayTarget);
+    return () => document.removeEventListener('fullscreenchange', updateOverlayTarget);
+  }, []);
 
   useEffect(() => {
     let feedPrimed = false;
@@ -103,11 +114,11 @@ export default function SharedDiceReplay({ access }) {
 
   useEffect(() => {
     if (!active || !settled) return undefined;
-    const timer = window.setTimeout(() => setActive(null), 1800);
+    const timer = window.setTimeout(() => setActive(null), 3000);
     return () => window.clearTimeout(timer);
   }, [active?._replayId, settled]);
 
-  if (!active) return null;
+  if (!active || !overlayTarget) return null;
 
   const sides = Number(active.sides || 20);
   const values = Array.isArray(active.values) && active.values.length
@@ -119,7 +130,7 @@ export default function SharedDiceReplay({ access }) {
   const color = active.rollerColor || (active.isCrit ? '#4ADE80' : active.isFail ? '#E8193C' : '#C8A8E8');
   const firstName = firstNameOf(active.roller);
 
-  return (
+  return createPortal(
     <div className="shared-dice-replay" aria-live="polite" aria-label={`${firstName} rolou ${values.length > 1 ? `${values.length} dados` : 'um dado'}`}>
       <div className="shared-dice-replay-card" style={{ '--replay-accent': color }}>
         <div className="shared-dice-replay-kicker">rolagem compartilhada</div>
@@ -135,9 +146,37 @@ export default function SharedDiceReplay({ access }) {
         />
         <div className="shared-dice-replay-name">{firstName}</div>
         <div className={`shared-dice-replay-result ${settled ? 'is-settled' : ''}`}>
-          {settled ? `${total}` : `${values.length > 1 ? `${values.length}D${sides}` : `D${sides}`} em movimento`}
+          {settled ? (
+            <>
+              <div className="shared-dice-replay-faces" aria-label="Faces roladas">
+                {values.map((value, index) => (
+                  <span
+                    key={`${active._replayId}-face-${index}`}
+                    className="shared-dice-replay-face"
+                    style={{ animationDelay: `${index * 110}ms` }}
+                  >
+                    {value}
+                  </span>
+                ))}
+              </div>
+              {bonus !== 0 && (
+                <div className="shared-dice-replay-breakdown">
+                  {base} {bonus > 0 ? '+' : '−'} {Math.abs(bonus)} de bônus
+                </div>
+              )}
+              <div className="shared-dice-replay-total" aria-label={`Total ${total}`}>
+                <span>Total</span>
+                <strong>{total}</strong>
+              </div>
+            </>
+          ) : (
+            <span className="shared-dice-replay-wait">
+              {values.length > 1 ? `${values.length}D${sides}` : `D${sides}`} em movimento
+            </span>
+          )}
         </div>
       </div>
-    </div>
+    </div>,
+    overlayTarget
   );
 }
