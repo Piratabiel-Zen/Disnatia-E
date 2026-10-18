@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import useMapFullscreenState from './useMapFullscreenState';
 import {
   collection, limit, onSnapshot, orderBy, query,
 } from 'firebase/firestore';
 import { db } from '../core/firebase';
-import PhysicalDiceTray from './PhysicalDiceTray';
 import { createLiveEventGate } from '../adventure/liveEventGate.mjs';
 
-const DICE_TTL = 16000;
 const COSMIC_TTL = 22000;
-const DICE_CLIENT_KEY = 'dinastia-dice-client-id';
 
 function eventId(payload, kind) {
   if (!payload) return '';
@@ -49,58 +45,6 @@ function useDurableChannel({ collectionName, kind, ttl }) {
   }, [collectionName, ingest, kind]);
 
   return events;
-}
-
-function DiceBroadcastQueue({ events }) {
-  const [queue, setQueue] = useState([]);
-  const [current, setCurrent] = useState(null);
-  const queuedRef = useRef(new Set());
-  const settleTimerRef = useRef(0);
-
-  useEffect(() => {
-    const fresh = events.filter(e => e?._rtId && !queuedRef.current.has(e._rtId));
-    if (!fresh.length) return;
-    fresh.forEach(e => queuedRef.current.add(e._rtId));
-    if (queuedRef.current.size > 240) {
-      const recent = Array.from(queuedRef.current).slice(-160);
-      queuedRef.current = new Set(recent);
-    }
-    setQueue(prev => [...prev, ...fresh].sort((a,b) => Number(a.ts||0)-Number(b.ts||0)));
-  }, [events]);
-
-  useEffect(() => {
-    if (current || !queue.length) return;
-    const [next, ...rest] = queue;
-    setCurrent(next);
-    setQueue(rest);
-  }, [current, queue]);
-
-  useEffect(() => () => window.clearTimeout(settleTimerRef.current), []);
-
-  if (!current) return null;
-  const isCrit = !!current.isCrit;
-  const isFail = !!current.isFail;
-  // Compatibilidade com o patch legado de identidade:  const color = result.rollerColor || (isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8');
-  const color = current.rollerColor || (isCrit ? '#4ADE80' : isFail ? '#E8193C' : '#C8A8E8');
-  const values = Array.isArray(current.values) && current.values.length ? current.values : [current.base];
-
-  return (
-    <div className="rt-dice-replay" style={{ '--rt-color': color }}>
-      <PhysicalDiceTray
-        sides={Number(current.sides || 20)}
-        finalValue={Number(current.base || current.total || 1)}
-        finalValues={values}
-        rollTs={Number(current.ts || Date.now())}
-        color={color}
-        total={Number(current.total || 0)}
-        bonus={Number(current.bonus || 0)}
-        onSettled={() => {
-          window.clearTimeout(settleTimerRef.current);
-          settleTimerRef.current = window.setTimeout(() => setCurrent(null), 1300);
-        }}
-      />
-    </div>
-  );
 }
 
 function CosmicBroadcastQueue({ events }) {
@@ -148,25 +92,13 @@ function CosmicBroadcastQueue({ events }) {
 }
 
 export default function RealtimeBroadcasts() {
-  const diceEvents = useDurableChannel({
-    collectionName: 'public_dice_events',
-    kind: 'dice',
-    ttl: DICE_TTL,
-  });
   const cosmicEvents = useDurableChannel({
     collectionName: 'cosmic_events',
     kind: 'cosmic',
     ttl: COSMIC_TTL,
   });
-  const fullscreen = useMapFullscreenState();
-  const liveRolls = fullscreen.active
-    ? diceEvents.filter(event => Number(event._receivedAt || 0) >= fullscreen.since)
-    : [];
 
-  return <>
-    {fullscreen.active && <DiceBroadcastQueue events={liveRolls} />}
-    <CosmicBroadcastQueue events={cosmicEvents} />
-  </>;
+  return <CosmicBroadcastQueue events={cosmicEvents} />;
 }
 
 /*
