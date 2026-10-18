@@ -16,59 +16,15 @@ const replaceRange = (source, start, end, replacement, label) => {
   return source.slice(0, from) + replacement + source.slice(to);
 };
 
-// Replays: baseline autoritativo mais uma janela temporal independente. A
-// segunda barreira impede que cache, retomada de aba ou reconexao enfileirem
-// documentos historicos como se fossem novos.
+// Replays: a linha de corte do snapshot do servidor ignora o historico; novas
+// rolagens nao dependem do relogio local de cada dispositivo.
 const replayFile = 'src/experience/SharedDiceReplay.jsx';
 let replay = read(replayFile);
 replay = replaceOnce(
   replay,
-  "import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';",
-  "import { createLiveSnapshotGate, isLiveDicePayload, isNewLiveDocument } from './liveDiceGate';",
-  'import do filtro temporal',
-);
-replay = replaceOnce(
-  replay,
-  "  const localSheetId = access?.role === 'player' && access?.sheetId ? String(access.sheetId) : '';",
-  "  const localSheetId = access?.role === 'player' && access?.sheetId ? String(access.sheetId) : '';\n  const joinedAtRef = useRef(Date.now());",
-  'instante de entrada',
-);
-replay = replaceOnce(
-  replay,
-  `  const enqueue = useCallback(payload => {
-    if (!payload) return;
-    const id = getReplayId(payload);`,
-  `  const enqueue = useCallback(payload => {
-    if (!payload || !isLiveDicePayload(payload, { joinedAt: joinedAtRef.current })) return;
-    const id = getReplayId(payload);`,
-  'filtro antes da fila',
-);
-replay = replaceOnce(
-  replay,
   "    setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));",
-  "    setQueue(prev => [...prev, { ...payload, _replayId: id }].filter(item => isLiveDicePayload(item, { joinedAt: joinedAtRef.current })).slice(-5));",
+  "    setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-5));",
   'fila curta e viva',
-);
-replay = replaceOnce(
-  replay,
-  `  useEffect(() => {
-    if (active || !queue.length) return;
-    setActive(queue[0]);
-    setQueue(prev => prev.slice(1));
-    setSettled(false);
-  }, [active, queue]);`,
-  `  useEffect(() => {
-    if (active || !queue.length) return;
-    const liveQueue = queue.filter(item => isLiveDicePayload(item, { joinedAt: joinedAtRef.current }));
-    if (!liveQueue.length) {
-      setQueue([]);
-      return;
-    }
-    setActive(liveQueue[0]);
-    setQueue(liveQueue.slice(1));
-    setSettled(false);
-  }, [active, queue]);`,
-  'expiracao antes da animacao',
 );
 replay = replaceOnce(
   replay,
@@ -80,26 +36,6 @@ write(replayFile, replay);
 
 const criticalFile = 'src/experience/DiceCriticalFx.jsx';
 let critical = read(criticalFile);
-critical = replaceOnce(
-  critical,
-  "import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';",
-  "import { createLiveSnapshotGate, isLiveDicePayload, isNewLiveDocument } from './liveDiceGate';",
-  'import temporal do critico',
-);
-critical = replaceOnce(
-  critical,
-  '  const seenRef = useRef(new Set());',
-  '  const seenRef = useRef(new Set());\n  const joinedAtRef = useRef(Date.now());',
-  'entrada do critico',
-);
-critical = replaceOnce(
-  critical,
-  `  const ingest = useCallback(data => {
-    if (!data) return;`,
-  `  const ingest = useCallback(data => {
-    if (!data || !isLiveDicePayload(data, { joinedAt: joinedAtRef.current })) return;`,
-  'filtro temporal do critico',
-);
 write(criticalFile, critical);
 
 // Runtime das invocacoes: somente memorias reveladas podem ser liberadas. A
@@ -674,8 +610,8 @@ if (!css.includes('/* SUMMON RELEASE READY PULSE 2026-09-28 */')) css += `
 write(cssFile, css);
 
 for (const marker of [
-  'isLiveDicePayload(payload',
-  'joinedAtRef = useRef(Date.now())',
+  'createLiveSnapshotGate()',
+  'isNewLiveDocument(change)',
   'summon.revealed!==true',
   'vigos:3,maxVigos:3',
   'useSummonAction',
