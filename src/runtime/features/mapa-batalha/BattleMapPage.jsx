@@ -683,10 +683,10 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     window.addEventListener('online', refreshActiveState);
     window.addEventListener('focus', refreshActiveState);
     document.addEventListener('visibilitychange', onVisible);
-    const realtimeHealthPulse = setInterval(() => {
-      if (document.visibilityState === 'visible' && navigator.onLine) refreshActiveState();
-    }, 8000);
-    return () => { clearInterval(realtimeHealthPulse); window.removeEventListener('online', refreshActiveState); window.removeEventListener('focus', refreshActiveState); document.removeEventListener('visibilitychange', onVisible); };
+    // As assinaturas onSnapshot já mantêm mapa e mapa ativo sincronizados.
+    // Evita reler documentos completos (incluindo imagem do mapa) em intervalo fixo
+    // em cada dispositivo conectado; faz a reconciliação ao retornar/reconectar.
+    return () => { window.removeEventListener('online', refreshActiveState); window.removeEventListener('focus', refreshActiveState); document.removeEventListener('visibilitychange', onVisible); };
   }, [activeId]);
 
   // Referências estáveis evitam que o listener da roda seja recriado a cada mudança de zoom.
@@ -869,7 +869,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     state.pending = { x: px, y: py };
 
     const flushLatest = () => {
-      if (!state.pending || state.inFlight >= 1) return;
+      if (!state.pending || state.inFlight >= 3) return;
       const point = state.pending;
       state.pending = null;
       state.inFlight += 1;
@@ -1338,7 +1338,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const mapIdAtDragStart = currentMap.id;
     // TABLETOP REALTIME FAST PATH 2026-09-14
 // OWLBEAR-STYLE INTERACTION PIPELINE 2026-09-13
-const TOKEN_THROTTLE_MS = 80;
+const TOKEN_THROTTLE_MS = 50;
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
