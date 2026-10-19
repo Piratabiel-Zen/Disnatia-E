@@ -7,6 +7,9 @@ import { pushToast } from "../core/toast";
 const SOUND_CATEGORIES = [
   { id: 'calmaria', label: 'Calmaria', icon: '🌤️', color: '#4ADE80' },
   { id: 'dialogos', label: 'Tristeza', icon: '🌧️', color: '#1EC8FF' },
+  { id: 'alegria', label: 'Alegria', icon: '☀️', color: '#FFD86B' },
+  { id: 'comico', label: 'Cômico', icon: '🎭', color: '#FF9F43' },
+  { id: 'inspiracao', label: 'Inspiração', icon: '✨', color: '#C084FC' },
   { id: 'ambiente', label: 'Ambiente', icon: '🌫️', color: '#A855F7' },
   { id: 'enigmas', label: 'Enigmas', icon: '🧩', color: '#E8A020' },
   { id: 'combate', label: 'Combate', icon: '⚔️', color: '#E8193C' },
