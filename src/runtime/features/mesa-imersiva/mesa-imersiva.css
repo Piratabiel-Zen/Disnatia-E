@@ -78,3 +78,23 @@
  .mi-scene-caption{top:78px;max-width:calc(100vw - 18px);padding:7px 9px}
  .mi-topbar{padding-bottom:0}
 }
+
+/* Session title shares the top row; camera controls stay at the lower left. */
+.mi-topbar{align-items:flex-start}
+.mi-session-title{flex:1;min-width:0;margin:7px clamp(14px,4vw,58px) 0;text-align:center}
+.mi-session-title small{font:8px 'Cinzel',serif;letter-spacing:.2em;color:var(--mi-accent);text-transform:uppercase}
+.mi-session-title h3{overflow:hidden;margin:4px 0 0;color:#fff1ff;text-overflow:ellipsis;white-space:nowrap;font:clamp(15px,1.8vw,23px) 'Cinzel',serif;text-shadow:0 2px 10px #000}
+.immersive-camera-actions{position:fixed;z-index:390;left:clamp(12px,2.4vw,38px);right:auto;bottom:max(14px,env(safe-area-inset-bottom));width:max-content;max-width:calc(100vw - 24px);min-height:34px;flex-wrap:wrap;gap:7px}
+.immersive-camera-actions .immersive-camera-count{margin-right:4px}
+@media(max-width:900px){
+  .mi-session-title{margin:6px 10px 0}
+  .immersive-camera-actions{left:12px;bottom:max(12px,env(safe-area-inset-bottom));gap:5px}
+}
+@media(max-width:560px){
+  .mi-topbar{align-items:flex-start}
+  .mi-session-title{margin:5px 7px 0}
+  .mi-session-title small{font-size:6px;letter-spacing:.1em}
+  .mi-session-title h3{font-size:11px}
+  .immersive-camera-actions{left:8px;right:auto;bottom:max(12px,env(safe-area-inset-bottom));width:max-content;max-width:calc(100vw - 122px);min-height:34px;gap:4px}
+  .immersive-camera-actions .immersive-camera-count{font-size:7px}
+}

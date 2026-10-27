@@ -78,14 +78,15 @@ export default function MesaImersivaPage({ masterMode, access, onNavigate }){
     <div className="mi-image-layer" style={activeImage?{backgroundImage:`url("${activeImage}")`}:{}} aria-hidden="true"/>
     <div className="mi-shade" aria-hidden="true"/>
     <header className="mi-topbar">
-      <div className="mi-title-block"><span className="mi-eyebrow">DINASTIA E · EXPERIÊNCIA DE NARRAÇÃO</span><h2>Mesa Imersiva</h2><p>{activeScene?`${THEMES.find(row=>row.id===activeScene.theme)?.label||'Cena'} · ${activeScene.title}`:'Uma cena compartilhada para a companhia'}</p></div>
+      <div className="mi-title-block"><span className="mi-eyebrow">DINASTIA E</span><h2>Mesa Imersiva</h2></div>
+      {activeScene&&<div className="mi-session-title" aria-live="polite"><small>SESSÃO ATUAL</small><h3>{activeScene.title}</h3></div>}
       <div className="mi-top-actions">
         {masterMode&&<button className="mi-scene-toggle" onClick={()=>setEditor(value=>!value)}>{editor?'Fechar cenas':'✦ Cenas'}</button>}
         <button className="mi-exit" onClick={()=>onNavigate?.('session')}>Sair da mesa imersiva</button>
       </div>
     </header>
 
-    {activeScene?<section className="mi-scene-caption" aria-live="polite"><span style={{color:accent}}>{THEMES.find(row=>row.id===activeScene.theme)?.icon||'✦'}</span><div><small>{THEMES.find(row=>row.id===activeScene.theme)?.label||'Cena revelada'}</small><h3>{activeScene.title}</h3></div></section>:<section className="mi-awaiting-scene"><span>✦</span><b>A narração começa aqui</b><small>{masterMode?'Adicione uma imagem e revele uma cena para a mesa.':'Aguardando a próxima cena do mestre.'}</small></section>}
+    {!activeScene&&<section className="mi-awaiting-scene"><span>✦</span><b>A narração começa aqui</b><small>{masterMode?'Adicione uma imagem e revele uma cena para a mesa.':'Aguardando a próxima cena do mestre.'}</small></section>}
 
     <section className="mi-camera-section"><div className="mi-camera-heading"><span>COMPANHIA</span><small>Até 7 câmeras · áudio desativado</small></div><TableCameraRoom access={access} selectedSheet={selectedSheet} selectedClass={selectedClass} masterMode={masterMode} immersive/></section>
 
