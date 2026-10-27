@@ -92,7 +92,7 @@ function PersonagensSection({ masterMode }) {
       </div>
 
       {expandedNpc&&createPortal(
-        <div style={{position:'fixed',inset:0,zIndex:20000,background:'rgba(0,0,0,0.94)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'max(24px,env(safe-area-inset-top)) 16px 40px',overflowY:'auto',backdropFilter:'none'}} onClick={()=>setExpandedId(null)>
+        <div style={{position:'fixed',inset:0,zIndex:20000,background:'rgba(0,0,0,0.94)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'max(24px,env(safe-area-inset-top)) 16px 40px',overflowY:'auto',backdropFilter:'none'}} onClick={()=>setExpandedId(null)}>
           <div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:650,position:'relative'}}>
             <button onClick={()=>setExpandedId(null)} style={{position:'absolute',top:-14,right:-14,zIndex:10,width:32,height:32,borderRadius:'50%',border:'1px solid rgba(168,85,247,0.26)',background:'rgba(7,2,14,0.98)',color:'#E8D8F0',cursor:'pointer',fontSize:15}}>✕</button>
             <NPCCard npc={expandedNpc} onChange={d=>upd(expandedNpc.id,d)} onDelete={()=>del(expandedNpc.id)} masterMode={masterMode}/>
