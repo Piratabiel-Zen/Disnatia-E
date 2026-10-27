@@ -74,7 +74,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
                 <AdventureSession onNavigate={navigate} masterMode={masterMode} access={access}/>
               ) : (
                 <Suspense fallback={<PageSkeleton/>}>
-                  <ActivePage masterMode={masterMode} playerSheetId={playerSheetId} access={access}/>
+                  <ActivePage masterMode={masterMode} playerSheetId={playerSheetId} access={access} onNavigate={navigate}/>
                 </Suspense>
               )}
             </div>

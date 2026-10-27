@@ -31,6 +31,7 @@ const TAB_LABELS = {
   session:'Sessão Atual', prologo:'Prólogo', classes:'Classes', fichas:'Fichas',
   personagens:'Personagens', inimigos:'Inimigos', bestiario:'Bestiário', regras:'Regras',
   visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
+  mesaImersiva:'Mesa Imersiva',
 };
 
 const isMobileViewport = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
@@ -48,6 +49,7 @@ const pageLoaders = {
   cronicas:     () => import("./features/cronicas/CronicasPage"),
   mapamundi:    () => import("./features/mapa-mundi/MapaMundiPage"),
   mapabatalha:  () => import("./features/mapa-batalha/BattleMapPage"),
+  mesaImersiva: () => import("./features/mesa-imersiva/MesaImersivaPage"),
 };
 
 const LazyPages = Object.fromEntries(
@@ -69,7 +71,7 @@ export default function App(){
   },[]);
 
   const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
-  const lockPageScroll = tab === 'mapabatalha';
+  const lockPageScroll = tab === 'mapabatalha' || tab === 'mesaImersiva';
   const ActivePage = tab === 'session' ? null : (LazyPages[tab] || LazyPages.prologo);
   const playerSheetId = access?.role === 'player' ? String(access.sheetId || '') : '';
 

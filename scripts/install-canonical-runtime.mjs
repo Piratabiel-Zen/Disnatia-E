@@ -11,6 +11,11 @@ const files = {
   'experience/EnhancedSoundscape.jsx': 'experience/EnhancedSoundscape.jsx',
   'shell/AmbientSoundPlayer.jsx': 'shell/AmbientSoundPlayer.jsx',
   'features/mapa-batalha/BattleMapPage.jsx': 'features/mapa-batalha/BattleMapPage.jsx',
+  'features/mesa-imersiva/MesaImersivaPage.jsx': 'features/mesa-imersiva/MesaImersivaPage.jsx',
+  'features/mesa-imersiva/mesa-imersiva.css': 'features/mesa-imersiva/mesa-imersiva.css',
 };
-for (const [source, target] of Object.entries(files)) fs.copyFileSync('src/runtime/' + source, 'src/' + target);
-console.log('Canonical player, session, map and audio modules installed after legacy generation.');
+for (const [source, target] of Object.entries(files)) {
+  fs.mkdirSync('src/' + target.split('/').slice(0, -1).join('/'), { recursive: true });
+  fs.copyFileSync('src/runtime/' + source, 'src/' + target);
+}
+console.log('Canonical player, session, map, audio and immersive-mesa modules installed after legacy generation.');

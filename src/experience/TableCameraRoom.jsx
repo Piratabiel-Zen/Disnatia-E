@@ -1,10 +1,10 @@
 import { useEffect,useRef,useState } from 'react';
 import { createPortal } from 'react-dom';
-import { collection,deleteDoc,doc,limit,onSnapshot,orderBy,query,serverTimestamp,setDoc } from 'firebase/firestore';
+import { collection,deleteDoc,doc,getDocs,limit,onSnapshot,orderBy,query,serverTimestamp,setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { activeCameraMembers,CAMERA_LIMIT,CAMERA_VIDEO,cameraName,cameraPosition,cameraProfileForParticipants,createCameraPeer,cameraMemberRows,timestampMs } from '../adventure/cameraPeer.mjs';
 
-function VideoTile({row,stream,state,index,local,layoutVersion,onRetry}){
+function VideoTile({row,stream,state,index,local,layoutVersion,onRetry,immersive=false}){
   const video=useRef(null),tile=useRef(null),drag=useRef(null);
   const storageKey='dinastia_camera_position_'+(row.userKey||row.id);
   const initial=()=>{
@@ -51,19 +51,22 @@ function VideoTile({row,stream,state,index,local,layoutVersion,onRetry}){
   };
   const end=()=>{if(drag.current){save(drag.current.next||pos);drag.current=null;}};
   const key=event=>{const offsets={ArrowLeft:[-12,0],ArrowRight:[12,0],ArrowUp:[0,-12],ArrowDown:[0,12]};if(!offsets[event.key])return;event.preventDefault();const [dx,dy]=offsets[event.key];save(cameraPosition({x:pos.x+dx,y:pos.y+dy},innerWidth,innerHeight,tile.current.offsetWidth,tile.current.offsetHeight));};
-  return <article ref={tile} className={'table-camera-tile'+(local?' own':'')} style={{left:pos.x,top:pos.y}} aria-label={'Câmera de '+row.name}>
+  return <article ref={tile} className={'table-camera-tile'+(local?' own':'')+(immersive?' immersive-camera-tile':'')} style={immersive?{'--camera-accent':row.color||'#A855F7'}:{left:pos.x,top:pos.y}} aria-label={'Câmera de '+row.name}>
     <video ref={video} autoPlay playsInline muted disablePictureInPicture disableRemotePlayback aria-label={'Vídeo de '+row.name} style={{visibility:row.cameraOn&&stream?'visible':'hidden'}}/>
     {(!row.cameraOn||!stream||playback==='waiting'||playback==='blocked'||playback==='stalled')&&<div className="table-camera-placeholder">{!row.cameraOn?'Câmera desligada':playback==='blocked'?<button onClick={playVideo}>Reproduzir vídeo</button>:state==='failed'||playback==='stalled'?<button onClick={onRetry} aria-label={'Reconectar vídeo de '+row.name}>Reconectar vídeo</button>:state==='reconnecting'?'Reconectando vídeo...':'Conectando vídeo...'}</div>}
     <div className="table-camera-name" role="button" tabIndex={0} aria-label={'Mover câmera de '+row.name} title="Arraste para reposicionar; use as setas quando selecionado" onKeyDown={key} onPointerDown={event=>{if(event.button!==0)return;event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);drag.current={...pos,px:event.clientX,py:event.clientY};}} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}><span>{row.name}{local?' · você':''}</span><small>{'\u283F'}</small></div>
   </article>;
 }
 
-export default function TableCameraRoom({access,selectedSheet,masterMode,onClose,onJoined}){
+export default function TableCameraRoom({access,selectedSheet,selectedClass,masterMode,onClose,onJoined,immersive=false}){
   const [joined,setJoined]=useState(false),[busy,setBusy]=useState(false),[cameraOn,setCameraOn]=useState(false),[error,setError]=useState('');
   const [members,setMembers]=useState([]),[streams,setStreams]=useState({}),[states,setStates]=useState({}),[layoutVersion,setLayoutVersion]=useState(0);
   const session=useRef(null),localStream=useRef(null),live=useRef(true),operation=useRef(0);
   const name=cameraName(access,selectedSheet,masterMode),userKey=masterMode?'master':access?.role==='visitor'?'visitor_'+access.visitorId:'sheet_'+(access?.sheetId||selectedSheet?.id||'player');
-  const identity=useRef({name,userKey});identity.current={name,userKey};
+  const cameraCollection=immersive?'immersive_camera_members':'table_cameras';
+  const callCollection=immersive?'immersive_camera_calls':'table_camera_calls';
+  const cameraLimit=immersive?8:CAMERA_LIMIT;
+  const identity=useRef({name,userKey});identity.current={name,userKey,role:masterMode?'master':'player',color:masterMode?'#E8A020':selectedClass?.color||'#A855F7',className:masterMode?'Mestre':selectedClass?.name||''};
   const setIssue=message=>{if(live.current)setError(message);};
   const stopMedia=()=>{localStream.current?.getTracks().forEach(track=>track.stop());localStream.current=null;};
   const leave=()=>{
@@ -72,13 +75,22 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
     if(live.current){setJoined(false);onJoined?.(false);setCameraOn(false);setMembers([]);setStreams({});setStates({});setBusy(false);}
   };
   useEffect(()=>{live.current=true;const pagehide=()=>leave();window.addEventListener('pagehide',pagehide);return()=>{live.current=false;leave();window.removeEventListener('pagehide',pagehide);};},[]);
-  useEffect(()=>{if(session.current)setDoc(session.current.ref,{name,userKey},{merge:true}).catch(()=>setIssue('Não foi possível atualizar seu nome na chamada.'));},[name,userKey]);
+  useEffect(()=>{if(session.current)setDoc(session.current.ref,identity.current,{merge:true}).catch(()=>setIssue('Não foi possível atualizar seu nome na chamada.'));},[name,userKey,selectedClass?.color,selectedClass?.name,masterMode]);
   const join=async event=>{
     const pointer=event?.detail>0;
     if(busy||session.current)return;
     if(!globalThis.RTCPeerConnection){setError('Este navegador não oferece suporte a vídeo WebRTC.');return;}
     setBusy(true);setError('');const generation=++operation.current;
-    const id=crypto.randomUUID(),ref=doc(db,'table_cameras',id);
+    if(immersive){
+      try{
+        const existing=await getDocs(query(collection(db,cameraCollection),orderBy('updatedAt','desc'),limit(32)));
+        const active=activeCameraMembers(cameraMemberRows(existing.docs),Date.now());
+        const existingMaster=active.some(row=>row.role==='master');
+        const playerCount=active.filter(row=>row.role!=='master').length;
+        if(masterMode?existingMaster:playerCount>=7){setError(masterMode?'A vaga do mestre já está ocupada.':'As sete vagas dos jogadores já estão ocupadas.');setBusy(false);return;}
+      }catch{setError('Não foi possível conferir as vagas. Tente novamente.');setBusy(false);return;}
+    }
+    const id=crypto.randomUUID(),ref=doc(db,cameraCollection,id);
     const room={id,ref,peers:new Map(),calls:new Map(),offset:0,rows:[],ownStamp:0,active:null,rosterReady:false,rosterCached:false,rosterRetries:0};session.current=room;
     try{
       await setDoc(ref,{...identity.current,online:true,cameraOn:false,updatedAt:serverTimestamp()});
@@ -89,16 +101,20 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
       try{const configured=JSON.parse(import.meta.env.VITE_CAMERA_ICE_SERVERS||'null');if(Array.isArray(configured))iceServers=configured;}catch{setIssue('Configuração de vídeo inválida. Usando conexão direta.');}
       const sync=()=>{
         if(session.current!==room)return;
-        const active=room.rosterCached&&room.active?room.active:activeCameraMembers(room.rows,Date.now()+room.offset);
+        const current=room.rosterCached&&room.active?room.active:activeCameraMembers(room.rows,Date.now()+room.offset);
+        const active=immersive?[...current].sort((a,b)=>(a.role==='master'?-1:b.role==='master'?1:String(a.id).localeCompare(String(b.id)))):current;
         room.active=active;
-        if(active.length>CAMERA_LIMIT){leave();setIssue(`A mesa suporta até ${CAMERA_LIMIT} participantes nas câmeras. Tente novamente quando houver uma vaga.`);return;}
-        setMembers(active);
+        const visible=immersive
+          ?[...active.filter(row=>row.role==='master').slice(0,1),...active.filter(row=>row.role!=='master').slice(0,7)]
+          :active.slice(0,cameraLimit);
+        if(immersive&&!visible.some(row=>row.id===id)){leave();setIssue(masterMode?'A vaga do mestre já está ocupada.':'As sete vagas dos jogadores já estão ocupadas.');return;}
+        setMembers(visible);
         const cameraProfile=cameraProfileForParticipants(active.length);
-        const ids=new Set(active.filter(row=>row.id!==id).map(row=>row.id));
+        const ids=new Set(visible.filter(row=>row.id!==id).map(row=>row.id));
         room.peers.forEach((peer,remoteId)=>{if(!ids.has(remoteId)){peer.close();room.peers.delete(remoteId);setStreams(previous=>{const next={...previous};delete next[remoteId];return next;});setStates(previous=>{const next={...previous};delete next[remoteId];return next;});const callRef=room.calls.get(remoteId);room.calls.delete(remoteId);if(callRef)deleteDoc(callRef).catch(()=>{});}});
-        active.forEach(row=>{
+        visible.forEach(row=>{
           if(row.id===id||room.peers.has(row.id))return;
-          const callRef=doc(db,'table_camera_calls',[id,row.id].sort().join('_'));room.calls.set(row.id,callRef);
+          const callRef=doc(db,callCollection,[id,row.id].sort().join('_'));room.calls.set(row.id,callRef);
           const peer=createCameraPeer({localId:id,remoteId:row.id,iceServers,...cameraProfile,
             publish:data=>setDoc(callRef,{...data,updatedAt:serverTimestamp()},{merge:true}),
             subscribe:(callback,onError)=>onSnapshot(callRef,snap=>{if(snap.exists())callback(snap.data(),snap.metadata);},onError),
@@ -113,7 +129,7 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
       const watchRoster=()=>{
         if(session.current!==room)return;
         room.unsubscribe?.();
-        room.unsubscribe=onSnapshot(query(collection(db,'table_cameras'),orderBy('updatedAt','desc'),limit(32)),{includeMetadataChanges:true},snap=>{
+        room.unsubscribe=onSnapshot(query(collection(db,cameraCollection),orderBy('updatedAt','desc'),limit(32)),{includeMetadataChanges:true},snap=>{
           if(session.current!==room)return;
           room.rosterCached=!!snap.metadata.fromCache;
           if(!room.rosterCached){room.rosterRetries=0;setError(previous=>previous==='Recuperando a conexão das câmeras...'?'':previous);}
@@ -176,6 +192,28 @@ export default function TableCameraRoom({access,selectedSheet,masterMode,onClose
     }finally{if(live.current&&generation===operation.current)setBusy(false);}
   };
   const reset=()=>{members.forEach(row=>{try{localStorage.removeItem('dinastia_camera_position_'+(row.userKey||row.id));}catch{}});setLayoutVersion(value=>value+1);};
+  if(immersive){
+    const master=members.find(row=>row.role==='master');
+    const party=members.filter(row=>row.role!=='master');
+    const canJoin=masterMode?!master:party.length<7;
+    const tile=(row,index)=> <VideoTile key={row.id} row={row.id===session.current?.id?{...row,cameraOn}:row} index={index} stream={streams[row.id]} state={states[row.id]} local={row.id===session.current?.id} layoutVersion={layoutVersion} immersive onRetry={()=>session.current?.peers.get(row.id)?.recover()}/>;
+    const joinSlot=(label='Entrar na câmera')=><button className="immersive-camera-slot" type="button" onClick={join} disabled={busy||joined||!canJoin} aria-label={label}><span>+</span><small>{busy?'Conectando…':joined?'Câmera conectada':'Ativar câmera'}</small></button>;
+    return <section className="immersive-camera-room" aria-label="Câmeras da Mesa Imersiva">
+      <div className="immersive-camera-wall">
+        <div className="immersive-master-camera">{master?tile(master,0):<div className="immersive-master-empty">{masterMode?joinSlot('Entrar como mestre na câmera'):<> <span className="immersive-master-mark">✦</span><small>O mestre ainda não entrou</small> </>}</div>}</div>
+        <div className="immersive-party-cameras">
+          {party.map((row,index)=>tile(row,index+1))}
+          {Array.from({length:Math.max(0,7-party.length)},(_,index)=><div className="immersive-party-slot" key={`empty-${index}`}>{!joined&&!masterMode&&canJoin?joinSlot('Entrar em uma câmera vazia'):<span className="immersive-empty-orbit">◌</span>}</div>)}
+        </div>
+      </div>
+      <div className="immersive-camera-actions">
+        <span className="immersive-camera-count">{members.length}/8 câmeras</span>
+        {joined?<><button type="button" disabled={busy} onClick={toggleCamera}>{busy?'Aguarde…':cameraOn?'Desligar câmera':'Ativar minha câmera'}</button><button type="button" onClick={leave}>Sair da câmera</button></>:canJoin&&<button type="button" disabled={busy} onClick={join}>{busy?'Conectando…':masterMode?'Entrar como mestre':'Entrar sem ligar a câmera'}</button>}
+        {error&&<span role="alert">{error}</span>}
+        {Object.values(states).some(state=>state==='reconnecting'||state==='disconnected')&&<span role="status">Reconectando vídeo…</span>}
+      </div>
+    </section>;
+  }
   return <>
     <section id="table-camera-options" className="table-camera-controls" aria-label="Câmeras da mesa" onClick={event=>{if(event.detail>0)event.target.closest('button')?.blur();}}>
       <strong>Câmeras da mesa{joined?` · ${members.length}/${CAMERA_LIMIT}`:''}</strong>
