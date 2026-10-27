@@ -87,7 +87,7 @@ export default function MesaImersivaPage({ masterMode, access, onNavigate }){
 
     {activeScene?<section className="mi-scene-caption" aria-live="polite"><span style={{color:accent}}>{THEMES.find(row=>row.id===activeScene.theme)?.icon||'✦'}</span><div><small>{THEMES.find(row=>row.id===activeScene.theme)?.label||'Cena revelada'}</small><h3>{activeScene.title}</h3></div></section>:<section className="mi-awaiting-scene"><span>✦</span><b>A narração começa aqui</b><small>{masterMode?'Adicione uma imagem e revele uma cena para a mesa.':'Aguardando a próxima cena do mestre.'}</small></section>}
 
-    <section className="mi-camera-section"><div className="mi-camera-heading"><span>COMPANHIA</span><small>Até 8 câmeras · áudio desativado</small></div><TableCameraRoom access={access} selectedSheet={selectedSheet} selectedClass={selectedClass} masterMode={masterMode} immersive/></section>
+    <section className="mi-camera-section"><div className="mi-camera-heading"><span>COMPANHIA</span><small>Até 7 câmeras · áudio desativado</small></div><TableCameraRoom access={access} selectedSheet={selectedSheet} selectedClass={selectedClass} masterMode={masterMode} immersive/></section>
 
     {masterMode&&editor&&<aside className="mi-scene-editor" aria-label="Gerenciar cenas">
       <header><div><small>CONTROLE DO MESTRE</small><h3>Arquivo de cenas</h3></div><button onClick={()=>setEditor(false)} aria-label="Fechar cenas">×</button></header>

@@ -1,4 +1,5 @@
 import CodexCard from '../../experience/CodexCard';
+import { createPortal } from 'react-dom';
 import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,setDoc } from "firebase/firestore";
@@ -21,7 +22,7 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
     <div style={{border:`1px solid ${corBase}44`,borderRadius:14,overflow:'hidden',background:'rgba(12,6,6,0.95)',marginBottom:18}}>
       <div style={{height:3,background:`linear-gradient(90deg,${corBase},transparent)`}}/>
       <div onClick={()=>masterMode&&photoRef.current?.click()} style={{position:'relative',width:'100%',cursor:masterMode?'pointer':'default',background:'rgba(0,0,0,0.4)',overflow:'hidden'}}>
-        {item.foto?<img loading="lazy" decoding="async" src={item.foto} alt="monstro" style={{width:'100%',maxHeight:350,objectFit:'cover',objectPosition:'center',display:'block'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'30px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>{masterMode?'Toque para adicionar a foto':'Nenhuma imagem catalogada'}</span></div>}
+        {item.foto?<img loading="lazy" decoding="async" src={item.foto} alt="monstro" style={{width:'100%',height:'auto',maxHeight:'70vh',objectFit:'contain',objectPosition:'center',display:'block',background:'#030108'}}/>:<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'30px',opacity:0.35}}><span style={{fontSize:22}}>📷</span><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:'Cinzel,serif'}}>{masterMode?'Toque para adicionar a foto':'Nenhuma imagem catalogada'}</span></div>}
         {item.foto&&<div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 55%,rgba(12,6,6,0.9))',pointerEvents:'none'}}/>}
         {item.foto&&item.nome&&<div style={{position:'absolute',bottom:10,left:16,fontFamily:'Cinzel,serif',fontSize:18,fontWeight:700,color:corBase}}>{item.nome}</div>}
         {masterMode&&<input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>}
@@ -57,7 +58,7 @@ function BestiarioCard({ item, onChange, onDelete, masterMode }) {
 
 function BestiarioGridCard({item,onClick}) {
   const threat=item.nivelAmeaca||'Médio';
-  return <CodexCard name={item.nome} photo={item.foto} color={BESTIARIO_AMEACA_CORES[threat]||'#E8A020'} category="Bestiário" badge={threat} meta={'Nível '+(item.nivel||1)+(item.tipo?' · '+item.tipo:'')} description={item.descricao} action="Examinar criatura" onClick={onClick}/>;
+  return <CodexCard name={item.nome} photo={item.foto} color={BESTIARIO_AMEACA_CORES[threat]||'#E8A020'} category="Bestiário" badge={threat} meta={'Nível '+(item.nivel||1)+(item.tipo?' · '+item.tipo:'')} preservePhoto description={item.descricao} action="Examinar criatura" onClick={onClick}/>;
 }
 
 function BestiarioSection({ masterMode }) {
@@ -142,13 +143,13 @@ function BestiarioSection({ masterMode }) {
         )}
       </div>
 
-      {expandedItem && (
-        <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.88)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'40px 16px',overflowY:'auto',backdropFilter:'none'}} onClick={()=>setExpandedId(null)}>
+      {expandedItem && createPortal(
+        <div style={{position:'fixed',inset:0,zIndex:20000,background:'rgba(0,0,0,0.94)',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'max(24px,env(safe-area-inset-top)) 16px 40px',overflowY:'auto',backdropFilter:'none'}} onClick={()=>setExpandedId(null)}>
           <div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:640,position:'relative'}}>
             <button onClick={()=>setExpandedId(null)} style={{position:'absolute',top:-14,right:-14,zIndex:10,width:32,height:32,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(20,10,10,0.95)',color:'#E8D8C0',cursor:'pointer',fontSize:15}}>✕</button>
             <BestiarioCard item={expandedItem} onChange={d=>upd(expandedItem.id,d)} onDelete={()=>del(expandedItem.id)} masterMode={masterMode}/>
           </div>
-        </div>
+        </div>,document.body
       )}
     </div>
   );

@@ -43,3 +43,38 @@
 @media(max-width:560px){
   .mi-topbar{align-items:center;padding:10px 10px 5px}.mi-eyebrow{letter-spacing:.12em}.mi-title-block h2{font-size:18px;margin:3px 0}.mi-title-block p{font-size:11px}.mi-exit{max-width:84px;line-height:1.2}.mi-scene-toggle{white-space:nowrap}.mi-awaiting-scene{padding:0 20px}.mi-awaiting-scene>small{max-width:250px}.mi-scene-caption{top:74px;max-width:calc(100vw - 30px)}.mi-camera-section{flex-basis:48%;padding:0 6px 8px}.mi-camera-heading{padding-bottom:5px}.mi-camera-heading>span{font-size:7px}.mi-camera-heading small{max-width:130px;text-align:right}.immersive-camera-wall{grid-template-columns:minmax(110px,.72fr) minmax(0,1.55fr);gap:5px}.immersive-party-cameras{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:5px}.immersive-camera-tile .table-camera-placeholder{font-size:8px;padding:3px}.immersive-camera-tile .table-camera-name{font-size:7px}.immersive-master-empty>small{font-size:7px;max-width:90%;text-align:center}.immersive-camera-slot>span{font-size:25px}.immersive-camera-slot>small{font-size:6px}.immersive-camera-actions{gap:4px;flex-wrap:wrap}.immersive-camera-actions button{padding:5px 6px;font-size:7px}.immersive-camera-count{font-size:7px}.mi-scene-editor{top:8px;right:8px;bottom:8px;width:min(340px,calc(100vw - 16px));padding:13px}.mi-quick-sheet-trigger{width:46px;height:46px;right:67px;bottom:17px;font-size:19px}
 }
+
+
+/* Seven camera seats arranged like the reference sketch. */
+.mi-camera-section{position:absolute;inset:clamp(164px,18vh,188px) clamp(16px,2.4vw,38px) 58px;margin:0;padding:0;flex:none;z-index:3}
+.mi-camera-heading{height:18px;min-height:18px;padding:0 2px 6px}
+.immersive-camera-room{position:relative;min-height:0;flex:1}
+.immersive-camera-wall{grid-template-columns:minmax(230px,.72fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:12px}
+.immersive-master-camera{grid-column:1;grid-row:2}
+.immersive-party-cameras{grid-column:2/4;grid-row:1/4;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:12px;max-width:min(100%,68vw);width:100%;justify-self:center}
+.immersive-camera-actions{position:absolute;left:0;right:0;bottom:-48px;min-height:34px;gap:9px}
+.immersive-camera-actions button{min-height:34px;padding:0 15px;border:1px solid rgba(88,217,255,.72);border-radius:8px;background:linear-gradient(135deg,#58d9ff,#8be8ff);color:#071217;font:700 9px 'Cinzel',serif;letter-spacing:.04em;box-shadow:0 0 18px rgba(88,217,255,.18);cursor:pointer}
+.immersive-camera-actions button:hover{background:#b4f1ff;box-shadow:0 0 24px rgba(88,217,255,.38)}
+.immersive-camera-actions button:disabled{opacity:.55;cursor:wait}
+.immersive-camera-actions .immersive-camera-count{color:#d4c3db}
+.mi-quick-sheet-trigger{bottom:16px}
+.mi-scene-caption{top:clamp(94px,11vh,122px);z-index:5}
+@media(max-width:900px){
+ .mi-camera-section{inset:clamp(128px,16vh,152px) 12px 58px;padding:0;flex:none}
+ .immersive-camera-wall{grid-template-columns:minmax(125px,.68fr) minmax(0,1fr) minmax(0,1fr);gap:7px}
+ .immersive-party-cameras{max-width:100%;gap:7px}
+ .immersive-camera-actions{bottom:-47px}
+}
+@media(max-width:560px){
+ .mi-camera-section{inset:132px 8px 62px}
+ .mi-camera-heading{height:15px;min-height:15px}
+ .immersive-camera-wall{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(115px,.7fr) minmax(0,2fr);gap:7px}
+ .immersive-master-camera{grid-column:1;grid-row:1;justify-content:center}
+ .immersive-master-camera .immersive-camera-tile,.immersive-master-empty{width:min(48vw,210px);height:100%;min-height:0}
+ .immersive-party-cameras{grid-column:1;grid-row:2;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));max-width:100%;gap:6px}
+ .immersive-camera-actions{bottom:-52px;left:0;right:0;min-height:38px}
+ .immersive-camera-actions button{min-height:32px;padding:0 10px;font-size:7px}
+ .mi-quick-sheet-trigger{right:66px;bottom:82px}
+ .mi-scene-caption{top:78px;max-width:calc(100vw - 18px);padding:7px 9px}
+ .mi-topbar{padding-bottom:0}
+}

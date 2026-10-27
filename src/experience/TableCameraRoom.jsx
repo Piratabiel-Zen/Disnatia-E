@@ -65,7 +65,7 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
   const name=cameraName(access,selectedSheet,masterMode),userKey=masterMode?'master':access?.role==='visitor'?'visitor_'+access.visitorId:'sheet_'+(access?.sheetId||selectedSheet?.id||'player');
   const cameraCollection=immersive?'immersive_camera_members':'table_cameras';
   const callCollection=immersive?'immersive_camera_calls':'table_camera_calls';
-  const cameraLimit=immersive?8:CAMERA_LIMIT;
+  const cameraLimit=immersive?7:CAMERA_LIMIT;
   const identity=useRef({name,userKey});identity.current={name,userKey,role:masterMode?'master':'player',color:masterMode?'#E8A020':selectedClass?.color||'#A855F7',className:masterMode?'Mestre':selectedClass?.name||''};
   const setIssue=message=>{if(live.current)setError(message);};
   const stopMedia=()=>{localStream.current?.getTracks().forEach(track=>track.stop());localStream.current=null;};
@@ -87,7 +87,7 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
         const active=activeCameraMembers(cameraMemberRows(existing.docs),Date.now());
         const existingMaster=active.some(row=>row.role==='master');
         const playerCount=active.filter(row=>row.role!=='master').length;
-        if(masterMode?existingMaster:playerCount>=7){setError(masterMode?'A vaga do mestre já está ocupada.':'As sete vagas dos jogadores já estão ocupadas.');setBusy(false);return;}
+        if(masterMode?existingMaster:playerCount>=6){setError(masterMode?'A vaga do mestre já está ocupada.':'As seis vagas dos jogadores já estão ocupadas.');setBusy(false);return;}
       }catch{setError('Não foi possível conferir as vagas. Tente novamente.');setBusy(false);return;}
     }
     const id=crypto.randomUUID(),ref=doc(db,cameraCollection,id);
@@ -105,7 +105,7 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
         const active=immersive?[...current].sort((a,b)=>(a.role==='master'?-1:b.role==='master'?1:String(a.id).localeCompare(String(b.id)))):current;
         room.active=active;
         const visible=immersive
-          ?[...active.filter(row=>row.role==='master').slice(0,1),...active.filter(row=>row.role!=='master').slice(0,7)]
+          ?[...active.filter(row=>row.role==='master').slice(0,1),...active.filter(row=>row.role!=='master').slice(0,6)]
           :active.slice(0,cameraLimit);
         if(immersive&&!visible.some(row=>row.id===id)){leave();setIssue(masterMode?'A vaga do mestre já está ocupada.':'As sete vagas dos jogadores já estão ocupadas.');return;}
         setMembers(visible);
@@ -203,11 +203,11 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
         <div className="immersive-master-camera">{master?tile(master,0):<div className="immersive-master-empty">{masterMode?joinSlot('Entrar como mestre na câmera'):<> <span className="immersive-master-mark">✦</span><small>O mestre ainda não entrou</small> </>}</div>}</div>
         <div className="immersive-party-cameras">
           {party.map((row,index)=>tile(row,index+1))}
-          {Array.from({length:Math.max(0,7-party.length)},(_,index)=><div className="immersive-party-slot" key={`empty-${index}`}>{!joined&&!masterMode&&canJoin?joinSlot('Entrar em uma câmera vazia'):<span className="immersive-empty-orbit">◌</span>}</div>)}
+          {Array.from({length:Math.max(0,6-party.length)},(_,index)=><div className="immersive-party-slot" key={`empty-${index}`}>{!joined&&!masterMode&&canJoin?joinSlot('Entrar em uma câmera vazia'):<span className="immersive-empty-orbit">◌</span>}</div>)}
         </div>
       </div>
       <div className="immersive-camera-actions">
-        <span className="immersive-camera-count">{members.length}/8 câmeras</span>
+        <span className="immersive-camera-count">{members.length}/7 câmeras</span>
         {joined?<><button type="button" disabled={busy} onClick={toggleCamera}>{busy?'Aguarde…':cameraOn?'Desligar câmera':'Ativar minha câmera'}</button><button type="button" onClick={leave}>Sair da câmera</button></>:canJoin&&<button type="button" disabled={busy} onClick={join}>{busy?'Conectando…':masterMode?'Entrar como mestre':'Entrar sem ligar a câmera'}</button>}
         {error&&<span role="alert">{error}</span>}
         {Object.values(states).some(state=>state==='reconnecting'||state==='disconnected')&&<span role="status">Reconectando vídeo…</span>}

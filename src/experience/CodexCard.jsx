@@ -1,8 +1,8 @@
 import './codex-cards.css';
 
 // A native button keeps the entire card usable by pointer, touch and keyboard.
-export default function CodexCard({name,photo,color='#a855f7',category,meta,description,badge,action='Abrir registro',onClick}) {
-  return <button type="button" className="codex-card" style={{'--codex-color':color}} onClick={onClick} aria-label={name||'Sem nome'}>
+export default function CodexCard({name,photo,color='#a855f7',category,meta,description,badge,action='Abrir registro',onClick,preservePhoto=false}) {
+  return <button type="button" className={'codex-card'+(preservePhoto?' codex-card-natural-photo':'')} style={{'--codex-color':color}} onClick={onClick} aria-label={name||'Sem nome'}>
     <span className="codex-card-art">
       {photo?<img src={photo} alt="" loading="lazy" decoding="async"/>:<span className="codex-card-placeholder" aria-hidden="true">{name?.[0]||'\u25C7'}</span>}
       <span className="codex-card-shade" aria-hidden="true"/>
