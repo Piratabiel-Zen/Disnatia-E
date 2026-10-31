@@ -224,7 +224,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
           {immersive ? (
             <div className="immersive-volume-control" aria-label="Volume local da música">
               <button onClick={() => setUserMuted(value => !value)} title={userMuted ? 'Ativar música para mim' : 'Silenciar música para mim'} aria-label={userMuted ? 'Ativar música para mim' : 'Silenciar música para mim'} className="ambient-mute-button">{volIcon}</button>
-              <input type="range" min="0" max="100" step="1" value={volume} onChange={handleVolumeChange} aria-label="Volume da música" title={isSpotify ? 'Ajuste Spotify no próprio player' : 'Volume local da música'} />
+              <input type="range" min="0" max="100" step="1" value={volume} onChange={handleVolumeChange} disabled={isSpotify} aria-label="Volume da música" title={isSpotify ? 'Ajuste Spotify no próprio player' : 'Volume local da música'} />
               <output>{volume}%</output>
             </div>
           ) : current?.videoId && (
