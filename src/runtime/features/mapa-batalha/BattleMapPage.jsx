@@ -1144,8 +1144,12 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     pushToast('Token salvo na biblioteca','📚','#A855F7');
   };
   const addLibraryToken = async (tpl) => {
-    if (!currentMap || addingLibraryTokenRef.current) return;
-    addingLibraryTokenRef.current = true;
+    if (!currentMap) return;
+    const lockKey=String(tpl.sheetId||tpl.enemyId||tpl.id||tpl.nome||'token');
+    const locks=addingLibraryTokenRef.current instanceof Set?addingLibraryTokenRef.current:new Set();
+    addingLibraryTokenRef.current=locks;
+    if(locks.has(lockKey))return;
+    locks.add(lockKey);
     const mapId = String(currentMap.id);
     const token=initializeEnemyToken({...newToken(crypto.randomUUID()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',enemyId:tpl.enemyId||''},enemyTemplateForToken(tpl));
     const tokens=[...(mapTokensRef.current[mapId] || currentMap.tokens || []),token];
@@ -1154,7 +1158,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     setSelectedId(token.id); setShowTokenLibrary(false);
     try { await writeLiveTokens(mapId,[token],true); }
     catch { /* The outbox keeps this exact token visible and retryable. */ }
-    finally { addingLibraryTokenRef.current = false; }
+    finally { locks.delete(lockKey); }
   };
 
   const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(doc(db,'battlemap_token_library',String(id))); };
