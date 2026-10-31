@@ -6,6 +6,7 @@ import { getSheetMaxHp } from '../../data/gameData';
 import { characterMaxVigor } from '../../adventure/characterResources.mjs';
 import { useExperience } from '../../experience/ExperienceKit.generated';
 import TableCameraRoom from '../../experience/TableCameraRoom';
+import AmbientSoundPlayer from '../../shell/AmbientSoundPlayer';
 import './mesa-imersiva.css';
 
 const THEMES = [
@@ -82,6 +83,7 @@ export default function MesaImersivaPage({ masterMode, access, onNavigate }){
       {activeScene&&<div className="mi-session-title" aria-live="polite"><small>SESSÃO ATUAL</small><h3>{activeScene.title}</h3></div>}
       <div className="mi-top-actions">
         {masterMode&&<button className="mi-scene-toggle" onClick={()=>setEditor(value=>!value)}>{editor?'Fechar cenas':'✦ Cenas'}</button>}
+        <AmbientSoundPlayer masterMode={masterMode} immersive/>
         <button className="mi-exit" onClick={()=>onNavigate?.('session')}>Sair da mesa imersiva</button>
       </div>
     </header>

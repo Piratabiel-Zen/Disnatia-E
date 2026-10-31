@@ -98,3 +98,21 @@
   .immersive-camera-actions{left:8px;right:auto;bottom:max(12px,env(safe-area-inset-bottom));width:max-content;max-width:calc(100vw - 122px);min-height:34px;gap:4px}
   .immersive-camera-actions .immersive-camera-count{font-size:7px}
 }
+
+.mi-top-actions .immersive-ambient-player{display:flex;align-items:center;z-index:6}
+.immersive-ambient-controls{gap:6px!important}
+.immersive-volume-control{display:flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid rgba(192,132,252,.3);border-radius:10px;background:rgba(12,8,20,.82);box-shadow:0 4px 15px #0005}
+.immersive-volume-control .ambient-mute-button{display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid rgba(192,132,252,.38);border-radius:50%;background:rgba(168,85,247,.15);color:#e2c6ff;font-size:14px;cursor:pointer}
+.immersive-volume-control input[type=range]{width:clamp(58px,7vw,92px);height:4px;margin:0;accent-color:#c084fc;cursor:pointer}
+.immersive-volume-control output{min-width:29px;color:#d7c2e7;text-align:right;font:8px 'Cinzel',serif}
+.immersive-ambient-player .ambient-track-pill{max-width:150px!important;padding:6px 9px!important}
+.immersive-ambient-player .ambient-playlist-button{white-space:nowrap}
+@media(max-width:560px){
+ .immersive-volume-control{gap:4px;padding:2px 5px}
+ .immersive-volume-control .ambient-mute-button{width:25px;height:25px;font-size:12px}
+ .immersive-volume-control input[type=range]{width:48px}
+ .immersive-volume-control output{display:none}
+ .immersive-ambient-player .ambient-track-pill{display:none!important}
+ .immersive-ambient-player .ambient-playlist-button{width:32px!important;height:32px!important;font-size:14px!important}
+ .immersive-ambient-player .ambient-playlist-button span{display:none}
+}

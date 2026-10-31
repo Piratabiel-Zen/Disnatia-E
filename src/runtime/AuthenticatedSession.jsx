@@ -61,7 +61,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
             <div className="top-actions">
               <SessionConnection/>
               <button className="ad-quality" title="Alternar entre fundo estático e atmosfera imersiva com estrelas cadentes" aria-pressed={quality==='light'} onClick={()=>setQuality(quality==='light'?'cinematic':'light')}>{quality==='light'?'◈ Leve':'✦ Imersivo'}</button>
-              <AmbientSoundPlayer masterMode={masterMode}/>
+              {tab!=='mesaImersiva'&&<AmbientSoundPlayer masterMode={masterMode}/>}
               <VisitorCharacterPicker access={access}/>
               <PlayerIdentityChip access={access} onLogout={logout}/>
               {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>} 

@@ -16,11 +16,13 @@ const SOUND_CATEGORIES = [
   { id: 'terror', label: 'Terror', icon: '💀', color: '#6E6E80' },
   { id: 'sfx', label: 'Sound Effects', icon: '🔊', color: '#FF6B9D' },
 ];
+const ALL_CATEGORY = { id: 'todas', label: 'Todas', icon: '🎶', color: '#D6B4F5' };
 import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
-export default function AmbientSoundPlayer({ masterMode }) {
+export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const [open, setOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('calmaria');
   const [playlists, setPlaylists] = useState({});
+  const [addCategory, setAddCategory] = useState('calmaria');
   const [current, setCurrent] = useState(null);
   const [userMuted, setUserMuted] = useState(false);
   const [preferences,updatePreferences]=usePlayerPreferences();
@@ -35,9 +37,9 @@ export default function AmbientSoundPlayer({ masterMode }) {
   const [combatActive, setCombatActive] = useState(false);
 
   useEffect(() => {
-    if (current?.provider === 'spotify' && current?.spotifyUri && current?.playing) setSpotifyPlayerOpen(true);
+    if (current?.provider === 'spotify' && current?.spotifyUri && current?.playing && !userMuted) setSpotifyPlayerOpen(true);
     else setSpotifyPlayerOpen(false);
-  }, [current?.provider, current?.spotifyUri, current?.revision, current?.playing]);
+  }, [current?.provider, current?.spotifyUri, current?.revision, current?.playing, userMuted]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
@@ -149,7 +151,7 @@ export default function AmbientSoundPlayer({ masterMode }) {
   const addTrack = async () => {
     const media = parseMediaLink(novoLink);
     if (!media || !novoNome.trim()) return;
-    const categoria = activeCategory;
+    const categoria = activeCategory === ALL_CATEGORY.id ? addCategory : activeCategory;
     const nova = { id: Date.now(), nome: novoNome.trim(), ...media };
     const playlistRef = doc(db, 'config', 'ambient_playlists');
     try {
@@ -195,9 +197,13 @@ export default function AmbientSoundPlayer({ masterMode }) {
   const spotifySrc = spotifyEmbedSrc(current?.spotifyUri);
   const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
+  const visibleTracks = activeCategory === ALL_CATEGORY.id
+    ? SOUND_CATEGORIES.flatMap(category => (playlists[category.id] || []).map(track => ({ ...track, _categoria: category.id })))
+    : (playlists[activeCategory] || []).map(track => ({ ...track, _categoria: activeCategory }));
+  const visibleCategories = [ALL_CATEGORY, ...SOUND_CATEGORIES];
 
   return (
-    <div className="ambient-topbar-player" style={{ position: 'relative', zIndex: 100, flexShrink: 0 }}>
+    <div className={`ambient-topbar-player${immersive ? ' immersive-ambient-player' : ''}`} style={{ position: 'relative', zIndex: 100, flexShrink: 0 }}>
       {isPlaying && volume > 0 && embedSrc && (
         <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
           <iframe key={`${current?.videoId || 'none'}_${current?.revision || current?.ts || 0}`} ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
@@ -214,32 +220,38 @@ export default function AmbientSoundPlayer({ masterMode }) {
         document.body
       )}
       {!open && (
-        <div className="ambient-topbar-closed" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {current?.videoId && (
+        <div className={`ambient-topbar-closed${immersive ? ' immersive-ambient-controls' : ''}`} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {immersive ? (
+            <div className="immersive-volume-control" aria-label="Volume local da música">
+              <button onClick={() => setUserMuted(value => !value)} title={userMuted ? 'Ativar música para mim' : 'Silenciar música para mim'} aria-label={userMuted ? 'Ativar música para mim' : 'Silenciar música para mim'} className="ambient-mute-button">{volIcon}</button>
+              <input type="range" min="0" max="100" step="1" value={volume} onChange={handleVolumeChange} aria-label="Volume da música" title={isSpotify ? 'Ajuste Spotify no próprio player' : 'Volume local da música'} />
+              <output>{volume}%</output>
+            </div>
+          ) : current?.videoId && (
             <button onClick={() => setUserMuted(m => !m)} title={userMuted ? 'Ativar som' : 'Silenciar para mim'} className="ambient-mute-button" style={{ width: 36, height: 36, borderRadius: '50%', background: isPlaying ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isPlaying ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.14)'}`, color: isPlaying ? '#4ADE80' : '#7A6A8A', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter:'none', boxShadow: isPlaying ? '0 0 18px rgba(74,222,128,0.28)' : 'none', transition: 'all 0.3s', animation: isPlaying ? 'pulse 2.5s ease-in-out infinite' : 'none' }}>{volIcon}</button>
           )}
           {hasCurrentMedia && (
             <div className="ambient-track-pill" onClick={() => isSpotify && setSpotifyPlayerOpen(true)} title={isSpotify ? 'Abrir player do Spotify' : undefined} style={{ cursor: isSpotify ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(10,12,28,0.92)', border: `1px solid ${catInfo ? catInfo.color+'44' : 'rgba(74,222,128,0.25)'}`, borderRadius: 24, padding: '6px 14px', backdropFilter:'none', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', maxWidth: 180 }}>
               <span style={{ fontSize: 13 }}>{catInfo?.icon || '🎵'}</span>
               <span style={{ fontSize: 11, color: catInfo?.color || '#4ADE80', fontFamily: 'Cinzel,serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.nome || 'Som ambiente'}</span>
-              {isPlaying && current?.videoId && (
+              {!immersive && isPlaying && current?.videoId && (
                 <input type="range" min={0} max={100} step={5} value={volume} onChange={handleVolumeChange} style={{ width: 60, accentColor: catInfo?.color || '#4ADE80', cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }} />
               )}
             </div>
           )}
           {masterMode && (
-            <button onClick={() => setOpen(true)} title="Playlists de ambiente" className="ambient-playlist-button" style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#5A5070', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter:'none', transition: 'all 0.2s' }}>🎼</button>
+            <button onClick={() => setOpen(true)} title="Playlists de ambiente" aria-label="Abrir músicas" className="ambient-playlist-button" style={{ width: immersive?96:32, height: 36, borderRadius: immersive?10:'50%', background: immersive?'rgba(168,85,247,0.14)':'rgba(255,255,255,0.04)', border: immersive?'1px solid rgba(192,132,252,0.45)':'1px solid rgba(255,255,255,0.09)', color: immersive?'#D8B4FE':'#5A5070', fontSize: immersive?10:14, display: 'flex', gap:immersive?6:0, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter:'none', transition: 'all 0.2s' }}>🎼{immersive&&<span>Músicas</span>}</button>
           )}
         </div>
       )}
       {open && masterMode && createPortal(
-        <div className="ambient-playlist-overlay" style={{ position: 'fixed', top: 72, bottom: 18, left: 'calc(var(--grim-w) + 16px)', width: 'min(440px, calc(100vw - var(--grim-w) - 32px))', minHeight: 0, background: 'rgba(8,10,24,0.985)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 16, padding: 16, display:'flex', flexDirection:'column', boxShadow: '0 18px 52px rgba(0,0,0,0.88)', backdropFilter:'none', zIndex: 4700 }}>          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink:0 }}>
+        <div className={immersive ? 'ambient-playlist-overlay immersive-playlist-overlay' : 'ambient-playlist-overlay'} style={{ position: 'fixed', top: 72, bottom: 18, left: immersive ? 16 : 'calc(var(--grim-w) + 16px)', right: immersive ? 16 : 'auto', width: immersive ? 'min(440px, calc(100vw - 32px))' : 'min(440px, calc(100vw - var(--grim-w) - 32px))', minHeight: 0, background: 'rgba(8,10,24,0.985)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 16, padding: 16, display:'flex', flexDirection:'column', boxShadow: '0 18px 52px rgba(0,0,0,0.88)', backdropFilter:'none', zIndex: 4700 }}>          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink:0 }}>
             <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, color: '#4ADE80', letterSpacing: '0.1em' }}>🎼 Playlists de Ambiente</div>
             <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: '#5A5070', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
 
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12, flexShrink:0 }}>
-            {SOUND_CATEGORIES.map(c => (
+            {visibleCategories.map(c => (
               <button key={c.id} onClick={() => setActiveCategory(c.id)} style={{
                 padding: '5px 10px', borderRadius: 16, fontFamily: 'Cinzel,serif', fontSize: 10.5, letterSpacing:'0.03em',
                 border: `1px solid ${activeCategory === c.id ? c.color + '77' : 'rgba(255,255,255,0.09)'}`,
@@ -250,24 +262,27 @@ export default function AmbientSoundPlayer({ masterMode }) {
           </div>
 
           <div style={{ overflowY: 'auto', flex:1, marginBottom: 10, display:'flex', flexDirection:'column', gap:9 }}>
-            {(playlists[activeCategory] || []).length === 0 && (
+            {visibleTracks.length === 0 && (
               <div style={{ fontSize: 11, color: '#4A4050', fontFamily: 'Cinzel,serif', textAlign: 'center', padding: '14px 0', fontStyle:'italic' }}>Nenhuma música nesta categoria ainda.</div>
             )}
-            {(playlists[activeCategory] || []).map(track => {
+            {visibleTracks.map(track => {
               const isCurrent = current?.playing && (track.spotifyUri ? current?.spotifyUri === track.spotifyUri : current?.videoId === track.videoId);
-              const catColor = SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.color || '#4ADE80';
+              const trackCategory = track._categoria || activeCategory;
+              const catColor = SOUND_CATEGORIES.find(c=>c.id===trackCategory)?.color || '#4ADE80';
               return (
                 <div key={track.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderRadius:9, background: isCurrent ? `${catColor}18` : 'rgba(255,255,255,0.03)', border:`1px solid ${isCurrent ? catColor+'55' : 'rgba(255,255,255,0.07)'}` }}>
-                  <button onClick={() => playTrack(track, activeCategory)} title="Tocar para todos" style={{ background:'none', border:'none', color: isCurrent ? catColor : '#8A7A6A', cursor:'pointer', fontSize:17, flexShrink:0 }}>{isCurrent ? '▶' : '▷'}</button>
+                  <button onClick={() => playTrack(track, trackCategory)} title="Tocar para todos" style={{ background:'none', border:'none', color: isCurrent ? catColor : '#8A7A6A', cursor:'pointer', fontSize:17, flexShrink:0 }}>{isCurrent ? '▶' : '▷'}</button>
                   <span style={{ flex:1, fontSize:13, color: isCurrent ? catColor : '#C8B8A0', fontFamily:'Cinzel,serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{track.nome}</span>
-                  <button onClick={() => deleteTrack(activeCategory, track.id)} style={{ background:'none', border:'none', color:'rgba(232,25,60,0.5)', cursor:'pointer', fontSize:13, flexShrink:0, padding:4 }}>✕</button>
+                  {activeCategory===ALL_CATEGORY.id&&<small style={{fontSize:9,color:catColor}}>{SOUND_CATEGORIES.find(category=>category.id===trackCategory)?.label}</small>}
+                  <button onClick={() => deleteTrack(trackCategory, track.id)} style={{ background:'none', border:'none', color:'rgba(232,25,60,0.5)', cursor:'pointer', fontSize:13, flexShrink:0, padding:4 }}>✕</button>
                 </div>
               );
             })}
           </div>
 
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, flexShrink:0 }}>
-            <label style={{ fontSize: 9, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.65)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Adicionar Música — {SOUND_CATEGORIES.find(c=>c.id===activeCategory)?.label}</label>
+            <label style={{ fontSize: 9, letterSpacing: '0.25em', color: 'rgba(74,222,128,0.65)', fontFamily: 'Cinzel,serif', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Adicionar Música — {SOUND_CATEGORIES.find(c=>c.id===(activeCategory===ALL_CATEGORY.id?addCategory:activeCategory))?.label}</label>
+            {activeCategory===ALL_CATEGORY.id&&<select aria-label="Categoria da nova música" value={addCategory} onChange={event=>setAddCategory(event.target.value)} style={{width:'100%',fontSize:12,marginBottom:6}}>{SOUND_CATEGORIES.map(category=><option key={category.id} value={category.id}>{category.label}</option>)}</select>}
             <input value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder="Nome da música/tema..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
             <input value={novoLink} onChange={e => setNovoLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTrack()} placeholder="Link do YouTube ou Spotify..." style={{ width: '100%', fontSize: 12, marginBottom: 8 }} />
             <button onClick={addTrack} disabled={!novoNome.trim() || !novoLink.trim()} style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: (novoNome.trim()&&novoLink.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 12, letterSpacing: '0.08em', opacity: (novoNome.trim()&&novoLink.trim()) ? 1 : 0.4 }}>✦ Adicionar à Playlist</button>
