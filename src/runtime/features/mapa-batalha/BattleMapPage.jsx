@@ -216,6 +216,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // REMOTE TOKEN LEASE 2026-09-19
   const draggingIdRef = useRef(null);
   const tokenInteractionRef = useRef({ id: null, pointerId: null });
+  const addingLibraryTokenRef = useRef(false);
   const remoteTokenLeaseRef = useRef({});
   useEffect(()=>{ draggingIdRef.current = draggingId; },[draggingId]);
   const mapsRef = useRef([]);
@@ -353,7 +354,6 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   useEffect(() => { mapsRef.current = maps; }, [maps]);
   const mapTokensRef = useRef({});
   const canonicalRosterReadyRef = useRef(false);
-  const addingLibraryTokenRef = useRef(false);
   const liveTokenVersionRef = useRef({});
   // Canal ultraleve por token: transmite somente x/y durante o arraste.
   // Isso evita regravar o array completo de tokens a cada movimento do mouse.
@@ -1161,8 +1161,10 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
 
 
   const addToken = () => {
-    if (!formNome.trim() || !formFoto || !currentMap) return;
-    const nt = initializeEnemyToken({ ...newToken(crypto.randomUUID()), nome: formNome.trim(), tipo: formTipo, foto: formFoto, sheetId: formSheetId || '', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
+    if (!formNome.trim() || (!formFoto&&!formSheetId&&!formEnemyId) || !currentMap) return;
+    const linkedSheet=sheets.find(sheet=>String(sheet.id)===String(formSheetId));
+    const linkedEnemy=enemies.find(enemy=>String(enemy.id)===String(formEnemyId));
+    const nt = initializeEnemyToken({ ...newToken(crypto.randomUUID()), nome: formNome.trim(), tipo: formTipo, foto: formFoto||linkedSheet?.foto||linkedEnemy?.foto||'', sheetId: formSheetId || '', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
     updCurrentMap({ tokens: [...(currentMap.tokens || []), nt] });
     setFormNome(''); setFormFoto(''); setFormSheetId(''); setFormEnemyId(''); setShowAddForm(false);
   };
@@ -1745,7 +1747,8 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
           {showTokenLibrary && masterMode && currentMap && (
             <div style={{position:'absolute',top:70,left:10,zIndex:42,width:330,maxHeight:'62%',overflowY:'auto',border:'1px solid rgba(168,85,247,.32)',borderRadius:12,background:'rgba(8,10,20,.97)',padding:12,boxShadow:'0 12px 34px rgba(0,0,0,.7)',backdropFilter:'none'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><span style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.18em',color:'#C8A8E8'}}>BIBLIOTECA DE TOKENS</span><button onClick={()=>setShowTokenLibrary(false)} style={{background:'none',border:'none',color:'#7A6A8A',cursor:'pointer'}}>✕</button></div>
-              {tokenLibrary.length===0?<div style={{padding:18,textAlign:'center',color:'#5A5070',fontSize:11}}>Nenhum token salvo ainda. Crie um token e use “Salvar”.</div>:
+              {masterMode&&sheets.length>0&&<><div style={{fontFamily:'Cinzel,serif',fontSize:9,letterSpacing:'.15em',color:'#8e78a2',margin:'4px 0 8px'}}>ADICIONAR TOKEN DE PERSONAGEM</div><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:14}}>{sheets.map(sheet=><button key={`sheet_token_${sheet.id}`} onClick={()=>addLibraryToken({nome:sheet.nome||'Personagem',foto:sheet.foto||'',tipo:'jogador',size:70,sheetId:String(sheet.id),hp:Number(sheet.hp||0),maxHp:getSheetMaxHp(sheet)})} style={{minWidth:0,padding:7,borderRadius:9,border:'1px solid rgba(110,213,139,.2)',background:'rgba(110,213,139,.04)',cursor:'pointer',color:'#C8B8A0'}}><div style={{height:52,display:'flex',alignItems:'center',justifyContent:'center'}}>{sheet.foto?<img src={sheet.foto} alt='' style={{width:44,height:44,borderRadius:'50%',objectFit:'cover'}}/>:<span style={{fontSize:20,color:'#70d58b'}}>{String(sheet.nome||'?').slice(0,1)}</span>}</div><div style={{fontSize:9,fontFamily:'Cinzel,serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sheet.nome||'Personagem'}</div></button>)}</div></>}
+              {tokenLibrary.length===0?<div style={{padding:18,textAlign:'center',color:'#5A5070',fontSize:11}}>Nenhum token salvo na biblioteca. Você ainda pode adicionar os personagens acima ou criar um token novo.</div>:
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{tokenLibrary.map(t=><div key={t.id} style={{padding:7,borderRadius:9,border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.025)',textAlign:'center',position:'relative'}}>
                 <button onClick={()=>addLibraryToken(t)} style={{width:'100%',background:'none',border:'none',cursor:'pointer',color:'#C8B8A0'}}><div style={{height:62,display:'flex',alignItems:'center',justifyContent:'center'}}>{t.foto?<img src={t.foto} alt='' style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>:<span>🎭</span>}</div><div style={{fontSize:9,fontFamily:'Cinzel,serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.nome}</div></button>
                 <button onClick={()=>deleteLibraryToken(t.id)} title='Excluir salvo' style={{position:'absolute',top:2,right:2,width:18,height:18,borderRadius:'50%',border:'none',background:'rgba(232,25,60,.18)',color:'#E8193C',cursor:'pointer',fontSize:9}}>✕</button>
@@ -1761,7 +1764,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                 <div onClick={() => tokenFileRef.current?.click()} style={{ width: 60, height: 60, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', background: formFoto ? `url(${formFoto}) center/contain no-repeat` : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                   {!formFoto && <span style={{ fontSize: 20, opacity: 0.3 }}>🖼️</span>}
                 </div>
-                <input ref={tokenFileRef} type="file" accept="image/png" onChange={handleTokenPhoto} style={{ display: 'none' }} />
+                <input ref={tokenFileRef} type="file" accept="image/*" onChange={handleTokenPhoto} style={{ display: 'none' }} />
                 <div style={{ flex: 1 }}>
                   <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Nome do token..." style={{ width: '100%', fontSize: 12, marginBottom: 6 }} />
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -1771,10 +1774,10 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                   </div>
                 </div>
               </div>
-              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
+              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const linked=kind==='sheet'?sheets.find(row=>String(row.id)===id):enemies.find(row=>String(row.id)===id);setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');if(linked){setFormNome(linked.nome||'');setFormFoto(linked.foto||'');if(kind==='sheet')setFormTipo('jogador');}}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={saveTokenToLibrary} disabled={!formNome.trim() || !formFoto} style={{padding:'8px 10px',borderRadius:8,border:'1px solid rgba(168,85,247,.4)',background:'rgba(168,85,247,.12)',color:'#C8A8E8',cursor:(formNome.trim()&&formFoto)?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:11}}>📚 Salvar</button>
-                <button onClick={addToken} disabled={!formNome.trim() || !formFoto} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && formFoto) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && formFoto) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && formFoto) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
+                <button onClick={addToken} disabled={!formNome.trim() || (!formFoto&&!formSheetId&&!formEnemyId)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
                 <button onClick={() => { setShowAddForm(false); setFormNome(''); setFormFoto(''); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5A5070', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 11 }}>Cancelar</button>
               </div>
             </div>

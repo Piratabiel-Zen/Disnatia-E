@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../core/firebase';
 import { compressImage } from '../../core/media';
 import { getSheetMaxHp } from '../../data/gameData';
 import { characterMaxVigor } from '../../adventure/characterResources.mjs';
+import { STATUS_LIST } from '../../data/gameData';
 import { useExperience } from '../../experience/ExperienceKit.generated';
 import TableCameraRoom from '../../experience/TableCameraRoom';
 import AmbientSoundPlayer from '../../shell/AmbientSoundPlayer';
@@ -18,11 +19,40 @@ const THEMES = [
 const nowId=()=>`scene_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
 
 export default function MesaImersivaPage({ masterMode, access, onNavigate }){
-  const { selectedSheet, selectedClass }=useExperience();
+  const { selectedSheet, selectedClass, useQuickAbility }=useExperience();
   const [scenes,setScenes]=useState([]),[active,setActive]=useState(null),[activeImage,setActiveImage]=useState('');
   const [editor,setEditor]=useState(false),[title,setTitle]=useState(''),[theme,setTheme]=useState('revelacao');
   const [file,setFile]=useState(null),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
-  const [quickSheet,setQuickSheet]=useState(false),fileRef=useRef(null);
+  const [quickSheet,setQuickSheet]=useState(false),fileRef=useRef(null),[abilityBusy,setAbilityBusy]=useState('');
+  const quickAbilities=useMemo(()=>listAbilities(selectedClass,selectedSheet),[selectedClass,selectedSheet]);
+  const adjustResource=async(field,delta)=>{
+    if(!selectedSheet?.id)return;
+    try{await runTransaction(db,async tx=>{
+      const ref=doc(db,'sheets',String(selectedSheet.id)),snap=await tx.get(ref);if(!snap.exists())return;
+      const sheet=snap.data()||{},value=Number(sheet[field]||0),max=field==='hp'?getSheetMaxHp(sheet):characterMaxVigor(sheet);
+      tx.set(ref,{[field]:Math.max(0,Math.min(max,value+delta))},{merge:true});
+    });}catch{setNotice('Não foi possível atualizar esse recurso. Confira a conexão e tente novamente.');}
+  };
+  const setResource=async(field,value)=>{
+    if(!selectedSheet?.id)return;
+    try{await runTransaction(db,async tx=>{
+      const ref=doc(db,'sheets',String(selectedSheet.id)),snap=await tx.get(ref);if(!snap.exists())return;
+      const sheet=snap.data()||{},max=field==='hp'?getSheetMaxHp(sheet):characterMaxVigor(sheet);
+      tx.set(ref,{[field]:Math.max(0,Math.min(max,Number(value)||0))},{merge:true});
+    });}catch{setNotice('Não foi possível atualizar esse recurso. Confira a conexão e tente novamente.');}
+  };
+  const activateAbility=async ability=>{
+    const key=abilityKey(ability);if(abilityBusy||!ability)return;
+    setAbilityBusy(key);
+    try{const ok=await useQuickAbility(ability);if(!ok)setNotice(`Não foi possível usar ${abilityName(ability)}: confira o vigor e o tempo de recarga.`);}
+    catch{setNotice('Não foi possível registrar a habilidade. Confira a conexão.');}
+    finally{setAbilityBusy('');}
+  };
+  const toggleStatus=async id=>{
+    if(!selectedSheet?.id)return;
+    try{await updateDoc(doc(db,'sheets',String(selectedSheet.id)),{[`status.${id}`]:!selectedSheet.status?.[id]});}
+    catch{setNotice('Não foi possível atualizar as condições.');}
+  };
 
   useEffect(()=>onSnapshot(collection(db,'immersive_scenes'),snap=>{
     const rows=snap.docs.map(entry=>({id:entry.id,...entry.data()}));
@@ -109,16 +139,30 @@ export default function MesaImersivaPage({ masterMode, access, onNavigate }){
 
     <button className="mi-quick-sheet-trigger" aria-label="Abrir ficha rápida" title="Ficha rápida" onClick={()=>setQuickSheet(true)}><span>▤</span></button>
     {quickSheet&&<div className="mi-sheet-backdrop" onClick={()=>setQuickSheet(false)}><aside className="mi-quick-sheet" onClick={event=>event.stopPropagation()}>
-      <header><div><small>FICHA RÁPIDA</small><h3>{selectedSheet?.nome||'Personagem'}</h3><span>{selectedClass?.icon||'✦'} {selectedClass?.name||'Classe'}</span></div><button onClick={()=>setQuickSheet(false)} aria-label="Fechar ficha">×</button></header>
-      {selectedSheet?<><div className="mi-sheet-meters"><Meter icon="❤" label="Vida" value={selectedSheet.hp} max={getSheetMaxHp(selectedSheet)}/><Meter icon="✦" label="Vigor Cósmico" value={selectedSheet.vigos} max={characterMaxVigor(selectedSheet)}/></div>
+      <header><div><small>FICHA RÁPIDA</small><div className="mi-sheet-identity"><span className="mi-sheet-portrait" style={{'--mi-class-color':selectedClass?.color||'#a855f7'}}>{selectedSheet?.foto?<img src={selectedSheet.foto} alt=""/>:(selectedClass?.icon||selectedSheet?.nome?.[0]||'✦')}</span><div><h3>{selectedSheet?.nome||'Personagem'}</h3><span>{selectedClass?.icon||'✦'} {selectedClass?.name||'Classe'} · Nv {selectedSheet?.nivel||1}</span></div></div></div><button onClick={()=>setQuickSheet(false)} aria-label="Fechar ficha">×</button></header>
+      {selectedSheet?<><div className="mi-resource-card mi-hp-card"><div className="mi-resource-title"><span>♥ VIDA</span><b>{Number(selectedSheet.hp||0)} / {getSheetMaxHp(selectedSheet)}</b></div><Meter icon="" label="" value={selectedSheet.hp} max={getSheetMaxHp(selectedSheet)}/><div className="mi-resource-actions"><button onClick={()=>adjustResource('hp',-1)} aria-label="Diminuir vida em um">−</button><strong>{Number(selectedSheet.hp||0)}</strong><button onClick={()=>adjustResource('hp',1)} aria-label="Aumentar vida em um">+</button></div><div className="mi-resource-steps">{[-10,-5,5,10].map(step=><button key={step} onClick={()=>adjustResource('hp',step)}>{step>0?'+':''}{step}</button>)}</div></div>
+        <div className="mi-resource-card mi-vc-card"><div className="mi-resource-title"><span>✦ VIGOR CÓSMICO</span><b>{Number(selectedSheet.vigos||0)} / {characterMaxVigor(selectedSheet)}</b></div><div className="mi-vc-dots">{Array.from({length:characterMaxVigor(selectedSheet)},(_,index)=><button key={index} className={index<Number(selectedSheet.vigos||0)?'filled':''} onClick={()=>setResource('vigos',index<Number(selectedSheet.vigos||0)?index:index+1)} aria-label={`Definir vigor cósmico em ${index+1}`} title={`${index+1} VC`}/>)}</div><div className="mi-resource-steps"><button onClick={()=>adjustResource('vigos',-1)}>−1</button><button onClick={()=>adjustResource('vigos',1)}>+1</button></div></div>
         <div className="mi-sheet-stats">{[['FOR','forca'],['AGI','agilidade'],['DUR','durabilidade'],['INT','inteligencia'],['PER','percepcao'],['SOR','sorte']].filter(([,key])=>selectedSheet[key]!=null).map(([label,key])=><div key={key}><small>{label}</small><b>{selectedSheet[key]}</b></div>)}</div>
-        <div className="mi-sheet-status"><small>CONDIÇÕES</small><p>{Object.entries(selectedSheet.status||{}).filter(([,value])=>value).map(([key])=>key).join(' · ')||'Nenhuma condição ativa'}</p></div>
+        <div className="mi-sheet-status"><small>CONDIÇÕES ATIVAS</small><p>{Object.entries(selectedSheet.status||{}).filter(([,value])=>value).map(([key])=>key).join(' · ')||'Nenhuma condição ativa'}</p><div className="mi-status-buttons">{STATUS_LIST.map(status=><button key={status.id} className={selectedSheet.status?.[status.id]?'active':''} onClick={()=>toggleStatus(status.id)}>{status.icon||'✦'} {status.label||status.id}</button>)}</div></div>
+        <section className="mi-quick-abilities"><div className="mi-abilities-heading"><small>HABILIDADES</small><span>{quickAbilities.length}</span></div>{quickAbilities.length?quickAbilities.map((ability,index)=>{
+          const key=abilityKey(ability),cost=Number(ability.cost??ability.custo??0)||0,cooldown=Number(selectedSheet.cooldowns?.[key]||0),description=String(ability.desc||ability.descricao||ability.description||''),passive=/passiv/i.test(String(ability.tipoHab||ability.tipo||ability.type||''));
+          return <article key={key} className="mi-ability-card"><div><span className="mi-ability-number">{String(index+1).padStart(2,'0')}</span><div><b>{abilityName(ability)}</b><small>{ability.tipoHab||ability.tipo||'Habilidade'}{cost?` · ${cost} VC`:''}{cooldown?` · Recarga ${cooldown}`:''}</small></div></div>{description&&<p>{description}</p>}<button disabled={passive||!!abilityBusy||cooldown>0||Number(selectedSheet.vigos||0)<cost} onClick={()=>activateAbility(ability)}>{passive?'Passiva':abilityBusy===key?'Usando…':cooldown>0?`Em recarga · ${cooldown}`:Number(selectedSheet.vigos||0)<cost?'Vigor insuficiente':'Usar habilidade'}</button></article>;
+        }):<p className="mi-empty-abilities">Esta ficha ainda não tem habilidades cadastradas.</p>}</section>
       </>:<p className="mi-no-sheet">Selecione uma ficha para consultar os dados do personagem.</p>}
     </aside></div>}
   </div>;
 }
 
+function listAbilities(cls,sheet){
+  const passiveRows=[cls?.passive,cls?.passiva,sheet?.passive,sheet?.passiva].filter(row=>row&&typeof row==='object').map(row=>({...row,tipoHab:row.tipoHab||'passiva'}));
+  const buckets=[cls?.normal,cls?.normais,cls?.habilidades,cls?.abilities,cls?.skills,cls?.especial,cls?.especiais,cls?.special,cls?.specials,cls?.passivas,cls?.campanha,cls?.campaign,sheet?.normal,sheet?.normais,sheet?.habilidades,sheet?.abilities,sheet?.skills,sheet?.especial,sheet?.especiais,sheet?.special,sheet?.passivas,sheet?.campanha,sheet?.campaign,...passiveRows];
+  const rows=[];const visit=value=>{if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object'){if(value.id||value.name||value.nome||value.desc||value.descricao||value.cost!=null||value.custo!=null)rows.push(value);else Object.values(value).forEach(visit);}};buckets.forEach(visit);
+  const seen=new Set();return rows.filter(row=>{const key=abilityKey(row);if(seen.has(key))return false;seen.add(key);return true;});
+}
+function abilityKey(row){return String(row?.id||row?.name||row?.nome||'habilidade');}
+function abilityName(row){return String(row?.name||row?.nome||'Habilidade');}
+
 function Meter({icon,label,value=0,max=1}){
   const current=Math.max(0,Number(value)||0),limit=Math.max(1,Number(max)||1),percent=Math.max(0,Math.min(100,current/limit*100));
-  return <div className="mi-meter"><div><span>{icon} {label}</span><b>{current}/{limit}</b></div><i><em style={{width:`${percent}%`}}/></i></div>;
+  return <div className={`mi-meter${!icon&&!label?' mi-meter-track-only':''}`}>{(icon||label)&&<div><span>{icon} {label}</span><b>{current}/{limit}</b></div>}<i><em style={{width:`${percent}%`}}/></i></div>;
 }
