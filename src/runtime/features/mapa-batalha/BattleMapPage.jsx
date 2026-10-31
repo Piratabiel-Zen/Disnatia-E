@@ -830,8 +830,15 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       const controlsPosition=['x','y','rotation'].some(field=>record.token[field]!==undefined)&&!!localLeaseRef.current;
       const positionOwner=String(liveClientIdRef.current);
       const baseline = (mapTokensRef.current[record.mapId] || []).find(token => String(token.id) === record.tokenId) || {};
+      const ref=doc(db, 'battlemap_tokens', key);
+      // Adds, removals and non-position edits don't need a read/transaction.
+      // Using a merge write avoids transaction contention when several players
+      // add tokens or update their sheets at the same time. Movement still uses
+      // the lease-checked transaction below.
+      if(!controlsPosition){
+        return setDoc(ref,record,{merge:true});
+      }
       return runTransaction(db, async transaction => {
-        const ref = doc(db, 'battlemap_tokens', key);
         const snapshot = await transaction.get(ref);
         if(controlsPosition){
           const lease=await transaction.get(doc(db,'battlemap_live_positions',String(record.mapId)+'_'+String(record.tokenId)+'_lease'));
@@ -850,7 +857,6 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       ]);
     } catch (error) {
       console.error('battlemap-token-write-failed', { mapId: String(mapId), code: error?.code, message: error?.message });
-      pushToast('Token ainda não salvo. A tentativa permanece no mapa; use Tentar novamente.', '\u26A0', '#E8A020');
       throw error;
     }
     return true;
@@ -1279,15 +1285,27 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const key=String(mapId)+':'+String(tokenId);
     const clientId=String(liveClientIdRef.current);
     const version=clientId+'_'+Math.random().toString(36).slice(2);
-    const acquired=await runTransaction(db,async transaction=>{
-      const snapshot=await transaction.get(record);
-      const row=snapshot.exists()?snapshot.data():null;
-      leaseTrackerRef.current.observe(key,row);
-      if(leaseTrackerRef.current.owner(key,clientId))return false;
-      transaction.set(record,{mapId:String(mapId),tokenId:String(tokenId),channel:'control-lease-v1',clientId,name:masterMode?'Mestre':ownPingName||'Jogador',active:true,version,publishedAt:serverTimestamp()});
-      return true;
-    });
+    let acquired=false,lastError=null;
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        acquired=await runTransaction(db,async transaction=>{
+          const snapshot=await transaction.get(record);
+          const row=snapshot.exists()?snapshot.data():null;
+          leaseTrackerRef.current.observe(key,row);
+          if(leaseTrackerRef.current.owner(key,clientId))return false;
+          transaction.set(record,{mapId:String(mapId),tokenId:String(tokenId),channel:'control-lease-v1',clientId,name:masterMode?'Mestre':ownPingName||'Jogador',active:true,version,publishedAt:serverTimestamp()});
+          return true;
+        });
+        break;
+      }catch(error){
+        lastError=error;
+        const code=String(error?.code||'').split('/').pop();
+        if(!['aborted','unavailable','deadline-exceeded','resource-exhausted','unknown','internal'].includes(code)||attempt===2)throw error;
+        await new Promise(resolve=>setTimeout(resolve,100+attempt*180+Math.random()*120));
+      }
+    }
     if(acquired){const lease={record,version,clientId,mapId:String(mapId),tokenId:String(tokenId)};localLeaseRef.current=lease;groupLeaseRef.current=append?[...groupLeaseRef.current,lease]:[lease];}
+    if(!acquired&&lastError)throw lastError;
     return acquired;
   };
   const releaseControl=async()=>{
@@ -1320,7 +1338,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       }catch(error){console.warn('Controle sem confirmação:',error);window.dispatchEvent(new Event('pointercancel'));}
       finally{inFlight=false;}
     };
-    const timer=setInterval(renew,2000);
+    const timer=setInterval(renew,3000);
     return()=>{clearInterval(timer);delete document.documentElement.dataset.tokenDragging;};
   },[draggingId,rotatingId]);
   useEffect(()=>{mountedMapRef.current=true;return()=>{mountedMapRef.current=false;claimRef.current=false;leaseTimersRef.current.forEach(clearTimeout);releaseControl();}},[]);
@@ -1742,12 +1760,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
             </div>
           )}
 
-          {currentMap && tokenOutbox.status(currentMap.id).count > 0 && (
-            <div role="status" style={{position:'absolute',bottom:12,left:12,zIndex:45,padding:'8px 12px',borderRadius:8,background:'#10121b',color:tokenOutbox.status(currentMap.id).failed?'#E8A020':'#C8A8E8',fontSize:12}}>
-              {tokenOutbox.status(currentMap.id).failed ? 'Há tokens aguardando gravação.' : 'Sincronizando tokens...'}
-              {tokenOutbox.status(currentMap.id).failed && <button onClick={() => tokenOutbox.retry(currentMap.id).catch(() => {})} style={{marginLeft:10,padding:'6px 10px',cursor:'pointer'}}>Tentar novamente</button>}
-            </div>
-          )}
+          {currentMap && (()=>{const sync=tokenOutbox.status(currentMap.id);if(!sync.count)return null;const code=String(sync.error?.code||'').split('/').pop();const message=code==='permission-denied'?'O Firebase recusou a gravação deste token.':sync.failed?'Conexão instável; o token permanece no mapa e será reenviado.':'Sincronizando tokens…';return <div role="status" style={{position:'absolute',bottom:12,left:12,zIndex:45,padding:'8px 12px',borderRadius:8,background:'#10121b',color:sync.failed?'#E8A020':'#C8A8E8',fontSize:12}}>{message}{sync.failed&&<button onClick={()=>tokenOutbox.retry(currentMap.id).catch(()=>{})} style={{marginLeft:10,padding:'6px 10px',cursor:'pointer'}}>Tentar novamente</button>}</div>;})()}
           {showTokenLibrary && masterMode && currentMap && (
             <div style={{position:'absolute',top:70,left:10,zIndex:42,width:330,maxHeight:'62%',overflowY:'auto',border:'1px solid rgba(168,85,247,.32)',borderRadius:12,background:'rgba(8,10,20,.97)',padding:12,boxShadow:'0 12px 34px rgba(0,0,0,.7)',backdropFilter:'none'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><span style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.18em',color:'#C8A8E8'}}>BIBLIOTECA DE TOKENS</span><button onClick={()=>setShowTokenLibrary(false)} style={{background:'none',border:'none',color:'#7A6A8A',cursor:'pointer'}}>✕</button></div>

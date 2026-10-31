@@ -67,10 +67,17 @@ test('generated writer supports a roster larger than 1 MiB without a map-sized d
       outbox.acknowledge(merged);
     },
   });
+  const setDoc = async (key, record) => {
+    const prior = documents.get(key) || {};
+    const merged = { ...prior, ...record, token: { ...prior.token, ...record.token } };
+    if (Buffer.byteLength(JSON.stringify(merged)) > 1048576) throw new Error('document exceeds 1 MiB');
+    documents.set(key, merged);
+    outbox.acknowledge(merged);
+  };
   const tokens = Array.from({ length: 30 }, (_, id) => ({ id, nome: `Enemy ${id}`, foto: 'data:image/png;base64,' + 'a'.repeat(80000), x: id, hp: 10 }));
   assert.ok(Buffer.byteLength(JSON.stringify({ tokens })) > 1048576);
-  const writer = new Function('tokenOutbox', 'runTransaction', 'db', 'doc', 'mapTokensRef', 'pushToast', 'localLeaseRef', 'liveClientIdRef', source.slice(start, end) + 'return writeLiveTokens;')
-    (outbox, runTransaction, {}, (_, collection, key) => key, { current: { m: tokens } }, () => {}, {current:null}, {current:'test'});
+  const writer = new Function('tokenOutbox', 'runTransaction', 'db', 'doc', 'mapTokensRef', 'pushToast', 'localLeaseRef', 'liveClientIdRef', 'setDoc', source.slice(start, end) + 'return writeLiveTokens;')
+    (outbox, runTransaction, {}, (_, collection, key) => key, { current: { m: tokens } }, () => {}, {current:null}, {current:'test'}, setDoc);
   await writer('m', tokens, true);
   assert.equal(documents.size, 30);
   await writer('m', [{ id: 1, x: 70 }], true);
