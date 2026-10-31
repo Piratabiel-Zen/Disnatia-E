@@ -122,7 +122,6 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
     };
     await Promise.all([
       addJournal(\`\${summoned.nome} foi invocado por \${selectedSheet.nome||'Necromante'}.\`,'ability',{icon:event.icon,color:event.color,source:'summon-release'}),
-      setDoc(doc(db,'config','cosmic_event'),event),
       setDoc(doc(db,'cosmic_events',event.id),event),
     ]);
     return true;
@@ -250,7 +249,6 @@ const summonRuntime = `  const useSummonAbility=useCallback(async(ability,summon
     };
     const broadcasts=await Promise.allSettled([
       addJournal(event.text,'ability',{icon:event.icon,color:event.color}),
-      setDoc(doc(db,'config','cosmic_event'),event),
       setDoc(doc(db,'cosmic_events',event.id),event),
     ]);
     if(broadcasts.some(item=>item.status==='rejected'))console.warn('Ação usada; parte do anúncio global não foi gravada.');

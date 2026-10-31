@@ -75,7 +75,6 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
   const [session,setSession]=useState(()=>readSessionCache());
   const [ambient,setAmbient]=useState({});
   const [soundscape,setSoundscapeState]=useState({preset:'silencio',...SOUNDSCAPE_PRESETS.silencio,updatedAt:0});
-  const [cosmicEvent,setCosmicEvent]=useState(null);
   const [journal,setJournal]=useState([]);
   const [maps,setMaps]=useState([]);
   const [atlas,setAtlas]=useState([]);
@@ -129,11 +128,6 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     unsubscribers.push(onSnapshot(doc(db,'config','session'),{includeMetadataChanges:true},snap=>{const next=normalizeDoc(snap,{active:false,title:'',location:'',objective:'',subtitle:''});writeSessionCache(next);setSession(next);}));
     unsubscribers.push(onSnapshot(doc(db,'config','ambient'),snap=>setAmbient(normalizeDoc(snap,{}))));
     unsubscribers.push(onSnapshot(doc(db,'config','soundscape'),snap=>setSoundscapeState({...SOUNDSCAPE_PRESETS.silencio,...normalizeDoc(snap,{})})));
-    const cosmicGate = createLiveEventGate();
-    unsubscribers.push(onSnapshot(doc(db,'config','cosmic_event'),{includeMetadataChanges:true},snap=>{
-      const value = snap.exists() ? snap.data() : null;
-      cosmicGate(snap,value?.id ? [{key:String(value.id),value}] : []).forEach(entry=>setCosmicEvent(entry.value));
-    }));
     unsubscribers.push(onSnapshot(doc(db,'config','battlemap_active'),snap=>setActiveMapState(normalizeDoc(snap,{activeId:''}))));
     const journalQuery=query(collection(db,'session_journal'),orderBy('ts','desc'),limit(JOURNAL_LIMIT));
     unsubscribers.push(onSnapshot(journalQuery,snap=>setJournal(snap.docs.map(d=>({id:d.id,...d.data()})))));
@@ -265,7 +259,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
   const triggerCosmicEvent=useCallback(async(type='message',text='')=>{
     const info=EVENT_TYPES[type]||EVENT_TYPES.message;
     const event={id:nowId('cosmic'),type,text:String(text||info.label),ts:Date.now(),color:info.color,icon:info.icon};
-    await Promise.all([setDoc(doc(db,'config','cosmic_event'),event),setDoc(doc(db,'cosmic_events',event.id),event,{merge:true})]);
+    await setDoc(doc(db,'cosmic_events',event.id),event,{merge:true});
     await addJournal(event.text,'event',{id:`event_${event.id}`,ts:event.ts,icon:event.icon,color:event.color,source:'cosmic'});
   },[addJournal]);
 
@@ -381,7 +375,6 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     const broadcasts=await Promise.allSettled([
       addJournal(`${actingSheet.nome||'Personagem'} usou ${ability.name||ability.nome}.`,'ability',{icon:'\u2726',color:actingClass?.color||'#A855F7'}),
-      setDoc(doc(db,'config','cosmic_event'),abilityEvent),
       setDoc(doc(db,'cosmic_events',abilityEvent.id),abilityEvent,{merge:true}),
     ]);
     if(broadcasts.some(row=>row.status==='rejected'))console.warn('Habilidade utilizada; anúncio aguardando confirmação.');
@@ -448,7 +441,6 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     await Promise.all([
       addJournal(`${summoned.nome} foi invocado por ${selectedSheet.nome||'Necromante'}.`,'ability',{icon:event.icon,color:event.color,source:'summon-release'}),
-      setDoc(doc(db,'config','cosmic_event'),event),
       setDoc(doc(db,'cosmic_events',event.id),event),
     ]);
     return true;
@@ -576,7 +568,6 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     const broadcasts=await Promise.allSettled([
       addJournal(event.text,'ability',{icon:event.icon,color:event.color}),
-      setDoc(doc(db,'config','cosmic_event'),event),
       setDoc(doc(db,'cosmic_events',event.id),event),
     ]);
     if(broadcasts.some(item=>item.status==='rejected'))console.warn('Ação usada; parte do anúncio global não foi gravada.');
@@ -625,12 +616,12 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
 
   const value=useMemo(()=>({
     tab,masterMode,access,sheets,summons,customAbilities,selectedSheetId,setSelectedSheetId,selectedSheet,selectedClass,
-    combat,combatState,session,ambient,soundscape,cosmicEvent,journal,maps,atlas,activeMap,
+    combat,combatState,session,ambient,soundscape,journal,maps,atlas,activeMap,
     updateSession,startSession,endSession,setAtmosphere,setSoundscape,applySoundscapePreset,
     triggerCosmicEvent,setActiveMap,nextTurn,reorderInitiative,endCombat,addJournal,updateJournal,deleteJournal,addAtlasDiscovery,useQuickAbility,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon,
   }),[
     tab,masterMode,access,sheets,summons,customAbilities,selectedSheetId,setSelectedSheetId,selectedSheet,selectedClass,combat,combatState,
-    session,ambient,soundscape,cosmicEvent,journal,maps,atlas,activeMap,updateSession,startSession,endSession,
+    session,ambient,soundscape,journal,maps,atlas,activeMap,updateSession,startSession,endSession,
     setAtmosphere,setSoundscape,applySoundscapePreset,triggerCosmicEvent,setActiveMap,nextTurn,reorderInitiative,endCombat,
     addJournal,updateJournal,deleteJournal,addAtlasDiscovery,useQuickAbility,useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon,
   ]);
@@ -909,7 +900,6 @@ function CombatHud({ onNavigate }){
         simple,cost,round:Number(combatState?.round||1),
       };
       await Promise.all([
-        setDoc(doc(db,'config','combat_action'),event,{merge:true}),
         setDoc(doc(db,'combat_action_events',id),event,{merge:true}),
       ]);
       await addJournal?.(`${event.actorName} usou ${abilityName}${target?.nome?` em ${target.nome}`:' sem alvo'}.`,'combat',{
@@ -967,9 +957,9 @@ function CombatActionPulse(){
   const [event,setEvent]=useState(null);
   useEffect(()=>{
     const gate = createLiveEventGate();
-    return onSnapshot(doc(db,'config','combat_action'),{includeMetadataChanges:true},snap=>{
-      const next = snap.exists() ? snap.data() : null;
-      const entries = next?.id ? [{key:String(next.id),value:next}] : [];
+    const feed=query(collection(db,'combat_action_events'),orderBy('ts','desc'),limit(30));
+    return onSnapshot(feed,{includeMetadataChanges:true},snap=>{
+      const entries = snap.docs.map(row=>({key:row.id,value:row.data()}));
       gate(snap,entries).forEach(entry=>setEvent(entry.value));
     },()=>{});
   },[]);
@@ -1024,20 +1014,6 @@ function CharacterStateAura(){
   const className=ratio<=0.2?'critical':dominant?'statused':ratio<=0.4?'wounded':'';
   if(!className) return null;
   return <div className={`character-state-aura ${className}`} style={{'--state-color':dominant?.color||'#E8193C'}}><span>{ratio<=0.2?'❤ VIDA CRÍTICA':dominant?`${dominant.icon} ${dominant.label}`:'❤ FERIDO'}</span></div>;
-}
-
-function CosmicEventLayer(){
-  const { cosmicEvent }=useExperience();
-  const [visible,setVisible]=useState(false);
-  const timer=useRef(null);
-  useEffect(()=>{
-    if(!cosmicEvent?.id||Date.now()-Number(cosmicEvent.ts||0)>7000) return;
-    setVisible(true); clearTimeout(timer.current); timer.current=setTimeout(()=>setVisible(false),cosmicEvent.soft?1600:3300);
-    return()=>clearTimeout(timer.current);
-  },[cosmicEvent?.id]);
-  if(!visible||!cosmicEvent) return null;
-  const info=EVENT_TYPES[cosmicEvent.type]||{icon:cosmicEvent.icon||'✦',color:cosmicEvent.color||'#A855F7'};
-  return <div className={`cosmic-event cosmic-${cosmicEvent.type||'message'} ${cosmicEvent.soft?'soft':''}`} style={{'--event-color':cosmicEvent.color||info.color}}><div className="cosmic-lines"/><div className="cosmic-ring"/><div className="cosmic-message"><span>{cosmicEvent.icon||info.icon}</span><strong>{cosmicEvent.text||info.label}</strong></div></div>;
 }
 
 function JournalDrawer(){

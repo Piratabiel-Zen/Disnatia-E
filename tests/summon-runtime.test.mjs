@@ -29,7 +29,8 @@ test('revealed summon retains configured HP, edits resources outside turns, stor
   await api.updateSummonVc(id,1);assert.equal(summons[0].vigos,2);
   await api.storeSummon(id);assert.equal(summons[0].active,false);
   await api.useSummonAbility({},summon);assert.equal(summons[0].active,true);assert.equal(summons[0].hp,40);assert.equal(summons[0].vigos,2);
-  assert.ok(data.has('config/cosmic_event'));
+  assert.ok([...data.keys()].some(key=>key.startsWith('cosmic_events/')));
+  assert.equal(data.has('config/cosmic_event'),false);
 });
 test('hidden summons and another player’s resources remain protected',async()=>{
   const {api,summons}=harness();

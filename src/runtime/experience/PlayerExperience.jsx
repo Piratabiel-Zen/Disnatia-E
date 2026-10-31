@@ -764,7 +764,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     const ok=await useQuickAbility(ability);
     if(!ok){pushFeedback({kind:'warning',icon:'⚠',name:abilityName(ability),text:'Sem Vigor suficiente ou habilidade em cooldown.'});setTargeting(null);return;}
     const actionEvent={id:nowId('combat_action'),type:'combat_action',ts:Date.now(),source:'game3-actionbar',actorId:String(selectedSheet?.id||''),actorName:selectedSheet?.nome||'Personagem',abilityName:abilityName(ability),targetId:String(target?.id||''),targetName:target?.nome||'',targetType:target?'combatant':'none',icon:selectedClass?.icon||'⚡',color:selectedClass?.color||'#A855F7',round:Number(combatState?.round||1)};
-    const announcements=await Promise.allSettled([setDoc(doc(db,'config','combat_action'),actionEvent,{merge:true}),setDoc(doc(db,'combat_action_events',actionEvent.id),actionEvent,{merge:true})]);
+    const announcements=await Promise.allSettled([setDoc(doc(db,'combat_action_events',actionEvent.id),actionEvent,{merge:true})]);
     if(announcements.some(row=>row.status==='rejected'))pushFeedback({kind:'warning',name:'Habilidade utilizada',text:'Parte do anúncio não foi confirmada. Não repita a ação.'});
     if(target) await addJournal(`${selectedSheet?.nome||'Personagem'} definiu ${target.nome||'combatente'} como alvo de ${abilityName(ability)}.`,'ability',{icon:selectedClass?.icon||'⌖',color:selectedClass?.color||'#a855f7'}).catch(()=>{});
     pushFeedback({kind:'ability',icon:actionEvent.icon,color:actionEvent.color,name:abilityName(ability),text:target?`Alvo: ${target.nome||'combatente'}`:'Ação manifestada'});

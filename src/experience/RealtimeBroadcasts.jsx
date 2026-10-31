@@ -34,7 +34,7 @@ function useDurableChannel({ collectionName, kind, ttl }) {
 
   useEffect(() => {
     const gate = createLiveEventGate();
-    const feedQuery = query(collection(db, collectionName), orderBy('ts', 'desc'), limit(20));
+    const feedQuery = query(collection(db, collectionName), orderBy('ts', 'desc'), limit(40));
     return onSnapshot(feedQuery, { includeMetadataChanges: true }, snap => {
       const entries = snap.docs.map(d => {
         const payload = { _feedId:d.id, ...(d.data()||{}) };

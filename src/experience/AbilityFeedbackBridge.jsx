@@ -21,10 +21,8 @@ export default function AbilityFeedbackBridge(){
         abilityName:String(detail.abilityName||'Habilidade'),targetId:'',targetName:'',targetType:'none',
         icon:String(detail.icon||'✦'),color:String(detail.color||'#A855F7'),cost:Math.max(0,Number(detail.cost)||0),
       };
-      Promise.allSettled([
-        setDoc(doc(db,'config','combat_action'),action,{merge:true}),
-        setDoc(doc(db,'combat_action_events',id),action,{merge:true}),
-      ]).then(results=>{if(results.every(result=>result.status==='rejected'))console.warn('Não foi possível publicar o uso da habilidade para a mesa.');});
+      setDoc(doc(db,'combat_action_events',id),action,{merge:true})
+        .catch(()=>console.warn('Não foi possível publicar o uso da habilidade para a mesa.'));
     };
     document.addEventListener('click',onClick,true);
     window.addEventListener('dinastia:ability-used',announce);
