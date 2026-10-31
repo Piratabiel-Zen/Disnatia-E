@@ -117,3 +117,26 @@
  .immersive-ambient-player .ambient-playlist-button{width:32px!important;height:32px!important;font-size:14px!important}
  .immersive-ambient-player .ambient-playlist-button span{display:none}
 }
+
+/* Câmeras mais contidas para manter as cenas de fundo visíveis. */
+.mi-camera-section{inset:clamp(164px,18vh,188px) 0 64px;padding:0}
+.mi-camera-heading{width:min(90vw,1000px);margin:0 auto}
+.immersive-camera-room{align-items:center;justify-content:center}
+.immersive-camera-wall{width:min(90vw,1000px);height:min(49vh,430px);flex:none;grid-template-columns:minmax(250px,.95fr) minmax(0,1.05fr);grid-template-rows:minmax(0,1fr);gap:clamp(28px,9vw,105px)}
+.immersive-master-camera{grid-column:1;grid-row:1;width:min(100%,310px);height:auto;aspect-ratio:16/9;align-self:center;justify-self:start}
+.immersive-master-camera .immersive-camera-tile,.immersive-master-camera .immersive-master-empty{width:100%;height:100%}
+.immersive-party-cameras{grid-column:2;grid-row:1;width:100%;height:100%;max-width:min(38vw,420px);grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(6px,1vw,12px);justify-self:end;align-self:center}
+@media(max-width:900px){
+ .mi-camera-section{inset:clamp(132px,17vh,164px) 0 64px}
+ .immersive-camera-wall{width:96vw;height:min(50vh,430px);grid-template-columns:minmax(200px,.95fr) minmax(0,1.05fr);gap:clamp(18px,5vw,48px)}
+ .immersive-master-camera{width:min(100%,270px)}
+ .immersive-party-cameras{max-width:min(45vw,420px);gap:7px}
+}
+@media(max-width:560px){
+ .mi-camera-section{inset:132px 0 76px}
+ .mi-camera-heading{width:92vw}
+ .immersive-camera-room{padding:0 8px}
+ .immersive-camera-wall{width:min(92vw,400px);height:min(54vh,450px);grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,.8fr) minmax(0,2fr);gap:8px}
+ .immersive-master-camera{grid-column:1;grid-row:1;width:min(48vw,210px);height:auto;aspect-ratio:16/9;justify-self:center}
+ .immersive-party-cameras{grid-column:1;grid-row:2;width:100%;height:100%;max-width:100%;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:6px}
+}
