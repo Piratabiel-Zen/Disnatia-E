@@ -6,7 +6,6 @@ import { useExperience } from './ExperienceKit';
 import './game-experience-3.css';
 
 const GAME_DOC = 'game_experience_v3';
-const PRESENCE_TTL = 75000;
 
 const WORLD_MODES = {
   exploration: { label:'Exploração', icon:'◈', hint:'Mundo aberto e HUD discreto' },
@@ -115,18 +114,6 @@ function WorldParticles({type='none',intensity=45}){
   </div>;
 }
 
-function PresenceStrip({rows}){
-  return <div className="g3-presence" aria-label="Jogadores online">
-    <span className="g3-presence-label"><i/> {rows.length} online</span>
-    <div className="g3-presence-avatars">
-      {rows.slice(0,8).map(row=><span key={row.id} className={`g3-presence-avatar ${row.role==='master'?'master':''}`} title={`${row.name||'Jogador'} · ${row.tab||'sessão'}`}>
-        {row.photo?<img src={row.photo} alt=""/>:<b>{row.role==='master'?'✦':initials(row.name)}</b>}
-      </span>)}
-      {rows.length>8&&<span className="g3-presence-more">+{rows.length-8}</span>}
-    </div>
-  </div>;
-}
-
 function TurnStrip({combatState,selectedSheet}){
   const list=Array.isArray(combatState?.initiative)?combatState.initiative:[];
   if(!list.length) return null;
@@ -145,7 +132,7 @@ function TurnStrip({combatState,selectedSheet}){
   </div>;
 }
 
-function TopContext({mode,session,presence,combat,combatState,selectedSheet,masterMode,onCompleteObjective}){
+function TopContext({mode,session,combat,combatState,selectedSheet,masterMode,onCompleteObjective}){
   const modeInfo=WORLD_MODES[mode]||WORLD_MODES.exploration;
   const current=Array.isArray(combatState?.initiative)?combatState.initiative[Number(combatState?.turnIdx||0)]:null;
   return <div className="g3-top-context">
@@ -154,7 +141,6 @@ function TopContext({mode,session,presence,combat,combatState,selectedSheet,mast
       <div className="g3-location"><small>LOCAL ATUAL</small><b>{session?.location||'Entre os véus de Cosmum'}</b></div>
       <div className="g3-objective"><small>OBJETIVO</small><b>{session?.objective||'Nenhum objetivo revelado'}</b>{masterMode&&session?.objective&&<button onClick={onCompleteObjective} title="Concluir objetivo">✓</button>}</div>
       {combat?.active&&<div className="g3-now"><small>AGORA</small><b>{current?.nome||combat.currentNome||'—'}</b></div>}
-      <PresenceStrip rows={presence}/>
     </div>
     {combat?.active&&<TurnStrip combatState={combatState} selectedSheet={selectedSheet}/>} 
   </div>;
@@ -354,7 +340,6 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
   }=useExperience();
 
   const [game,setGame]=useState({worldMode:'exploration',environment:{type:'none',intensity:45}});
-  const [presence,setPresence]=useState([]);
   const [items,setItems]=useState([]);
   const [enemies,setEnemies]=useState([]);
   const [panel,setPanel]=useState('');
@@ -375,34 +360,10 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
 
   useEffect(()=>{
     const u1=onSnapshot(doc(db,'config',GAME_DOC),snap=>setGame(snap.exists()?{worldMode:'exploration',environment:{type:'none',intensity:45},...(snap.data()||{})}:{worldMode:'exploration',environment:{type:'none',intensity:45}}));
-    const u2=onSnapshot(collection(db,'presence'),snap=>setPresence(snap.docs.map(d=>({id:d.id,...d.data()}))));
-    const u3=onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0))));
+    const u3=panel==='inventory'?onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)))):()=>{};
     const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));
-    return()=>{u1();u2();u3();u4();};
-  },[]);
-
-  useEffect(()=>{
-    let clientId='';
-    try{
-      clientId=sessionStorage.getItem('dinastia_presence_tab')||nowId('presence');
-      sessionStorage.setItem('dinastia_presence_tab',clientId);
-    }catch(_){clientId=nowId('presence');}
-    const ref=doc(db,'presence',clientId);
-    const push=(online=true)=>setDoc(ref,{
-      online,role:access?.role||'player',sheetId:String(access?.sheetId||selectedSheet?.id||''),name:access?.name||selectedSheet?.nome||(access?.role==='master'?'Mestre':'Jogador'),photo:access?.photo||selectedSheet?.foto||'',tab:tab||'session',updatedAt:Date.now(),
-    },{merge:true}).catch(()=>{});
-    push(true);
-    const timer=window.setInterval(()=>push(document.visibilityState!=='hidden'),30000);
-    const onFocus=()=>push(true);
-    const onVisibility=()=>push(document.visibilityState!=='hidden');
-    window.addEventListener('focus',onFocus);document.addEventListener('visibilitychange',onVisibility);
-    return()=>{window.clearInterval(timer);window.removeEventListener('focus',onFocus);document.removeEventListener('visibilitychange',onVisibility);push(false);};
-  },[access?.role,access?.sheetId,access?.name,access?.photo,selectedSheet?.id,selectedSheet?.nome,selectedSheet?.foto,tab]);
-
-  const activePresence=useMemo(()=>{
-    const now=Date.now();
-    return presence.filter(row=>row.online!==false&&now-Number(row.updatedAt||0)<PRESENCE_TTL).sort((a,b)=>a.role==='master'?-1:b.role==='master'?1:String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
-  },[presence]);
+    return()=>{u1();u3();u4();};
+  },[panel]);
 
   const pushFeedback=useCallback(row=>{
     const entry={id:nowId('feedback'),...row};
@@ -507,7 +468,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
 
   return <div className={`game3-root game3-mode-${effectiveMode} game3-preset-${preset} game3-tab-${tab}`} data-game3-mode={effectiveMode}>
     <WorldParticles type={game?.environment?.type||'none'} intensity={game?.environment?.intensity||45}/>
-    <TopContext mode={effectiveMode} session={session} presence={activePresence} combat={combat} combatState={combatState} selectedSheet={selectedSheet} masterMode={masterMode} onCompleteObjective={completeObjective}/>
+    <TopContext mode={effectiveMode} session={session} combat={combat} combatState={combatState} selectedSheet={selectedSheet} masterMode={masterMode} onCompleteObjective={completeObjective}/>
     <UtilityRail tab={tab} panel={panel} setPanel={setPanel} masterMode={masterMode} onNavigate={onNavigate} preset={preset} setPreset={setPreset} onPing={()=>setPingOpen(true)}/>
     {masterMode&&<MasterQuickBar onOpen={openDirector} onNavigate={onNavigate} onPatchGame={patchGame} currentMode={game?.worldMode||'exploration'}/>} 
     <ActionBar mode={effectiveMode} selectedSheet={selectedSheet} selectedClass={selectedClass} combat={combat} combatState={combatState} onNavigate={onNavigate} onAbility={chooseAbility} onOpenSheet={()=>setPanel('sheet')} onOpenInventory={()=>setPanel('inventory')}/>

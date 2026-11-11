@@ -22,7 +22,6 @@ const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.
       {id:'own',nome:'Kenai',tipo:'jogador',sheetId:'necro',x:30,y:50,size:70,hp:18,maxHp:20}
     ]});
     for(let n=0;n<16;n++)window.__testStore.set('enemies/e'+n,{id:'e'+n,nome:'Inimigo '+n,hp:20,hp_max:20,perigo:'Médio'});
-    window.__testStore.set('presence/remote-master',{role:'master',name:'Mestre',online:true,photo:image,updatedAt:Date.now()});
    });
    await page.locator('[data-token-id=t]').waitFor();
    await page.mouse.move(600,50);
@@ -32,8 +31,7 @@ const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.
    const ownTokenText=await page.locator('[data-token-id="own"]').textContent();
    if(master){assert.match(enemyTokenText,/20\\/20/);assert.match(ownTokenText,/18\\/20/);}
    else {assert.doesNotMatch(enemyTokenText,/20\\/20/);assert.match(ownTokenText,/18\\/20/);}
-   assert.equal(await page.locator('.g3-presence-avatar.master img').count(),0);
-   assert.equal(await page.locator('.g3-presence-avatar.master b').first().textContent(),'M');
+   assert.equal(await page.locator('.g3-presence').count(),0);
    assert.equal(await page.locator('.map-dock-trigger').count(),master?2:1);
    if(master){
     assert.equal(await page.locator('.mbc-setup-summary strong').textContent(),'0');

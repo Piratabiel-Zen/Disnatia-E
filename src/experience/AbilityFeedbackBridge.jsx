@@ -19,6 +19,7 @@ export default function AbilityFeedbackBridge(){
         id,type:'combat_action',source:'character-sheet',ts:Date.now(),
         actorId:String(detail.actorId||''),actorName:String(detail.actorName||'Personagem'),
         abilityName:String(detail.abilityName||'Habilidade'),targetId:'',targetName:'',targetType:'none',
+        abilityType:String(detail.abilityType||'normal'),
         icon:String(detail.icon||'✦'),color:String(detail.color||'#A855F7'),cost:Math.max(0,Number(detail.cost)||0),
       };
       setDoc(doc(db,'combat_action_events',id),action,{merge:true})

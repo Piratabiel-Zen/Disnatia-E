@@ -17,5 +17,5 @@ test('Legacy aliases remain consistent after an edit',()=>{
  assert.equal(next[0].name,'Novo');assert.equal(next[0].desc,'Nova descrição');assert.equal(next[0].cost,0);
 });
 test('Ability type supports passive, normal and special metadata',()=>{
- assert.equal(abilityType({tipoHab:'passiva'}),'passiva');assert.equal(abilityType({tipo:'Especial'}),'especial');assert.equal(abilityType({},'especial'),'especial');assert.equal(abilityType({}),'normal');
+ assert.equal(abilityType({tipoHab:'passiva'}),'passiva');assert.equal(abilityType({tipo:'Especial'}),'especial');assert.equal(abilityType({type:'combined'}),'combinada');assert.equal(abilityType({},'especial'),'especial');assert.equal(abilityType({}),'normal');
 });

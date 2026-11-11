@@ -16,6 +16,7 @@ import {
 import { mergeSessionContext, readSessionCache, writeSessionCache } from '../adventure/sessionCache';
 
 import {artifactAbilities,artifactUseReason} from '../adventure/artifactRules.mjs';
+import { abilityType } from '../adventure/abilityPresentation.mjs';
 import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
 
 const ExperienceContext = createContext(null);
@@ -896,6 +897,7 @@ function CombatHud({ onNavigate }){
         id,type:'combat_action',ts,source:'combat-hud',
         actorId:String(selectedSheet.id),actorName:selectedSheet.nome||'Personagem',
         abilityName,targetId:String(target?.id||''),targetName,targetType:target?.type||'none',
+        abilityType:abilityType(simple?{tipoHab:'normal'}:pending),
         icon:selectedClass?.icon||'✦',color:selectedClass?.color||'#A855F7',
         simple,cost,round:Number(combatState?.round||1),
       };
@@ -955,19 +957,27 @@ function CombatHud({ onNavigate }){
 
 function CombatActionPulse(){
   const [event,setEvent]=useState(null);
+  const [queue,setQueue]=useState([]);
+  const queuedRef=useRef(new Set());
   useEffect(()=>{
     const gate = createLiveEventGate();
     const feed=query(collection(db,'combat_action_events'),orderBy('ts','desc'),limit(30));
     return onSnapshot(feed,{includeMetadataChanges:true},snap=>{
       const entries = snap.docs.map(row=>({key:row.id,value:row.data()}));
-      gate(snap,entries).forEach(entry=>setEvent(entry.value));
+      const fresh=gate(snap,entries).map(entry=>entry.value).filter(value=>value?.id&&!queuedRef.current.has(value.id));
+      fresh.forEach(value=>queuedRef.current.add(value.id));
+      if(queuedRef.current.size>180)queuedRef.current=new Set(Array.from(queuedRef.current).slice(-120));
+      if(fresh.length)setQueue(previous=>[...previous,...fresh].slice(-8));
     },()=>{});
   },[]);
-  useEffect(()=>{if(!event?.id)return undefined;const timer=window.setTimeout(()=>setEvent(null),2100);return()=>window.clearTimeout(timer);},[event?.id]);
+  useEffect(()=>{if(event||!queue.length)return;setEvent(queue[0]);setQueue(previous=>previous.slice(1));},[event,queue]);
+  useEffect(()=>{if(!event?.id)return undefined;const duration=event.abilityType==='combinada'?3500:event.abilityType==='especial'?2500:1900;const timer=window.setTimeout(()=>setEvent(null),duration);return()=>window.clearTimeout(timer);},[event?.id]);
   if(!event)return null;
-  return <div className="combat-action-pulse compact" style={{'--action-color':event.color||'#A855F7'}}>
+  const kind=abilityType(event);
+  return <div className={`combat-action-pulse compact action-${kind}`} data-ability-type={kind} style={{'--action-color':event.color||'#A855F7'}}>
+    {kind!=='normal'&&<div className="combat-action-backdrop" aria-hidden="true"/>}
     <div className="combat-action-wave wave-a"/><div className="combat-action-wave wave-b"/>
-    <div className="combat-action-pulse-core"><span className="combat-action-class-icon">{event.icon||'✦'}</span><strong>{event.abilityName||'Habilidade'}</strong></div>
+    <div className="combat-action-pulse-core"><span className="combat-action-class-icon">{event.icon||'✦'}</span><small>{event.actorName||'Personagem'}</small><strong>{event.abilityName||'Habilidade'}</strong></div>
   </div>;
 }
 

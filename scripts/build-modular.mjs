@@ -77,13 +77,13 @@ try {
   }
   generatedComponents = generatedComponents.replace(
     'function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName }) {',
-    'function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName, actorId, color }) {'
+    'function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abilityCost, currentVigos, onSpendVC, abilityName, characterName, actorId, color, abilityType }) {'
   ).replace(
     '      logAbilityUsed(characterName, abilityName, cost);',
-    "      logAbilityUsed(characterName, abilityName, cost);\n      window.dispatchEvent(new CustomEvent('dinastia:ability-used',{detail:{id:`sheet_ability_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,actorId,actorName:characterName,abilityName,cost,color,icon:'✦'}}));"
+    "      logAbilityUsed(characterName, abilityName, cost);\n      window.dispatchEvent(new CustomEvent('dinastia:ability-used',{detail:{id:`sheet_ability_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,actorId,actorName:characterName,abilityName,cost,color,abilityType,icon:'✦'}}));"
   ).replace(
     "    characterName={characterName || ''}            ",
-    "    characterName={characterName || ''}\n    actorId={sheet?.id}\n    color={color}            "
+    "    characterName={characterName || ''}\n    actorId={sheet?.id}\n    color={color}\n    abilityType={a.tipoHab || a.tipo || a.type || 'normal'}            "
   );
   if (!generatedComponents.includes("dinastia:ability-used")) {
     throw new Error('Broadcast global de habilidades da ficha não foi aplicado.');

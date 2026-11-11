@@ -60,7 +60,7 @@ game = replace(game, mount, `  // Public UI bridge; never changes roles or authe
 ${mount}`, 'panel and keyboard bridge');
 // Loading every base64 scene image for every player was unnecessarily expensive.
 game = replace(game, "const u5=onSnapshot(collection(db,'director_media'),snap=>{const rows={};snap.docs.forEach(d=>{rows[d.id]={id:d.id,...d.data()};});setDirectorMedia(rows);});", "const u5=()=>{}; // Media is subscribed by active reference below.", 'media scope');
-const presenceAnchor = "  useEffect(()=>{\n    let clientId='';";
+const presenceAnchor = "  const pushFeedback=useCallback(row=>{";
 game = replace(game, presenceAnchor, `  const liveMediaIds=JSON.stringify([...new Set([
     game?.npcFocus?.visible&&game?.npcFocus?.portraitRef,
     game?.handout?.visible&&game?.handout?.imageRef,

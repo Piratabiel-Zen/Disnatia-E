@@ -9,7 +9,6 @@ import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
 import SharedDiceReplay from './experience/SharedDiceReplay';
 import DiceCriticalFx from './experience/DiceCriticalFx';
-import SessionConnection from './adventure/SessionConnection';
 import AdventureSession from './adventure/AdventureSession';
 import SessionLink from './adventure/SessionLink';
 import AbilityFeedbackBridge from './experience/AbilityFeedbackBridge';
@@ -59,7 +58,6 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
               </div>
             </div>
             <div className="top-actions">
-              <SessionConnection/>
               <button className="ad-quality" title="Alternar entre fundo estático e atmosfera imersiva com estrelas cadentes" aria-pressed={quality==='light'} onClick={()=>setQuality(quality==='light'?'cinematic':'light')}>{quality==='light'?'◈ Leve':'✦ Imersivo'}</button>
               {tab!=='mesaImersiva'&&<AmbientSoundPlayer masterMode={masterMode}/>}
               <VisitorCharacterPicker access={access}/>

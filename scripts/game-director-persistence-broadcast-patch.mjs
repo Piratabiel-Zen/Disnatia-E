@@ -66,8 +66,8 @@ if (!source.includes(`/* ${MARKER} */`)) {
   );
 
   replaceExact(
-    "    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    return()=>{u1();u2();u3();u4();};",
-    "    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    const u5=onSnapshot(collection(db,'director_media'),snap=>{const rows={};snap.docs.forEach(d=>{rows[d.id]={id:d.id,...d.data()};});setDirectorMedia(rows);});\n    return()=>{u1();u2();u3();u4();u5();};",
+    "    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    return()=>{u1();u3();u4();};",
+    "    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));\n    const u5=onSnapshot(collection(db,'director_media'),snap=>{const rows={};snap.docs.forEach(d=>{rows[d.id]={id:d.id,...d.data()};});setDirectorMedia(rows);});\n    return()=>{u1();u3();u4();u5();};",
     'listener de mídia persistente não encontrado'
   );
 

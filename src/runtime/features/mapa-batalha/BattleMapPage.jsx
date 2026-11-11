@@ -1,6 +1,7 @@
 import MapSheetDock from '../../experience/MapSheetDock';
 import { hasIndividualHp, enemyTokenVitals, initializeEnemyToken } from '../../adventure/tokenVitals.mjs';
 import { createLeaseTracker } from '../../adventure/tokenLease.mjs';
+import { canControlToken } from '../../adventure/tokenAccess.mjs';
 import { tokenChanges, resolveTokenRoster, tokenOutbox } from '../../adventure/tokenPersistence.mjs';
 import { onSnapshot, onSnapshot as liveSnapshot } from '../../adventure/sharedSnapshot';
 import { useEffect,useRef,useState } from "react";
@@ -182,6 +183,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
   const [formSheetId, setFormSheetId] = useState('');
+  const [formControllerSheetId, setFormControllerSheetId] = useState('');
   const [formEnemyId, setFormEnemyId] = useState('');
   const [showMapNameEdit, setShowMapNameEdit] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -1146,7 +1148,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const saveTokenToLibrary = async () => {
     if (!formNome.trim() || !formFoto) return;
     const id=String(Date.now());
-    await setDoc(doc(db,'battlemap_token_library',id),{nome:formNome.trim(),foto:formFoto,tipo:formTipo,size:70,sheetId:formSheetId||'',enemyId:formEnemyId||'',createdAt:Date.now()});
+    await setDoc(doc(db,'battlemap_token_library',id),{nome:formNome.trim(),foto:formFoto,tipo:formTipo,size:70,sheetId:formSheetId||'',controllerSheetId:formControllerSheetId||formSheetId||'',enemyId:formEnemyId||'',createdAt:Date.now()});
     pushToast('Token salvo na biblioteca','📚','#A855F7');
   };
   const addLibraryToken = async (tpl) => {
@@ -1157,7 +1159,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     if(locks.has(lockKey))return;
     locks.add(lockKey);
     const mapId = String(currentMap.id);
-    const token=initializeEnemyToken({...newToken(crypto.randomUUID()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',enemyId:tpl.enemyId||''},enemyTemplateForToken(tpl));
+    const token=initializeEnemyToken({...newToken(crypto.randomUUID()),nome:tpl.nome||'Token',foto:tpl.foto||'',tipo:tpl.tipo||'jogador',size:tpl.size||70,x:50,y:50,hp:tpl.hp||0,maxHp:tpl.maxHp||tpl.hp||0,status:tpl.status||{},rangeMeters:0,sheetId:tpl.sheetId||'',controllerSheetId:tpl.controllerSheetId||tpl.ownerSheetId||tpl.sheetId||'',enemyId:tpl.enemyId||''},enemyTemplateForToken(tpl));
     const tokens=[...(mapTokensRef.current[mapId] || currentMap.tokens || []),token];
     mapTokensRef.current = {...mapTokensRef.current,[mapId]:tokens};
     setMapTokens(prev=>({...prev,[mapId]:tokens}));
@@ -1174,9 +1176,9 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     if (!formNome.trim() || (!formFoto&&!formSheetId&&!formEnemyId) || !currentMap) return;
     const linkedSheet=sheets.find(sheet=>String(sheet.id)===String(formSheetId));
     const linkedEnemy=enemies.find(enemy=>String(enemy.id)===String(formEnemyId));
-    const nt = initializeEnemyToken({ ...newToken(crypto.randomUUID()), nome: formNome.trim(), tipo: formTipo, foto: formFoto||linkedSheet?.foto||linkedEnemy?.foto||'', sheetId: formSheetId || '', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
+    const nt = initializeEnemyToken({ ...newToken(crypto.randomUUID()), nome: formNome.trim(), tipo: formTipo, foto: formFoto||linkedSheet?.foto||linkedEnemy?.foto||'', sheetId: formSheetId || '', controllerSheetId:formControllerSheetId||formSheetId||'', enemyId: formEnemyId || '' },enemyTemplateForToken({enemyId:formEnemyId,sheetId:formSheetId}));
     updCurrentMap({ tokens: [...(currentMap.tokens || []), nt] });
-    setFormNome(''); setFormFoto(''); setFormSheetId(''); setFormEnemyId(''); setShowAddForm(false);
+    setFormNome(''); setFormFoto(''); setFormSheetId(''); setFormControllerSheetId(''); setFormEnemyId(''); setShowAddForm(false);
   };
 
   const updateToken = (id, data) => {
@@ -1222,7 +1224,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   };
 
   const startTokenRotation = async (e, token) => {
-    if (token.locked && !masterMode) return;
+    if (!canControlToken(token,{masterMode,sheetId:playerSheetId})) return;
     e.preventDefault();
     e.stopPropagation();
     if(claimRef.current||draggingIdRef.current!=null)return;
@@ -1344,7 +1346,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   useEffect(()=>{mountedMapRef.current=true;return()=>{mountedMapRef.current=false;claimRef.current=false;leaseTimersRef.current.forEach(clearTimeout);releaseControl();}},[]);
   useEffect(()=>{setTokenControllers({});setSelectedTokenIds([]);setMultiSelectMode(false);leaseTrackerRef.current.clear();},[currentMapId]);
   const onTokenPointerDown = async (e, token) => {
-    if((token.locked&&!masterMode)||claimRef.current||draggingIdRef.current!=null)return;
+    if(!canControlToken(token,{masterMode,sheetId:playerSheetId})||claimRef.current||draggingIdRef.current!=null)return;
     e.stopPropagation();e.preventDefault();
     if(multiSelectMode||e.shiftKey||e.ctrlKey||e.metaKey){
       const key=String(token.id);
@@ -1368,7 +1370,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       groupLeaseRef.current=[];localLeaseRef.current=null;
       for(const tokenId of [...selectedGroup].sort()){
         const row=tokensNow.find(item=>String(item.id)===String(tokenId));
-        if(!row||row.locked&&!masterMode||!await acquireControl(mapId,tokenId,true)){
+        if(!row||!canControlToken(row,{masterMode,sheetId:playerSheetId})||!await acquireControl(mapId,tokenId,true)){
           await releaseControl();pushToast('Um dos tokens selecionados está sendo controlado por outro participante ou bloqueado.','\u26BF','#E8A020');return;
         }
       }
@@ -1791,7 +1793,8 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                   </div>
                 </div>
               </div>
-              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const linked=kind==='sheet'?sheets.find(row=>String(row.id)===id):enemies.find(row=>String(row.id)===id);setFormSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');if(linked){setFormNome(linked.nome||'');setFormFoto(linked.foto||'');if(kind==='sheet')setFormTipo('jogador');}}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
+              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const linked=kind==='sheet'?sheets.find(row=>String(row.id)===id):enemies.find(row=>String(row.id)===id);setFormSheetId(kind==='sheet'?id:'');setFormControllerSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');if(linked){setFormNome(linked.nome||'');setFormFoto(linked.foto||'');if(kind==='sheet')setFormTipo('jogador');}}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
+              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Jogador autorizado a mover<select value={formControllerSheetId||formSheetId||''} onChange={e=>setFormControllerSheetId(e.target.value)} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_form_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select></label>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={saveTokenToLibrary} disabled={!formNome.trim() || !formFoto} style={{padding:'8px 10px',borderRadius:8,border:'1px solid rgba(168,85,247,.4)',background:'rgba(168,85,247,.12)',color:'#C8A8E8',cursor:(formNome.trim()&&formFoto)?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:11}}>📚 Salvar</button>
                 <button onClick={addToken} disabled={!formNome.trim() || (!formFoto&&!formSheetId&&!formEnemyId)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
@@ -1857,7 +1860,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const controller=tokenControllers[String(token.id)]||'';
                   const isSelected = String(selectedId) === String(token.id) || selectedTokenIds.includes(String(token.id));
-                  const canDrag = masterMode || !token.locked;
+                  const canDrag = canControlToken(token,{masterMode,sheetId:playerSheetId});
                   const dispSize = (token.size || 70) * tokenScale;
                   const linkedEnemyVitals = token.enemyId ? enemies.find(e => String(e.id) === String(token.enemyId)) : null;
                   const linkedSheetVitals = token.sheetId ? sheetVitals[String(token.sheetId)] : null;
@@ -1977,6 +1980,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                 <button onClick={() => {setSelectedId(null);setSelectedTokenIds([]);}} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
               </div>
               <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Ficha de referência<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};const next={...selectedToken,...patch};const source=enemyTemplateForToken(next);updateToken(selectedToken.id,{...patch,...(hasIndividualHp(next)&&source?{hp:source.hp,maxHp:source.maxHp,hpMode:'individual'}:{})});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Inimigos têm HP individual. A ficha fornece a vida inicial; alterar este token não altera os demais.</span></label>
+              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Jogador autorizado a mover<select value={selectedToken.controllerSheetId||selectedToken.ownerSheetId||selectedToken.sheetId||''} onChange={e=>updateToken(selectedToken.id,{controllerSheetId:e.target.value})} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Só o jogador desta ficha pode mover o token; o Mestre mantém controle total.</span></label>
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho do token</span>

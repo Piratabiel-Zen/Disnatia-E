@@ -18,11 +18,11 @@ import TableCameras from './TableCameras';
 import {ArtifactPowerControls} from './ArtifactPowers';
 import { ComfortPanel, MorePanel, PlayerDock } from './PlayerComfort';
 import { abilityAvailability, isTyping } from '../adventure/playerPreferences.mjs';
+import { abilityType } from '../adventure/abilityPresentation.mjs';
 /* SESSION OPENING CINEMATIC 2026-09-10 */
 /* GAME EXPERIENCE 3 POLISH + LIVE EVENTS 2026-09-10 */
 
 const GAME_DOC = 'game_experience_v3';
-const PRESENCE_TTL = 75000;
 
 const WORLD_MODES = {
   exploration: { label:'Exploração', icon:'◈', hint:'Mundo aberto e HUD discreto' },
@@ -218,18 +218,6 @@ function WorldParticles({type='none',intensity=45}){
   </div>;
 }
 
-function PresenceStrip({rows}){
-  return <div className="g3-presence" aria-label="Jogadores online">
-    <span className="g3-presence-label"><i/> {rows.length} online</span><span className="g3-sync-state"><i/> TEMPO REAL</span>
-    <div className="g3-presence-avatars">
-      {rows.slice(0,8).map(row=><span key={row.id} className={`g3-presence-avatar ${row.role==='master'?'master':''}`} title={`${row.name||'Jogador'} · ${row.tab||'sessão'}`}>
-        {row.role==='master'?<b aria-label="Mestre">M</b>:row.photo?<img src={row.photo} alt="" decoding="async" loading="lazy"/>:<b>{initials(row.name)}</b>}
-      </span>)}
-      {rows.length>8&&<span className="g3-presence-more">+{rows.length-8}</span>}
-    </div>
-  </div>;
-}
-
 function TurnStrip({combatState,selectedSheet}){
   const list=Array.isArray(combatState?.initiative)?combatState.initiative:[];
   if(!list.length) return null;
@@ -248,7 +236,7 @@ function TurnStrip({combatState,selectedSheet}){
   </div>;
 }
 
-function TopContext({mode,session,presence,combat,combatState,selectedSheet,masterMode,onCompleteObjective}){
+function TopContext({mode,session,combat,combatState,selectedSheet,masterMode,onCompleteObjective}){
   const modeInfo=WORLD_MODES[mode]||WORLD_MODES.exploration;
   const current=Array.isArray(combatState?.initiative)?combatState.initiative[Number(combatState?.turnIdx||0)]:null;
   return <div className="g3-top-context">
@@ -257,7 +245,6 @@ function TopContext({mode,session,presence,combat,combatState,selectedSheet,mast
       <div className="g3-location"><small>LOCAL ATUAL</small><b>{session?.location||'Entre os véus de Cosmum'}</b></div>
       <div className="g3-objective"><small>OBJETIVO</small><b>{session?.objective||'Nenhum objetivo revelado'}</b>{masterMode&&session?.objective&&<button onClick={onCompleteObjective} title="Concluir objetivo">✓</button>}</div>
       {combat?.active&&<div className="g3-now"><small>AGORA</small><b>{current?.nome||combat.currentNome||'—'}</b></div>}
-      <PresenceStrip rows={presence}/>
     </div>
     {combat?.active&&<TurnStrip combatState={combatState} selectedSheet={selectedSheet}/>} 
   </div>;
@@ -574,7 +561,6 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     return()=>{window.removeEventListener('dinastia:adventure-panel',open);window.removeEventListener('keydown',key);};
   },[masterMode,tab]);
   const [game,setGame]=useState({worldMode:'exploration',environment:{type:'none',intensity:45}});
-  const [presence,setPresence]=useState([]);
   const [items,setItems]=useState([]);
   const [enemies,setEnemies]=useState([]);
   const [directorMedia,setDirectorMedia]=useState({});
@@ -612,14 +598,15 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
   const g3LiveSurface=['session','mapamundi','mapabatalha'].includes(tab)||!!panel;
   useEffect(()=>{
     if(!g3LiveSurface){
-      setPresence([]);setItems([]);setEnemies([]);setDirectorMedia({});
+      setItems([]);setEnemies([]);setDirectorMedia({});
       return undefined;
     }
-    const u2=onSnapshot(collection(db,'presence'),snap=>setPresence(snap.docs.map(d=>({id:d.id,...d.data()}))));
-    const u3=onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0))));
+    // Inventory is the only surface that consumes this collection. Avoid
+    // keeping a campaign-wide item listener active while the player is on the map.
+    const u3=panel==='inventory'?onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)))):()=>{};
     const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));
-    return()=>{u2();u3();u4();};
-  },[g3LiveSurface]);
+    return()=>{u3();u4();};
+  },[g3LiveSurface,panel]);
 
   const liveMediaIds=JSON.stringify([...new Set([
     game?.npcFocus?.visible&&game?.npcFocus?.portraitRef,
@@ -636,29 +623,6 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     const stops=ids.map(id=>onSnapshot(doc(db,'director_media',id),snap=>setDirectorMedia(prev=>({...prev,[id]:snap.exists()?snap.data():null}))));
     return()=>stops.forEach(stop=>stop());
   },[g3LiveSurface,masterMode,panel,liveMediaIds]);
-
-  useEffect(()=>{
-    let clientId='';
-    try{
-      clientId=sessionStorage.getItem('dinastia_presence_tab')||nowId('presence');
-      sessionStorage.setItem('dinastia_presence_tab',clientId);
-    }catch(_){clientId=nowId('presence');}
-    const ref=doc(db,'presence',clientId);
-    const push=(online=true)=>setDoc(ref,{
-      online,role:access?.role||'player',sheetId:access?.role==='master'?'':String(access?.sheetId||selectedSheet?.id||''),name:access?.role==='master'?'Mestre':access?.name||selectedSheet?.nome||'Jogador',photo:access?.role==='master'?'':access?.photo||selectedSheet?.foto||'',tab:tab||'session',updatedAt:Date.now(),
-    },{merge:true}).catch(()=>{});
-    push(true);
-    const timer=window.setInterval(()=>push(document.visibilityState!=='hidden'),30000);
-    const onFocus=()=>push(true);
-    const onVisibility=()=>push(document.visibilityState!=='hidden');
-    window.addEventListener('focus',onFocus);document.addEventListener('visibilitychange',onVisibility);
-    return()=>{window.clearInterval(timer);window.removeEventListener('focus',onFocus);document.removeEventListener('visibilitychange',onVisibility);push(false);};
-  },[access?.role,access?.sheetId,access?.name,access?.photo,selectedSheet?.id,selectedSheet?.nome,selectedSheet?.foto,tab]);
-
-  const activePresence=useMemo(()=>{
-    const now=Date.now();
-    return presence.filter(row=>row.online!==false&&now-Number(row.updatedAt||0)<PRESENCE_TTL).sort((a,b)=>a.role==='master'?-1:b.role==='master'?1:String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
-  },[presence]);
 
   const pushFeedback=useCallback(row=>{
     const entry={id:nowId('feedback'),...row};
@@ -763,7 +727,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     try {
     const ok=await useQuickAbility(ability);
     if(!ok){pushFeedback({kind:'warning',icon:'⚠',name:abilityName(ability),text:'Sem Vigor suficiente ou habilidade em cooldown.'});setTargeting(null);return;}
-    const actionEvent={id:nowId('combat_action'),type:'combat_action',ts:Date.now(),source:'game3-actionbar',actorId:String(selectedSheet?.id||''),actorName:selectedSheet?.nome||'Personagem',abilityName:abilityName(ability),targetId:String(target?.id||''),targetName:target?.nome||'',targetType:target?'combatant':'none',icon:selectedClass?.icon||'⚡',color:selectedClass?.color||'#A855F7',round:Number(combatState?.round||1)};
+    const actionEvent={id:nowId('combat_action'),type:'combat_action',ts:Date.now(),source:'game3-actionbar',actorId:String(selectedSheet?.id||''),actorName:selectedSheet?.nome||'Personagem',abilityName:abilityName(ability),abilityType:abilityType(ability),targetId:String(target?.id||''),targetName:target?.nome||'',targetType:target?'combatant':'none',icon:selectedClass?.icon||'⚡',color:selectedClass?.color||'#A855F7',round:Number(combatState?.round||1)};
     const announcements=await Promise.allSettled([setDoc(doc(db,'combat_action_events',actionEvent.id),actionEvent,{merge:true})]);
     if(announcements.some(row=>row.status==='rejected'))pushFeedback({kind:'warning',name:'Habilidade utilizada',text:'Parte do anúncio não foi confirmada. Não repita a ação.'});
     if(target) await addJournal(`${selectedSheet?.nome||'Personagem'} definiu ${target.nome||'combatente'} como alvo de ${abilityName(ability)}.`,'ability',{icon:selectedClass?.icon||'⌖',color:selectedClass?.color||'#a855f7'}).catch(()=>{});
@@ -857,7 +821,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     <SummonCombatRack access={access} tab={tab}/>
     {tab!=='mesaImersiva'&&<TableCameras access={access} selectedSheet={selectedSheet} selectedClass={selectedClass} masterMode={masterMode}/>}
     <WorldParticles type={game?.environment?.type||'none'} intensity={game?.environment?.intensity||45}/>
-    <TopContext mode={effectiveMode} session={session} presence={activePresence} combat={combat} combatState={combatState} selectedSheet={selectedSheet} masterMode={masterMode} onCompleteObjective={completeObjective}/>
+    <TopContext mode={effectiveMode} session={session} combat={combat} combatState={combatState} selectedSheet={selectedSheet} masterMode={masterMode} onCompleteObjective={completeObjective}/>
     <UtilityRail tab={tab} panel={panel} setPanel={setPanel} masterMode={masterMode} onNavigate={onNavigate} preset={preset} setPreset={setPreset} onPing={()=>setPingOpen(true)}/>
     {!masterMode&&<PlayerDock panel={panel} onPanel={setPanel} onNavigate={onNavigate}/>}
     {masterMode&&<MasterQuickBar onOpen={openDirector} onNavigate={onNavigate} onPatchGame={patchGame} currentMode={game?.worldMode||'exploration'}/>} 

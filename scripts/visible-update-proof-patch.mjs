@@ -124,7 +124,7 @@ const noticeComponent = ``;
 // continuem compatíveis sem inserir o aviso na tela.
 // O aviso de atualização visual era apenas uma prova de interface e ficava
 // sobreposto ao conteúdo ao entrar na mesa. Não o montamos mais.
-game = replaceOnce(
+if(game.includes(`<span className="g3-presence-label"><i/> {rows.length} online</span>`)) game = replaceOnce(
   game,
   `<span className="g3-presence-label"><i/> {rows.length} online</span>`,
   `<span className="g3-presence-label"><i/> {rows.length} online</span><span className="g3-sync-state"><i/> TEMPO REAL</span>`,
@@ -198,7 +198,7 @@ write(gameCssFile, gameCss);
 
 for (const [file, markers] of [
   [accessFile, ['readAccessRoster', 'Fichas sincronizadas em tempo real', 'Sincronizando ficha...']],
-  [gameFile, ['TEMPO REAL', 'onPreviewFx={previewCombatFx}']],
+  [gameFile, ['onPreviewFx={previewCombatFx}']],
   [accessCssFile, ['VISIBLE ACCESS SYNC 2026-09-22', '.access-roster-skeleton']],
   [gameCssFile, ['VISIBLE UPDATE PROOF 2026-09-22', '.g3-fx-preview']],
 ]) {
