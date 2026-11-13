@@ -44,6 +44,29 @@ html[data-quality=light] .action-combinada .combat-action-backdrop,html[data-qua
 html[data-quality=light] .combat-action-pulse.compact.action-especial .combat-action-backdrop{animation:none!important;opacity:.45}
 @media(prefers-reduced-motion:reduce){.combat-action-pulse.compact.action-normal,.combat-action-pulse.compact.action-especial,.combat-action-pulse.compact.action-combinada,.combat-action-pulse.compact .combat-action-wave,.combat-action-pulse.compact .combat-action-pulse-core,.combat-action-backdrop{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 
+/* All player ability uses receive a short focus vignette; higher tiers intensify it. */
+.combat-action-pulse.compact .combat-action-backdrop{background:radial-gradient(ellipse at center,rgba(4,5,12,.24),rgba(3,4,11,.72));animation:actionDimIn .22s ease both,actionDimOut var(--action-duration,1.9s) ease both}
+.combat-action-pulse.compact.action-passiva{--action-duration:1.9s}
+.combat-action-pulse.compact.action-normal{--action-duration:2.05s}
+.combat-action-pulse.compact.action-especial{--action-duration:2.5s}
+.combat-action-pulse.compact.action-combinada{--action-duration:3.5s}
+.action-passiva .combat-action-backdrop{background:radial-gradient(ellipse at center,rgba(12,22,20,.16),rgba(2,7,8,.58))}
+.action-normal .combat-action-backdrop{background:radial-gradient(ellipse at center,rgba(7,7,15,.22),rgba(2,3,10,.66))}
+.action-especial .combat-action-backdrop{background:radial-gradient(ellipse at center,color-mix(in srgb,var(--action-color) 13%,rgba(2,3,10,.5)),rgba(2,3,10,.76))}
+.action-combinada .combat-action-backdrop{background:radial-gradient(ellipse at center,rgba(235,242,255,.25),rgba(99,111,145,.12) 28%,rgba(9,10,20,.72) 72%)}
+.action-passiva .combat-action-pulse-core{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--action-color) 38%,transparent))}
+.action-especial .combat-action-pulse-core{filter:drop-shadow(0 0 22px color-mix(in srgb,var(--action-color) 68%,transparent))}
+.action-passiva .combat-action-wave{opacity:.48}
+.action-normal .combat-action-wave{border-color:color-mix(in srgb,var(--action-color) 62%,white);box-shadow:0 0 22px color-mix(in srgb,var(--action-color) 34%,transparent)}
+.action-especial .combat-action-wave{box-shadow:0 0 36px color-mix(in srgb,var(--action-color) 62%,transparent)}
+.action-combinada .combat-action-pulse-core{filter:drop-shadow(0 0 28px rgba(220,235,255,.82))}
+.combat-action-pixels{position:absolute;left:50%;top:50%;width:1px;height:1px;z-index:1;pointer-events:none}
+.combat-action-pixels i{--angle:calc(var(--pixel-index)*30deg);position:absolute;width:clamp(4px,.55vw,8px);height:clamp(4px,.55vw,8px);background:color-mix(in srgb,var(--action-color) 76%,white);box-shadow:0 0 10px color-mix(in srgb,var(--action-color) 55%,transparent);opacity:0;animation:actionPixelBurst 1.25s steps(5,end) both;animation-delay:calc(var(--pixel-index)*.018s)}
+.action-especial .combat-action-pixels i{width:9px;height:9px;animation-duration:1.7s}
+.action-combinada .combat-action-pixels i{width:11px;height:11px;background:#ecf4ff;box-shadow:0 0 18px #d6e8ff;animation-duration:2.2s;animation-iteration-count:2}
+@keyframes actionPixelBurst{0%{opacity:0;transform:rotate(var(--angle)) translateX(12px) scale(.3)}18%{opacity:.95}100%{opacity:0;transform:rotate(var(--angle)) translateX(clamp(90px,22vw,300px)) scale(1)}}
+@media(prefers-reduced-motion:reduce){.combat-action-pixels i{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
 /* Roll broadcasts are raised above the battle map and centered in fullscreen. */
 .dinastia-map-fullscreen .rt-dice-replay{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);z-index:9998;width:min(420px,calc(100vw - 28px));animation:rtFullscreenDiceReplayIn .24s ease both}
 @keyframes rtFullscreenDiceReplayIn{from{opacity:0;transform:translate(-50%,calc(-50% + 12px)) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { d20CriticalOutcome } from '../adventure/diceCritical.mjs';
 import './dice-critical-fx.css';
 
 const EVENT_TTL = 7000;
@@ -13,35 +14,57 @@ const firstNameOf = value => {
 
 export default function DiceCriticalFx() {
   const [event, setEvent] = useState(null);
-  const primedRef = useRef(false);
-  const lastIdRef = useRef('');
+  const seenRef = useRef(new Set());
+  const mountedAtRef = useRef(Date.now());
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
-      if (!snap.exists()) return;
-      const data = snap.data() || {};
-      const id = String(data.rollId || `${data.ts || 0}_${data.rollerSheetId || ''}_${data.base || ''}`);
-
-      if (!primedRef.current) {
-        primedRef.current = true;
-        lastIdRef.current = id;
-        return;
-      }
-      if (!id || id === lastIdRef.current) return;
-      lastIdRef.current = id;
-
+    const present = (data, sourceId) => {
+      const id = String(data.rollId || sourceId || `${data.ts || 0}_${data.rollerSheetId || ''}_${data.base || ''}`);
+      if (!id || seenRef.current.has(id)) return;
+      seenRef.current.add(id);
+      if (seenRef.current.size > 160) seenRef.current = new Set(Array.from(seenRef.current).slice(-100));
       const ts = Number(data.ts || 0);
-      if (!ts || Date.now() - ts > EVENT_TTL) return;
-      if (!data.isCrit && !data.isFail) return;
+      if (!ts || Math.abs(Date.now() - ts) > EVENT_TTL) return;
+      const critical = d20CriticalOutcome(data);
+      if (!critical) return;
 
       setEvent({
         id,
-        positive: !!data.isCrit,
+        positive: critical.outcome === 'positive',
         roller: firstNameOf(data.roller),
-        total: Number(data.total ?? data.base ?? 0),
+        total: critical.natural,
+      });
+    };
+    let feedPrimed = false;
+    let configPrimed = false;
+    const feed = query(collection(db, 'public_dice_events'), orderBy('ts', 'desc'), limit(20));
+    const unsubFeed = onSnapshot(feed, snapshot => {
+      if (!feedPrimed) {
+        feedPrimed = true;
+        snapshot.docs.forEach(row => {
+          const data = row.data() || {};
+          if (Number(data.ts || 0) >= mountedAtRef.current) present(data, row.id);
+          else seenRef.current.add(String(data.rollId || row.id));
+        });
+        return;
+      }
+      snapshot.docChanges().forEach(change => {
+        if (change.type !== 'added') return;
+        present(change.doc.data() || {}, change.doc.id);
       });
     }, () => {});
-    return () => unsub();
+    const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), snapshot => {
+      if (!snapshot.exists()) { configPrimed = true; return; }
+      const data = snapshot.data() || {};
+      if (!configPrimed) {
+        configPrimed = true;
+        if (Number(data.ts || 0) >= mountedAtRef.current) present(data);
+        else seenRef.current.add(String(data.rollId || `${data.ts || 0}_${data.rollerSheetId || ''}_${data.base || ''}`));
+        return;
+      }
+      present(data);
+    }, () => {});
+    return () => { unsubFeed(); unsubConfig(); };
   }, []);
 
   useEffect(() => {
@@ -67,8 +90,9 @@ export default function DiceCriticalFx() {
       </div>
       <div className="dice-critical-fx-message">
         <span>{event.positive ? '✦' : '◆'}</span>
+        <b className="dice-critical-fx-number">{event.total}</b>
         <strong>{event.positive ? 'ACERTO CRÍTICO' : 'FALHA CRÍTICA'}</strong>
-        <small>{event.roller}{Number.isFinite(event.total) && event.total ? ` · ${event.total}` : ''}</small>
+        <small>{event.roller} · D20 NATURAL</small>
       </div>
     </div>
   );

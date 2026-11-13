@@ -15,6 +15,7 @@ import { resolveEquipIcon,HabilidadesPanel,StatusPanel,VigosWithLocked,newSheet 
 import { FloatingEnemyPanel } from "../../experience/BattleMapEnemySheet.jsx";
 import useMapFullscreen from '../../experience/useMapFullscreen';
 import { fitMapWithReference } from '../../adventure/mapFit.mjs';
+import { tokenIdsInMarquee } from '../../adventure/tokenSelection.mjs';
 import '../../experience/map-fullscreen.css';
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
@@ -178,6 +179,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedTokenIds,setSelectedTokenIds]=useState([]);
   const [multiSelectMode,setMultiSelectMode]=useState(false);
+  const [marquee,setMarquee]=useState(null);
+  const marqueeStartRef=useRef(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formNome, setFormNome] = useState('');
   const [formTipo, setFormTipo] = useState('jogador');
@@ -749,6 +752,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // Arraste do mapa ampliado: clique em uma área vazia e puxe em qualquer direção.
   // Os tokens usam stopPropagation, portanto continuam sendo arrastados normalmente.
   const onMapPanStart = (e) => {
+    if (multiSelectMode) return;
     const frame = frameRef.current;
     if (!frame || zoomRef.current <= 1 || e.button > 1) return;
     e.preventDefault();
@@ -761,7 +765,52 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     try { frame.setPointerCapture(e.pointerId); } catch (_) {}
   };
 
+  const mapPercentAtPointer = e => {
+    const map = mapRef.current;
+    if (!map) return null;
+    const rect = map.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)),
+      y: Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)),
+    };
+  };
+  const startTokenMarquee = e => {
+    if (!multiSelectMode || pingMode || rulerMode || e.button !== 0) return false;
+    const point = mapPercentAtPointer(e);
+    if (!point) return false;
+    e.preventDefault();
+    e.stopPropagation();
+    marqueeStartRef.current = { ...point, clientX: e.clientX, clientY: e.clientY, pointerId: e.pointerId };
+    setMarquee({ left: point.x, right: point.x, top: point.y, bottom: point.y });
+    try { frameRef.current?.setPointerCapture(e.pointerId); } catch (_) {}
+    return true;
+  };
+  const moveTokenMarquee = e => {
+    if (!marqueeStartRef.current) return false;
+    const point = mapPercentAtPointer(e);
+    if (!point) return true;
+    e.preventDefault();
+    setMarquee({ left: marqueeStartRef.current.x, top: marqueeStartRef.current.y, right: point.x, bottom: point.y });
+    return true;
+  };
+  const endTokenMarquee = e => {
+    const start = marqueeStartRef.current;
+    if (!start) return false;
+    const point = mapPercentAtPointer(e) || start;
+    const movedEnough = Math.hypot(e.clientX - start.clientX, e.clientY - start.clientY) >= 8;
+    if (movedEnough) {
+      const ids = tokenIdsInMarquee(mapTokensRef.current[String(currentMap?.id)] || currentMap?.tokens || [], { left: start.x, top: start.y, right: point.x, bottom: point.y }, token => canControlToken(token, { masterMode, sheetId: playerSheetId }));
+      setSelectedTokenIds(ids);
+      setSelectedId(ids[0] || null);
+    }
+    marqueeStartRef.current = null;
+    setMarquee(null);
+    try { frameRef.current?.releasePointerCapture(start.pointerId); } catch (_) {}
+    return true;
+  };
+
   const onMapPanMove = (e) => {
+    if (moveTokenMarquee(e)) return;
     if (!isPanning) return;
     const frame = frameRef.current;
     if (!frame) return;
@@ -772,6 +821,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   };
 
   const endMapPan = (e) => {
+    if (endTokenMarquee(e)) return;
     if (!isPanning) return;
     const frame = frameRef.current;
     setIsPanning(false);
@@ -1345,44 +1395,38 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   },[draggingId,rotatingId]);
   useEffect(()=>{mountedMapRef.current=true;return()=>{mountedMapRef.current=false;claimRef.current=false;leaseTimersRef.current.forEach(clearTimeout);releaseControl();}},[]);
   useEffect(()=>{setTokenControllers({});setSelectedTokenIds([]);setMultiSelectMode(false);leaseTrackerRef.current.clear();},[currentMapId]);
-  const onTokenPointerDown = async (e, token) => {
+  const onTokenPointerDown = (e, token) => {
     if(!canControlToken(token,{masterMode,sheetId:playerSheetId})||claimRef.current||draggingIdRef.current!=null)return;
     e.stopPropagation();e.preventDefault();
-    if(multiSelectMode||e.shiftKey||e.ctrlKey||e.metaKey){
+    if(multiSelectMode){
+      const key=String(token.id);
+      if (!selectedTokenIds.includes(key)) {
+        setSelectedTokenIds([key]);
+        setSelectedId(token.id);
+        return;
+      }
+    } else if(e.shiftKey||e.ctrlKey||e.metaKey){
       const key=String(token.id);
       setSelectedTokenIds(previous=>previous.includes(key)?previous.filter(id=>id!==key):[...previous,key]);
       setSelectedId(token.id);
       return;
     }
-    if(!navigator.onLine){pushToast('Reconecte para mover tokens com o grupo.','\u26A0','#E8A020');return;}
     const mapId=currentMap.id;
     const element=e.currentTarget,pointerId=e.pointerId;
-    let down=true;
-    const ended=()=>{down=false;};
-    window.addEventListener('pointerup',ended,{once:true});window.addEventListener('pointercancel',ended,{once:true});
     try{element.setPointerCapture(pointerId);}catch(_){}
-    claimRef.current=true;setClaimingToken(String(token.id));
     setSelectedId(token.id);
-    try{
-      const selectedGroup=selectedTokenIds.includes(String(token.id))&&selectedTokenIds.length>1?selectedTokenIds:[String(token.id)];
-      const tokensNow=mapTokensRef.current[String(mapId)]||currentMap.tokens||[];
-      const startById=Object.fromEntries(tokensNow.filter(row=>selectedGroup.includes(String(row.id))).map(row=>[String(row.id),{x:Number(row.x)||0,y:Number(row.y)||0}]));
-      groupLeaseRef.current=[];localLeaseRef.current=null;
-      for(const tokenId of [...selectedGroup].sort()){
-        const row=tokensNow.find(item=>String(item.id)===String(tokenId));
-        if(!row||!canControlToken(row,{masterMode,sheetId:playerSheetId})||!await acquireControl(mapId,tokenId,true)){
-          await releaseControl();pushToast('Um dos tokens selecionados está sendo controlado por outro participante ou bloqueado.','\u26BF','#E8A020');return;
-        }
-      }
-      if(!groupLeaseRef.current.length){pushToast('Não foi possível obter controle do grupo selecionado.','\u26BF','#E8A020');return;}
-      localLeaseRef.current=groupLeaseRef.current.find(lease=>String(lease.tokenId)===String(token.id))||groupLeaseRef.current[0];
-      groupDragIdsRef.current=[...selectedGroup];groupDragStartRef.current=startById;
-      if(!down||!mountedMapRef.current||String(mapId)!==mapIdentityRef.current){await releaseControl();return;}
-      moved.current=false;
-      tokenInteractionRef.current={id:token.id,pointerId};
-      setDraggingId(token.id);
-    }catch(error){await releaseControl();console.error('Falha ao reservar token:',error);pushToast('Não foi possível obter controle. Confira a conexão.','\u26A0','#E8A020');}
-    finally{claimRef.current=false;setClaimingToken('');window.removeEventListener('pointerup',ended);window.removeEventListener('pointercancel',ended);}
+    const selectedGroup=selectedTokenIds.includes(String(token.id))&&selectedTokenIds.length>1?selectedTokenIds:[String(token.id)];
+    const tokensNow=mapTokensRef.current[String(mapId)]||currentMap.tokens||[];
+    const startById=Object.fromEntries(tokensNow.filter(row=>selectedGroup.includes(String(row.id))&&canControlToken(row,{masterMode,sheetId:playerSheetId})).map(row=>[String(row.id),{x:Number(row.x)||0,y:Number(row.y)||0}]));
+    const draggableGroup=Object.keys(startById);
+    if(!draggableGroup.includes(String(token.id)))return;
+    // A ficha vinculada já define o controlador. Começa localmente sem aguardar
+    // uma transação de reserva; as posições seguem para o Firestore em paralelo.
+    groupLeaseRef.current=[];localLeaseRef.current=null;
+    groupDragIdsRef.current=draggableGroup;groupDragStartRef.current=startById;
+    moved.current=false;
+    tokenInteractionRef.current={id:token.id,pointerId};
+    setDraggingId(token.id);
   };
 
  useEffect(() => {
@@ -1679,7 +1723,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
         {masterMode&&<div className="battlemap-master-mark" aria-label="Acesso do Mestre"><span className="master-sigil" aria-hidden="true">M</span><span>MESTRE<small>Conduzindo a mesa</small></span></div>}
         {currentMap?.nome && <span style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif' }}>· {currentMap.nome}</span>}
         {currentMap&&<div role="group" aria-label="Seleção múltipla de tokens" style={{display:'inline-flex',alignItems:'center',gap:5,marginLeft:'auto'}}>
-          <button type="button" aria-pressed={multiSelectMode} title="Ative e clique nos tokens para selecionar; desative e arraste um deles para mover o grupo" onClick={()=>setMultiSelectMode(value=>!value)} style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${multiSelectMode?'rgba(168,85,247,.65)':'rgba(255,255,255,.12)'}`,background:multiSelectMode?'rgba(168,85,247,.18)':'rgba(4,6,15,.55)',color:multiSelectMode?'#D8B7F3':'#9A8AA8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:9}}>{multiSelectMode?'✓ Concluir seleção':'▧ Selecionar vários'}{selectedTokenIds.length?` · ${selectedTokenIds.length}`:''}</button>
+          <button type="button" aria-pressed={multiSelectMode} title="Ative e arraste sobre uma área vazia do mapa para selecionar os tokens; depois arraste um token selecionado para mover o grupo" onClick={()=>{setMarquee(null);marqueeStartRef.current=null;setMultiSelectMode(value=>!value);}} style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${multiSelectMode?'rgba(168,85,247,.65)':'rgba(255,255,255,.12)'}`,background:multiSelectMode?'rgba(168,85,247,.18)':'rgba(4,6,15,.55)',color:multiSelectMode?'#D8B7F3':'#9A8AA8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:9}}>{multiSelectMode?'▰ Arraste no mapa':'▧ Selecionar vários'}{selectedTokenIds.length?` · ${selectedTokenIds.length}`:''}</button>
           {selectedTokenIds.length>0&&<button type="button" aria-label="Limpar seleção de tokens" title="Limpar seleção" onClick={()=>{setSelectedTokenIds([]);setSelectedId(null);}} style={{padding:'5px 7px',borderRadius:7,border:'1px solid rgba(255,255,255,.1)',background:'rgba(4,6,15,.55)',color:'#80748c',cursor:'pointer',fontSize:10}}>×</button>}
         </div>}
         {masterMode && currentMap?.img && !mapScreen.expanded && <button type="button" className="battlemap-screen-button in-heading" aria-pressed={false} onClick={mapScreen.toggle}>Preencher tela completa</button>}
@@ -1827,10 +1871,10 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
             <div
               ref={frameRef}
               title={zoom > 1 ? 'Clique e arraste para mover · use a roda para controlar o zoom' : 'Use a roda do mouse para aproximar'}
-              onPointerDown={pingMode ? sendMapPing : (rulerMode ? startRuler : onMapPanStart)}
-              onPointerMove={rulerMode ? moveRuler : onMapPanMove}
-              onPointerUp={rulerMode ? endRuler : endMapPan}
-              onPointerCancel={rulerMode ? endRuler : endMapPan}
+          onPointerDown={e => startTokenMarquee(e) || (pingMode ? sendMapPing(e) : (rulerMode ? startRuler(e) : onMapPanStart(e)))}
+              onPointerMove={e => moveTokenMarquee(e) || (rulerMode ? moveRuler(e) : onMapPanMove(e))}
+              onPointerUp={e => endTokenMarquee(e) || (rulerMode ? endRuler(e) : endMapPan(e))}
+              onPointerCancel={e => endTokenMarquee(e) || (rulerMode ? endRuler(e) : endMapPan(e))}
               onLostPointerCapture={endMapPan}
               style={{
                 position: 'absolute', inset: 0,
@@ -1855,6 +1899,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                 }}
               >
                 <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                {marquee && <div aria-hidden="true" style={{position:'absolute',left:`${Math.min(marquee.left,marquee.right)}%`,top:`${Math.min(marquee.top,marquee.bottom)}%`,width:`${Math.abs(marquee.right-marquee.left)}%`,height:`${Math.abs(marquee.bottom-marquee.top)}%`,border:'1px solid rgba(113,196,255,.95)',background:'rgba(65,145,255,.18)',boxShadow:'0 0 14px rgba(65,145,255,.28)',pointerEvents:'none',zIndex:90}}/>}
                 {ruler && (()=>{const dx=(ruler.end.x-ruler.start.x)/100*(baseSize.w||1)*zoom;const dy=(ruler.end.y-ruler.start.y)/100*(baseSize.h||1)*zoom;const meters=Math.sqrt(dx*dx+dy*dy)/(pixelsPerMeter*tokenScale);return <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:24,overflow:'visible'}}><line x1={`${ruler.start.x}%`} y1={`${ruler.start.y}%`} x2={`${ruler.end.x}%`} y2={`${ruler.end.y}%`} stroke='#58D9FF' strokeWidth={2*zoom} strokeDasharray={`${7*zoom} ${5*zoom}`}/><circle cx={`${ruler.start.x}%`} cy={`${ruler.start.y}%`} r={4*zoom} fill='#58D9FF'/><circle cx={`${ruler.end.x}%`} cy={`${ruler.end.y}%`} r={4*zoom} fill='#58D9FF'/><text x={`${(ruler.start.x+ruler.end.x)/2}%`} y={`${(ruler.start.y+ruler.end.y)/2}%`} fill='#D7F7FF' fontSize={12*zoom} textAnchor='middle' style={{paintOrder:'stroke',stroke:'#02040A',strokeWidth:4*zoom,fontFamily:'Cinzel,serif'}}>{meters.toFixed(1)} m</text></svg>;})()}
                 {(currentMap.tokens || []).map(token => {
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;

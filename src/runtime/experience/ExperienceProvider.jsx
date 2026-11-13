@@ -975,8 +975,9 @@ function CombatActionPulse(){
   if(!event)return null;
   const kind=abilityType(event);
   return <div className={`combat-action-pulse compact action-${kind}`} data-ability-type={kind} style={{'--action-color':event.color||'#A855F7'}}>
-    {kind!=='normal'&&<div className="combat-action-backdrop" aria-hidden="true"/>}
+    <div className="combat-action-backdrop" aria-hidden="true"/>
     <div className="combat-action-wave wave-a"/><div className="combat-action-wave wave-b"/>
+    <div className="combat-action-pixels" aria-hidden="true">{Array.from({length:12},(_,index)=><i key={index} style={{'--pixel-index':index}}/>)}</div>
     <div className="combat-action-pulse-core"><span className="combat-action-class-icon">{event.icon||'✦'}</span><small>{event.actorName||'Personagem'}</small><strong>{event.abilityName||'Habilidade'}</strong></div>
   </div>;
 }

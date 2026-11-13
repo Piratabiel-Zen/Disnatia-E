@@ -9,6 +9,7 @@ import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
 import SharedDiceReplay from './experience/SharedDiceReplay';
 import DiceCriticalFx from './experience/DiceCriticalFx';
+import ConnectionHealth from './experience/ConnectionHealth';
 import AdventureSession from './adventure/AdventureSession';
 import SessionLink from './adventure/SessionLink';
 import AbilityFeedbackBridge from './experience/AbilityFeedbackBridge';
@@ -40,6 +41,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
         <RealtimeBroadcasts/>
         <SharedDiceReplay access={access}/>
         <DiceCriticalFx/>
+        <ConnectionHealth/>
         <VisitorSessionGuard access={access} onLogout={logout}/>
         <PreferenceSurface/><InterfaceFeedback/>
         <SessionLink masterMode={masterMode} onNavigate={navigate}/>
