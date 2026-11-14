@@ -49,3 +49,26 @@ organização de interface, não autorização de servidor.
   `main` só recebe o que já foi testado na mesa.
 - `docs/notas-runtime.md` guarda decisões históricas (câmeras WebRTC, visitantes,
   invocações, carregamento adiado da sessão) que continuam valendo.
+
+## Canal vivo (Realtime Database)
+
+O que é efêmero na mesa (posição do token durante o arraste, pings) trafega pelo
+**Firebase Realtime Database** do mesmo projeto, em `live/maps/{mapId}/tokens/{tokenId}`
+e `live/ping`, a até 30 atualizações por segundo. O Firestore continua guardando a
+posição final (`position-final-v1`) e todo o resto. O módulo `src/core/liveChannel.js`
+carrega o SDK só no mapa de batalha (chunk `vendor-live`) e, se o banco não responder
+em 4 s, o mapa volta sozinho ao caminho antigo pelo Firestore.
+
+Para ativar: Console do Firebase → Realtime Database → Criar banco de dados. Se a URL
+gerada não for `https://dinastia-e-a4b28-default-rtdb.firebaseio.com`, defina a
+variável `VITE_RTDB_URL` na Vercel com a URL mostrada no console. Regras do banco
+(aba Regras), no mesmo nível de confiança do Firestore atual, que também não tem regras:
+
+```json
+{
+  "rules": {
+    "live": { ".read": true, ".write": true },
+    "$outro": { ".read": false, ".write": false }
+  }
+}
+```
