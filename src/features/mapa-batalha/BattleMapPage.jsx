@@ -7,6 +7,7 @@ import { onSnapshot, onSnapshot as liveSnapshot } from '../../adventure/sharedSn
 import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,getDocFromServer,getDocs,runTransaction,query,serverTimestamp,setDoc,where } from "firebase/firestore";
 import { db } from "../../core/firebase";
+import { publishTokenMotion, subscribeTokenMotion, publishPing, subscribePing, liveChannelConnected, onLiveConnection } from "../../core/liveChannel";
 import { compressImage,compressImagePNG } from "../../core/media";
 import { pushToast } from "../../core/toast";
 import { CLASSES,ATTRS,SHEET_COLORS,STATUS_LIST,getSheetMaxHp } from "../../data/gameData";
@@ -349,9 +350,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       });
     }, error => console.error('Erro no canal direto rápido do ping:', error));
 
+    // Canal vivo (Realtime Database): chega antes dos documentos do Firestore;
+    // o id do ping evita exibir o mesmo aviso duas vezes.
+    const uLive = subscribePing(row => receivePing(row || {}));
+
     return () => {
       uConfig();
       uFeed();
+      uLive();
       clearTimeout(pingTimerRef.current);
     };
   }, []);
@@ -364,6 +370,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // Isso evita regravar o array completo de tokens a cada movimento do mouse.
   const livePositionVersionRef = useRef({});
   const liveClientIdRef = useRef(`client_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  // Abre o canal vivo assim que o mapa monta, para que o primeiro arraste já saia por ele.
+  useEffect(() => onLiveConnection(() => {}), []);
   const liveSequenceRef = useRef(0);
   const livePositionWriteStateRef = useRef({});
   const remotePositionQueueRef = useRef(new Map());
@@ -589,26 +597,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       return true;
     };
 
-    const positionsQuery = query(collection(db, 'battlemap_live_positions'), where('mapId', '==', String(currentMapId)));
-    // Movimento usa transporte direto, como o dado 3D compartilhado.
-    const unsub = liveSnapshot(positionsQuery, snap => {
-      const orderedPositionChanges = snap.docChanges()
-        .filter(change => change.type !== 'removed')
-        .filter(change => {
-          const row = change.doc.data() || {};
-          const channel = String(row.channel || '');
-          if (channel !== 'motion-v2' && channel !== 'position-final-v1' && channel !== 'control-lease-v1') return false;
-          if (/_p[3-5]$/.test(change.doc.id)) return false;
-          return true;
-        })
-        .sort((a, b) => {
-          const aFinal = String((a.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
-          const bFinal = String((b.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
-          return aFinal - bFinal;
-        });
-      orderedPositionChanges.forEach(change => {
-        if (change.type === 'removed') return;
-        const data = change.doc.data() || {};
+    const applyRemoteRow = data => {
         if (String(data.mapId) !== String(currentMapId) || data.tokenId === undefined) return;
 
         // O token local já acompanha o ponteiro imediatamente. Ignorar o próprio
@@ -655,12 +644,41 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         }
 
         if (changed) remotePositionQueueRef.current.set(tokenId, nextPatch);
+    };
+
+    const positionsQuery = query(collection(db, 'battlemap_live_positions'), where('mapId', '==', String(currentMapId)));
+    // Movimento usa transporte direto, como o dado 3D compartilhado.
+    const unsub = liveSnapshot(positionsQuery, snap => {
+      const orderedPositionChanges = snap.docChanges()
+        .filter(change => change.type !== 'removed')
+        .filter(change => {
+          const row = change.doc.data() || {};
+          const channel = String(row.channel || '');
+          if (channel !== 'motion-v2' && channel !== 'position-final-v1' && channel !== 'control-lease-v1') return false;
+          if (/_p[3-5]$/.test(change.doc.id)) return false;
+          return true;
+        })
+        .sort((a, b) => {
+          const aFinal = String((a.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
+          const bFinal = String((b.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
+          return aFinal - bFinal;
+        });
+      orderedPositionChanges.forEach(change => {
+        if (change.type === 'removed') return;
+        applyRemoteRow(change.doc.data() || {});
       });
       if (remotePositionQueueRef.current.size) scheduleRemoteFlush();
     }, err => console.error('Erro no canal low-latency do mapa atual:', err));
 
+    // Canal vivo (Realtime Database): mesma validação, latência de dezenas de ms.
+    const unsubLive = subscribeTokenMotion(currentMapId, (tokenId, data) => {
+      applyRemoteRow({ ...data, tokenId, mapId: String(currentMapId), channel: 'motion-v2' });
+      if (remotePositionQueueRef.current.size) scheduleRemoteFlush();
+    });
+
     return () => {
       unsub();
+      unsubLive();
       if (remotePositionFrameRef.current) cancelAnimationFrame(remotePositionFrameRef.current);
       remotePositionFrameRef.current = 0;
       remotePositionQueueRef.current.clear();
@@ -858,9 +876,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     clearTimeout(pingTimerRef.current);
     pingTimerRef.current = setTimeout(() => setBattlePing(null), 5200);
     const pingSlot = Math.floor(Math.random() * 8);
+    const liveFirst = liveChannelConnected();
+    if (liveFirst) publishPing(ping).catch(e => console.warn('Ping pelo canal vivo falhou; o Firestore ainda entrega.', e));
     Promise.allSettled([
       setDoc(doc(db,'config','battlemap_ping'), ping),
-      setDoc(doc(db,'battlemap_ping_live','slot_' + pingSlot), { ...ping, publishedAt: Date.now() }, { merge: true }),
+      ...(liveFirst ? [] : [setDoc(doc(db,'battlemap_ping_live','slot_' + pingSlot), { ...ping, publishedAt: Date.now() }, { merge: true })]),
     ]).then(results => {
       if (results.every(result => result.status === 'rejected')) console.error('Erro ao enviar ping no mapa pelos canais realtime.');
     });
@@ -940,7 +960,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       const seq = liveSequenceRef.current;
       const slot = seq % 3;
 
-      setDoc(doc(db, 'battlemap_live_positions', id + '_' + tid + '_p' + slot), {
+      const motion = {
         mapId: id,
         tokenId: tid,
         x: point.x,
@@ -951,7 +971,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         clientId: liveClientIdRef.current,
         actorName:masterMode?'Mestre':ownPingName||'Jogador',
         updatedAt: Date.now(),
-      }, { merge: true })
+      };
+      const transport = liveChannelConnected()
+        ? publishTokenMotion(id, tid, motion)
+        : setDoc(doc(db, 'battlemap_live_positions', id + '_' + tid + '_p' + slot), motion, { merge: true });
+      transport
         .catch(e => console.error('Erro ao transmitir posição low-latency:', e))
         .finally(() => {
           state.inFlight = Math.max(0, state.inFlight - 1);
@@ -1435,10 +1459,12 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     // TABLETOP REALTIME FAST PATH 2026-09-14
 // OWLBEAR-STYLE INTERACTION PIPELINE 2026-09-13
 const TOKEN_THROTTLE_MS = 100;
+const LIVE_TOKEN_THROTTLE_MS = 33;
 const dragIds=groupDragIdsRef.current.length?groupDragIdsRef.current:[String(draggingId)];
 const dragIdSet=new Set(dragIds.map(String));
 const groupStarts=groupDragStartRef.current;
-const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
+const liveFast=liveChannelConnected();
+const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THROTTLE_MS:TOKEN_THROTTLE_MS);
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
