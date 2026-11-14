@@ -15,6 +15,7 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return
           if (id.includes('/@3d-dice/') || id.includes('/three/') || id.includes('/cannon-es/')) return 'vendor-dice-physics'
+          if (id.includes('/@firebase/database') || id.includes('/firebase/database')) return 'vendor-live'
           if (id.includes('/@firebase/') || id.includes('/firebase/')) return 'vendor-firebase'
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react'
           return 'vendor'
