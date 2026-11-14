@@ -229,6 +229,10 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const lastTokenWriteRef = useRef({});
 
   const [sheets, setSheets] = useState([]);
+  const visitorSheetIds = new Set(access?.role === 'visitor'
+    ? sheets.filter(sheet => String(sheet.visitorId || '') === String(access.visitorId || '')).map(sheet => String(sheet.id))
+    : []);
+  const canControlMapToken = token => canControlToken(token, { masterMode, sheetId: playerSheetId, sheetIds: visitorSheetIds });
   const [sheetVitals, setSheetVitals] = useState({});
   const [customAbilities, setCustomAbilities] = useState({});
   const [floatingSheets, setFloatingSheets] = useState([]); // {sheetId, x, y, z}
@@ -458,7 +462,9 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       const vitals = {};
       all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });
       setSheetVitals(vitals);
-      setSheets(!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all);
+      setSheets(access?.role === 'visitor'
+        ? all.filter(s => String(s.visitorId || '') === String(access.visitorId || ''))
+        : (!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all));
     });
     const u4 = onSnapshot(doc(db, 'config', 'customAbilities'), snap => {
       if (snap.exists()) setCustomAbilities(snap.data() || {});
@@ -799,7 +805,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const point = mapPercentAtPointer(e) || start;
     const movedEnough = Math.hypot(e.clientX - start.clientX, e.clientY - start.clientY) >= 8;
     if (movedEnough) {
-      const ids = tokenIdsInMarquee(mapTokensRef.current[String(currentMap?.id)] || currentMap?.tokens || [], { left: start.x, top: start.y, right: point.x, bottom: point.y }, token => canControlToken(token, { masterMode, sheetId: playerSheetId }));
+      const ids = tokenIdsInMarquee(mapTokensRef.current[String(currentMap?.id)] || currentMap?.tokens || [], { left: start.x, top: start.y, right: point.x, bottom: point.y }, canControlMapToken);
       setSelectedTokenIds(ids);
       setSelectedId(ids[0] || null);
     }
@@ -1274,7 +1280,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   };
 
   const startTokenRotation = async (e, token) => {
-    if (!canControlToken(token,{masterMode,sheetId:playerSheetId})) return;
+    if (!canControlMapToken(token)) return;
     e.preventDefault();
     e.stopPropagation();
     if(claimRef.current||draggingIdRef.current!=null)return;
@@ -1396,7 +1402,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   useEffect(()=>{mountedMapRef.current=true;return()=>{mountedMapRef.current=false;claimRef.current=false;leaseTimersRef.current.forEach(clearTimeout);releaseControl();}},[]);
   useEffect(()=>{setTokenControllers({});setSelectedTokenIds([]);setMultiSelectMode(false);leaseTrackerRef.current.clear();},[currentMapId]);
   const onTokenPointerDown = (e, token) => {
-    if(!canControlToken(token,{masterMode,sheetId:playerSheetId})||claimRef.current||draggingIdRef.current!=null)return;
+    if(!canControlMapToken(token)||claimRef.current||draggingIdRef.current!=null)return;
     e.stopPropagation();e.preventDefault();
     if(multiSelectMode){
       const key=String(token.id);
@@ -1417,7 +1423,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     setSelectedId(token.id);
     const selectedGroup=selectedTokenIds.includes(String(token.id))&&selectedTokenIds.length>1?selectedTokenIds:[String(token.id)];
     const tokensNow=mapTokensRef.current[String(mapId)]||currentMap.tokens||[];
-    const startById=Object.fromEntries(tokensNow.filter(row=>selectedGroup.includes(String(row.id))&&canControlToken(row,{masterMode,sheetId:playerSheetId})).map(row=>[String(row.id),{x:Number(row.x)||0,y:Number(row.y)||0}]));
+    const startById=Object.fromEntries(tokensNow.filter(row=>selectedGroup.includes(String(row.id))&&canControlMapToken(row)).map(row=>[String(row.id),{x:Number(row.x)||0,y:Number(row.y)||0}]));
     const draggableGroup=Object.keys(startById);
     if(!draggableGroup.includes(String(token.id)))return;
     // A ficha vinculada já define o controlador. Começa localmente sem aguardar
@@ -1905,7 +1911,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                   const info = TOKEN_TYPES[token.tipo] || TOKEN_TYPES.jogador;
                   const controller=tokenControllers[String(token.id)]||'';
                   const isSelected = String(selectedId) === String(token.id) || selectedTokenIds.includes(String(token.id));
-                  const canDrag = canControlToken(token,{masterMode,sheetId:playerSheetId});
+                  const canDrag = canControlMapToken(token);
                   const dispSize = (token.size || 70) * tokenScale;
                   const linkedEnemyVitals = token.enemyId ? enemies.find(e => String(e.id) === String(token.enemyId)) : null;
                   const linkedSheetVitals = token.sheetId ? sheetVitals[String(token.sheetId)] : null;
@@ -2025,7 +2031,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                 <button onClick={() => {setSelectedId(null);setSelectedTokenIds([]);}} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
               </div>
               <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Ficha de referência<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};const next={...selectedToken,...patch};const source=enemyTemplateForToken(next);updateToken(selectedToken.id,{...patch,...(hasIndividualHp(next)&&source?{hp:source.hp,maxHp:source.maxHp,hpMode:'individual'}:{})});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Inimigos têm HP individual. A ficha fornece a vida inicial; alterar este token não altera os demais.</span></label>
-              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Jogador autorizado a mover<select value={selectedToken.controllerSheetId||selectedToken.ownerSheetId||selectedToken.sheetId||''} onChange={e=>updateToken(selectedToken.id,{controllerSheetId:e.target.value})} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Só o jogador desta ficha pode mover o token; o Mestre mantém controle total.</span></label>
+              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Pessoa autorizada a mover<select value={selectedToken.controllerSheetId||selectedToken.ownerSheetId||selectedToken.sheetId||''} onChange={e=>updateToken(selectedToken.id,{controllerSheetId:e.target.value})} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>O jogador ou visitante dono desta ficha pode mover o token; o Mestre mantém controle total.</span></label>
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho do token</span>
