@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { SHEET_COLORS, getSheetMaxHp } from '../data/gameData';
 import { applyRoundAutomation } from './combatRoundEngine';
@@ -21,6 +21,8 @@ function makePlayer(sheet) {
     agiBonus:bonus(sheet.agilidade),
     perBonus:bonus(sheet.percepcao),
     status:sheet.status || {},
+    classe:sheet.classe || '',
+    className:sheet.className || sheet.classeNome || sheet.classe || 'Aventureiro',
   };
 }
 
@@ -37,6 +39,7 @@ function makeEnemy(enemy) {
     agiBonus:bonus(enemy.agilidade),
     perBonus:bonus(enemy.percepcao),
     status:enemy.status || {},
+    className:enemy.className || enemy.tipo || 'Inimigo',
   };
 }
 
@@ -128,11 +131,14 @@ export default function MasterBattleConsole() {
     const ts=Date.now();
     const entry={msg:`Vez de ${target.nome||'combatente'}`,color:target.color||'#C8B8A0',icon:'▶',ts,round};
     const log=[...(state.log||[]),entry].slice(-60);
+    const turnEvent={id:'turn_'+ts+'_'+safe,type:'turn_announce',icon:'\u2694',text:target.nome||'Combatente',subtitle:target.className||target.classeName||target.classe||(target.type==='enemy'?'Inimigo':'Aventureiro'),color:target.color||'#A855F7',soft:false,ts,publishedAt:serverTimestamp()};
+    window.dispatchEvent(new CustomEvent('dinastia:cosmic-live',{detail:turnEvent}));
     setBusy(true);
     try{
       await Promise.all([
         setDoc(doc(db,'config','combat_state'),{...state,initiative,turnIdx:safe,round,log},{merge:true}),
         setDoc(doc(db,'config','combat'),{active:true,round,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
+        setDoc(doc(db,'cosmic_events',turnEvent.id),turnEvent,{merge:true}),
       ]);
     }finally{setBusy(false);}
   };
@@ -200,11 +206,14 @@ export default function MasterBattleConsole() {
     }
     entries.push({msg:`Vez de ${target.nome||'combatente'}${next===0?` — Rodada ${newRound} começa!`:''}`,color:target.color||'#C8B8A0',icon:'▶',ts,round:newRound});
     const log=[...(state.log||[]),...entries].slice(-60);
+    const turnEvent={id:'turn_'+ts+'_'+next,type:'turn_announce',icon:'\u2694',text:target.nome||'Combatente',subtitle:target.className||target.classeName||target.classe||(target.type==='enemy'?'Inimigo':'Aventureiro'),color:target.color||'#A855F7',soft:false,ts,publishedAt:serverTimestamp()};
+    window.dispatchEvent(new CustomEvent('dinastia:cosmic-live',{detail:turnEvent}));
     setBusy(true);
     try{
       await Promise.all([
         setDoc(doc(db,'config','combat_state'),{...state,initiative:syncedInitiative,turnIdx:next,round:newRound,log},{merge:true}),
         setDoc(doc(db,'config','combat'),{active:true,round:newRound,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
+        setDoc(doc(db,'cosmic_events',turnEvent.id),turnEvent,{merge:true}),
       ]);
     }finally{setBusy(false);}
   };

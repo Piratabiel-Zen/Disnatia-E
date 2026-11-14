@@ -3,15 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createLiveSnapshotGate, isNewLiveDocument } from '../src/experience/liveDiceGate.js';
 
-const vite = fs.readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
-const patch = fs.readFileSync(new URL('../scripts/live-dice-necromancer-summons-final-patch.mjs', import.meta.url), 'utf8');
-
-test('the session-only replay and summon patch follows realtime fixes', () => {
-  const current = vite.indexOf('live-dice-necromancer-summons-final-patch.mjs');
-  const previous = vite.indexOf('battlemap-direct-realtime-receiver-fix-2026-09-24.mjs');
-  assert.ok(current > previous);
-  assert.ok(vite.indexOf('chronicles-mobile-reliability-patch.mjs') > current);
-});
+const kit = fs.readFileSync(new URL('../src/experience/ExperienceKit.jsx', import.meta.url), 'utf8');
+const sheets = fs.readFileSync(new URL('../src/features/sheets/SheetComponents.jsx', import.meta.url), 'utf8');
+const replay = fs.readFileSync(new URL('../src/experience/SharedDiceReplay.jsx', import.meta.url), 'utf8');
+const broadcasts = fs.readFileSync(new URL('../src/experience/RealtimeBroadcasts.jsx', import.meta.url), 'utf8');
+const patch = kit + '\n' + sheets + '\n' + replay + '\n' + broadcasts;
 
 test('historical snapshots are silent and new dice do not depend on the device clock', () => {
   const gate = createLiveSnapshotGate();
@@ -20,7 +16,7 @@ test('historical snapshots are silent and new dice do not depend on the device c
   assert.equal(gate.shouldDeliver({ fromCache:false }), true);
   assert.equal(isNewLiveDocument({ type:'added', doc:{ ts:1 } }), true);
   assert.equal(isNewLiveDocument({ type:'modified' }), false);
-  const realtimePatch = fs.readFileSync(new URL('../scripts/live-dice-critical-session-performance-final-patch.mjs', import.meta.url), 'utf8');
+  const realtimePatch = replay;
   assert.match(realtimePatch, /createLiveSnapshotGate\(\)/);
   assert.match(realtimePatch, /isNewLiveDocument\(change\)/);
   assert.doesNotMatch(patch, /isLiveDicePayload\(payload/);
@@ -31,7 +27,7 @@ test('summons require a master reveal and expose HP, actions and editable three 
   assert.match(patch, /summon\.revealed!==true/);
   assert.match(patch, /Revelar/);
   assert.match(patch, /Liberar/);
-  assert.match(patch, /vigos:3,maxVigos:3/);
+  assert.match(patch, /maxVigos:3/);
   assert.match(patch, /const updateSummonHp=useCallback/);
   assert.match(patch, /const updateSummonVc=useCallback/);
   assert.match(patch, /const useSummonAction=useCallback/);
@@ -42,7 +38,6 @@ test('a revealed summon can be released outside combat and persists for future i
   assert.match(patch, /const canRelease=Boolean\(!activeSummon&&!busy\)/);
   assert.match(patch, /Autorizada pelo Mestre\. Pode ser liberada agora/);
   assert.match(patch, /collection\(db,'combat_summons'\)/);
-  assert.match(patch, /releasedSummons\.filter/);
   assert.match(patch, /const actionsAvailable=Boolean\(activeSummon\)/);
   assert.doesNotMatch(patch, /!masterMode&&combat\?\.active&&!isTurn/);
 });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useExperience } from '../experience/ExperienceKit.generated';
+import { useExperience } from '../experience/ExperienceKit';
 import { focusDestination } from './sessionModel';
 
 export default function SessionLink({ masterMode, onNavigate }) {

@@ -7,7 +7,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  first.on('console',message=>{if(message.type()==='error')console.log('browser:',message.text());});second.on('console',message=>{if(message.type()==='error')console.log('browser:',message.text());});
  for(const page of [first,second]){page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));}
  await first.goto('http://127.0.0.1:4179/?map&master');
- await first.addStyleTag({content:require('node:fs').readFileSync(require('node:path').join(__dirname,'../../.generated/src/experience/performance-smooth.css'),'utf8')});
+ await first.addStyleTag({content:require('node:fs').readFileSync(require('node:path').join(__dirname,'../../src/experience/performance-smooth.css'),'utf8')});
  await first.evaluate(()=>document.documentElement.classList.add('opera-gx-safe'));
  await first.evaluate(()=>{
   const canvas=document.createElement('canvas');canvas.width=1600;canvas.height=600;canvas.getContext('2d').fillStyle='#384c65';canvas.getContext('2d').fillRect(0,0,1600,600);

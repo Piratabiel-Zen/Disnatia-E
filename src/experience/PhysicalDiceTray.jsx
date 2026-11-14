@@ -1,9 +1,30 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './physical-dice.css';
 
-const OPERA_GX_SAFE = typeof navigator !== 'undefined' && (/OPR\//i.test(navigator.userAgent || '') || /OPRGX/i.test(navigator.userAgent || '') || /Opera GX/i.test(navigator.userAgent || '') || /Opera\//i.test(navigator.userAgent || '') || (typeof location !== 'undefined' && new URLSearchParams(location.search).has('safe')));
+const SUPPORTED_SIDES = [4, 6, 8, 10, 12, 20];
+const clampSide = value => SUPPORTED_SIDES.includes(Number(value)) ? Number(value) : 20;
 
-const clampSide = value => [4, 6, 8, 10, 12, 20].includes(Number(value)) ? Number(value) : 20;
+function disposeDiceBox(box, host) {
+  if (!box) return;
+  try {
+    box.running = false;
+    box.rolling = false;
+    if (box.threadid) cancelAnimationFrame(box.threadid);
+    if (Array.isArray(box.bodies) && box.world) {
+      box.bodies.forEach(body => { try { box.world.removeBody(body); } catch (_) {} });
+    }
+    if (box.renderer) {
+      try { box.renderer.dispose(); } catch (_) {}
+      try { box.renderer.forceContextLoss?.(); } catch (_) {}
+    }
+  } catch (_) {}
+  try { host?.replaceChildren(); } catch (_) {}
+}
+
+const withTimeout = (promise, timeoutMs) => new Promise((resolve, reject) => {
+  const timer = window.setTimeout(() => reject(new Error('Tempo limite da física 3D excedido')), timeoutMs);
+  promise.then(value => { window.clearTimeout(timer); resolve(value); }, error => { window.clearTimeout(timer); reject(error); });
+});
 
 export default function PhysicalDiceTray({
   sides = 20,
@@ -16,12 +37,13 @@ export default function PhysicalDiceTray({
   onSettled,
 }) {
   const reactId = useId();
-  const sceneId = `dinastia-physical-dice-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const sceneId = `dinastia-three-dice-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const hostRef = useRef(null);
   const boxRef = useRef(null);
-  const mountedRef = useRef(true);
+  const boxKeyRef = useRef('');
   const lastRollRef = useRef(0);
   const settledRef = useRef(onSettled);
+  const mountedRef = useRef(true);
   const [phase, setPhase] = useState('idle');
   const [fallback, setFallback] = useState(false);
 
@@ -32,35 +54,33 @@ export default function PhysicalDiceTray({
   const valuesKey = values.join(',');
 
   useEffect(() => { settledRef.current = onSettled; }, [onSettled]);
-
   useEffect(() => {
     mountedRef.current = true;
+    const handleResize = () => {
+      const box = boxRef.current;
+      if (!box?.renderer || !hostRef.current) return;
+      try { box.setDimensions(); } catch (_) {}
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
     return () => {
       mountedRef.current = false;
-      const box = boxRef.current;
-      try {
-        if (box) {
-          box.running = false;
-          if (box.threadid) cancelAnimationFrame(box.threadid);
-          if (Array.isArray(box.bodies) && box.world) box.bodies.forEach(body => { try { box.world.removeBody(body); } catch (_) {} });
-          if (box.renderer) {
-            try { box.renderer.dispose(); } catch (_) {}
-            try { box.renderer.forceContextLoss?.(); } catch (_) {}
-          }
-        }
-      } catch (_) {}
+      window.removeEventListener('resize', handleResize);
+      disposeDiceBox(boxRef.current, hostRef.current);
       boxRef.current = null;
-      if (hostRef.current) hostRef.current.replaceChildren();
     };
   }, []);
 
   useEffect(() => {
-    if (!rollTs || rollTs === lastRollRef.current) return;
+    if (!rollTs || rollTs === lastRollRef.current) return undefined;
     lastRollRef.current = rollTs;
     let cancelled = false;
     let fallbackTimer = 0;
+    const safeSides = clampSide(sides);
+    const safeValues = values.map(value => Math.max(1, Math.min(safeSides, Number(value) || 1)));
+    const scaleBand = safeValues.length >= 4 ? 'many' : safeValues.length >= 2 ? 'pair' : 'single';
+    const boxKey = `${String(color).toLowerCase()}-${scaleBand}`;
 
-    const settleFallback = () => {
+    const settle = () => {
       if (cancelled || !mountedRef.current) return;
       setPhase('settled');
       settledRef.current?.();
@@ -69,72 +89,69 @@ export default function PhysicalDiceTray({
     const run = async () => {
       setPhase('loading');
       setFallback(false);
-      if (OPERA_GX_SAFE) {
-        setFallback(true);
-        setPhase('rolling');
-        fallbackTimer = window.setTimeout(settleFallback, 780);
-        return;
-      }
       try {
-        const mod = await import('@3d-dice/dice-box-threejs');
+        if (!window.WebGLRenderingContext) throw new Error('WebGL não está disponível neste navegador');
+        const module = await import('@3d-dice/dice-box-threejs');
         if (cancelled || !hostRef.current) return;
-        const DiceBox = mod.default || mod.DiceBox || mod;
+        const DiceBox = module.default || module.DiceBox || module;
+
+        if (boxRef.current && boxKeyRef.current !== boxKey) {
+          disposeDiceBox(boxRef.current, hostRef.current);
+          boxRef.current = null;
+        }
+
         let box = boxRef.current;
         if (!box) {
+          hostRef.current.replaceChildren();
           box = new DiceBox(`#${sceneId}`, {
+            assetPath: '/dice-box/',
             sounds: false,
             shadows: true,
             theme_surface: 'green-felt',
             theme_customColorset: {
-              name: `dinastia-${sceneId}`,
-              foreground: color,
-              background: '#241D2B',
-              outline: '#08060D',
+              name: `dinastia-${String(color).replace('#', '')}`,
+              foreground: '#FFF8FF',
+              background: color,
+              outline: '#16081E',
+              edge: color,
               texture: 'none',
               material: 'metal',
             },
             theme_texture: '',
             theme_material: 'metal',
-            gravity_multiplier: 430,
-            light_intensity: 0.95,
-            color_spotlight: 0xf7efff,
-            baseScale: values.length >= 4 ? 62 : values.length >= 2 ? 72 : 82,
-            strength: 1.45,
-            iterationLimit: 850,
+            gravity_multiplier: 360,
+            light_intensity: 1.15,
+            color_spotlight: 0xf8efff,
+            baseScale: safeValues.length >= 4 ? 54 : safeValues.length >= 2 ? 66 : 78,
+            strength: 2.15,
+            iterationLimit: 1100,
           });
+          // A biblioteca registra internamente um listener que não oferece API de
+          // remoção. O componente já possui um listener limpo no unmount.
+          box.resizeWorld = () => {};
           await box.initialize();
+          if (cancelled || !mountedRef.current) {
+            disposeDiceBox(box, hostRef.current);
+            return;
+          }
           boxRef.current = box;
-        } else if (box.updateConfig) {
-          try {
-            await box.updateConfig({
-              baseScale: values.length >= 4 ? 62 : values.length >= 2 ? 72 : 82,
-              light_intensity: 0.95,
-              color_spotlight: 0xf7efff,
-              theme_customColorset: {
-                name: `dinastia-${sceneId}-${String(color).replace('#', '')}`,
-                foreground: color,
-                background: '#241D2B',
-                outline: '#08060D',
-                texture: 'none',
-                material: 'metal',
-              },
-            });
-          } catch (_) {}
+          boxKeyRef.current = boxKey;
         }
-        if (cancelled) return;
+
         setPhase('rolling');
-        const safeSides = clampSide(sides);
-        const safeValues = values.map(value => Math.max(1, Math.min(safeSides, Number(value) || 1)));
-        await box.roll(`${safeValues.length}d${safeSides}@${safeValues.join(',')}`);
-        if (cancelled || !mountedRef.current) return;
-        setPhase('settled');
-        settledRef.current?.();
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const notation = `${safeValues.length}d${safeSides}@${safeValues.join(',')}`;
+        await withTimeout(box.roll(notation), 10000);
+        settle();
       } catch (error) {
-        console.warn('Física 3D do dado indisponível; usando fallback leve.', error);
+        console.error('[Dinastia Dice] Falha ao iniciar a física Three.js/Cannon.', error);
         if (cancelled || !mountedRef.current) return;
+        disposeDiceBox(boxRef.current, hostRef.current);
+        boxRef.current = null;
+        boxKeyRef.current = '';
         setFallback(true);
-        setPhase('rolling');
-        fallbackTimer = window.setTimeout(settleFallback, 980);
+        setPhase('fallback');
+        fallbackTimer = window.setTimeout(settle, 1200);
       }
     };
 
@@ -145,35 +162,27 @@ export default function PhysicalDiceTray({
     };
   }, [rollTs, sides, valuesKey, color, sceneId]);
 
-  const hasTotal = Number.isFinite(Number(total));
+  const safeSides = clampSide(sides);
   const numericBonus = Number(bonus || 0);
+  const diceTotal = values.reduce((sum, value) => sum + Number(value || 0), 0);
+  const hasTotal = Number.isFinite(Number(total));
 
   return (
     <div className={`physical-dice-tray phase-${phase}`} style={{ '--dice-accent': color }}>
       <div className="physical-dice-space">
         <div className="physical-dice-stars" />
-        <div ref={hostRef} id={sceneId} className="physical-dice-scene" />
+        <div ref={hostRef} id={sceneId} className="physical-dice-scene" aria-hidden="true" />
         {fallback && (
-          <div className="physical-dice-fallback" aria-hidden="true" style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center' }}>
-            {values.map((value, index) => (
-              <div key={`${rollTs}-${index}`} className={`physical-die-fallback d${clampSide(sides)}`}>{value}</div>
-            ))}
+          <div className="physical-dice-fallback" aria-hidden="true">
+            {values.map((value, index) => <b key={`${rollTs}-${index}`}>{value}</b>)}
           </div>
         )}
-        {(phase === 'loading' || phase === 'idle') && (
-          <div className="physical-dice-loading">materializando {values.length > 1 ? 'os dados' : 'o dado'}…</div>
-        )}
+        {phase === 'loading' && <div className="physical-dice-loading">preparando física tridimensional…</div>}
+        <span className="physical-dice-a11y" role="img" aria-label={values.map(value => `D${safeSides} com resultado ${value}`).join(', ')} />
       </div>
       <div className="physical-dice-caption">
-        <span>{values.length > 1 ? `${values.length}D${clampSide(sides)}` : `D${clampSide(sides)}`}</span>
-        <i />
-        <small>
-          {phase === 'rolling'
-            ? 'em movimento'
-            : phase === 'settled' && hasTotal
-              ? `total ${Number(total)}${numericBonus ? ` (${values.reduce((sum, value) => sum + Number(value || 0), 0)} ${numericBonus >= 0 ? '+' : '−'} ${Math.abs(numericBonus)})` : ''}`
-              : phase === 'settled' ? 'repouso alcançado' : 'preparando matéria'}
-        </small>
+        <span>{values.length > 1 ? `${values.length}D${safeSides}` : `D${safeSides}`}</span><i />
+        <small>{phase === 'rolling' ? 'física em movimento' : phase === 'loading' ? 'materializando dados' : phase === 'settled' && hasTotal ? `total ${Number(total)}${numericBonus ? ` (${diceTotal} ${numericBonus >= 0 ? '+' : '−'} ${Math.abs(numericBonus)})` : ''}` : phase === 'settled' ? 'repouso alcançado' : phase === 'fallback' ? 'modo de compatibilidade' : 'pronto para rolar'}</small>
       </div>
     </div>
   );

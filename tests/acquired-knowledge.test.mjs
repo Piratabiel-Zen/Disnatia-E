@@ -17,8 +17,8 @@ test('Acquired knowledge keeps all nine originals with unique paths', () => {
   assert.equal(acquiredSpells[0].cooldown, '1 vez por dia');
 });
 
-test('Generated necromancer skill preserves cost, cooldown and damage with two-hit condition', () => {
-  const source = fs.readFileSync('.generated/src/data/gameData.jsx', 'utf8');
+test('Necromancer skill preserves cost, cooldown and damage with two-hit condition', () => {
+  const source = fs.readFileSync('src/data/gameData.jsx', 'utf8');
   const marker = 'export const CLASSES=';
   const start = source.indexOf(marker) + marker.length;
   const end = source.indexOf('\n];', start) + 2;
@@ -33,8 +33,8 @@ test('Generated necromancer skill preserves cost, cooldown and damage with two-h
 });
 
 test('Book and chronicles use the top-layer viewer, not trapped page overlays', () => {
-  const book = fs.readFileSync('.generated/src/features/livro/LivroPage.jsx', 'utf8');
-  const chronicles = fs.readFileSync('.generated/src/features/cronicas/CronicasPage.jsx', 'utf8');
+  const book = fs.readFileSync('src/features/livro/LivroPage.jsx', 'utf8');
+  const chronicles = fs.readFileSync('src/features/cronicas/CronicasPage.jsx', 'utf8');
   assert.match(book, /label:'Magias adquiridas'/);
   assert.match(book, /label:'Arquivos adquiridos'/);
   assert.match(book, /<ImageViewer/);

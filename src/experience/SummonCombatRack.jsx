@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useExperience } from './ExperienceKit.generated';
+import { useExperience } from './ExperienceKit';
 import './visitor-summons.css';
 
 function SummonMiniSheet({record,memory,api}) {

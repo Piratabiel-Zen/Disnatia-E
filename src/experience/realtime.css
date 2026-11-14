@@ -70,3 +70,24 @@ html[data-quality=light] .combat-action-pulse.compact.action-especial .combat-ac
 /* Roll broadcasts are raised above the battle map and centered in fullscreen. */
 .dinastia-map-fullscreen .rt-dice-replay{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);z-index:9998;width:min(420px,calc(100vw - 28px));animation:rtFullscreenDiceReplayIn .24s ease both}
 @keyframes rtFullscreenDiceReplayIn{from{opacity:0;transform:translate(-50%,calc(-50% + 12px)) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+
+/* DADO IDENTIFICADO POR PERSONAGEM */
+.rt-dice-card{animation:rtDiceIn .25s ease both,rtDiceClassPulse 1.15s ease-in-out .3s infinite alternate}
+.rt-dice-head{color:var(--rt-color);text-shadow:0 0 10px color-mix(in srgb,var(--rt-color) 35%,transparent)}
+@keyframes rtDiceClassPulse{from{border-color:color-mix(in srgb,var(--rt-color) 34%,transparent);box-shadow:0 10px 34px rgba(0,0,0,.55),0 0 18px color-mix(in srgb,var(--rt-color) 12%,transparent)}to{border-color:color-mix(in srgb,var(--rt-color) 72%,transparent);box-shadow:0 10px 34px rgba(0,0,0,.55),0 0 34px color-mix(in srgb,var(--rt-color) 34%,transparent),inset 0 0 20px color-mix(in srgb,var(--rt-color) 7%,transparent)}}
+
+
+/* SUMMON RELEASE CINEMATIC 2026-09-28 */
+.rt-summon_release{z-index:var(--g3-z-cinematic,2400);background:radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--event-color) 23%,rgba(11,3,18,.82)) 0,rgba(4,2,9,.92) 38%,rgba(1,2,7,.96) 72%);animation:rtSummonScene 4.2s cubic-bezier(.2,.8,.2,1) both}
+.rt-summon_release .rt-cosmic-ring{width:22vmin;height:22vmin;border-width:2px;animation:rtSummonRing 2.2s cubic-bezier(.16,.84,.24,1) infinite}
+.rt-summon-release-copy{position:relative;display:grid;justify-items:center;text-align:center;animation:rtSummonCopy 4.2s cubic-bezier(.2,.8,.2,1) both}
+.rt-summon-release-copy>span{font-size:clamp(42px,8vw,92px);line-height:1;filter:drop-shadow(0 0 24px color-mix(in srgb,var(--event-color) 72%,transparent));animation:rtSummonIcon 1.05s ease-in-out infinite alternate}
+.rt-summon-release-copy>small{margin-top:18px;font:800 clamp(10px,1.1vw,14px) Cinzel,serif;letter-spacing:.42em;color:color-mix(in srgb,var(--event-color) 72%,#fff);text-shadow:0 0 24px var(--event-color);animation:rtSummonTitle 1.1s ease-in-out infinite alternate}
+.rt-summon-release-copy>strong{margin-top:10px;max-width:min(880px,86vw);font:800 clamp(28px,5vw,66px) 'Cinzel Decorative',serif;letter-spacing:.06em;color:#f3ebf5;text-shadow:0 3px 18px #000,0 0 32px color-mix(in srgb,var(--event-color) 58%,transparent)}
+.rt-summon-release-copy>p{margin:10px 0 0;font:700 clamp(9px,1vw,13px) Cinzel,serif;letter-spacing:.12em;color:#a99daf}
+@keyframes rtSummonScene{0%{opacity:0;filter:brightness(.35)}12%,76%{opacity:1;filter:brightness(1)}100%{opacity:0;filter:brightness(.5)}}
+@keyframes rtSummonRing{0%{transform:scale(.55);opacity:.1}48%{opacity:.9}100%{transform:scale(4.4);opacity:0}}
+@keyframes rtSummonCopy{0%{opacity:0;transform:translateY(24px) scale(.82);filter:blur(9px)}14%,78%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}100%{opacity:0;transform:translateY(-14px) scale(1.04)}}
+@keyframes rtSummonIcon{from{transform:scale(.94)}to{transform:scale(1.08)}}
+@keyframes rtSummonTitle{from{opacity:.65;text-shadow:0 0 12px var(--event-color)}to{opacity:1;text-shadow:0 0 32px var(--event-color)}}
+@media(prefers-reduced-motion:reduce){.rt-summon_release,.rt-summon_release .rt-cosmic-ring,.rt-summon-release-copy,.rt-summon-release-copy>span,.rt-summon-release-copy>small{animation:none!important}.rt-summon_release{opacity:1}}
