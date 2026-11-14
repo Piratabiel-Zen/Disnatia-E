@@ -35,7 +35,9 @@ function connectNoise(ctx, master, buffer, type, frequency, q = 0.8) {
   return { src, filter, gain };
 }
 
+import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
 export default function EnhancedSoundscape() {
+  const [preferences]=usePlayerPreferences();
   const [soundscape, setSoundscape] = useState({ preset:'silencio' });
   const [ready, setReady] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -206,9 +208,9 @@ export default function EnhancedSoundscape() {
     set(nodes.rain, 'rain', 0.16); set(nodes.wind, 'wind', 0.12); set(nodes.fire, 'fire', 0.08); set(nodes.whispers, 'whispers', 0.055);
     set(nodes.water, 'water', 0.15); set(nodes.crowd, 'crowd', 0.045); set(nodes.hum, 'hum', 0.08); set(nodes.arcane, 'arcane', 0.045); set(nodes.arcaneUpper, 'arcane', 0.023);
     master.gain.cancelScheduledValues(t);
-    master.gain.setTargetAtTime(muted || !active ? 0 : 0.9, t, active && !muted ? 0.18 : 0.035);
+    master.gain.setTargetAtTime(muted || !active ? 0 : 0.9 * preferences.ambience / 100, t, active && !muted ? 0.18 : 0.035);
     if (active && ctx.state === 'suspended') ctx.resume?.();
-  }, [soundscape, muted, ready, active]);
+  }, [soundscape, muted, ready, active, preferences.ambience]);
 
   useEffect(() => () => {
     timersRef.current.forEach(timer => window.clearTimeout(timer)); timersRef.current.clear();

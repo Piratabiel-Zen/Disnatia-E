@@ -161,3 +161,202 @@
 @media(prefers-reduced-motion:reduce){
   .g3-environment *,.g3-environment,.g3-discovery-toast,.g3-target-reticle,.g3-boss-cinematic>img,.game3-mode-danger:before,.game3-mode-combat:before{animation:none!important}.g3-right-drawer,.g3-npc-focus,.g3-feedback{animation:none!important}
 }
+
+/* GAME DIRECTOR PERSISTENTE + BOSS BROADCAST 2026-09-08 */
+.g3-director-autosave{display:flex;align-items:center;gap:7px;margin:-5px 0 7px;padding:7px 9px;border-radius:9px;border:1px solid rgba(83,241,166,.11);background:rgba(83,241,166,.025);font:600 6px 'Cinzel',serif;letter-spacing:.06em;color:#6e8e80}.g3-director-autosave i{width:6px;height:6px;border-radius:50%;background:#53f1a6;box-shadow:0 0 8px rgba(83,241,166,.55)}
+.g3-director-section input[type=file]{padding:7px;border-style:dashed;cursor:pointer;color:#776981}.g3-director-section input[type=file]::file-selector-button{margin-right:9px;border:1px solid rgba(168,85,247,.24);border-radius:7px;background:rgba(168,85,247,.08);color:#bba4ca;padding:6px 9px;font:700 6px 'Cinzel',serif;cursor:pointer}.g3-director-section input[type=file]:disabled{opacity:.5;cursor:wait}
+.g3-media-preview{position:relative;min-height:76px;display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:9px;padding:7px;border-radius:10px;border:1px solid rgba(168,85,247,.12);background:rgba(168,85,247,.025);overflow:hidden}.g3-media-preview img{width:72px;height:62px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.07);background:#030106}.g3-media-preview span{font:700 6px 'Cinzel',serif;color:#6fa287;letter-spacing:.05em}.g3-media-preview.wide{grid-template-columns:118px minmax(0,1fr)}.g3-media-preview.wide img{width:118px;height:72px}.g3-media-preview.boss{border-color:rgba(232,25,60,.16);background:rgba(232,25,60,.025)}
+
+
+/* GAME EXPERIENCE 3 POLISH + LIVE EVENTS 2026-09-10 */
+.g3-utility-rail{right:14px!important;top:50%!important;transform:translateY(-50%);width:44px!important;max-height:44px;overflow:hidden;padding:4px!important;border-radius:14px!important;background:linear-gradient(180deg,rgba(10,5,21,.94),rgba(5,2,11,.94))!important;box-shadow:0 12px 34px rgba(0,0,0,.48),0 0 20px rgba(168,85,247,.07)!important;transition:max-height .24s ease,width .2s ease,border-color .2s ease,box-shadow .2s ease;scrollbar-width:none}
+.g3-utility-rail::-webkit-scrollbar{display:none}.g3-utility-rail:hover,.g3-utility-rail:focus-within{width:58px!important;max-height:min(560px,calc(100vh - 150px));border-color:rgba(168,85,247,.28)!important;box-shadow:0 16px 46px rgba(0,0,0,.58),0 0 28px rgba(168,85,247,.12)!important}
+.g3-utility-rail>button{min-height:36px!important;height:36px!important;border-radius:10px!important;flex:0 0 36px}.g3-utility-rail>button span{font-size:16px!important}.g3-utility-rail>button small{max-height:0;opacity:0;overflow:hidden;transition:.18s}.g3-utility-rail:hover>button,.g3-utility-rail:focus-within>button{height:46px!important;flex-basis:46px}.g3-utility-rail:hover>button small,.g3-utility-rail:focus-within>button small{max-height:10px;opacity:1}
+.g3-master-quickbar{left:84px!important;top:50%!important;transform:translateY(-50%);width:42px;max-height:42px;overflow:hidden;padding:4px!important;border-radius:14px!important;background:linear-gradient(180deg,rgba(13,7,18,.94),rgba(6,3,11,.94))!important;border-color:rgba(232,160,32,.14)!important;box-shadow:0 12px 34px rgba(0,0,0,.46)!important;transition:max-height .24s ease,border-color .2s ease,box-shadow .2s ease}
+.g3-master-quickbar:hover,.g3-master-quickbar:focus-within{max-height:260px;border-color:rgba(232,160,32,.28)!important;box-shadow:0 16px 46px rgba(0,0,0,.58),0 0 24px rgba(232,160,32,.08)!important}.g3-master-quickbar button{width:34px!important;height:34px!important;flex:0 0 34px;border-radius:10px!important;font-size:15px}.g3-master-quickbar button:first-child{color:#d8b56f}
+.g3-actionbar{width:min(1020px,calc(100vw - 270px))!important;grid-template-columns:minmax(140px,180px) 118px minmax(0,1fr) auto!important;gap:7px!important}
+.g3-hotbar{display:flex!important;grid-template-columns:none!important;gap:5px!important;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.28) transparent;padding-bottom:2px;scroll-snap-type:x proximity}
+.g3-hotbar::-webkit-scrollbar{height:4px}.g3-hotbar::-webkit-scrollbar-thumb{background:rgba(168,85,247,.25);border-radius:10px}.g3-hotbar>button{flex:0 0 116px;min-width:116px!important;height:55px;scroll-snap-align:start;background:linear-gradient(180deg,rgba(168,85,247,.065),rgba(168,85,247,.025))!important;border-color:rgba(168,85,247,.16)!important}.g3-hotbar>button:hover:not(:disabled){box-shadow:0 7px 18px rgba(0,0,0,.26),0 0 14px rgba(168,85,247,.09)}
+.battle-master-toolbar{right:auto!important;width:46px!important;max-width:calc(100% - 20px);max-height:44px;overflow:hidden!important;pointer-events:auto!important;padding:4px!important;border:1px solid rgba(183,132,235,.18);border-radius:14px;background:linear-gradient(180deg,rgba(10,5,21,.94),rgba(4,2,10,.94));box-shadow:0 14px 38px rgba(0,0,0,.5),0 0 22px rgba(133,72,190,.08);backdrop-filter:blur(12px);transition:width .24s ease,max-height .28s ease,border-color .2s ease,box-shadow .2s ease}
+.battle-master-toolbar:hover,.battle-master-toolbar:focus-within{width:min(860px,calc(100% - 96px))!important;max-height:230px;overflow:auto!important;border-color:rgba(183,132,235,.34);box-shadow:0 20px 55px rgba(0,0,0,.62),0 0 32px rgba(133,72,190,.12)}
+.battle-master-toolbar-handle{width:36px;height:34px;min-height:34px;display:flex;align-items:center;justify-content:center;gap:0;flex:0 0 auto;border:1px solid rgba(183,132,235,.2);border-radius:10px;background:radial-gradient(circle at 35% 30%,rgba(168,85,247,.16),rgba(255,255,255,.02));color:#c9a9de;cursor:pointer;box-shadow:inset 0 0 14px rgba(168,85,247,.05)}
+.battle-master-toolbar-handle span{font-size:17px;text-shadow:0 0 14px rgba(168,85,247,.55)}.battle-master-toolbar-handle b{display:none;font:700 7px 'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase}.battle-master-toolbar:hover .battle-master-toolbar-handle,.battle-master-toolbar:focus-within .battle-master-toolbar-handle{width:auto;padding:0 11px;gap:7px}.battle-master-toolbar:hover .battle-master-toolbar-handle b,.battle-master-toolbar:focus-within .battle-master-toolbar-handle b{display:block}
+.battle-master-map-tabs,.battle-master-controls{pointer-events:auto!important;display:flex!important;gap:5px!important;flex-wrap:wrap!important;align-items:center}.battle-master-map-tabs{padding-top:2px}.battle-master-map-tabs button,.battle-master-controls button,.battle-master-controls label{min-height:32px!important;border-radius:9px!important;border:1px solid rgba(255,255,255,.075)!important;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012))!important;color:#a997b1!important;box-shadow:none!important;backdrop-filter:none!important;font-family:'Cinzel',serif!important;font-size:8px!important;letter-spacing:.02em;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease}
+.battle-master-map-tabs button:hover,.battle-master-controls button:hover{background:rgba(168,85,247,.08)!important;border-color:rgba(168,85,247,.26)!important;color:#d0b9dc!important;transform:translateY(-1px)}.battle-master-controls label{padding:4px 7px!important}.battle-master-controls input{background:rgba(2,1,7,.55)!important;border-color:rgba(255,255,255,.08)!important;color:#c0acc8!important}
+@media(max-width:900px){
+  .immersive-content,.access-player:has(.game3-mode-combat) .immersive-content,.access-master:has(.game3-mode-combat) .immersive-content{padding-top:52px!important;padding-bottom:146px!important}.immersive-content.main-locked{padding-bottom:146px!important}
+  .g3-utility-rail{display:flex!important;left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;transform:none!important;width:auto!important;max-height:46px!important;height:46px;max-width:none;flex-direction:row!important;align-items:center;gap:3px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:4px!important;border-radius:14px!important}
+  .g3-utility-rail:hover,.g3-utility-rail:focus-within{width:auto!important;max-height:46px!important}.g3-utility-rail>button,.g3-utility-rail:hover>button,.g3-utility-rail:focus-within>button{flex:0 0 38px!important;width:38px!important;height:36px!important;min-height:36px!important;padding:0!important}.g3-utility-rail>button small,.g3-utility-rail:hover>button small,.g3-utility-rail:focus-within>button small{display:none!important}.g3-rail-separator{width:1px!important;height:24px!important;margin:0 2px!important;flex:0 0 1px}
+  .g3-master-quickbar{display:none!important}
+  .g3-actionbar{left:6px!important;right:6px!important;bottom:60px!important;transform:none!important;width:auto!important;height:74px!important;grid-template-columns:84px minmax(0,1fr) 30px!important;padding:5px 6px!important;border-radius:15px!important}.g3-action-meters{display:none!important}.g3-action-character{min-width:0!important;gap:4px!important;padding:0 2px!important}.g3-action-character .g3-portrait{width:38px!important;height:38px!important}.g3-action-character>span:last-child small{display:none!important}.g3-action-character b{font-size:6px!important}.g3-hotbar{height:60px!important;gap:4px!important;padding-bottom:1px}.g3-hotbar>button{flex-basis:92px!important;min-width:92px!important;height:56px!important;padding:4px 4px 4px 20px!important}.g3-hotbar span{font-size:6px!important}.g3-hotbar small{font-size:5px!important}.g3-hotbar kbd{left:4px!important;top:5px!important}.g3-action-shortcuts{display:grid!important;gap:3px!important}.g3-action-shortcuts button{width:28px!important;height:28px!important}.g3-action-shortcuts button:first-child{display:none!important}
+  .dice-widget{bottom:144px!important;right:8px!important}.master-battle-console{left:8px!important;right:8px!important;bottom:144px!important;width:auto!important;transform:none!important}.mbc-orb{right:70px!important;bottom:144px!important}.g3-npc-focus{left:8px!important;right:8px!important;bottom:144px!important;width:auto!important}.battlemap-ping-button{right:8px!important;top:auto!important;bottom:144px!important}.battlemap-ping-wheel-inline{right:8px!important;top:auto!important;bottom:192px!important}
+  .g3-top-context{left:6px!important;right:6px!important}.g3-context-card{border-radius:11px!important;min-height:40px!important}.g3-turn-strip{border-radius:11px!important}.g3-feedback-stack{right:6px!important;top:108px!important;width:min(240px,74vw)!important}
+  .battle-master-toolbar{top:8px!important;left:8px!important;right:auto!important;width:42px!important;max-width:calc(100% - 16px);max-height:42px}.battle-master-toolbar:hover,.battle-master-toolbar:focus-within{width:calc(100% - 16px)!important;max-height:min(56vh,360px)!important}.battle-master-toolbar-handle{width:32px!important;height:32px!important;min-height:32px!important}.battle-master-map-tabs,.battle-master-controls{gap:4px!important}.battle-master-map-tabs button,.battle-master-controls button,.battle-master-controls label{min-height:34px!important;font-size:7px!important}
+}
+@media(max-width:580px){
+  .g3-actionbar{grid-template-columns:70px minmax(0,1fr) 28px!important}.g3-action-character .g3-portrait{width:34px!important;height:34px!important}.g3-action-character b{font-size:5.5px!important}.g3-hotbar>button{flex-basis:84px!important;min-width:84px!important}.g3-context-card{grid-template-columns:auto minmax(0,1fr)!important}.g3-objective b{font-size:6px!important}.g3-utility-rail{gap:2px!important}.g3-utility-rail>button{flex-basis:36px!important;width:36px!important}
+}
+
+
+/* SESSION OPENING CINEMATIC 2026-09-10 */
+.g3-opening-editor{display:grid;gap:8px;padding:10px;border:1px solid rgba(168,85,247,.13);border-radius:12px;background:linear-gradient(180deg,rgba(168,85,247,.035),rgba(255,255,255,.012))}.g3-opening-editor>p{margin:0;color:#74647c;font-size:9px;line-height:1.45}.g3-opening-status{font:700 6px 'Cinzel',serif;letter-spacing:.08em;color:#75647e}.g3-opening-cinematic{position:fixed;inset:0;z-index:var(--g3-z-cinematic);display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 42%,rgba(72,28,113,.18),transparent 42%),#020104;isolation:isolate}.g3-opening-bg{position:absolute;inset:-2%;width:104%;height:104%;object-fit:cover;z-index:-4;filter:brightness(.52) saturate(.92) contrast(1.06);animation:g3OpeningDrift 24s ease-out both}.g3-opening-shade{position:absolute;inset:0;z-index:-3;background:radial-gradient(circle at 50% 42%,rgba(0,0,0,.06),rgba(0,0,0,.58) 66%,rgba(0,0,0,.88)),linear-gradient(180deg,rgba(0,0,0,.52),transparent 34%,rgba(0,0,0,.6))}.g3-opening-stars{position:absolute;inset:0;z-index:-2;pointer-events:none}.g3-opening-stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#d9c5ef;box-shadow:0 0 14px rgba(188,142,232,.78);animation:g3OpeningTwinkle 3.6s ease-in-out infinite}.g3-opening-stars i:nth-child(1){left:12%;top:28%}.g3-opening-stars i:nth-child(2){left:31%;top:17%;animation-delay:-1.1s}.g3-opening-stars i:nth-child(3){right:24%;top:31%;animation-delay:-2.2s}.g3-opening-stars i:nth-child(4){right:11%;bottom:27%;animation-delay:-.7s}.g3-opening-stars i:nth-child(5){left:20%;bottom:18%;animation-delay:-1.8s}.g3-opening-copy{width:min(980px,86vw);text-align:center;padding:42px 24px;text-shadow:0 4px 24px #000;animation:g3OpeningIn .9s cubic-bezier(.2,.8,.2,1)}.g3-opening-copy>small{font:700 9px 'Cinzel',serif;letter-spacing:.48em;color:#927ba1}.g3-opening-copy h1{margin:16px 0 10px;font-family:'Cinzel Decorative',serif;font-size:clamp(38px,6.4vw,92px);line-height:1.02;color:#eee3f0;font-weight:700}.g3-opening-copy h2{margin:0;font:700 clamp(11px,1.6vw,18px) 'Cinzel',serif;letter-spacing:.22em;color:#c6adc9;text-transform:uppercase}.g3-opening-copy>p{max-width:720px;margin:18px auto 0;color:#a996af;font:600 clamp(12px,1.45vw,16px) 'Crimson Text',serif;line-height:1.5}.g3-opening-objective{max-width:700px;margin:28px auto 0;padding:14px 18px;border-top:1px solid rgba(168,85,247,.25);border-bottom:1px solid rgba(168,85,247,.15);background:linear-gradient(90deg,transparent,rgba(168,85,247,.045),transparent)}.g3-opening-objective span{display:block;font:700 7px 'Cinzel',serif;letter-spacing:.32em;color:#785f87}.g3-opening-objective b{display:block;margin-top:7px;font:600 clamp(11px,1.35vw,15px) 'Cinzel',serif;color:#d2bfd7}.g3-opening-end{position:absolute;right:22px;top:22px;z-index:2;border-radius:10px;border:1px solid rgba(232,160,32,.26);background:rgba(8,4,16,.8);color:#d1ad69;padding:9px 12px;font:700 7px 'Cinzel',serif;letter-spacing:.06em;cursor:pointer;backdrop-filter:blur(10px)}@keyframes g3OpeningIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}@keyframes g3OpeningDrift{from{transform:scale(1.07)}to{transform:scale(1)}}@keyframes g3OpeningTwinkle{50%{opacity:.25;transform:scale(.62)}}@media(max-width:900px){.g3-opening-copy{width:94vw;padding:26px 14px}.g3-opening-copy>small{font-size:6px;letter-spacing:.32em}.g3-opening-copy h1{font-size:clamp(30px,11vw,58px)}.g3-opening-objective{margin-top:20px;padding:11px 12px}.g3-opening-end{right:10px;top:10px;padding:8px 9px}}@media(prefers-reduced-motion:reduce){.g3-opening-bg,.g3-opening-copy,.g3-opening-stars i{animation:none!important}}
+
+
+/* MOBILE HUB + MOTION + SILENT 2026-09-10 */
+.g3-mobile-session-hub,.g3-mobile-hud-toggle{display:none}
+@media(max-width:900px){
+  /* Hub utilitário permanente, acima da navegação e sem cobrir o dado. */
+  .g3-mobile-session-hub{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:8px;right:72px;bottom:74px;height:48px;z-index:805;gap:3px;padding:4px;border:1px solid rgba(168,85,247,.14);border-radius:13px;background:linear-gradient(180deg,rgba(10,5,20,.9),rgba(5,2,11,.94));box-shadow:0 10px 28px rgba(0,0,0,.4);backdrop-filter:blur(12px);pointer-events:auto;opacity:.76;transition:opacity .25s ease,border-color .25s ease}
+  .g3-mobile-session-hub.combat{opacity:1;border-color:rgba(232,25,60,.22)}
+  .g3-mobile-session-hub button{min-width:0;border:0;border-radius:8px;background:transparent;color:#7c6d86;display:flex;align-items:center;justify-content:center;gap:5px;padding:3px;transition:.2s ease}
+  .g3-mobile-session-hub button:active{transform:scale(.95)}.g3-mobile-session-hub button.active{color:#c3a7da;background:rgba(168,85,247,.09)}
+  .g3-mobile-session-hub button span{font-size:13px;line-height:1}.g3-mobile-session-hub button small{font:700 6px 'Cinzel',serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Botão do HUD fica no canto direito, imediatamente acima do dado. */
+  .g3-mobile-hud-toggle{display:flex;position:fixed;right:10px;bottom:132px;width:52px;height:52px;z-index:812;border-radius:16px;border:1px solid rgba(168,85,247,.2);background:linear-gradient(145deg,rgba(12,6,24,.88),rgba(5,2,11,.9));color:#9a81aa;align-items:center;justify-content:center;flex-direction:column;gap:1px;box-shadow:0 10px 26px rgba(0,0,0,.48),0 0 18px rgba(168,85,247,.07);backdrop-filter:blur(10px);opacity:.5;transition:opacity .25s ease,transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s ease,box-shadow .25s ease;pointer-events:auto}
+  .g3-mobile-hud-toggle span{font-size:16px;line-height:1}.g3-mobile-hud-toggle small{font:700 6px 'Cinzel',serif;letter-spacing:.08em}.g3-mobile-hud-toggle.open{opacity:.78;border-color:rgba(168,85,247,.34)}.g3-mobile-hud-toggle.combat{opacity:1;color:#e9b0ba;border-color:rgba(232,25,60,.34);box-shadow:0 10px 26px rgba(0,0,0,.5),0 0 20px rgba(232,25,60,.14)}.g3-mobile-hud-toggle:active{transform:scale(.93)}
+  /* O HUD principal ocupa sua própria faixa. Fechado em exploração, abre por toque; combate abre automaticamente. */
+  .g3-actionbar{left:8px!important;right:72px!important;bottom:130px!important;width:auto!important;transition:opacity .3s ease,transform .34s cubic-bezier(.2,.8,.2,1)!important}
+  .g3-mobile-hud-closed .g3-actionbar:not(.combat){opacity:0!important;transform:translateY(26px) scale(.97)!important;pointer-events:none!important}
+  .g3-mobile-hud-open .g3-actionbar,.g3-actionbar.combat{opacity:1!important;transform:none!important;pointer-events:auto!important}
+  /* O dado fica abaixo do botão de HUD e à direita do hub utilitário. */
+  .dice-widget{right:10px!important;bottom:74px!important;z-index:810!important}
+  .immersive-content,.access-player:has(.game3-mode-combat) .immersive-content,.access-master:has(.game3-mode-combat) .immersive-content{padding-bottom:210px!important}
+  .session-page{padding-bottom:210px!important}
+}
+
+
+/* DESKTOP CONTENT SURFACE RESET 2026-09-12 */
+@media(min-width:901px){
+.game3-tab-prologo .g3-top-context,
+.game3-tab-prologo .g3-utility-rail,
+.game3-tab-prologo .g3-master-quickbar,
+.game3-tab-prologo .g3-actionbar,
+.game3-tab-prologo .g3-environment,
+.game3-tab-prologo .g3-right-drawer,
+.game3-tab-classes .g3-top-context,
+.game3-tab-classes .g3-utility-rail,
+.game3-tab-classes .g3-master-quickbar,
+.game3-tab-classes .g3-actionbar,
+.game3-tab-classes .g3-environment,
+.game3-tab-classes .g3-right-drawer,
+.game3-tab-fichas .g3-top-context,
+.game3-tab-fichas .g3-utility-rail,
+.game3-tab-fichas .g3-master-quickbar,
+.game3-tab-fichas .g3-actionbar,
+.game3-tab-fichas .g3-environment,
+.game3-tab-fichas .g3-right-drawer,
+.game3-tab-personagens .g3-top-context,
+.game3-tab-personagens .g3-utility-rail,
+.game3-tab-personagens .g3-master-quickbar,
+.game3-tab-personagens .g3-actionbar,
+.game3-tab-personagens .g3-environment,
+.game3-tab-personagens .g3-right-drawer,
+.game3-tab-inimigos .g3-top-context,
+.game3-tab-inimigos .g3-utility-rail,
+.game3-tab-inimigos .g3-master-quickbar,
+.game3-tab-inimigos .g3-actionbar,
+.game3-tab-inimigos .g3-environment,
+.game3-tab-inimigos .g3-right-drawer,
+.game3-tab-bestiario .g3-top-context,
+.game3-tab-bestiario .g3-utility-rail,
+.game3-tab-bestiario .g3-master-quickbar,
+.game3-tab-bestiario .g3-actionbar,
+.game3-tab-bestiario .g3-environment,
+.game3-tab-bestiario .g3-right-drawer,
+.game3-tab-regras .g3-top-context,
+.game3-tab-regras .g3-utility-rail,
+.game3-tab-regras .g3-master-quickbar,
+.game3-tab-regras .g3-actionbar,
+.game3-tab-regras .g3-environment,
+.game3-tab-regras .g3-right-drawer,
+.game3-tab-livro .g3-top-context,
+.game3-tab-livro .g3-utility-rail,
+.game3-tab-livro .g3-master-quickbar,
+.game3-tab-livro .g3-actionbar,
+.game3-tab-livro .g3-environment,
+.game3-tab-livro .g3-right-drawer,
+.game3-tab-cronicas .g3-top-context,
+.game3-tab-cronicas .g3-utility-rail,
+.game3-tab-cronicas .g3-master-quickbar,
+.game3-tab-cronicas .g3-actionbar,
+.game3-tab-cronicas .g3-environment,
+.game3-tab-cronicas .g3-right-drawer{display:none!important}
+.access-player:has(.game3-tab-prologo) .immersive-content,
+.access-master:has(.game3-tab-prologo) .immersive-content,
+.access-player:has(.game3-tab-classes) .immersive-content,
+.access-master:has(.game3-tab-classes) .immersive-content,
+.access-player:has(.game3-tab-fichas) .immersive-content,
+.access-master:has(.game3-tab-fichas) .immersive-content,
+.access-player:has(.game3-tab-personagens) .immersive-content,
+.access-master:has(.game3-tab-personagens) .immersive-content,
+.access-player:has(.game3-tab-inimigos) .immersive-content,
+.access-master:has(.game3-tab-inimigos) .immersive-content,
+.access-player:has(.game3-tab-bestiario) .immersive-content,
+.access-master:has(.game3-tab-bestiario) .immersive-content,
+.access-player:has(.game3-tab-regras) .immersive-content,
+.access-master:has(.game3-tab-regras) .immersive-content,
+.access-player:has(.game3-tab-livro) .immersive-content,
+.access-master:has(.game3-tab-livro) .immersive-content,
+.access-player:has(.game3-tab-cronicas) .immersive-content,
+.access-master:has(.game3-tab-cronicas) .immersive-content{padding-top:64px!important;padding-bottom:28px!important}
+}
+
+
+/* MOBILE QUIET HUD · 2026-09-15 */
+@media(max-width:900px){
+  .game3-root:not(.game3-tab-session):not(.game3-mode-combat) .g3-mobile-session-hub,.game3-root:not(.game3-tab-session):not(.game3-mode-combat) .g3-mobile-hud-toggle,.game3-root:not(.game3-tab-session):not(.game3-mode-combat) .g3-actionbar,.game3-root:not(.game3-tab-session):not(.game3-mode-combat) .g3-top-context{display:none!important}
+  .g3-mobile-session-hub{height:42px!important;bottom:68px!important;left:8px!important;right:60px!important;padding:3px!important;border-radius:11px!important;box-shadow:0 8px 20px rgba(0,0,0,.32)!important;opacity:.62!important}.g3-mobile-session-hub.combat{opacity:.9!important}
+  .g3-mobile-session-hub button span{font-size:12px!important}.g3-mobile-session-hub button small{font-size:5.5px!important}
+  .g3-mobile-hud-toggle{width:42px!important;height:42px!important;right:10px!important;bottom:68px!important;border-radius:12px!important;box-shadow:0 8px 20px rgba(0,0,0,.34)!important}.g3-mobile-hud-toggle span{font-size:14px!important}.g3-mobile-hud-toggle small{font-size:5.5px!important}.dice-widget{bottom:68px!important}
+}
+
+/* SUBTLE MEDIA REMOVE 2026-09-19 */
+.g3-media-preview{position:relative}
+.g3-media-remove{position:absolute;right:6px;top:6px;width:auto!important;min-width:0!important;height:24px!important;padding:0 7px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.11)!important;background:rgba(4,2,9,.68)!important;color:#8d7d96!important;font:600 6px 'Cinzel',serif!important;letter-spacing:.03em!important;opacity:.56;cursor:pointer;backdrop-filter:blur(7px);transition:opacity .16s ease,border-color .16s ease,color .16s ease}
+.g3-media-preview:hover .g3-media-remove,.g3-media-remove:focus{opacity:1;color:#c7b4ce!important;border-color:rgba(200,168,232,.28)!important}
+
+/* PLAYER EXPERIENCE CONTROLS 2026-09-19 */
+.g3-utility-rail{top:50%!important;transform:translateY(-50%);max-height:calc(100vh - 140px);overflow-y:auto;scrollbar-width:thin}
+.g3-sheet-note{display:flex;gap:9px;align-items:flex-start;margin-top:15px;padding:10px;border:1px solid rgba(168,85,247,.14);border-radius:10px;background:rgba(168,85,247,.035)}.g3-sheet-note span{color:#b98bd5;font-size:14px}.g3-sheet-note p{margin:0;color:#76657f;font-size:9px;line-height:1.45}.g3-sheet-note b{color:#bca4c8}.g3-ability-intro{display:flex;gap:10px;align-items:center;padding:5px 2px 11px}.g3-ability-sigil{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;border:1px solid color-mix(in srgb,var(--g3-c) 38%,transparent);background:color-mix(in srgb,var(--g3-c) 10%,transparent);color:var(--g3-c);font-size:20px;box-shadow:0 0 22px color-mix(in srgb,var(--g3-c) 13%,transparent)}.g3-ability-intro h3{margin:0;color:#d6c1da;font:700 13px 'Cinzel',serif}.g3-ability-intro p{margin:4px 0 0;color:#74627d;font-size:9px;line-height:1.35}.g3-immersive-abilities{display:grid;gap:6px}.g3-immersive-ability{border:1px solid color-mix(in srgb,var(--g3-c) 13%,transparent);border-radius:10px;background:linear-gradient(135deg,color-mix(in srgb,var(--g3-c) 4%,transparent),rgba(255,255,255,.01));overflow:hidden}.g3-immersive-ability.expanded{border-color:color-mix(in srgb,var(--g3-c) 34%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--g3-c) 9%,transparent)}.g3-ability-heading{width:100%;min-height:52px;display:grid;grid-template-columns:29px minmax(0,1fr) 20px;gap:8px;align-items:center;padding:7px 9px;border:0;background:transparent;color:#bca7c5;text-align:left;cursor:pointer}.g3-ability-index{font:700 8px 'Cinzel',serif;color:var(--g3-c)}.g3-ability-heading b{display:block;font:700 9px 'Cinzel',serif;color:#c9b6d0}.g3-ability-heading small{display:block;margin-top:3px;color:#715f79;font-size:8px}.g3-ability-heading em{font:400 18px Georgia,serif;color:var(--g3-c);font-style:normal;text-align:center}.g3-ability-script{padding:0 10px 10px 46px}.g3-ability-script p{margin:0 0 9px;color:#a994aa;font-size:10px;line-height:1.55;font-style:italic}.g3-use-ability{border:1px solid color-mix(in srgb,var(--g3-c) 35%,transparent);border-radius:7px;background:color-mix(in srgb,var(--g3-c) 9%,transparent);color:color-mix(in srgb,var(--g3-c) 70%,white);padding:7px 10px;font:700 7px 'Cinzel',serif;cursor:pointer}.g3-use-ability:disabled{opacity:.45;cursor:not-allowed}.g3-journal-actions,.g3-item-actions{display:flex;gap:4px;margin-top:5px}.g3-journal-actions button,.g3-item-actions button,.g3-journal-edit button,.g3-item-edit button{border:1px solid rgba(168,85,247,.2);border-radius:6px;background:rgba(168,85,247,.05);color:#a990b4;padding:4px 7px;font:700 6px 'Cinzel',serif;cursor:pointer}.g3-journal-actions button:last-child,.g3-item-actions button:last-child{border-color:rgba(232,25,60,.2);color:#d98291}.g3-journal-edit textarea,.g3-item-edit input,.g3-item-edit textarea,.g3-item-edit select{width:100%;box-sizing:border-box;border:1px solid rgba(168,85,247,.18);border-radius:7px;background:#08040f;color:#bda9c4;padding:6px;font-size:9px}.g3-journal-edit span,.g3-item-edit>span{display:flex;gap:4px;margin-top:4px}.g3-item-grid article{position:relative}.g3-item-edit{grid-column:1/-1;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)}.g3-item-edit .g3-icon-picker{margin-bottom:3px}.g3-item-edit .g3-icon-picker button{width:23px;height:23px;font-size:12px}.g3-item-edit input,.g3-item-edit textarea,.g3-item-edit select{margin:3px 0}.g3-feedback.ability>span{color:var(--g3-feedback-color,#a855f7);background:color-mix(in srgb,var(--g3-feedback-color,#a855f7) 10%,transparent)}.combat-action-pulse{z-index:var(--g3-z-critical)!important}
+@media(max-width:900px){.g3-utility-rail{transform:none;top:auto!important;max-height:none;overflow:visible}.g3-sheet-note{font-size:9px}}
+
+/* CINEMATIC COMBAT VITALS 2026-09-22 */
+.g3-feedback-stack{right:78px!important;top:210px!important}
+.g3-floating-damage{position:fixed;z-index:var(--g3-z-cinematic,900);pointer-events:none;transform:translate(-50%,-50%);font:900 25px/1 'Cinzel Decorative','Cinzel',serif;color:#E8193C;text-shadow:0 2px 3px #000,0 0 14px color-mix(in srgb,currentColor 62%,transparent);animation:floatDmg 1.2s cubic-bezier(.18,.72,.2,1) forwards;will-change:transform,opacity}
+.g3-floating-damage.heal{color:#4ADE80}.g3-floating-damage.critical{color:#FFD700;font-size:35px;filter:drop-shadow(0 0 8px rgba(255,215,0,.65))}
+@keyframes floatDmg{0%{opacity:0;transform:translate(-50%,-20%) scale(.72)}16%{opacity:1;transform:translate(-50%,-55%) scale(1.08)}72%{opacity:1}100%{opacity:0;transform:translate(-50%,-150%) scale(.94)}}
+.g3-player-fallen .adventure-shell{animation:g3DeathGrayscale 3s ease both}
+@keyframes g3DeathGrayscale{0%{filter:grayscale(0)}18%,76%{filter:grayscale(1)}100%{filter:grayscale(0)}}
+
+.g3-actionbar.combat{grid-template-columns:minmax(220px,260px) minmax(260px,1fr) auto!important}
+.g3-actionbar.combat .g3-action-character{display:grid;grid-template-columns:42px 48px 42px minmax(0,1fr);gap:6px;align-items:center;min-width:0;padding:4px 8px}
+.g3-resource-orb{position:relative;width:42px;height:54px;display:grid;place-items:center;flex:0 0 auto;color:#f6edf7;filter:drop-shadow(0 5px 8px rgba(0,0,0,.52));isolation:isolate}
+.g3-resource-orb svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.g3-orb-shell{fill:#05030a;stroke:color-mix(in srgb,var(--orb-color) 70%,#d7c9dc);stroke-width:2;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--orb-color) 33%,transparent))}.g3-orb-depth{fill:#08050d;stroke:rgba(255,255,255,.1);stroke-width:1}.g3-orb-liquid,.g3-orb-wave{fill:var(--orb-color)}.g3-orb-liquid{transition:y .42s cubic-bezier(.2,.8,.2,1),height .42s cubic-bezier(.2,.8,.2,1);opacity:.88}.g3-orb-wave{opacity:.82;animation:orbWave 2.2s linear infinite;transform-box:fill-box;transform-origin:center}.g3-orb-glint{fill:rgba(255,255,255,.21);transform:rotate(-24deg);transform-origin:30px 30px}.g3-resource-orb b{position:relative;z-index:2;margin-top:4px;font:800 9px/1 'Cinzel',serif;text-shadow:0 1px 4px #000}.g3-resource-orb small{position:absolute;z-index:2;left:50%;bottom:1px;transform:translateX(-50%);font:800 5px/1 'Cinzel',serif;letter-spacing:.08em;color:#d9cadf;text-shadow:0 1px 3px #000}.g3-resource-orb.vc{--orb-color:#a855f7}
+@keyframes orbWave{0%{transform:translateX(-10px)}50%{transform:translateX(0)}100%{transform:translateX(-10px)}}
+
+.g3-portrait-lg,.g3-portrait-xl{position:relative;overflow:visible!important;isolation:isolate}.g3-portrait-lg>img,.g3-portrait-lg>b,.g3-portrait-xl>img,.g3-portrait-xl>b{position:relative;z-index:1}.g3-portrait-lg[data-classe]::before,.g3-portrait-xl[data-classe]::before{content:'';position:absolute;inset:-7px;z-index:2;pointer-events:none;background-color:var(--g3-c);background-image:var(--g3-ornament-image);background-blend-mode:multiply;background-position:center;background-repeat:no-repeat;background-size:100% 100%;-webkit-mask-image:var(--g3-ornament-image);mask-image:var(--g3-ornament-image);-webkit-mask-position:center;mask-position:center;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:100% 100%;mask-size:100% 100%;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--g3-c) 52%,transparent))}.g3-portrait-lg[data-classe]::after,.g3-portrait-xl[data-classe]::after{content:'';position:absolute;inset:-3px;z-index:0;border:1px solid color-mix(in srgb,var(--g3-c) 62%,transparent);border-radius:30% 30% 42% 42%;box-shadow:inset 0 0 8px color-mix(in srgb,var(--g3-c) 18%,transparent),0 0 10px color-mix(in srgb,var(--g3-c) 14%,transparent);pointer-events:none}
+.g3-portrait[data-classe="fogo" i]{--g3-ornament-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M18 78C5 57 20 46 16 27c15 8 18 19 16 31M82 78c13-21-2-32 2-51-15 8-18 19-16 31M29 14c5 9 12 11 21 5 9 6 16 4 21-5'/%3E%3Cpath d='M31 88l19 7 19-7'/%3E%3C/g%3E%3C/svg%3E")}
+.g3-portrait[data-classe="escarlate" i]{--g3-ornament-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='3'%3E%3Cpath d='M19 18C9 33 8 42 19 47c11-5 10-14 0-29zM81 18c-10 15-11 24 0 29 11-5 10-14 0-29z'/%3E%3Cpath d='M22 76c8 12 17 18 28 19 11-1 20-7 28-19M28 10h44'/%3E%3C/g%3E%3C/svg%3E")}
+.g3-portrait[data-classe="corvos" i]{--g3-ornament-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M11 68c13-5 22-17 25-36-14 8-21 21-25 36zm78 0c-13-5-22-17-25-36 14 8 21 21 25 36z'/%3E%3Cpath d='M18 59l15-9M82 59l-15-9M30 89l20 7 20-7'/%3E%3C/g%3E%3C/svg%3E")}
+.g3-portrait[data-classe="magos" i]{--g3-ornament-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='3'%3E%3Cpath d='M50 4l4 10 11 1-9 7 3 11-9-6-9 6 3-11-9-7 11-1zM15 45l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1zM85 45l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z'/%3E%3Cpath d='M28 88c14 8 30 8 44 0'/%3E%3C/g%3E%3C/svg%3E")}
+.g3-portrait[data-classe="marfim" i]{--g3-ornament-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='3'%3E%3Cpath d='M50 3l10 14-10 12-10-12zM12 35l11-9 9 13-12 11zM88 35l-11-9-9 13 12 11zM25 87l10-13 15 21 15-21 10 13'/%3E%3Cpath d='M18 56l5 19M82 56l-5 19'/%3E%3C/g%3E%3C/svg%3E")}
+
+@media(max-width:900px){.g3-feedback-stack{right:8px!important;top:auto!important;bottom:160px!important}.g3-actionbar.combat{grid-template-columns:118px minmax(0,1fr) 28px!important}.g3-actionbar.combat .g3-action-character{grid-template-columns:30px 36px 30px!important;gap:2px!important;padding:3px!important}.g3-actionbar.combat .g3-action-character>span:last-child{display:none!important}.g3-resource-orb{width:30px;height:39px}.g3-resource-orb b{font-size:7px}.g3-resource-orb small{font-size:4px}.g3-hotbar{min-width:0}}
+@media(prefers-reduced-motion:reduce){.g3-floating-damage,.g3-orb-wave,.g3-player-fallen .adventure-shell{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* VISIBLE UPDATE PROOF 2026-09-22 */
+.g3-sync-state{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid rgba(74,222,128,.13);border-radius:999px;background:rgba(74,222,128,.035);font:700 5px/1 'Cinzel',serif;letter-spacing:.08em;color:#71947f;white-space:nowrap}.g3-sync-state i{width:5px;height:5px;border-radius:50%;background:#4ADE80;box-shadow:0 0 8px rgba(74,222,128,.6)}.g3-update-notice{position:fixed;z-index:var(--g3-z-notify,620);left:50%;top:128px;transform:translateX(-50%);width:min(560px,calc(100vw - 40px));padding:13px 42px 13px 16px;border:1px solid rgba(88,217,255,.22);border-radius:14px;background:linear-gradient(135deg,rgba(4,10,18,.96),rgba(11,5,22,.96));box-shadow:0 18px 44px rgba(0,0,0,.48),0 0 30px rgba(88,217,255,.08);pointer-events:auto;animation:g3UpdateReveal .55s cubic-bezier(.2,.8,.2,1) both}.g3-update-notice.combat{border-color:rgba(232,25,60,.27);box-shadow:0 18px 44px rgba(0,0,0,.48),0 0 34px rgba(232,25,60,.1)}.g3-update-notice>button{position:absolute;right:10px;top:9px;width:27px;height:27px;border:0;border-radius:50%;background:rgba(255,255,255,.04);color:#8a7b91;cursor:pointer}.g3-update-notice>small{display:block;font:700 7px/1 'Cinzel',serif;letter-spacing:.22em;color:#58d9ff}.g3-update-notice.combat>small{color:#E8193C}.g3-update-notice>strong{display:block;margin-top:5px;font:800 15px/1.1 'Cinzel Decorative','Cinzel',serif;color:#d8cce0}.g3-update-notice>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.g3-update-notice>div span{padding:4px 7px;border:1px solid rgba(255,255,255,.055);border-radius:999px;background:rgba(255,255,255,.02);font:700 6px/1 'Cinzel',serif;color:#817489}.g3-fx-preview{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;border:1px solid rgba(88,217,255,.13);border-radius:10px;background:linear-gradient(135deg,rgba(88,217,255,.035),rgba(168,85,247,.035))}.g3-fx-preview small,.g3-fx-preview b,.g3-fx-preview span{display:block}.g3-fx-preview small{font:700 6px/1 'Cinzel',serif;letter-spacing:.14em;color:#58d9ff}.g3-fx-preview b{margin-top:4px;font:700 9px/1.1 'Cinzel',serif;color:#b8a7c0}.g3-fx-preview span{margin-top:4px;font-size:8px;color:#62576a}.g3-fx-preview button{min-height:35px;padding:7px 9px;border:1px solid rgba(88,217,255,.2);border-radius:8px;background:rgba(88,217,255,.055);color:#8abed1;cursor:pointer;font:700 6px/1.2 'Cinzel',serif}@keyframes g3UpdateReveal{from{opacity:0;transform:translate(-50%,-12px) scale(.97)}to{opacity:1;transform:translate(-50%,0) scale(1)}}@media(max-width:900px){.g3-update-notice{top:110px;width:calc(100vw - 20px)}.g3-sync-state{display:none}.g3-fx-preview{grid-template-columns:1fr}.g3-fx-preview button{width:100%}}@media(prefers-reduced-motion:reduce){.g3-update-notice,.access-sync-status i{animation-duration:.01ms!important}}
+
+
+/* QUICK PORTRAIT CLEANUP · 2026-09-24 */
+/* A foto continua intacta; apenas a miniatura ornamental que cobria o rosto
+   sai do botão da ficha rápida e do cabeçalho aberto por ele. */
+.g3-action-character .g3-portrait[data-classe]::before,
+.g3-action-character .g3-portrait[data-classe]::after,
+.combat-action-portrait.g3-portrait[data-classe]::before,
+.combat-action-portrait.g3-portrait[data-classe]::after,
+.g3-sheet-hero .g3-portrait[data-classe]::before,
+.g3-sheet-hero .g3-portrait[data-classe]::after{content:none!important;display:none!important;background-image:none!important;box-shadow:none!important}
+.g3-action-character .g3-portrait[data-classe],
+.combat-action-portrait.g3-portrait[data-classe],
+.g3-sheet-hero .g3-portrait[data-classe]{overflow:hidden!important;border-radius:50%!important}

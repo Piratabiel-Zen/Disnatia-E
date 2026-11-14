@@ -77,3 +77,40 @@ html.opera-gx-safe .cosmic-dark-space,
 html.opera-gx-safe .cosmic-lite-nebula,
 html.opera-gx-safe .cosmic-living-vignette{mix-blend-mode:normal!important;filter:none!important}
 html.opera-gx-safe .session-card{content-visibility:visible!important;contain-intrinsic-size:auto!important}
+
+
+/* RUNTIME LIGHTWEIGHT · 2026-09-13 */
+.cosmic-lite-nebula,.cosmic-lite-vortex::before{will-change:auto!important}
+.prologue-cover,.class-illustration,.chronicles-memory{content-visibility:auto;contain-intrinsic-size:auto 460px}
+@media(max-width:900px){.prologue-cover,.class-illustration,.chronicles-memory{contain-intrinsic-size:auto 360px}}
+
+
+/* CROSS-PLATFORM VISUAL PARITY + SUBTLE CLARITY · 2026-09-14 */
+.cosmic-unified-starfield{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none;opacity:.82}
+.cosmic-unified-starfield>i{position:absolute;inset:-12%;display:block;pointer-events:none;background-repeat:repeat;transform:translate3d(0,0,0);will-change:auto}
+.cosmic-unified-starfield>i:first-child{background-image:radial-gradient(circle,rgba(245,250,255,.78) 0 .9px,transparent 1.25px),radial-gradient(circle,rgba(155,196,244,.46) 0 .7px,transparent 1.05px);background-size:127px 127px,211px 211px;background-position:19px 31px,83px 117px;animation:cosmicUnifiedStarsA 34s linear infinite!important;opacity:.64}
+.cosmic-unified-starfield>i:last-child{background-image:radial-gradient(circle,rgba(255,255,255,.92) 0 1.05px,rgba(166,211,255,.16) 1.35px,transparent 2.15px),radial-gradient(circle,rgba(199,184,255,.66) 0 .85px,transparent 1.25px);background-size:359px 359px,503px 503px;background-position:47px 103px,241px 37px;animation:cosmicUnifiedStarsB 49s linear infinite!important;opacity:.48}
+@keyframes cosmicUnifiedStarsA{0%{transform:translate3d(-1.8%,-.8%,0)}50%{transform:translate3d(.9%,1.15%,0)}100%{transform:translate3d(2.6%,-.25%,0)}}
+@keyframes cosmicUnifiedStarsB{0%{transform:translate3d(1.5%,-1.1%,0)}50%{transform:translate3d(-.7%,.7%,0)}100%{transform:translate3d(-2.4%,1.5%,0)}}
+html.opera-gx-safe .cosmic-unified-starfield,html.opera-gx-safe .cosmic-unified-starfield>i{display:block!important}
+
+
+/* OPERA GX BOOT-SAFE HARDENING · 2026-09-14 */
+html.opera-gx-safe,html.opera-gx-safe body,html.opera-gx-safe #root{visibility:visible!important;opacity:1!important;background:#030109!important}
+html.opera-gx-safe #root{filter:none!important;transform:none!important;mix-blend-mode:normal!important;isolation:auto!important}
+html.opera-gx-safe *,html.opera-gx-safe *::before,html.opera-gx-safe *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.opera-gx-safe .cosmic-loop-video video,html.opera-gx-safe .cosmic-living-bg canvas,html.opera-gx-safe .cosmic-loop-video{display:none!important}
+html.opera-gx-safe .immersive-content>div,html.opera-gx-safe .session-card,html.opera-gx-safe .character-card,html.opera-gx-safe .objective-card{content-visibility:visible!important;contain:none!important;filter:none!important}
+html.opera-gx-safe .cosmic-lite-nebula,html.opera-gx-safe .cosmic-lite-stars-far,html.opera-gx-safe .cosmic-lite-stars-near{will-change:auto!important;filter:none!important;mix-blend-mode:normal!important}
+html.opera-gx-safe .page-transition,html.opera-gx-safe .immersive-content>div{animation:none!important}
+
+
+/* COLORED SHOOTING STARS RETURN · 2026-09-15 */
+/* Transform-only: restaura estrelas cadentes sem reintroduzir vídeo/canvas pesado. */
+.cosmic-shooting-stars{display:block!important;pointer-events:none!important;overflow:hidden!important}
+.cosmic-shooting-star{display:block!important;background:linear-gradient(90deg,var(--meteor-color,#fff) 0%,var(--meteor-color,#fff) 8%,rgba(255,255,255,.30) 32%,transparent 100%)!important;box-shadow:-4px 0 8px color-mix(in srgb,var(--meteor-color,#fff) 40%,transparent),-14px 0 22px color-mix(in srgb,var(--meteor-color,#fff) 16%,transparent)!important;filter:none!important}
+.cosmic-shooting-star::before{background:var(--meteor-color,#fff)!important;box-shadow:0 0 7px var(--meteor-color,#fff),0 0 14px color-mix(in srgb,var(--meteor-color,#fff) 55%,transparent)!important}
+html.opera-gx-safe .cosmic-shooting-stars{display:block!important}
+html.opera-gx-safe .cosmic-shooting-star{display:block!important;box-shadow:none!important;filter:none!important;will-change:auto!important}
+html.opera-gx-safe .cosmic-shooting-star::before{box-shadow:none!important}
+html.opera-gx-safe .cosmic-shooting-star:nth-child(n+3){display:none!important}

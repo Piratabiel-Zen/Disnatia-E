@@ -1,3 +1,0 @@
-Dinastia E production deploy trigger
-Commit de funcionalidades esperado: fcb4c3f7864608320a0a28fe8724372b38e48a08
-Revalidação do lote de rotação proporcional dos tokens e efeitos de crítico após build-rate-limit da Vercel.
