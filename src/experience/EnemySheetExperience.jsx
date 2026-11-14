@@ -13,13 +13,13 @@ const DANGER_LEVELS = ['Baixo','Médio','Alto','Extremo'];
 
 const makeAbility = () => ({
   id:`enemy_ab_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
-  nome:'', descricao:'', dano:'', custo:0, cooldown:'—', tipoHab:'normal',
+  nome:'', descricao:'', dano:'', custo:0, cooldown:'—', tipoHab:'normal', aliadoRequerido:'', amplificacao:'',
 });
 
 const makeEnemy = id => ({
   id,
   nome:'', tipo:'', classe:'', nivel:1, perigo:'Médio',
-  hp:10, hp_max:10, hp_bonus:0, vigos:10, alcance:'',
+  hp:10, hp_max:10, hp_bonus:0, vigos:10, vigos_max:10, alcance:'',
   forca:0, agilidade:0, durabilidade:0, inteligencia:0, percepcao:0, sorte:0,
   foto:'', habilidades:[], cooldowns:{}, notas:'', lore:'', status:{},
 });
@@ -31,6 +31,8 @@ const enemyColor = enemy => {
   return SHEET_COLORS[cls.id] || cls.color || ENEMY_DEFAULT;
 };
 const maxHpFor = enemy => Math.max(1, Number(enemy?.hp_max ?? Math.max(10, Number(enemy?.hp || 10))) + Math.max(0, Number(enemy?.hp_bonus || 0)));
+const maxVigosFor = enemy => Math.max(0, Math.min(10, Number(enemy?.vigos_max ?? 10)));
+const currentVigosFor = enemy => Math.max(0, Math.min(maxVigosFor(enemy), Number(enemy?.vigos ?? maxVigosFor(enemy))));
 const parseCooldown = value => {
   const text = String(value || '').toLowerCase();
   if (!text || text === '—' || text === '-') return 0;
@@ -73,19 +75,19 @@ function NumberControl({ value, min=0, max=999, onChange, color=ENEMY_DEFAULT })
 }
 
 function AbilityCard({ enemy, ability, onChange, onDelete }) {
-  const color = ability.tipoHab === 'especial' ? '#A855F7' : ability.tipoHab === 'passiva' ? '#E8A020' : enemyColor(enemy);
+  const color = ability.tipoHab === 'combinada' ? '#FFE58A' : ability.tipoHab === 'especial' ? '#A855F7' : ability.tipoHab === 'passiva' ? '#E8A020' : enemyColor(enemy);
   const cooldowns = enemy.cooldowns || {};
   const key = String(ability.id || ability.nome);
   const cd = Number(cooldowns[key] || 0);
   const cost = Number(ability.custo ?? ability.cost ?? 0);
   const passive = ability.tipoHab === 'passiva';
-  const canUse = !passive && cd <= 0 && Number(enemy.vigos || 0) >= cost;
+  const canUse = !passive && cd <= 0 && currentVigosFor(enemy) >= cost;
   const useAbility = () => {
     if (!canUse) return;
     const turns = parseCooldown(ability.cooldown);
     onChange({
       ...enemy,
-      vigos:Math.max(0,Number(enemy.vigos || 0)-cost),
+      vigos:Math.max(0,currentVigosFor(enemy)-cost),
       cooldowns:{...cooldowns,...(turns>0?{[key]:turns}:{})},
     });
   };
@@ -99,6 +101,7 @@ function AbilityCard({ enemy, ability, onChange, onDelete }) {
       </header>
       <small>{ability.dano ? `Dano/Efeito: ${ability.dano}` : ''}{ability.dano && cost ? ' · ' : ''}{cost ? `${cost} VC` : passive ? 'Passiva' : '0 VC'}{ability.cooldown && ability.cooldown !== '—' ? ` · CD ${ability.cooldown}` : ''}</small>
       {(ability.descricao || ability.desc) && <p>{ability.descricao || ability.desc}</p>}
+      {ability.tipoHab==='combinada'&&<div className="enemy-combined-note"><b>✧ ATAQUE COMBINADO</b><span>Aliado necessário: {ability.aliadoRequerido||'a definir'}</span><span>Amplificação: {ability.amplificacao||'a definir'}</span><small>O aliado participante consome 1 VC.</small></div>}
       <div className="enemy-ability-actions">
         {!passive && <button disabled={!canUse} onClick={useAbility} style={{border:`1px solid ${color}55`,background:`${color}12`,color:canUse?color:'#5e555f',cursor:canUse?'pointer':'not-allowed'}}>{cd>0?(cd>=90?'USADO':`CD ${cd}`):`Usar · ${cost} VC`}</button>}
         {!passive && cd>0 && <button onClick={()=>updateCooldown(cd>=90?0:cd-1)} style={{border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.025)',color:'#8b7b88',cursor:'pointer'}}>{cd>=90?'Resetar':'−1 CD'}</button>}
@@ -120,9 +123,10 @@ function AbilityEditor({ enemy, onChange }) {
       <h4>✦ Criar habilidade própria</h4>
       <div className="enemy-form-grid">
         <div className="enemy-form-field"><label>Nome</label><input value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Corte Abissal"/></div>
-        <div className="enemy-form-field"><label>Tipo</label><select value={form.tipoHab} onChange={e=>setForm(f=>({...f,tipoHab:e.target.value}))}><option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option></select></div>
+        <div className="enemy-form-field"><label>Tipo</label><select value={form.tipoHab} onChange={e=>setForm(f=>({...f,tipoHab:e.target.value}))}><option value="normal">Normal</option><option value="especial">Especial</option><option value="passiva">Passiva</option><option value="combinada">✧ Combinada</option></select></div>
+        {form.tipoHab==='combinada'&&<div className="enemy-form-field wide enemy-combined-fields"><b>✧ HABILIDADE SUPREMA · COMBINADA</b><label>Aliado / condição necessária<input value={form.aliadoRequerido||''} onChange={e=>setForm(f=>({...f,aliadoRequerido:e.target.value}))} placeholder="Ex.: outro inimigo aliado"/></label><label>Amplificação<input value={form.amplificacao||''} onChange={e=>setForm(f=>({...f,amplificacao:e.target.value}))} placeholder="Ex.: dano dobrado ou +2 de dano"/></label><small>O aliado participante consome 1 VC.</small></div>}
         <div className="enemy-form-field"><label>Dano / efeito</label><input value={form.dano} onChange={e=>setForm(f=>({...f,dano:e.target.value}))} placeholder="Ex: 1D8 + Força"/></div>
-        <div className="enemy-form-field"><label>Custo VC</label><input type="number" min="0" value={form.custo} onChange={e=>setForm(f=>({...f,custo:Number(e.target.value)||0}))}/></div>
+        <div className="enemy-form-field"><label>Custo VC</label><input type="number" min="0" max="10" value={form.custo} onChange={e=>setForm(f=>({...f,custo:Math.max(0,Math.min(10,Number(e.target.value)||0))}))}/></div>
         <div className="enemy-form-field"><label>Cooldown</label><input value={form.cooldown} onChange={e=>setForm(f=>({...f,cooldown:e.target.value}))} placeholder="Ex: 3 rodadas"/></div>
         <div className="enemy-form-field wide"><label>Descrição</label><textarea rows="3" value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Efeito, alcance, condição e detalhes..."/></div>
       </div>
@@ -138,6 +142,8 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
   const cls = classFor(enemy);
   const maxHp = maxHpFor(enemy);
   const hp = Math.max(0,Math.min(maxHp,Number(enemy.hp || 0)));
+  const maxVigos = maxVigosFor(enemy);
+  const currentVigos = currentVigosFor(enemy);
   const abilities = mergedAbilities(enemy);
   const f = (k,v) => onChange({...enemy,[k]:v});
 
@@ -157,6 +163,10 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
     const nextMax=Math.max(1,Number(enemy.hp_max??10))+bonus;
     onChange({...enemy,hp_bonus:bonus,hp:Math.min(Number(enemy.hp||0),nextMax)});
   };
+  const setMaxVigos = value => {
+    const max=Math.max(0,Math.min(10,Number(value)||0));
+    onChange({...enemy,vigos_max:max,vigos:Math.min(currentVigos,max)});
+  };
   const setClass = value => {
     const nextClass=CLASSES.find(c=>c.id===value);
     onChange({...enemy,classe:value,alcance:enemy.alcance || nextClass?.alcance || ''});
@@ -172,7 +182,7 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
         </button>
         <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
         <div className="enemy-sheet-title"><h3>{enemy.nome || 'Inimigo sem nome'}</h3><p>{cls ? `${cls.icon} ${cls.name}` : '◌ Sem classe'} · Nv {enemy.nivel || 1}{enemy.tipo?` · ${enemy.tipo}`:''}</p></div>
-        <div className="enemy-sheet-meta"><span style={{color:DANGER_COLORS[enemy.perigo]}}>Perigo {enemy.perigo || 'Médio'}</span><span>{abilities.length} habilidades</span><span>{hp}/{maxHp} HP</span></div>
+        <div className="enemy-sheet-meta"><span style={{color:DANGER_COLORS[enemy.perigo]}}>Perigo {enemy.perigo || 'Médio'}</span><span>{abilities.length} habilidades</span><span>{hp}/{maxHp} HP</span><span style={{color}}>{currentVigos}/{maxVigos} VC</span></div>
       </div>
       <div className="enemy-sheet-tabs">
         {[['geral','◈ Visão Geral'],['combate','⚔ Combate & Habilidades'],['lore','✦ Lore & Inventário']].map(([id,label])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{label}</button>)}
@@ -197,11 +207,19 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
               <div style={{font:'8px Cinzel,serif',letterSpacing:'.18em',color:'#8b6068'}}>PONTOS DE VIDA</div>
               <div className="enemy-hp-controls"><button onClick={()=>f('hp',Math.max(0,hp-1))} style={{border:'1px solid rgba(232,25,60,.35)',background:'rgba(232,25,60,.1)',color:'#E8193C'}}>−</button><div className="enemy-hp-value" style={{color:hpColor(hp,maxHp)}}>{hp}</div><button onClick={()=>f('hp',Math.min(maxHp,hp+1))} style={{border:'1px solid rgba(74,222,128,.35)',background:'rgba(74,222,128,.1)',color:'#4ADE80'}}>+</button></div>
               <div className="enemy-hp-track"><i style={{width:`${Math.min(100,(hp/maxHp)*100)}%`,background:hpColor(hp,maxHp)}}/></div>
+              <div className="enemy-hp-quick" style={{display:'flex',gap:5,justifyContent:'center',flexWrap:'wrap',marginTop:10}}>{[-15,-10,-5].map(v=><button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'4px 9px',borderRadius:6,border:'1px solid rgba(232,25,60,.3)',background:'rgba(232,25,60,.09)',color:'#E8193C',cursor:'pointer',fontWeight:700}}>{v}</button>)}{[5,10,15].map(v=><button key={v} onClick={()=>f('hp',Math.min(maxHp,hp+v))} style={{padding:'4px 9px',borderRadius:6,border:'1px solid rgba(74,222,128,.3)',background:'rgba(74,222,128,.09)',color:'#4ADE80',cursor:'pointer',fontWeight:700}}>+{v}</button>)}</div>
             </div>
             <div className="enemy-form-grid" style={{marginTop:11}}>
               <div className="enemy-form-field"><label>HP base máximo</label><NumberControl value={enemy.hp_max??10} min={1} max={999} onChange={setBaseHp} color="#E8193C"/></div>
               <div className="enemy-form-field"><label>HP bônus</label><NumberControl value={enemy.hp_bonus||0} min={0} max={999} onChange={setBonusHp} color="#4ADE80"/></div>
-              <div className="enemy-form-field wide"><label>Vigor Cósmico</label><NumberControl value={enemy.vigos||0} min={0} max={99} onChange={v=>f('vigos',v)} color={color}/></div>
+              <div className="enemy-form-field"><label>VC máximo · limite 10</label><NumberControl value={maxVigos} min={0} max={10} onChange={setMaxVigos} color={color}/></div>
+              <div className="enemy-form-field wide enemy-vigor-dots-player-style">
+                <label>Vigor Cósmico · {currentVigos}/{maxVigos} VC</label>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center',marginTop:6}}>
+                  {Array.from({length:maxVigos}).map((_,i)=><button key={i} type="button" onClick={()=>f('vigos',i<currentVigos?(i===currentVigos-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:'1.5px solid '+(i<currentVigos?color:'rgba(255,255,255,0.13)'),background:i<currentVigos?color+'33':'transparent',cursor:'pointer',transition:'all .2s',padding:0,boxShadow:i<currentVigos?'0 0 5px '+color+'55':'none',flexShrink:0}}>{i<currentVigos&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>)}
+                  <button type="button" onClick={()=>f('vigos',maxVigos)} disabled={currentVigos===maxVigos} style={{marginLeft:4,padding:'4px 8px',borderRadius:6,border:'1px solid '+color+'33',background:color+'0b',color:currentVigos===maxVigos?'#554b55':color,cursor:currentVigos===maxVigos?'default':'pointer',font:'8px Cinzel,serif'}}>Restaurar</button>
+                </div>
+              </div>
             </div>
           </section>
           <section className="enemy-sheet-panel" style={{'--enemy-color':color}}>
@@ -212,6 +230,14 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
         </div>}
 
         {tab==='combate'&&<>
+          <div className="enemy-sheet-panel" style={{'--enemy-color':color,marginBottom:12}}>
+            <h4>✦ Vigor Cósmico</h4>
+            <div className="enemy-vigor-combat-dots" style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center',marginBottom:9}}>
+              {Array.from({length:maxVigos}).map((_,i)=><button key={i} type="button" onClick={()=>f('vigos',i<currentVigos?(i===currentVigos-1?0:i+1):i+1)} style={{width:22,height:22,borderRadius:'50%',border:'1.5px solid '+(i<currentVigos?color:'rgba(255,255,255,0.13)'),background:i<currentVigos?color+'33':'transparent',cursor:'pointer',transition:'all .2s',padding:0,boxShadow:i<currentVigos?'0 0 5px '+color+'55':'none'}}>{i<currentVigos&&<span style={{display:'block',width:8,height:8,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>)}
+            </div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}><span style={{font:'8px Cinzel,serif',color:'#736677'}}>{currentVigos} / {maxVigos} VC</span><button type="button" onClick={()=>f('vigos',maxVigos)} disabled={currentVigos===maxVigos} style={{padding:'5px 8px',borderRadius:7,border:'1px solid '+color+'33',background:color+'0a',color:currentVigos===maxVigos?'#554b55':color,font:'8px Cinzel,serif'}}>Restaurar</button></div>
+            <div style={{font:'9px Crimson Text,serif',color:'#786a76',marginTop:8}}>As habilidades abaixo consomem automaticamente o custo indicado em VC. Quando o vigor for insuficiente, o uso fica bloqueado.</div>
+          </div>
           <div className="enemy-sheet-panel" style={{'--enemy-color':color}}>
             <h4>⚔ Arsenal de combate</h4>
             {cls&&<div className="enemy-class-note" style={{margin:'0 0 10px'}}>A ficha herda as habilidades de <b style={{color}}>{cls.name}</b> compatíveis com o nível atual e continua aceitando habilidades próprias abaixo.</div>}

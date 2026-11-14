@@ -7,6 +7,8 @@ const dangerColor = { Baixo:'#4ADE80', Médio:'#E8A020', Alto:'#FF6B35', Extremo
 const getClass = enemy => CLASSES.find(c=>c.id===enemy?.classe)||null;
 const getColor = enemy => { const cls=getClass(enemy); return cls ? (SHEET_COLORS[cls.id]||cls.color||'#FF4F65') : (dangerColor[enemy?.perigo]||'#FF4F65'); };
 const getMaxHp = enemy => Math.max(1,Number(enemy?.hp_max??Math.max(10,Number(enemy?.hp||10)))+Math.max(0,Number(enemy?.hp_bonus||0)));
+const getMaxVigos = enemy => Math.max(0,Math.min(10,Number(enemy?.vigos_max??10)));
+const getVigos = enemy => Math.max(0,Math.min(getMaxVigos(enemy),Number(enemy?.vigos??getMaxVigos(enemy))));
 const cooldownTurns = value => {const text=String(value||'').toLowerCase();if(text.includes('combate'))return 99;const n=Number((text.match(/\d+/)||[0])[0]);return Number.isFinite(n)?n:0;};
 const getAbilities = enemy => {const cls=getClass(enemy);return [
   ...(cls?.normal||[]).map((a,i)=>({...a,id:`class_${cls.id}_normal_${i}`,nome:a.name,custo:Number(a.cost||0),tipoHab:'normal',source:'classe'})),
@@ -21,8 +23,8 @@ function AbilityMini({ enemy, ability, onChangeEnemy }) {
   const cd=Number(cooldowns[key]||0);
   const cost=Number(ability.custo??ability.cost??0);
   const passive=ability.tipoHab==='passiva';
-  const canUse=!passive&&cd<=0&&Number(enemy.vigos||0)>=cost;
-  const use=()=>{if(!canUse)return;const turns=cooldownTurns(ability.cooldown);onChangeEnemy({...enemy,vigos:Math.max(0,Number(enemy.vigos||0)-cost),cooldowns:{...cooldowns,...(turns>0?{[key]:turns}:{})}});};
+  const canUse=!passive&&cd<=0&&getVigos(enemy)>=cost;
+  const use=()=>{if(!canUse)return;const turns=cooldownTurns(ability.cooldown);onChangeEnemy({...enemy,vigos:Math.max(0,getVigos(enemy)-cost),cooldowns:{...cooldowns,...(turns>0?{[key]:turns}:{})}});};
   const cdDown=()=>onChangeEnemy({...enemy,cooldowns:{...cooldowns,[key]:cd>=90?0:Math.max(0,cd-1)}});
   return <div className="enemy-mini-ability" style={{borderColor:`${color}28`}}>
     <header><b>{ability.nome||ability.name||'Habilidade'}</b><span style={{font:'8px Cinzel,serif',color}}>{passive?'PASSIVA':ability.source==='classe'?'CLASSE':'PRÓPRIA'}</span></header>
@@ -39,6 +41,8 @@ export function BattleMapEnemyPanel({ enemy, onChangeEnemy }) {
   const color=getColor(enemy);
   const maxHp=getMaxHp(enemy);
   const hp=Math.max(0,Math.min(maxHp,Number(enemy.hp||0)));
+  const maxVigos=getMaxVigos(enemy);
+  const vigos=getVigos(enemy);
   const abilities=getAbilities(enemy);
   const f=(k,v)=>onChangeEnemy({...enemy,[k]:v});
   return <div style={{'--enemy-color':color}}>
@@ -49,7 +53,11 @@ export function BattleMapEnemyPanel({ enemy, onChangeEnemy }) {
     <div style={{padding:10,border:'1px solid rgba(232,25,60,.16)',background:'rgba(232,25,60,.045)',borderRadius:9,marginBottom:9}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><button onClick={()=>f('hp',Math.max(0,hp-1))} style={{width:28,height:28,padding:0,borderRadius:7,border:'1px solid rgba(232,25,60,.35)',background:'rgba(232,25,60,.1)',color:'#E8193C'}}>−</button><b style={{font:'900 26px Cinzel,serif',color:hpColor(hp,maxHp)}}>{hp}</b><span style={{fontSize:9,color:'#5e535b'}}>/ {maxHp}</span><button onClick={()=>f('hp',Math.min(maxHp,hp+1))} style={{width:28,height:28,padding:0,borderRadius:7,border:'1px solid rgba(74,222,128,.35)',background:'rgba(74,222,128,.1)',color:'#4ADE80'}}>+</button></div>
       <div className="enemy-hp-track" style={{marginTop:8}}><i style={{width:`${Math.min(100,(hp/maxHp)*100)}%`,background:hpColor(hp,maxHp)}}/></div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:7,marginTop:9}}><span style={{font:'8px Cinzel,serif',color:'#716270'}}>VC</span><button onClick={()=>f('vigos',Math.max(0,Number(enemy.vigos||0)-1))} style={{width:25,height:25,padding:0,border:`1px solid ${color}33`,background:`${color}09`,color}}>−</button><b style={{font:'700 15px Cinzel,serif',color}}>{enemy.vigos||0}</b><button onClick={()=>f('vigos',Number(enemy.vigos||0)+1)} style={{width:25,height:25,padding:0,border:`1px solid ${color}33`,background:`${color}09`,color}}>+</button></div>
+      <div style={{display:'flex',justifyContent:'center',gap:4,marginTop:7,flexWrap:'wrap'}}>{[-10,-5].map(v=><button key={v} onClick={()=>f('hp',Math.max(0,hp+v))} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(232,25,60,.28)',background:'rgba(232,25,60,.08)',color:'#E8193C',cursor:'pointer',fontSize:9}}>{v}</button>)}{[5,10].map(v=><button key={v} onClick={()=>f('hp',Math.min(maxHp,hp+v))} style={{padding:'3px 7px',borderRadius:5,border:'1px solid rgba(74,222,128,.28)',background:'rgba(74,222,128,.08)',color:'#4ADE80',cursor:'pointer',fontSize:9}}>+{v}</button>)}</div>
+      <div className="enemy-mini-vigor-dots" style={{marginTop:10,paddingTop:9,borderTop:'1px solid rgba(255,255,255,.055)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:7,marginBottom:7}}><span style={{font:'8px Cinzel,serif',color:'#716270'}}>VIGOR CÓSMICO · {vigos}/{maxVigos}</span><button onClick={()=>f('vigos',maxVigos)} disabled={vigos===maxVigos} style={{padding:'4px 7px',borderRadius:6,border:'1px solid '+color+'2d',background:color+'08',color:vigos===maxVigos?'#514950':color,font:'7px Cinzel,serif'}}>Restaurar</button></div>
+        <div style={{display:'flex',gap:5,flexWrap:'wrap',alignItems:'center'}}>{Array.from({length:maxVigos}).map((_,i)=><button key={i} type="button" onClick={()=>f('vigos',i<vigos?(i===vigos-1?0:i+1):i+1)} style={{width:20,height:20,borderRadius:'50%',border:'1.5px solid '+(i<vigos?color:'rgba(255,255,255,0.13)'),background:i<vigos?color+'33':'transparent',cursor:'pointer',transition:'all .2s',padding:0,boxShadow:i<vigos?'0 0 5px '+color+'55':'none'}}>{i<vigos&&<span style={{display:'block',width:7,height:7,borderRadius:'50%',background:color,margin:'auto'}}/>}</button>)}</div>
+      </div>
     </div>
     <StatusPanel sheet={enemy} onChange={onChangeEnemy}/>
     <div style={{margin:'9px 0'}}><div style={{font:'8px Cinzel,serif',letterSpacing:'.16em',color:'#665967',marginBottom:6}}>BÔNUS DE ATRIBUTOS</div><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5}}>{ATTRS.map(a=>{const b=Math.floor(Number(enemy[a.key]||0)/2);return <div key={a.key} style={{padding:'6px 3px',borderRadius:6,border:`1px solid ${a.color}22`,background:`${a.color}08`,textAlign:'center'}}><div style={{font:'7px Cinzel,serif',color:a.color,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{a.label}</div><b style={{font:'700 12px Cinzel,serif',color:b>0?a.color:'#4e474e'}}>{b>0?`+${b}`:'—'}</b></div>})}</div></div>

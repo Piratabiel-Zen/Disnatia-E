@@ -45,3 +45,11 @@
 @media(max-width:900px){.cosmic-side-rail{display:none}.immersive-content::before{left:0}.enemy-sheet-grid{grid-template-columns:1fr}.enemy-sheet-header{grid-template-columns:auto minmax(0,1fr)}.enemy-sheet-meta{grid-column:1/-1;justify-content:flex-start}.enemy-sheet-body{padding:12px}.enemy-form-grid{grid-template-columns:1fr}.enemy-form-field.wide{grid-column:auto}.enemy-ability-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.enemy-sheet-page{padding:12px 9px 82px}.enemy-icon-button{width:49px;height:49px}.enemy-sheet-header{padding:10px}.enemy-sheet-avatar{width:48px;height:48px}.enemy-sheet-tabs{overflow-x:auto}.enemy-sheet-tabs button{min-width:120px;flex:0 0 auto}.enemy-sheet-title h3{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.cosmic-side-rail::before,.cosmic-side-rail::after,.cosmic-side-rail i,.immersive-topbar::after{animation:none!important}}
+
+
+/* STATIC LIGHTWEIGHT BACKDROP 2026-09-20 */
+.cosmic-static-backdrop{position:absolute;inset:0;z-index:1;pointer-events:none;background-color:#080511;background-image:radial-gradient(circle at 16% 21%,rgba(255,255,255,.78) 0 1px,transparent 1.35px),radial-gradient(circle at 71% 14%,rgba(198,217,255,.66) 0 1px,transparent 1.45px),radial-gradient(circle at 84% 66%,rgba(220,194,255,.55) 0 1px,transparent 1.4px),radial-gradient(circle at 33% 78%,rgba(255,255,255,.48) 0 1px,transparent 1.3px),radial-gradient(ellipse at 20% 32%,rgba(68,45,106,.23),transparent 38%),radial-gradient(ellipse at 78% 61%,rgba(28,74,112,.16),transparent 41%),linear-gradient(145deg,#090512 0%,#04040c 54%,#0b0614 100%);background-size:173px 181px,229px 211px,263px 247px,311px 283px,100% 100%,100% 100%,100% 100%}
+.cosmic-living-bg.is-static{background:#080511}
+.cosmic-living-bg.is-static .cosmic-static-backdrop{opacity:1;animation:none!important;transform:none!important;filter:none!important}
+.cosmic-living-bg.is-immersive .cosmic-static-backdrop{opacity:.72}
+@media(prefers-reduced-motion:reduce){.cosmic-static-backdrop{animation:none!important}}

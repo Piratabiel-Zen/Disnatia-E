@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
-import { useExperience } from './ExperienceKit.generated';
+import { useExperience } from './ExperienceKit';
 import './visitor-summons.css';
 
 export function VisitorSessionGuard({access,onLogout}) {

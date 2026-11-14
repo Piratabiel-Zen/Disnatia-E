@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { isVisitorSheet, verifyVisitorPassword } from '../adventure/visitorAccess.mjs';
+import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
 import PasswordVisibilityInput from './PasswordVisibilityInput';
 
@@ -19,7 +21,8 @@ export function loadStoredAccess() {
     const raw = localStorage.getItem(ACCESS_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || !['player','master'].includes(parsed.role)) return null;
+    if (!parsed || !['player','master','visitor'].includes(parsed.role)) return null;
+    if(parsed.role==='visitor'&&!parsed.visitorId)return null;
     return parsed;
   } catch (_) {
     return null;
@@ -47,10 +50,18 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [mode, setMode] = useState('player');
+  const [visitors,setVisitors]=useState([]);
+  const [visitorId,setVisitorId]=useState('');
+  const [visitorsLoaded,setVisitorsLoaded]=useState(false);
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{
+    if(mode!=='visitor')return;
+    return onSnapshot(collection(db,'visitors'),snap=>{setVisitors(snap.docs.map(item=>({id:item.id,...item.data()})).filter(row=>row.active!==false));setVisitorsLoaded(true);},()=>{setVisitorsLoaded(true);setError('Não foi possível consultar os visitantes. Confira sua conexão.');});
+  },[mode]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'sheets'), snap => {
-      const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(sheet=>!isVisitorSheet(sheet));
       setSheets(rows);
       setLoaded(true);
       setSelectedId(prev => prev || String(rows[0]?.id || ''));
@@ -95,6 +106,18 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
     onAccess?.(payload);
   };
 
+  const enterVisitor = async () => {
+    const visitor=visitors.find(row=>row.id===visitorId);
+    if(!visitor||busy)return;
+    setBusy(true);setError('');
+    try{
+      if(!await verifyVisitorPassword(pin,visitor.password)){setError('Senha incorreta para este visitante.');return;}
+      const payload={role:'visitor',visitorId:visitor.id,name:visitor.name,authVersion:Number(visitor.authVersion||1),ts:Date.now()};
+      saveStoredAccess(payload);onAccess?.(payload);
+    }catch{setError('Não foi possível entrar. Tente novamente.');}
+    finally{setBusy(false);}
+  };
+
   const enterMaster = async () => {
     const digest = await sha256(pin);
     if (digest !== MASTER_PIN_SHA256) {
@@ -122,6 +145,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
         <div className="access-mode-tabs">
           <button className={mode === 'player' ? 'active' : ''} onClick={() => { setMode('player'); setPin(''); setError(''); }}>Jogador</button>
+          <button className={mode === 'visitor'?'active':''} onClick={()=>{setMode('visitor');setPin('');setError('');}}>Visitante</button>
           <button className={mode === 'master' ? 'active' : ''} onClick={() => { setMode('master'); setPin(''); setError(''); }}>Mestre</button>
         </div>
 
@@ -132,7 +156,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
                 const c = CLASSES.find(x => x.id === s.classe);
                 return (
                   <button key={s.id} className={String(selectedId) === String(s.id) ? 'active' : ''} onClick={() => { setSelectedId(String(s.id)); setPin(''); setError(''); }} style={{ '--char-color': c?.color || '#A855F7' }}>
-                    <span>{s.foto ? <img src={s.foto} alt="" decoding="async" loading="lazy" /> : (s.nome?.[0] || '?')}</span>
+                    <span>{s.foto ? <img src={s.foto} alt="" /> : (s.nome?.[0] || '?')}</span>
                     <b>{s.nome || 'Personagem'}</b>
                     <small>{c?.name || 'Classe personalizada'}</small>
                   </button>
@@ -142,7 +166,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
             {selected && (
               <div className="access-selected" style={{ '--char-color': cls?.color || '#A855F7' }}>
-                <div className="access-selected-portrait">{selected.foto ? <img src={selected.foto} alt="" decoding="async" /> : (selected.nome?.[0] || '?')}</div>
+                <div className="access-selected-portrait">{selected.foto ? <img src={selected.foto} alt="" /> : (selected.nome?.[0] || '?')}</div>
                 <div>
                   <strong>{selected.nome || 'Personagem'}</strong>
                   <span>{cls?.name || 'Classe personalizada'} · Nível {selected.nivel || 1}</span>
@@ -159,6 +183,8 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
             <button className="access-enter" disabled={!selected} onClick={enterPlayer}>Entrar como {selected?.nome || 'Jogador'} <span>→</span></button>
           </>
+        ) : mode === 'visitor' ? (
+          <div className="access-visitor-login"><h2>Entrada de visitantes</h2><p>Entre pelo seu nome. Seus personagens são definidos pelo Mestre.</p><label className="access-field">Nome do visitante<select aria-label="Nome do visitante" value={visitorId} onChange={event=>{setVisitorId(event.target.value);setPin('');setError('');}}><option value="">Selecione seu nome</option>{visitors.map(visitor=><option key={visitor.id} value={visitor.id}>{visitor.name}</option>)}</select></label><label className="access-field">Senha do visitante<PasswordVisibilityInput value={pin} onChange={event=>{setPin(event.target.value);setError('');}} onKeyDown={event=>event.key==='Enter'&&enterVisitor()} autoComplete="current-password"/></label><button className="access-enter" disabled={busy||!visitorId||!pin} onClick={enterVisitor}>{busy?'Verificando...':'Entrar como visitante'}</button>{!visitorsLoaded&&<p>Consultando visitantes...</p>}{visitorsLoaded&&!visitors.length&&<p>O Mestre ainda não cadastrou visitantes.</p>}</div>
         ) : (
           <div className="access-master-login">
             <div className="access-master-orb">✦</div>
@@ -179,8 +205,8 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 export function PlayerIdentityChip({ access, onLogout }) {
   if (!access) return null;
   return (
-    <button className="player-identity-chip" onClick={onLogout} title="Trocar usuário">
-      <span>{access.photo ? <img src={access.photo} alt="" decoding="async" /> : access.role === 'master' ? '✦' : (access.name?.[0] || '?')}</span>
+    <button className={'player-identity-chip'+(access.role==='master'?' is-master':'')} onClick={onLogout} title="Trocar usuário">
+      <span>{access.role === 'master' ? 'M' : access.photo ? <img src={access.photo} alt="" /> : (access.name?.[0] || '?')}</span>
       <div><b>{access.name || (access.role === 'master' ? 'Mestre' : 'Jogador')}</b><small>{access.role === 'master' ? 'Mesa do Mestre' : 'Trocar usuário'}</small></div>
     </button>
   );

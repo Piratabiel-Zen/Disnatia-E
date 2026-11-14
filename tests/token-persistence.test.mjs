@@ -49,9 +49,9 @@ test('explicit deletion wins over stale legacy rosters and late movement', () =>
   assert.deepEqual(resolveTokenRoster(legacy, records, [{ tokenId: '2', token: { id: 2, x: 8 } }]), [legacy[0]]);
 });
 
-test('generated writer supports a roster larger than 1 MiB without a map-sized document', async () => {
-  const file = '.generated/src/features/mapa-batalha/BattleMapPage.jsx';
-  assert.ok(fs.existsSync(file), 'Run the production build before tests');
+test('writer supports a roster larger than 1 MiB without a map-sized document', async () => {
+  const file = 'src/features/mapa-batalha/BattleMapPage.jsx';
+  
   const source = fs.readFileSync(file, 'utf8');
   const start = source.indexOf('  const writeLiveTokens = async');
   const end = source.indexOf('  const writeLivePosition', start);
@@ -89,8 +89,8 @@ test('generated writer supports a roster larger than 1 MiB without a map-sized d
   assert.equal(resolveTokenRoster(tokens, records).some(token => token.id === 1), false);
 });
 
-test('generated canonical receiver keeps both clients consistent despite stale legacy lists', async () => {
-  const source = fs.readFileSync('.generated/src/features/mapa-batalha/BattleMapPage.jsx', 'utf8');
+test('canonical receiver keeps both clients consistent despite stale legacy lists', async () => {
+  const source = fs.readFileSync('src/features/mapa-batalha/BattleMapPage.jsx', 'utf8');
   const start = source.indexOf('    const u1b = liveSnapshot(');
   const end = source.indexOf('    // Canal leve de sincronização ao vivo.', start);
   assert.ok(start > 0 && end > start);
@@ -131,7 +131,7 @@ test('token identity comes from its record, while separate instances of the same
 });
 
 test('authoritative snapshots replace boot ghosts and do not resurrect deleted or absent instances',async()=>{
-  const source=fs.readFileSync('.generated/src/features/mapa-batalha/BattleMapPage.jsx','utf8');
+  const source=fs.readFileSync('src/features/mapa-batalha/BattleMapPage.jsx','utf8');
   const start=source.indexOf('    const u1b = liveSnapshot('),end=source.indexOf('    // Canal leve de sincronização ao vivo.',start);
   const clients=Array.from({length:7},()=>{
     let receive,state={m:[{id:'ghost',nome:'Old boot copy'}]};const ref={current:state},outbox=createTokenOutbox();
@@ -153,7 +153,7 @@ test('authoritative snapshots replace boot ghosts and do not resurrect deleted o
 });
 
 test('a rapid double activation of the library creates one token; later intentional additions stay distinct',async()=>{
-  const source=fs.readFileSync('.generated/src/features/mapa-batalha/BattleMapPage.jsx','utf8');
+  const source=fs.readFileSync('src/features/mapa-batalha/BattleMapPage.jsx','utf8');
   const start=source.indexOf('  const addLibraryToken = async (tpl) => {'),end=source.indexOf('  const deleteLibraryToken',start);
   let release,state={},selected;const writes=[],ref={current:{m:[]}};
   const add=new Function('currentMap','addingLibraryTokenRef','initializeEnemyToken','newToken','enemyTemplateForToken','mapTokensRef','setMapTokens','writeLiveTokens','setSelectedId','setShowTokenLibrary',source.slice(start,end)+'return addLibraryToken;')
