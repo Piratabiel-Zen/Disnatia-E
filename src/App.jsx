@@ -26,8 +26,9 @@ import {
   clearStoredAccess,
 } from "./experience/PlayerAccess";
 import { isMobileViewport, blockedOnThisDevice } from "./adventure/viewport.mjs";
+import { isUnlocked } from "./core/campaignPassword.mjs";
 import {
-  campaignTheme, clearStoredCampaign, docIn, restoreCampaignFromStorage, setActiveCampaign,
+  campaignTheme, clearStoredCampaign, docIn, globalDoc, restoreCampaignFromStorage, setActiveCampaign,
 } from "./core/campaign";
 
 const CampaignGate = lazy(() => import('./features/campanhas/CampaignGate'));
@@ -74,6 +75,20 @@ export default function App(){
     const unsub=onSnapshot(docIn('config','atmosphere'),snap=>{
       if(snap.exists()) setAtmosphere(snap.data().key||'neutro');
     });
+    return()=>unsub();
+  },[campaign?.id]);
+
+  // A senha da mesa vale também para quem já estava dentro: se o Mestre troca
+  // a senha (ou a mesa passa a ter uma), este aparelho volta para o portal.
+  useEffect(()=>{
+    if(!campaign?.id)return;
+    const unsub=onSnapshot(globalDoc('campaigns',campaign.id),snap=>{
+      const record={...campaign,...(snap.exists()?snap.data():{}),id:campaign.id};
+      if(!isUnlocked(record)){
+        clearStoredAccess();clearStoredCampaign();
+        setAccess(null);setMasterMode(false);setTab('session');setCampaign(null);
+      }
+    },()=>{});
     return()=>unsub();
   },[campaign?.id]);
 

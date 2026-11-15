@@ -5,6 +5,7 @@ import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { CLASSES } from "../../data/gameData";
 import CosmicSelectionRing from "../../experience/CosmicSelectionRing";
+import ClassScene from "./ClassScene";
 import "./classes.css";
 import { col, docIn } from '../../core/campaign';
 function ClassesSection({ masterMode }) {
@@ -55,6 +56,8 @@ function ClassesSection({ masterMode }) {
   const especiais=(cls.specials||[]).filter(a=>a?.name);
 
   return (
+    <>
+    <ClassScene classId={cls.id} color={cls.color}/>
     <div className="classe-page">
       <header className="classe-intro">
         <span className="classe-intro-kicker">As linhagens de Cosmum</span>
@@ -143,6 +146,7 @@ function ClassesSection({ masterMode }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

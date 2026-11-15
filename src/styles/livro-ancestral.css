@@ -1,0 +1,155 @@
+/* LIVRO DA MANDÍBULA · um livro antigo e poderoso
+   Três coisas mudam aqui e só elas: a folha vira como papel de verdade, os
+   artefatos ganham uma estampa de relíquia, e o livro passa a emanar algo.
+   O resto do livro continua como estava. */
+
+/* ---------- 1. A folha que vira ---------- */
+/* A perspectiva precisa estar no pai direto da folha; sem isso o giro vira
+   um simples achatamento horizontal. */
+.livro-pages{perspective:2400px;perspective-origin:50% 42%}
+.livro-page-flip{
+  background:none!important;box-shadow:none!important;backface-visibility:visible!important;
+  transform-style:preserve-3d;z-index:35;
+}
+.livro-page-flip::before,.livro-page-flip::after{display:none!important}
+.livro-leaf-front,.livro-leaf-back{
+  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background-color:#d8c391;
+  background-image:
+    radial-gradient(circle at 20% 16%,rgba(83,51,23,.16),transparent 26%),
+    radial-gradient(circle at 82% 88%,rgba(83,51,23,.14),transparent 30%),
+    repeating-linear-gradient(7deg,rgba(82,50,22,.03) 0 1px,transparent 1px 4px);
+  box-shadow:inset 0 0 60px rgba(91,55,24,.3),inset 0 0 0 1px rgba(91,55,24,.3);
+}
+.livro-leaf-back{transform:rotateY(180deg)}
+/* A curva do papel: uma faixa de luz e uma de sombra que correm pela folha
+   enquanto ela sobe, que é o que faz o olho ler "dobra" e não "placa". */
+.livro-leaf-front::after,.livro-leaf-back::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(40,20,8,.34),rgba(255,248,220,.42) 22%,transparent 46%,rgba(40,20,8,.2) 100%);
+  animation:livroLeafSheen 1.15s ease-in-out both;
+}
+.livro-page-flip.backward .livro-leaf-front::after,.livro-page-flip.backward .livro-leaf-back::after{transform:scaleX(-1)}
+@keyframes livroLeafSheen{0%{opacity:.25}45%{opacity:1}100%{opacity:.3}}
+
+.livro-page-flip.forward{left:50%;transform-origin:left center;animation:livroLeafTurnForward 1.15s cubic-bezier(.45,.05,.2,1) both}
+.livro-page-flip.backward{left:0;transform-origin:right center;animation:livroLeafTurnBackward 1.15s cubic-bezier(.45,.05,.2,1) both}
+/* A folha levanta a ponta antes de girar e assenta com um pequeno rebote. */
+@keyframes livroLeafTurnForward{
+  0%{transform:rotateY(0) rotateX(0);filter:drop-shadow(0 0 0 rgba(0,0,0,0))}
+  12%{transform:rotateY(-14deg) rotateX(2deg)}
+  50%{transform:rotateY(-90deg) rotateX(4deg);filter:drop-shadow(-30px 18px 26px rgba(0,0,0,.5))}
+  88%{transform:rotateY(-172deg) rotateX(1deg)}
+  94%{transform:rotateY(-183deg) rotateX(0)}
+  100%{transform:rotateY(-180deg) rotateX(0);filter:drop-shadow(0 0 0 rgba(0,0,0,0))}
+}
+@keyframes livroLeafTurnBackward{
+  0%{transform:rotateY(0) rotateX(0);filter:drop-shadow(0 0 0 rgba(0,0,0,0))}
+  12%{transform:rotateY(14deg) rotateX(2deg)}
+  50%{transform:rotateY(90deg) rotateX(4deg);filter:drop-shadow(30px 18px 26px rgba(0,0,0,.5))}
+  88%{transform:rotateY(172deg) rotateX(1deg)}
+  94%{transform:rotateY(183deg) rotateX(0)}
+  100%{transform:rotateY(180deg) rotateX(0);filter:drop-shadow(0 0 0 rgba(0,0,0,0))}
+}
+/* A tinta: some antes da folha passar e volta a se formar depois. */
+.livro-turning .livro-page>*{animation:livroInk 1.25s ease both}
+@keyframes livroInk{
+  0%{opacity:1;filter:blur(0)}
+  30%{opacity:0;filter:blur(2px)}
+  52%{opacity:0;filter:blur(3px)}
+  100%{opacity:1;filter:blur(0)}
+}
+/* Quando a página assenta, um fio de luz arcana percorre o livro. */
+.livro-pages::after{
+  content:'';position:absolute;inset:0;z-index:30;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(196,140,255,.34) 48%,rgba(255,236,180,.3) 52%,transparent 70%);
+  background-size:260% 100%;background-position:120% 0;
+}
+.livro-turning .livro-pages::after{animation:livroArcaneSweep 1.25s ease-out both}
+@keyframes livroArcaneSweep{0%,55%{opacity:0;background-position:120% 0}70%{opacity:1}100%{opacity:0;background-position:-40% 0}}
+
+/* ---------- 2. O livro emana ---------- */
+.livro-stage{isolation:isolate}
+.livro-stage::before{
+  content:'';position:absolute;z-index:-1;left:6%;right:6%;top:8%;bottom:-4%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 60%,rgba(139,63,199,.4),rgba(216,182,107,.1) 45%,transparent 70%);
+  filter:blur(38px);animation:livroBreath 7s ease-in-out infinite;
+}
+@keyframes livroBreath{0%,100%{opacity:.55;transform:scale(.97)}50%{opacity:1;transform:scale(1.03)}}
+/* Centelhas que sobem das páginas, devagar, como poeira acesa. */
+.livro-aura{position:absolute;inset:-30px 4% 0;z-index:7;pointer-events:none;overflow:hidden}
+.livro-aura i{
+  position:absolute;bottom:6%;left:calc(4% + var(--mote) * 6.7%);
+  width:3px;height:3px;border-radius:50%;opacity:0;
+  background:#F3D58F;box-shadow:0 0 6px #F3D58F,0 0 14px rgba(180,108,232,.9);
+  animation:livroMote calc(9s + var(--mote) * .7s) linear calc(var(--mote) * -1.3s) infinite;
+}
+.livro-aura i:nth-child(3n){background:#D9A8FF;box-shadow:0 0 6px #D9A8FF,0 0 14px rgba(139,63,199,.9);width:2px;height:2px}
+.livro-aura i:nth-child(4n){left:calc(50% + var(--mote) * 2.6%)}
+@keyframes livroMote{
+  0%{transform:translate3d(0,0,0) scale(.6);opacity:0}
+  12%{opacity:.9}
+  60%{opacity:.55}
+  100%{transform:translate3d(calc((var(--mote) - 7) * 5px),-560px,0) scale(1.2);opacity:0}
+}
+/* Cantoneiras de metal na capa: o detalhe que diz "este livro é velho e foi protegido". */
+.livro-corner{
+  position:absolute;z-index:4;width:64px;height:64px;pointer-events:none;
+  background:
+    radial-gradient(circle at 22px 22px,#F6E2A6 0 3px,#8a6426 3.5px 5px,transparent 5.5px),
+    linear-gradient(135deg,#c9a253 0,#7a5a22 38%,#3b2a10 39%,transparent 40%);
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
+}
+.livro-corner.tl{top:-2px;left:-2px;border-radius:30px 0 0 0}
+.livro-corner.tr{top:-2px;right:-2px;transform:scaleX(-1);border-radius:30px 0 0 0}
+.livro-corner.bl{bottom:-2px;left:-2px;transform:scaleY(-1);border-radius:20px 0 0 0}
+.livro-corner.br{bottom:-2px;right:-2px;transform:scale(-1);border-radius:20px 0 0 0}
+/* Couro: grão fino por cima do degradê da capa. */
+.livro-cover{background-blend-mode:overlay,normal}
+.livro-cover>.livro-pages{box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+/* Capitular nas descrições: a primeira letra iluminada, como nos manuscritos. */
+.livro-artifacts-premium .livro-page.right .livro-copy:first-of-type::first-letter,
+.elyon-chapter-body p:first-child::first-letter{
+  float:left;font:900 3.1em/0.82 'Cinzel Decorative','Cinzel',serif;margin:.06em .12em 0 0;
+  color:#6a2f8f;text-shadow:0 0 12px rgba(139,63,199,.45),1px 1px 0 rgba(255,236,180,.6);
+}
+
+/* ---------- 3. A estampa da relíquia ---------- */
+.relic-record{gap:0}
+.relic-plate{position:relative;width:min(300px,78%);aspect-ratio:1;display:grid;place-items:center}
+.relic-rays{
+  position:absolute;inset:-12%;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(139,63,199,.2) 0 3deg,transparent 3deg 15deg);
+  -webkit-mask-image:radial-gradient(circle,transparent 34%,#000 44%,transparent 70%);mask-image:radial-gradient(circle,transparent 34%,#000 44%,transparent 70%);
+  animation:relicSpin 90s linear infinite;
+}
+.relic-runes,.relic-ticks{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.relic-runes{animation:relicSpin 70s linear infinite}
+.relic-ticks{animation:relicSpin 46s linear infinite reverse}
+.relic-line{fill:none;stroke:rgba(91,55,24,.55);stroke-width:1}
+.relic-dash{fill:none;stroke:rgba(111,60,141,.7);stroke-width:1.4;stroke-dasharray:2 7}
+.relic-gem{fill:#8b3fc7;stroke:#f1d48a;stroke-width:.8;filter:drop-shadow(0 0 4px rgba(139,63,199,.9))}
+.relic-rune-text{font:600 12.5px 'Cinzel',serif;letter-spacing:2.6px;fill:#5b3718;opacity:.86}
+.relic-core{
+  position:relative;width:58%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;padding:0;overflow:hidden;
+  background:radial-gradient(circle at 40% 32%,rgba(255,246,214,.9),rgba(216,190,140,.5) 46%,rgba(120,70,150,.28) 100%);
+  border:2px solid rgba(91,55,24,.7);
+  box-shadow:0 0 0 5px rgba(216,182,107,.28),0 0 0 6px rgba(91,55,24,.5),0 0 34px rgba(139,63,199,.5),inset 0 0 26px rgba(91,55,24,.4);
+  animation:relicPulse 5s ease-in-out infinite;
+}
+button.relic-core{cursor:zoom-in}
+.relic-core img{width:100%;height:100%;object-fit:cover;filter:sepia(.18) contrast(1.05)}
+.relic-core>span{filter:drop-shadow(0 6px 10px rgba(60,30,10,.45))}
+@keyframes relicSpin{to{transform:rotate(360deg)}}
+@keyframes relicPulse{0%,100%{box-shadow:0 0 0 5px rgba(216,182,107,.28),0 0 0 6px rgba(91,55,24,.5),0 0 26px rgba(139,63,199,.38),inset 0 0 26px rgba(91,55,24,.4)}50%{box-shadow:0 0 0 5px rgba(216,182,107,.4),0 0 0 6px rgba(91,55,24,.5),0 0 52px rgba(139,63,199,.7),inset 0 0 26px rgba(91,55,24,.4)}}
+.relic-record .livro-record-name{margin-top:26px;font-size:24px}
+.relic-gallery{width:100%;margin-top:14px}
+
+@media(max-width:720px){.livro-corner{width:44px;height:44px}.relic-plate{width:min(240px,74%)}.livro-aura{display:none}}
+@media(prefers-reduced-motion:reduce){
+  .livro-page-flip,.livro-leaf-front::after,.livro-leaf-back::after,.livro-turning .livro-page>*,.livro-turning .livro-pages::after,
+  .livro-stage::before,.livro-aura i,.relic-rays,.relic-runes,.relic-ticks,.relic-core{animation:none!important}
+  .livro-aura{display:none}
+}
+html[data-quality="light"] .livro-aura,html[data-quality="light"] .relic-rays{display:none}
+.relic-gallery{order:9}

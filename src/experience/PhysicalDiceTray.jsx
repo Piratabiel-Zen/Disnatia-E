@@ -36,6 +36,8 @@ export default function PhysicalDiceTray({
   bonus = 0,
   onSettled,
   throwGesture = null,
+  overlay = null,
+  className = '',
 }) {
   const reactId = useId();
   const sceneId = `dinastia-three-dice-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -201,7 +203,7 @@ export default function PhysicalDiceTray({
   const hasTotal = Number.isFinite(Number(total));
 
   return (
-    <div className={`physical-dice-tray phase-${phase}`} style={{ '--dice-accent': color }}>
+    <div className={`physical-dice-tray phase-${phase} ${className}`.trim()} style={{ '--dice-accent': color }}>
       <div className="physical-dice-space">
         <div className="physical-dice-stars" />
         <div ref={hostRef} id={sceneId} className="physical-dice-scene" aria-hidden="true" />
@@ -211,6 +213,7 @@ export default function PhysicalDiceTray({
           </div>
         )}
         {phase === 'loading' && <div className="physical-dice-loading">preparando física tridimensional…</div>}
+        {overlay}
         <span className="physical-dice-a11y" role="img" aria-label={values.map(value => `D${safeSides} com resultado ${value}`).join(', ')} />
       </div>
       <div className="physical-dice-caption">

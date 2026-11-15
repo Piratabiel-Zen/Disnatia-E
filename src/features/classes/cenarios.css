@@ -1,0 +1,267 @@
+/* CENÁRIOS DAS LINHAGENS
+   Uma camada fixa atrás da página de classes. Cada cenário é feito das
+   mesmas peças — um brilho de fundo, um punhado de partículas <i> e um
+   clarão de entrada — e o que muda é o que essas peças viram em cada
+   linhagem. Tudo é transform e opacity: quem anima é o compositor. */
+
+.classe-scene{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  animation:sceneArrive .9s ease both;
+}
+@keyframes sceneArrive{from{opacity:0}to{opacity:1}}
+.classe-scene-glow{position:absolute;inset:0}
+.classe-scene i{position:absolute;display:block;will-change:transform,opacity}
+/* O clarão de quando a linhagem é escolhida: a cor dela toma a tela e some. */
+.classe-scene-flash{
+  position:absolute;inset:0;opacity:0;
+  background:radial-gradient(circle at 50% 60%,color-mix(in srgb,var(--c) 46%,transparent),transparent 62%);
+  animation:sceneFlash .9s ease-out both;
+}
+@keyframes sceneFlash{0%{opacity:.95}100%{opacity:0}}
+/* O conteúdo fica na frente e ganha um véu para o texto continuar legível. */
+.classe-page{position:relative;z-index:1}
+
+/* ============ ASSASSINOS DO FOGO AZUL · o chão queima em azul ============ */
+.scene-fogo .classe-scene-glow{
+  background:
+    radial-gradient(ellipse 100% 62% at 50% 112%,rgba(30,200,255,.62),rgba(24,90,255,.26) 46%,transparent 74%),
+    radial-gradient(ellipse 60% 30% at 50% 104%,rgba(210,250,255,.35),transparent 70%);
+  animation:fogoFlicker 2.6s ease-in-out infinite;
+}
+@keyframes fogoFlicker{0%,100%{opacity:.82}22%{opacity:1}40%{opacity:.7}63%{opacity:.95}81%{opacity:.76}}
+.scene-fogo i{
+  left:var(--x);bottom:-9%;margin-left:-60px;
+  width:calc(150px * var(--s));height:calc(620px * var(--s));
+  background:radial-gradient(ellipse 50% 58% at 50% 100%,#F2FDFF 0,#7FE9FF 16%,#1EC8FF 36%,rgba(30,110,255,.55) 56%,transparent 74%);
+  border-radius:50% 50% 30% 30% / 78% 78% 22% 22%;
+  filter:blur(13px);mix-blend-mode:screen;transform-origin:50% 100%;
+  animation:fogoLingua calc(var(--d) * .22) ease-in-out var(--dl) infinite alternate;
+}
+@keyframes fogoLingua{
+  0%{transform:scale(.9,.7) skewX(-8deg);opacity:.62}
+  50%{transform:scale(1.06,1.05) skewX(5deg);opacity:1}
+  100%{transform:scale(.84,1.28) skewX(10deg);opacity:.72}
+}
+/* Uma em cada três vira fagulha: sobe até sumir. */
+.scene-fogo i:nth-child(3n){
+  bottom:-2%;margin:0;width:calc(5px * var(--s));height:calc(5px * var(--s));border-radius:50%;filter:none;
+  background:#DDFAFF;box-shadow:0 0 8px #5FE1FF,0 0 18px #1E90FF;
+  animation:fogoFagulha var(--d) linear var(--dl) infinite;
+}
+@keyframes fogoFagulha{
+  0%{transform:translate3d(0,0,0);opacity:0}
+  8%{opacity:1}
+  100%{transform:translate3d(var(--sw),-105vh,0);opacity:0}
+}
+
+/* ============ CAVALEIROS ESCARLATE · rochas suspensas ============ */
+.scene-escarlate .classe-scene-glow{
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 112%,rgba(232,25,60,.42),transparent 70%),
+    radial-gradient(ellipse 50% 60% at 88% 20%,rgba(140,10,30,.3),transparent 70%),
+    radial-gradient(ellipse 46% 50% at 8% 46%,rgba(170,14,42,.22),transparent 70%);
+}
+.scene-escarlate i{
+  left:var(--x);top:var(--y);
+  width:calc(80px * var(--s));height:calc(98px * var(--s));
+  /* Faces duras, como pedra lascada: cada faixa é um plano pegando luz diferente. */
+  background:linear-gradient(152deg,#FF7A90 0 9%,#E0213F 9% 30%,#8E0C22 30% 55%,#3D050E 55% 79%,#170205 79%);
+  clip-path:polygon(38% 0,78% 9%,100% 42%,84% 86%,46% 100%,8% 78%,0 34%);
+  filter:drop-shadow(0 0 16px rgba(232,25,60,.6)) drop-shadow(0 18px 12px rgba(0,0,0,.6));
+  animation:escarlateFlutua var(--d) ease-in-out var(--dl) infinite alternate;
+}
+.scene-escarlate i:nth-child(3n){clip-path:polygon(50% 0,100% 28%,88% 74%,52% 100%,10% 82%,0 30%)}
+.scene-escarlate i:nth-child(3n+1){clip-path:polygon(22% 4%,70% 0,100% 36%,92% 82%,40% 100%,0 62%)}
+/* As de trás: menores, embaçadas, mais lentas. Dão a profundidade. */
+.scene-escarlate i:nth-child(4n){filter:blur(3px) drop-shadow(0 0 12px rgba(232,25,60,.4));opacity:.5;animation-duration:calc(var(--d) * 1.7)}
+@keyframes escarlateFlutua{
+  from{transform:translate3d(0,18px,0) rotate(var(--r))}
+  to{transform:translate3d(calc(var(--sw) * .12),-24px,0) rotate(calc(var(--r) + 13deg))}
+}
+
+/* ============ CORVOS DO HORIZONTE · penas e um horizonte âmbar ============ */
+.scene-corvos .classe-scene-glow{
+  background:
+    radial-gradient(ellipse 85% 22% at 50% 100%,rgba(232,160,32,.5),rgba(232,110,20,.16) 55%,transparent 78%),
+    linear-gradient(180deg,transparent 60%,rgba(232,160,32,.07) 100%);
+}
+.scene-corvos i,.scene-arcanjo i{
+  left:var(--x);top:-12%;
+  width:calc(15px * var(--s));height:calc(62px * var(--s));
+  border-radius:50% 50% 50% 50% / 14% 14% 86% 86%;
+  background:
+    linear-gradient(90deg,transparent 45%,color-mix(in srgb,var(--c) 62%,transparent) 47% 53%,transparent 55%),
+    linear-gradient(100deg,#201a10,#060504 60%);
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--c) 34%,transparent));
+  animation:penaCai calc(var(--d) * 1.25) linear var(--dl) infinite;
+}
+@keyframes penaCai{
+  0%{transform:translate3d(0,0,0) rotate(var(--r));opacity:0}
+  8%{opacity:.95}
+  50%{transform:translate3d(var(--sw),58vh,0) rotate(calc(var(--r) + 120deg))}
+  92%{opacity:.9}
+  100%{transform:translate3d(calc(var(--sw) * .3),120vh,0) rotate(calc(var(--r) + 250deg));opacity:0}
+}
+
+/* ============ ARCANJOS DA ESCURIDÃO · penas negras sob um pilar de luz ============ */
+.scene-arcanjo .classe-scene-glow{
+  background:
+    linear-gradient(180deg,rgba(168,85,247,.34),rgba(91,44,140,.14) 42%,transparent 78%) 50% 0/22% 100% no-repeat,
+    radial-gradient(ellipse 38% 26% at 50% 0,rgba(214,167,255,.42),transparent 70%),
+    radial-gradient(ellipse 120% 80% at 50% 50%,transparent 46%,rgba(4,0,10,.72) 100%);
+  animation:arcanjoPilar 6s ease-in-out infinite;
+}
+@keyframes arcanjoPilar{0%,100%{opacity:.72}50%{opacity:1}}
+.scene-arcanjo i{
+  background:
+    linear-gradient(90deg,transparent 45%,rgba(214,167,255,.6) 47% 53%,transparent 55%),
+    linear-gradient(100deg,#1c0d2e,#050208 60%);
+  animation-duration:calc(var(--d) * 1.9);
+}
+
+/* ============ MAGOS DO PRÓLOGO DO CÉU · estrelas e cometas ============ */
+.scene-magos .classe-scene-glow{
+  background:
+    radial-gradient(ellipse 60% 44% at 74% 18%,rgba(168,85,247,.4),transparent 70%),
+    radial-gradient(ellipse 50% 40% at 16% 72%,rgba(88,217,255,.2),transparent 70%);
+}
+.scene-magos i{
+  left:var(--x);top:var(--y);width:calc(4px * var(--s));height:calc(4px * var(--s));border-radius:50%;
+  background:#fff;box-shadow:0 0 8px #E9D5FF,0 0 18px #A855F7;
+  animation:magoEstrela calc(var(--d) * .5) ease-in-out var(--dl) infinite alternate;
+}
+@keyframes magoEstrela{from{opacity:.2;transform:scale(.6)}to{opacity:1;transform:scale(1.5)}}
+/* Uma em cada seis é um cometa atravessando o céu. */
+.scene-magos i:nth-child(6n){
+  top:calc(var(--y) * .5);left:-12%;width:calc(190px * var(--s));height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,#A855F7 40%,#F3E8FF);box-shadow:0 0 12px #C084FC;
+  animation:magoCometa calc(var(--d) * 1.1) cubic-bezier(.4,0,.6,1) var(--dl) infinite;
+}
+@keyframes magoCometa{
+  0%{transform:translate3d(0,0,0) rotate(16deg);opacity:0}
+  6%{opacity:1}
+  34%{transform:translate3d(125vw,36vh,0) rotate(16deg);opacity:0}
+  100%{transform:translate3d(125vw,36vh,0) rotate(16deg);opacity:0}
+}
+
+/* ============ CIENTISTAS DE MARFIM · um laboratório borbulhando ============ */
+.scene-marfim .classe-scene-glow{
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 112%,rgba(74,222,128,.4),transparent 72%),
+    repeating-linear-gradient(60deg,rgba(74,222,128,.045) 0 1px,transparent 1px 46px),
+    repeating-linear-gradient(-60deg,rgba(74,222,128,.045) 0 1px,transparent 1px 46px);
+}
+.scene-marfim i{
+  left:var(--x);bottom:-6%;width:calc(34px * var(--s));height:calc(34px * var(--s));border-radius:50%;
+  border:1.5px solid rgba(134,239,172,.75);
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.7),rgba(74,222,128,.16) 34%,transparent 62%);
+  box-shadow:0 0 14px rgba(74,222,128,.38),inset 0 0 10px rgba(74,222,128,.25);
+  animation:marfimBolha var(--d) ease-in var(--dl) infinite;
+}
+@keyframes marfimBolha{
+  0%{transform:translate3d(0,0,0) scale(.4);opacity:0}
+  12%{opacity:.9}
+  50%{transform:translate3d(calc(var(--sw) * .35),-52vh,0) scale(1)}
+  96%{opacity:.8}
+  100%{transform:translate3d(calc(var(--sw) * -.2),-108vh,0) scale(1.25);opacity:0}
+}
+/* Algumas são moléculas: hexágonos girando no lugar. */
+.scene-marfim i:nth-child(5n){
+  bottom:auto;top:var(--y);border-radius:0;border:none;box-shadow:none;
+  background:rgba(74,222,128,.5);
+  clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%,25% 5%,29% 12%,8% 50%,29% 88%,71% 88%,92% 50%,71% 12%,29% 12%);
+  animation:marfimMolecula calc(var(--d) * 2.4) linear var(--dl) infinite;
+}
+@keyframes marfimMolecula{from{transform:rotate(0) scale(1.4);opacity:.3}50%{opacity:.8}to{transform:rotate(360deg) scale(1.4);opacity:.3}}
+
+/* ============ NECROMANTES DAS CINZAS ETERNAS · cinza caindo, almas subindo ============ */
+.scene-necromante .classe-scene-glow{
+  background:
+    radial-gradient(ellipse 120% 34% at 30% 106%,rgba(150,150,170,.36),transparent 70%),
+    radial-gradient(ellipse 120% 30% at 78% 108%,rgba(110,110,128,.3),transparent 70%),
+    radial-gradient(ellipse 120% 80% at 50% 50%,transparent 42%,rgba(2,2,4,.7) 100%);
+  animation:necroNevoa 14s ease-in-out infinite alternate;
+}
+@keyframes necroNevoa{from{transform:translate3d(-3%,0,0) scale(1.05)}to{transform:translate3d(3%,-1%,0) scale(1.1)}}
+.scene-necromante i{
+  left:var(--x);top:-4%;width:calc(4px * var(--s));height:calc(4px * var(--s));border-radius:40%;
+  background:#9A9AA8;opacity:.7;
+  animation:necroCinza calc(var(--d) * 1.6) linear var(--dl) infinite;
+}
+@keyframes necroCinza{
+  0%{transform:translate3d(0,0,0) rotate(0)}
+  100%{transform:translate3d(var(--sw),108vh,0) rotate(300deg)}
+}
+/* Uma em cada quatro é uma alma: luz pálida que sobe ondulando. */
+.scene-necromante i:nth-child(4n){
+  top:auto;bottom:-4%;width:calc(13px * var(--s));height:calc(13px * var(--s));border-radius:50%;
+  background:radial-gradient(circle,#F4FFFB,#A7F3D0 40%,transparent 72%);
+  box-shadow:0 0 16px rgba(167,243,208,.75),0 22px 26px -6px rgba(167,243,208,.35);filter:blur(1px);
+  animation:necroAlma calc(var(--d) * 1.5) ease-in-out var(--dl) infinite;
+}
+@keyframes necroAlma{
+  0%{transform:translate3d(0,0,0);opacity:0}
+  12%{opacity:.9}
+  35%{transform:translate3d(calc(var(--sw) * .4),-34vh,0)}
+  65%{transform:translate3d(calc(var(--sw) * -.3),-66vh,0);opacity:.7}
+  100%{transform:translate3d(calc(var(--sw) * .2),-106vh,0);opacity:0}
+}
+
+/* ============ BARDOS DA LUZ · raios dourados e notas no ar ============ */
+.scene-bardo .classe-scene-glow{
+  background:
+    repeating-conic-gradient(from 150deg at 50% -8%,rgba(255,216,107,.16) 0 4deg,transparent 4deg 13deg),
+    radial-gradient(ellipse 60% 36% at 50% 0,rgba(255,216,107,.42),transparent 72%);
+  -webkit-mask-image:linear-gradient(180deg,#000,transparent 82%);mask-image:linear-gradient(180deg,#000,transparent 82%);
+  inset:-6% -30% 0;transform-origin:50% 0;animation:bardoRaios 9s ease-in-out infinite alternate;
+}
+@keyframes bardoRaios{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+.scene-bardo i{
+  left:var(--x);bottom:-8%;width:auto;height:auto;
+  animation:bardoNota calc(var(--d) * 1.2) ease-in-out var(--dl) infinite;
+}
+.scene-bardo i::before{
+  content:'♪';font-size:calc(30px * var(--s));line-height:1;color:#FFE9A8;font-style:normal;
+  text-shadow:0 0 10px #FFD86B,0 0 24px rgba(255,180,60,.8);
+}
+.scene-bardo i:nth-child(2n)::before{content:'♫'}
+.scene-bardo i:nth-child(5n)::before{content:'✦';font-size:calc(13px * var(--s))}
+@keyframes bardoNota{
+  0%{transform:translate3d(0,0,0) rotate(var(--r));opacity:0}
+  10%{opacity:1}
+  50%{transform:translate3d(calc(var(--sw) * .5),-50vh,0) rotate(calc(var(--r) * -1))}
+  90%{opacity:.8}
+  100%{transform:translate3d(calc(var(--sw) * -.2),-104vh,0) rotate(var(--r));opacity:0}
+}
+
+/* ============ PERSONALIZADO · poeira de prata e um mecanismo girando ============ */
+.scene-personalizado .classe-scene-glow{
+  background:radial-gradient(ellipse 60% 44% at 50% 30%,rgba(192,192,192,.16),transparent 70%);
+}
+.scene-personalizado .classe-scene-glow::after{
+  content:'';position:absolute;top:50%;left:50%;width:min(86vh,86vw);aspect-ratio:1;margin:calc(min(86vh,86vw) / -2) 0 0 calc(min(86vh,86vw) / -2);
+  border-radius:50%;border:2px dashed rgba(192,192,192,.16);box-shadow:inset 0 0 0 26px rgba(192,192,192,.03),inset 0 0 0 27px rgba(192,192,192,.12);
+  animation:relicSpinScene 80s linear infinite;
+}
+@keyframes relicSpinScene{to{transform:rotate(360deg)}}
+.scene-personalizado i{
+  left:var(--x);top:var(--y);width:calc(3px * var(--s));height:calc(3px * var(--s));border-radius:50%;
+  background:#E5E7EB;box-shadow:0 0 8px rgba(229,231,235,.8);
+  animation:magoEstrela calc(var(--d) * .6) ease-in-out var(--dl) infinite alternate;
+}
+
+/* ---------- Onde o cenário cede ---------- */
+/* Celular: metade das partículas e nada de desfoque pesado. */
+@media(max-width:900px){
+  .classe-scene i:nth-child(n+13){display:none}
+  .scene-fogo i{filter:blur(9px)}
+}
+/* Modo Leve: o brilho de fundo fica, o enxame de partículas diminui. */
+html[data-quality="light"] .classe-scene i:nth-child(2n){display:none}
+/* Menos movimento: a cor do lugar permanece, o que se mexe para. */
+@media(prefers-reduced-motion:reduce){
+  .classe-scene,.classe-scene-glow,.classe-scene-glow::after,.classe-scene-flash{animation:none!important}
+  .classe-scene-flash{display:none}
+  .classe-scene i{animation:none!important;opacity:.5}
+  .scene-fogo i:nth-child(3n),.scene-corvos i,.scene-arcanjo i,.scene-marfim i,.scene-necromante i,.scene-bardo i,.scene-magos i:nth-child(6n){display:none}
+}

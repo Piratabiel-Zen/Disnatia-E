@@ -184,3 +184,8 @@
 }
 .summon-photo-button:hover{border-color:rgba(155,124,255,.6);color:#C7B8E0}
 .summon-photo-button img{width:100%;height:100%;object-fit:cover}
+
+/* Atributos no cadastro do Mestre: os mesmos pontos da ficha, clicáveis. */
+.summon-master-attrs{grid-column:1/-1;display:grid;gap:8px;padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.015)}
+.summon-master-attrs>span{font:9px 'Cinzel',Georgia,serif;letter-spacing:.3em;text-transform:uppercase;color:#5A5070}
+.invocacao-abilities{gap:6px}

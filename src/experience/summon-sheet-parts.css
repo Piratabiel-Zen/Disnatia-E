@@ -1,0 +1,67 @@
+/* Invocações na linguagem da ficha de personagem. As medidas espelham a
+   ficha padrão (pontos de 15px, Cinzel 10/12, bônus em chip) de propósito:
+   o necromante lê a criatura do mesmo jeito que lê o próprio personagem. */
+.summon-attr-rows{display:flex;flex-direction:column;gap:7px}
+.summon-attr-row{display:flex;align-items:center;gap:6px;min-width:0}
+.summon-attr-label{font:10px 'Cinzel',Georgia,serif;color:var(--attr-color);min-width:84px}
+.summon-attr-dots{display:flex;gap:4px;flex-wrap:nowrap;min-width:0}
+.summon-attr-dots i,.summon-attr-dots button{
+  width:15px;height:15px;min-height:0;flex:0 0 15px;border-radius:50%;padding:0;
+  border:1.5px solid rgba(255,255,255,.12);background:transparent;transition:all .15s;
+}
+.summon-attr-dots button{cursor:pointer}
+.summon-attr-dots .is-on{
+  border-color:var(--attr-color);
+  background:color-mix(in srgb,var(--attr-color) 27%,transparent);
+  box-shadow:0 0 5px color-mix(in srgb,var(--attr-color) 30%,transparent);
+}
+.summon-attr-dots button:hover{border-color:var(--attr-color)}
+.summon-attr-value{font-size:10px;color:rgba(255,255,255,.22);min-width:14px;text-align:right}
+.summon-attr-bonus{
+  font:700 10px 'Cinzel',Georgia,serif;min-width:24px;text-align:center;border-radius:4px;padding:1px 3px;
+  color:rgba(255,255,255,.12);border:1px solid transparent;
+}
+.summon-attr-bonus.has-bonus{
+  color:var(--attr-color);
+  background:color-mix(in srgb,var(--attr-color) 8%,transparent);
+  border-color:color-mix(in srgb,var(--attr-color) 20%,transparent);
+}
+.summon-attr-note{font:9px 'Cinzel',Georgia,serif;color:rgba(255,255,255,.15);margin-top:2px}
+
+/* Versão do mapa: mesma leitura, metade do espaço. */
+.summon-attr-rows.is-compact{gap:4px}
+.summon-attr-rows.is-compact .summon-attr-label{min-width:66px;font-size:9px}
+.summon-attr-rows.is-compact .summon-attr-dots{gap:2px}
+.summon-attr-rows.is-compact .summon-attr-dots i{width:7px;height:7px;flex-basis:7px;border-width:1px}
+.summon-attr-rows.is-compact .summon-attr-value{display:none}
+.summon-attr-rows.is-compact .summon-attr-bonus{font-size:9px;min-width:22px}
+
+.summon-ability-row{
+  position:relative;display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:8px;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);
+}
+.summon-ability-row.type-especial,.summon-ability-row.type-combinada{
+  background:color-mix(in srgb,var(--ability-color) 4%,transparent);
+  border-color:color-mix(in srgb,var(--ability-color) 14%,transparent);
+}
+.summon-ability-row.type-passiva{
+  background:color-mix(in srgb,var(--ability-color) 5%,transparent);
+  border-color:color-mix(in srgb,var(--ability-color) 16%,transparent);
+}
+.summon-ability-main{flex:1;min-width:0}
+.summon-ability-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.summon-ability-title b{font:700 12px 'Cinzel',Georgia,serif;color:#C8B8A0}
+.summon-ability-spark{font-size:10px;color:var(--ability-color)}
+.summon-ability-damage{
+  font:10px 'Cinzel',Georgia,serif;letter-spacing:.05em;color:rgba(255,200,80,.85);
+  background:rgba(255,200,80,.08);border:1px solid rgba(255,200,80,.22);border-radius:4px;padding:1px 6px;
+}
+.summon-ability-row p{margin:0;font-size:13px;line-height:1.65;color:#7A6A5A}
+.summon-ability-side{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
+.summon-ability-cost{font:11px 'Cinzel',Georgia,serif;color:color-mix(in srgb,var(--ability-color) 74%,transparent)}
+.ability-use-button{
+  font:9px 'Cinzel',Georgia,serif;letter-spacing:.08em;padding:3px 9px;min-height:0;border-radius:4px;cursor:pointer;
+  border:1px solid rgba(255,200,0,.2);background:rgba(255,200,0,.05);color:rgba(255,200,0,.6);
+  transition:all .2s;
+}
+.ability-use-button:disabled{opacity:.35;cursor:not-allowed}

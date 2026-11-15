@@ -1,0 +1,133 @@
+/* FICHA VIVA
+   Duas ideias: a ficha "desperta" quando o jogador entra nela, e cada
+   habilidade responde ao mouse na medida da própria força. Passiva sussurra,
+   normal acende, especial carrega, combinada transborda. A escala é o recado:
+   dá para sentir o peso de uma habilidade antes de ler o custo dela. */
+
+/* ---------- Entrar na ficha ---------- */
+.sheet-awakening{animation:sheetAwaken .7s cubic-bezier(.2,.9,.25,1) both}
+@keyframes sheetAwaken{
+  0%{opacity:0;transform:translateY(14px) scale(.985);filter:brightness(1.6) saturate(1.4)}
+  55%{opacity:1;filter:brightness(1.18) saturate(1.15)}
+  100%{opacity:1;transform:none;filter:none}
+}
+/* Um clarão na cor da classe atravessa a ficha uma única vez. */
+.sheet-awakening::after{
+  content:'';position:absolute;inset:0;z-index:40;pointer-events:none;
+  background:linear-gradient(105deg,transparent 38%,color-mix(in srgb,var(--sheet-color) 34%,transparent) 48%,rgba(255,255,255,.22) 50%,color-mix(in srgb,var(--sheet-color) 28%,transparent) 52%,transparent 62%);
+  background-size:300% 100%;animation:sheetSweep 1.1s .12s cubic-bezier(.3,.1,.2,1) both;
+}
+@keyframes sheetSweep{from{background-position:130% 0;opacity:1}to{background-position:-60% 0;opacity:0}}
+/* A faixa do topo se desenha da esquerda para a direita. */
+.sheet-awakening .sheet-accent-bar{transform-origin:left center;animation:sheetBar .8s .1s cubic-bezier(.2,.9,.25,1) both}
+@keyframes sheetBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+/* As colunas chegam uma depois da outra: identidade, combate, história. */
+.sheet-awakening .sheet-column-scroll{animation:sheetColumn .6s cubic-bezier(.2,.9,.25,1) both}
+.sheet-awakening .sheet-column-scroll:nth-of-type(odd){animation-delay:.14s}
+.sheet-awakening .sheet-column-scroll:nth-of-type(even){animation-delay:.26s}
+.sheet-awakening .sheet-column-scroll:last-of-type{animation-delay:.38s}
+@keyframes sheetColumn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+/* O retrato foca por último, com um anel na cor da classe. */
+.sheet-awakening .sheet-photo-main{animation:sheetPortrait .9s .2s ease-out both}
+@keyframes sheetPortrait{
+  0%{filter:blur(8px) brightness(1.7);box-shadow:0 0 0 0 color-mix(in srgb,var(--sheet-color) 70%,transparent)}
+  60%{filter:blur(0) brightness(1.1);box-shadow:0 0 0 6px color-mix(in srgb,var(--sheet-color) 30%,transparent),0 0 38px color-mix(in srgb,var(--sheet-color) 55%,transparent)}
+  100%{filter:none;box-shadow:0 0 0 0 transparent}
+}
+
+/* ---------- Habilidades: resposta por força ---------- */
+.ability-row{
+  --tier-glow:var(--ability-color,#A855F7);
+  transition:transform .22s cubic-bezier(.2,.9,.3,1),box-shadow .25s ease,border-color .25s ease,filter .25s ease!important;
+}
+.ability-row::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:0;
+  transition:opacity .25s ease;
+}
+
+/* Passiva: não se usa, está sempre lá. Só respira. */
+.ability-row[data-ability-tier="passiva"]:hover{box-shadow:0 0 0 1px rgba(168,85,247,.28),0 0 16px rgba(168,85,247,.14)}
+.ability-row[data-ability-tier="passiva"]:hover::before{
+  opacity:1;background:radial-gradient(ellipse at 0% 50%,rgba(168,85,247,.12),transparent 60%);
+  animation:tierBreath 2.8s ease-in-out infinite;
+}
+@keyframes tierBreath{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* Normal: acende e levanta um pouco. */
+.ability-row[data-ability-tier="normal"]:hover{
+  transform:translateY(-1px);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--tier-glow) 42%,transparent),0 6px 18px rgba(0,0,0,.35),0 0 14px color-mix(in srgb,var(--tier-glow) 16%,transparent);
+}
+.ability-row[data-ability-tier="normal"]:hover::before{
+  opacity:1;background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--tier-glow) 14%,transparent) 50%,transparent 70%);
+  background-size:250% 100%;animation:tierSweep .7s ease-out both;
+}
+@keyframes tierSweep{from{background-position:120% 0}to{background-position:-40% 0}}
+
+/* Especial: carrega. A borda acende, a energia corre em volta sem parar. */
+.ability-row[data-ability-tier="especial"]:hover{
+  transform:translateY(-2px) scale(1.006);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--tier-glow) 80%,transparent),0 10px 26px rgba(0,0,0,.42),
+    0 0 26px color-mix(in srgb,var(--tier-glow) 38%,transparent),inset 0 0 22px color-mix(in srgb,var(--tier-glow) 12%,transparent);
+  filter:saturate(1.2) brightness(1.06);
+}
+.ability-row[data-ability-tier="especial"]:hover::before{
+  opacity:1;
+  background:linear-gradient(100deg,transparent 20%,color-mix(in srgb,var(--tier-glow) 26%,transparent) 45%,rgba(255,255,255,.14) 50%,color-mix(in srgb,var(--tier-glow) 26%,transparent) 55%,transparent 80%);
+  background-size:250% 100%;animation:tierSweepLoop 1.5s linear infinite;
+}
+@keyframes tierSweepLoop{from{background-position:140% 0}to{background-position:-60% 0}}
+
+/* Combinada: transborda. Ouro e violeta, o cartão pulsa e brilha por dentro. */
+.ability-row[data-ability-tier="combinada"]:hover{
+  transform:translateY(-3px) scale(1.012);
+  box-shadow:0 0 0 1px #FFE58A,0 14px 34px rgba(0,0,0,.5),0 0 34px rgba(255,216,115,.55),0 0 70px rgba(168,85,247,.42),inset 0 0 30px rgba(255,225,125,.16)!important;
+  filter:saturate(1.3) brightness(1.1);
+  animation:tierOverflow 1.1s ease-in-out infinite!important;
+}
+.ability-row[data-ability-tier="combinada"]:hover::before{
+  opacity:1;
+  background:
+    linear-gradient(100deg,transparent 15%,rgba(255,229,138,.3) 42%,rgba(255,255,255,.3) 50%,rgba(192,132,252,.34) 58%,transparent 85%);
+  background-size:230% 100%;animation:tierSweepLoop .95s linear infinite;
+}
+@keyframes tierOverflow{0%,100%{transform:translateY(-3px) scale(1.012)}50%{transform:translateY(-4px) scale(1.018)}}
+
+/* ---------- O botão Usar ---------- */
+.ability-use-button{position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.2,.9,.3,1),box-shadow .2s,background .2s,color .2s,border-color .2s}
+.ability-use-button:hover:not(:disabled){
+  transform:translateY(-1px);color:#FFE9A8;border-color:rgba(255,200,0,.6);background:rgba(255,200,0,.14);
+  box-shadow:0 0 12px rgba(255,200,0,.28);
+}
+.ability-use-button:active:not(:disabled){transform:scale(.94)}
+/* Especial: o botão carrega na cor da classe enquanto o mouse está em cima. */
+.ability-use-button[data-ability-tier="especial"]:hover:not(:disabled){
+  transform:translateY(-1px) scale(1.08);color:#fff;
+  border-color:var(--ability-color,#A855F7);
+  background:color-mix(in srgb,var(--ability-color,#A855F7) 34%,transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--ability-color,#A855F7) 18%,transparent),0 0 22px color-mix(in srgb,var(--ability-color,#A855F7) 65%,transparent);
+  animation:useCharge .7s ease-in-out infinite;
+}
+@keyframes useCharge{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
+/* Combinada: ouro vivo, com um raio de luz cruzando o botão. */
+.ability-use-button[data-ability-tier="combinada"]{border-color:rgba(255,229,138,.55);color:#FFE58A}
+.ability-use-button[data-ability-tier="combinada"]:hover:not(:disabled){
+  transform:translateY(-2px) scale(1.14);color:#1a0d02;border-color:#FFF2B8;
+  background:linear-gradient(110deg,#FFE58A,#F7B955 45%,#C084FC);
+  box-shadow:0 0 0 3px rgba(255,229,138,.24),0 0 26px rgba(255,216,115,.85),0 0 46px rgba(168,85,247,.55);
+  animation:useCharge .45s ease-in-out infinite;
+}
+.ability-use-button[data-ability-tier="especial"]:hover:not(:disabled)::after,
+.ability-use-button[data-ability-tier="combinada"]:hover:not(:disabled)::after{
+  content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.65) 50%,transparent 70%);
+  background-size:250% 100%;animation:tierSweepLoop .8s linear infinite;mix-blend-mode:overlay;
+}
+
+/* Quem pediu menos movimento fica só com a luz, sem deslocamento nem laço. */
+@media(prefers-reduced-motion:reduce){
+  .sheet-awakening,.sheet-awakening::after,.sheet-awakening .sheet-accent-bar,.sheet-awakening .sheet-column-scroll,.sheet-awakening .sheet-photo-main,
+  .ability-row:hover,.ability-row:hover::before,.ability-use-button:hover,.ability-use-button:hover::after{animation:none!important}
+  .sheet-awakening::after{display:none}
+  .ability-row:hover,.ability-use-button:hover:not(:disabled){transform:none!important}
+}
+html[data-quality="light"] .ability-row:hover::before,html[data-quality="light"] .ability-use-button:hover::after{animation:none}

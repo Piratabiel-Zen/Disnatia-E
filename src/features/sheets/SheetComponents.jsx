@@ -9,7 +9,9 @@ import { logAbilityUsed } from "../../core/combatEvents";
 import { useExperience } from "../../experience/ExperienceKit";
 import { LevelUpScreen,hpColor } from "../../core/ui";
 import "./invocacoes.css";
+import "./habilidades-vivas.css";
 import { SHEET_COLORS,SHEET_GLOWS,STATUS_LIST,CLASSES,ATTRS,getArtifactPowers,ArtifactGlyph,getClassBaseHp,getDurabilityHp,getSheetMaxHp } from "../../data/gameData";
+import { SummonAttrRows, SummonAbilityRow } from '../../experience/SummonSheetParts';
 const SHEET_TABS = [
   { id: 'geral',   label: 'Visão Geral',  icon: '🧙' },
   { id: 'combate', label: 'Combate',      icon: '⚔️' },
@@ -430,11 +432,7 @@ function CooldownBadge({ abilityId, cooldownText, sheetCooldowns, onUpdate, abil
       );
     }
     return (
-      <button onClick={activate} title={`Usar — gasta ${cost} VC`} style={{
-        fontSize: 9, padding: '2px 7px', borderRadius: 4, cursor: 'pointer',
-        border: '1px solid rgba(255,200,0,0.2)', background: 'rgba(255,200,0,0.05)',
-        color: 'rgba(255,200,0,0.55)', fontFamily: 'Cinzel,serif', letterSpacing: '0.08em', transition: 'all 0.2s',
-      }}>⚡ Usar</button>
+      <button onClick={activate} title={`Usar — gasta ${cost} VC`} className="ability-use-button" data-ability-tier={String(abilityType||'normal')} style={{'--ability-color':color}}>⚡ Usar</button>
     );
   }
 
@@ -494,7 +492,7 @@ function HabilidadesPanel({cls, sheet, customAbilities, masterMode, onSaveCustom
     const cdText = a.cooldown || a.tempo || '—';
     const hasCd = cdText && cdText !== '—' && cdText !== '';
     return(
-    <div key={abilityId} style={{ background:isCombined?'radial-gradient(ellipse at 12% 0%,rgba(255,225,125,.19),transparent 62%),linear-gradient(125deg,rgba(64,30,104,.32),rgba(18,12,32,.96))':(isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)'), border:isCombined?'1px solid rgba(255,225,125,.78)':`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`, borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start', opacity:locked?0.45:1, position:'relative', transition: 'opacity 0.2s', boxShadow:isCombined?'0 0 10px rgba(255,216,115,.35), inset 0 0 18px rgba(168,85,247,.14)':undefined, animation:isCombined?'bannerGlow 2.2s ease-in-out infinite':undefined }}>
+    <div key={abilityId} className="ability-row" data-ability-tier={isCombined?'combinada':type} style={{ '--ability-color':color, background:isCombined?'radial-gradient(ellipse at 12% 0%,rgba(255,225,125,.19),transparent 62%),linear-gradient(125deg,rgba(64,30,104,.32),rgba(18,12,32,.96))':(isSpecial||isCustom?`${color}09`:'rgba(255,255,255,0.02)'), border:isCombined?'1px solid rgba(255,225,125,.78)':`1px solid ${isSpecial||isCustom?color+'22':'rgba(255,255,255,0.06)'}`, borderRadius:8,padding:'9px 12px',display:'flex',gap:10,alignItems:'flex-start', opacity:locked?0.45:1, position:'relative', transition: 'opacity 0.2s', boxShadow:isCombined?'0 0 10px rgba(255,216,115,.35), inset 0 0 18px rgba(168,85,247,.14)':undefined, animation:isCombined?'bannerGlow 2.2s ease-in-out infinite':undefined }}>
       {(sheetCooldowns?.[abilityId]||0) > 0 && !isPassiva && <div style={{ position:'absolute',inset:0,borderRadius:8,pointerEvents:'none', background:'rgba(232,100,0,0.06)', border:'1px solid rgba(232,100,0,0.25)', zIndex:0 }}/>}
       <div style={{flex:1,position:'relative',zIndex:1}}>
         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
@@ -719,7 +717,7 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
     return <div className={'summon-memory-slot master '+(summon.revealed?'is-revealed':'is-hidden')} style={{'--summon-color':color}}>
       <header><div><span>{SUMMON_ICON} SLOT DE MEMÓRIA</span><b>{summon.nome||'Nova invocação'}</b></div><div className="summon-master-actions"><button className="summon-reveal-button" onClick={()=>change('revealed',!summon.revealed)}>{summon.revealed?'Ocultar':'Revelar'}</button><button className="summon-delete-button" onClick={onDelete}>×</button></div></header>
       <div className="summon-reveal-state">{summon.revealed?'Visível para o necromante':'Oculta até o Mestre revelar'} · 3 VC</div>
-      <div className="summon-memory-form"><label className="wide">Retrato<button type="button" className="summon-photo-button" onClick={()=>photoRef.current?.click()}>{summon.foto?<img src={summon.foto} alt=""/>:<span>{SUMMON_ICON} Enviar imagem</span>}</button><input ref={photoRef} type="file" accept="image/*" onChange={handleSummonPhoto} style={{display:'none'}}/></label><label className="wide">Nome<input value={summon.nome||''} onChange={event=>change('nome',event.target.value)} placeholder="Nome da criatura"/></label><label>Ameaça<select value={threat} onChange={event=>change('ameaca',event.target.value)}>{SUMMON_THREATS.map(item=><option key={item} value={item}>{item}</option>)}</select></label><label>Habilidade necessária<input value={required} readOnly/></label><label>HP base<input type="number" min="1" value={summon.hp??10} onChange={event=>change('hp',Math.max(1,Number(event.target.value)||1))}/></label><label>HP bônus<input type="number" min="0" value={summon.hp_bonus||0} onChange={event=>change('hp_bonus',Math.max(0,Number(event.target.value)||0))}/></label>{SUMMON_ATTRS.map(([key,label])=><label key={key}>{label}<input type="number" min="0" max="30" value={summon[key]||0} onChange={event=>change(key,Math.max(0,Math.min(30,Number(event.target.value)||0)))}/></label>)}</div>
+      <div className="summon-memory-form"><label className="wide">Retrato<button type="button" className="summon-photo-button" onClick={()=>photoRef.current?.click()}>{summon.foto?<img src={summon.foto} alt=""/>:<span>{SUMMON_ICON} Enviar imagem</span>}</button><input ref={photoRef} type="file" accept="image/*" onChange={handleSummonPhoto} style={{display:'none'}}/></label><label className="wide">Nome<input value={summon.nome||''} onChange={event=>change('nome',event.target.value)} placeholder="Nome da criatura"/></label><label>Ameaça<select value={threat} onChange={event=>change('ameaca',event.target.value)}>{SUMMON_THREATS.map(item=><option key={item} value={item}>{item}</option>)}</select></label><label>Habilidade necessária<input value={required} readOnly/></label><label>HP base<input type="number" min="1" value={summon.hp??10} onChange={event=>change('hp',Math.max(1,Number(event.target.value)||1))}/></label><label>HP bônus<input type="number" min="0" value={summon.hp_bonus||0} onChange={event=>change('hp_bonus',Math.max(0,Number(event.target.value)||0))}/></label><div className="wide summon-master-attrs"><span>Atributos</span><SummonAttrRows source={summon} onChange={(key,value)=>change(key,value)}/></div></div>
       <div className="summon-memory-attacks"><small>HABILIDADES · VC MÁXIMO 3</small>{(summon.ataques||[]).map(action=><article key={action.id} className={'summon-ability-card type-'+(action.tipoHab||'normal')}><div className="summon-ability-head"><b>{action.nome||'Habilidade'}</b><span>{({normal:'NORMAL',passiva:'PASSIVA',especial:'ESPECIAL'})[action.tipoHab||'normal']||'NORMAL'}</span><button onClick={()=>change('ataques',(summon.ataques||[]).filter(item=>item.id!==action.id))}>×</button></div><span className="summon-ability-meta">{action.dano||'—'} · {Math.max(0,Math.min(3,Number(action.custo??1)))} VC</span><p>{action.desc||''}</p><label>Tipo<select aria-label={'Tipo de habilidade '+(action.nome||'')} value={action.tipoHab||'normal'} onChange={event=>change('ataques',(summon.ataques||[]).map(item=>item.id===action.id?{...item,tipoHab:event.target.value}:item))}><option value="normal">Normal</option><option value="passiva">Passiva</option><option value="especial">Especial</option></select></label></article>)}<div className="summon-memory-add-attack"><input value={attackDraft.nome} onChange={event=>setAttackDraft(value=>({...value,nome:event.target.value}))} placeholder="Nome da habilidade"/><input value={attackDraft.dano} onChange={event=>setAttackDraft(value=>({...value,dano:event.target.value}))} placeholder="Dano / efeito"/><input type="number" min="0" max="3" value={attackDraft.custo} onChange={event=>setAttackDraft(value=>({...value,custo:Number(event.target.value)}))} aria-label="Custo em VC"/><input value={attackDraft.desc} onChange={event=>setAttackDraft(value=>({...value,desc:event.target.value}))} placeholder="Descrição"/><select aria-label="Tipo da nova habilidade" value={attackDraft.tipoHab||'normal'} onChange={event=>setAttackDraft(value=>({...value,tipoHab:event.target.value}))}><option value="normal">Normal</option><option value="passiva">Passiva</option><option value="especial">Especial</option></select><button onClick={addAttack}>＋</button></div></div>
     </div>;
   }
@@ -780,9 +778,7 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
 
     <section className="invocacao-section">
       <h5>Atributos</h5>
-      <div className="invocacao-attrs">
-        {SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}
-      </div>
+      <SummonAttrRows source={summon}/>
     </section>
 
     <section className="invocacao-section">
@@ -791,17 +787,9 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
         {actions.map(action=>{
           const cost=Math.max(0,Math.min(3,Number(action.custo??1)));
           const type=action.tipoHab||'normal';
-          return <article key={action.id||action.nome} className={'invocacao-ability type-'+type}>
-            <div className="invocacao-ability-head">
-              <b>{action.nome||'Habilidade'}</b>
-              <span className="invocacao-ability-type">{typeLabel[type]||'NORMAL'}</span>
-            </div>
-            <div className="invocacao-ability-meta">{action.dano||'Sem dano definido'}{type!=='passiva'?' · '+cost+' VC':''}</div>
-            {action.desc&&<p>{action.desc}</p>}
-            {type!=='passiva'&&<button disabled={!actionsAvailable||busy||displayedVc<cost||displayedHp<=0} onClick={()=>useAction(action)}>
-              Usar habilidade <em>{cost} VC</em>
-            </button>}
-          </article>;
+          return <SummonAbilityRow key={action.id||action.nome} action={action} color={color}
+            disabled={!actionsAvailable||busy||displayedVc<cost||displayedHp<=0}
+            onUse={type!=='passiva'?()=>useAction(action):undefined}/>;
         })}
         {!actions.length&&<div className="invocacao-empty">O Mestre ainda não cadastrou habilidades.</div>}
       </div>
@@ -869,7 +857,7 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
   };
 
   return(
-    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`}}>
+    <div className="sheet-awakening is-mobile" style={{'--sheet-color':sheetColor,position:'relative',border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(8,10,22,0.95)',boxShadow:`0 6px 32px ${sheetGlow}`}}>
       {levelUpData && <LevelUpScreen data={levelUpData} onClose={() => setLevelUpData(null)} />}
       <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
 
@@ -1259,9 +1247,9 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
   }
 
   return(
-    <div style={{border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(2,0,9,0.985)',boxShadow:`0 8px 38px rgba(77,20,120,0.28), 0 6px 32px ${sheetGlow}`}}>
+    <div className="sheet-awakening" style={{'--sheet-color':sheetColor,position:'relative',border:`1px solid ${sheetColor}44`,borderRadius:16,overflow:'hidden',background:'rgba(2,0,9,0.985)',boxShadow:`0 8px 38px rgba(77,20,120,0.28), 0 6px 32px ${sheetGlow}`}}>
       {levelUpData&&<LevelUpScreen data={levelUpData} onClose={()=>setLevelUpData(null)}/>}
-      <div style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
+      <div className="sheet-accent-bar" style={{height:4,background:`linear-gradient(90deg,${sheetColor},${sheetColor}44,transparent)`}}/>
       <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:'none'}}/>
 
       {/* HEADER COMPACTO */}

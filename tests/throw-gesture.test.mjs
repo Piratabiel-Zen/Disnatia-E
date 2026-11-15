@@ -34,8 +34,20 @@ test('a força e a direção saem do movimento real da mão', () => {
 });
 
 test('o clique de sempre continua funcionando', () => {
-  assert.match(widget, /onClick=\{\(\) => \{ if \(!holding && !physicalRolling\) roll\(null\); \}\}/);
+  // Um toque no dado flutuante joga ele para cima: quem não arrasta ainda rola.
+  assert.match(widget, /onClick=\{\(\) => \{ if \(!holding && !physicalRolling && rearmed\) throwDie\(null\); \}\}/);
   // E o teclado também abre o lançamento.
   assert.match(widget, /event\.key === 'Enter' \|\| event\.key === ' '/);
   assert.match(widget, /role="button"/);
+});
+
+test('o dado flutua sobre a mesa e é ele que a mão segura', () => {
+  assert.match(widget, /<FloatingDie sides=\{dice\} count=\{count\}/);
+  assert.match(widget, /dieControl\.current\?\.grab\(event\.clientX, event\.clientY\)/);
+  assert.match(widget, /dieControl\.current\?\.drag\(event\.clientX, event\.clientY\)/);
+  // O dado some no ar e a física assume o voo com o mesmo gesto.
+  assert.match(widget, /dieControl\.current\?\.release\(gesture\)/);
+  assert.match(widget, /window\.setTimeout\(\(\) => roll\(gesture\), 160\)/);
+  // three.js só é baixado quando a mesa de dados abre.
+  assert.match(widget, /const FloatingDie = lazy\(/);
 });

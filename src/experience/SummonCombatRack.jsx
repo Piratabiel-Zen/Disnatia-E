@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useExperience } from './ExperienceKit';
 import './visitor-summons.css';
+import { SummonAttrRows } from './SummonSheetParts';
+import AbilityTypeBadge from './AbilityTypeBadge';
+import './summon-rack-ficha.css';
 
-function SummonMiniSheet({record,memory,api}) {
+function SummonMiniSheet({record,memory,api,ownerName}) {
   const [draft,setDraft]=useState(null);
+  const [showAttrs,setShowAttrs]=useState(false);
   const draftRef=useRef(null);
   const pendingCount=useRef(0);
   const [busy,setBusy]=useState(false);
@@ -36,21 +40,46 @@ function SummonMiniSheet({record,memory,api}) {
     finally{if(live.current)setBusy(false);}
   };
   return <article className="summon-mini-sheet" style={{'--summon-color':record.color||'#a855f7'}} aria-label={`Invocação ${record.nome}`}>
-    <header><strong>{record.nome||'Invocação'}</strong><button disabled={busy} onClick={()=>act(()=>api.storeSummon(record.id))}>Guardar</button></header>
+    <header>
+      <span className="summon-mini-portrait" aria-hidden="true">{(memory?.foto||record.foto)?<img src={memory?.foto||record.foto} alt=""/>:'\uD83D\uDC80'}</span>
+      <span className="summon-mini-identity"><strong>{record.nome||'Invocação'}</strong><small>{ownerName?`de ${ownerName} · `:''}Ameaça {memory?.ameaca||record.ameaca||'Baixa'}</small></span>
+      <button disabled={busy} onClick={()=>act(()=>api.storeSummon(record.id))}>Guardar</button></header>
+    <div className="summon-mini-hpbar" aria-hidden="true"><i style={{width:Math.round(hp/max*100)+'%'}} data-low={hp/max<=.34?'true':'false'}/></div>
     <div className="summon-mini-resource"><label>HP</label><button aria-label={`Diminuir HP de ${record.nome}`} disabled={busy||hp<=0} onClick={()=>adjust('hp',-1)}>{'\u2212'}</button><output>{hp}/{max}</output><button aria-label={`Aumentar HP de ${record.nome}`} disabled={busy||hp>=max} onClick={()=>adjust('hp',1)}>+</button></div>
     <div className="summon-mini-resource"><label>VC</label><div className="summon-vigor-dots" role="group" aria-label={`Vigor cósmico ${vc} de 3`}>{[0,1,2].map(index=>{const active=index<vc;const next=active?index:index+1;return <button type="button" key={index} className={active?'active':''} aria-label={`Definir vigor em ${next}`} aria-pressed={active} disabled={busy} onClick={()=>act(()=>api.updateSummonVc(record.id,next-vc))}><i/></button>;})}<output>{vc}/3</output></div></div>
-    <div className="summon-mini-actions">{(record.ataques||[]).map((action,index)=>{const cost=Math.max(0,Math.min(3,Number(action.custo??1)));return <button key={action.id||index} disabled={busy||hp<=0||vc<cost} onClick={()=>act(()=>api.useSummonAction(record.id,action))} title={action.desc||action.descricao||''}><b>{action.nome||action.name||'Habilidade'}</b><small>{cost} VC{action.dano?` · ${action.dano}`:''}</small></button>;})}</div>
+    <details className="summon-mini-attrs"><summary>Atributos</summary><SummonAttrRows source={memory||record} compact/></details>
+    <div className="summon-mini-actions">{(record.ataques||[]).map((action,index)=>{
+      const type=action.tipoHab||'normal';
+      const cost=Math.max(0,Math.min(3,Number(action.custo??1)));
+      const body=<><span className="summon-mini-action-head"><b>{action.nome||action.name||'Habilidade'}</b><AbilityTypeBadge ability={action} fallback={type}/></span>{(action.desc||action.descricao)&&<em>{action.desc||action.descricao}</em>}<small>{type==='passiva'?'Sempre ativa':`${cost} VC`}{action.dano?` · \u2694 ${action.dano}`:''}</small></>;
+      // Passiva não se usa: aparece como informação, não como botão.
+      if(type==='passiva')return <div key={action.id||index} className="summon-mini-passive" data-ability-tier="passiva">{body}</div>;
+      return <button key={action.id||index} data-ability-tier={type} disabled={busy||hp<=0||vc<cost} onClick={()=>act(()=>api.useSummonAction(record.id,action))} title={action.desc||action.descricao||''}>{body}</button>;
+    })}</div>
     {error&&<p className="visitor-error" role="alert">{error}</p>}
   </article>;
 }
 
 export default function SummonCombatRack({access,tab}) {
   const api=useExperience();
-  const {selectedSheet,summons}=api;
+  const {selectedSheet,summons,sheets,masterMode}=api;
   const [open,setOpen]=useState(true);
   const [busy,setBusy]=useState('');
   const [error,setError]=useState('');
-  if(tab!=='mapabatalha'||!['player','visitor'].includes(access?.role)||selectedSheet?.classe!=='necromante')return null;
+  if(tab!=='mapabatalha')return null;
+  // O Mestre acompanha todas as invocações em campo, de qualquer necromante,
+  // com a mesma mini ficha — sem precisar abrir a ficha de cada jogador.
+  const overseeing=Boolean(masterMode||access?.role==='master');
+  if(overseeing){
+    const field=(summons||[]).filter(row=>row.active!==false&&row.type==='summon');
+    if(!field.length)return null;
+    const ownerOf=row=>(sheets||[]).find(sheet=>String(sheet.id)===String(row.ownerSheetId));
+    return <aside className="summon-combat-rack is-master" aria-label="Invocações em campo">
+      <button className="summon-rack-toggle" aria-expanded={open} onClick={()=>setOpen(value=>!value)}>{'\uD83D\uDC80'} Invocações em campo <b>{field.length}</b><span>{open?'Recolher':'Abrir'}</span></button>
+      {open&&<div className="summon-rack-body">{field.map(record=>{const owner=ownerOf(record);return <SummonMiniSheet key={record.id} record={record} ownerName={owner?.nome||''} memory={(owner?.invocacoes||[]).find(memory=>String(memory.id)===String(record.summonMemoryId))} api={api}/>;})}</div>}
+    </aside>;
+  }
+  if(!['player','visitor'].includes(access?.role)||selectedSheet?.classe!=='necromante')return null;
   const memories=(selectedSheet.invocacoes||[]).filter(memory=>memory.revealed===true);
   const active=summons.filter(row=>row.active!==false&&String(row.ownerSheetId)===String(selectedSheet.id));
   const available=memories.filter(memory=>!active.some(row=>String(row.summonMemoryId)===String(memory.id)));

@@ -43,6 +43,7 @@ function Harness() {
       <div style={{ position: 'absolute', inset: '48px 20px 20px' }}>
         {mounted ? (
           <GlobeView
+            earth={new URLSearchParams(window.location.search).has('terra')}
             image={TEXTURE}
             pins={PINS}
             selectedPinId={selected}

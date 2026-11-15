@@ -14,12 +14,15 @@ const MIN_DISTANCE = 1.45;
 const MAX_DISTANCE = 4.2;
 const DEFAULT_DISTANCE = 2.9;
 
+// Texturas reais do planeta (NASA Blue Marble), servidas pelo próprio site.
+const EARTH_TEXTURES = { day: '/media/terra/dia.jpg', night: '/media/terra/noite.jpg', water: '/media/terra/agua.png' };
+
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export default function GlobeView({
   image, pins = [], selectedPinId, onSelectPin, onPlacePin, placing = false,
-  pinTypes = {}, canSeePin = () => true, accent = '#9B7CFF',
+  pinTypes = {}, canSeePin = () => true, accent = '#9B7CFF', earth = false,
 }) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
@@ -80,6 +83,57 @@ export default function GlobeView({
     );
     scene.add(halo);
 
+    // O universo ao fundo: estrelas de verdade na cena, em três tamanhos, que
+    // cintilam devagar e giram uma fração do que o planeta gira — é essa
+    // diferença que dá a sensação de estar olhando de fora.
+    const STAR_COUNT = 2600;
+    const starPositions = new Float32Array(STAR_COUNT * 3);
+    const starSeeds = new Float32Array(STAR_COUNT);
+    const starSizes = new Float32Array(STAR_COUNT);
+    for (let i = 0; i < STAR_COUNT; i++) {
+      // Distribuição uniforme na esfera (sem amontoar nos polos).
+      const u = Math.random() * 2 - 1;
+      const theta = Math.random() * Math.PI * 2;
+      const ring = Math.sqrt(1 - u * u);
+      const distance = 34 + Math.random() * 10;
+      starPositions[i * 3] = ring * Math.cos(theta) * distance;
+      starPositions[i * 3 + 1] = u * distance;
+      starPositions[i * 3 + 2] = ring * Math.sin(theta) * distance;
+      starSeeds[i] = Math.random() * 6.283;
+      const roll = Math.random();
+      starSizes[i] = roll > 0.985 ? 4.6 : roll > 0.9 ? 2.8 : 1.6;
+    }
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('aSeed', new THREE.BufferAttribute(starSeeds, 1));
+    starGeometry.setAttribute('aSize', new THREE.BufferAttribute(starSizes, 1));
+    const starMaterial = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime: { value: 0 }, uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 2) } },
+      vertexShader: `
+        attribute float aSeed; attribute float aSize;
+        uniform float uTime; uniform float uPixelRatio;
+        varying float vGlow; varying float vSeed;
+        void main(){
+          vSeed = aSeed;
+          vGlow = 0.62 + 0.38 * sin(uTime * (0.35 + fract(aSeed) * 0.9) + aSeed);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+          gl_PointSize = aSize * uPixelRatio * (0.8 + 0.2 * vGlow);
+        }`,
+      fragmentShader: `
+        varying float vGlow; varying float vSeed;
+        void main(){
+          float d = length(gl_PointCoord - 0.5);
+          float core = smoothstep(0.5, 0.0, d);
+          // Um terço das estrelas puxa para o violeta, um terço para o ciano.
+          float pick = fract(vSeed * 3.17);
+          vec3 tint = pick < 0.33 ? vec3(0.80,0.72,1.0) : pick < 0.66 ? vec3(0.66,0.90,1.0) : vec3(1.0,0.98,0.94);
+          gl_FragColor = vec4(tint, core * vGlow * 0.95);
+        }`,
+    });
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+
     scene.add(new THREE.AmbientLight(0xffffff, 0.86));
     const key = new THREE.DirectionalLight(0xffffff, 0.78);
     key.position.set(3, 2, 4);
@@ -92,7 +146,7 @@ export default function GlobeView({
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
 
-    stateRef.current = { scene, camera, globe, sphere, renderer, spin, markerRefs };
+    stateRef.current = { scene, camera, globe, sphere, halo, renderer, spin, markerRefs };
 
     const resize = () => {
       const width = host.clientWidth || 1;
@@ -197,6 +251,7 @@ export default function GlobeView({
     canvas.addEventListener('wheel', onWheel, { passive: false });
 
     const reduce = prefersReducedMotion();
+    const startedAt = performance.now();
     const projected = new THREE.Vector3();
     const cameraDirection = new THREE.Vector3();
     let frame = 0;
@@ -214,6 +269,10 @@ export default function GlobeView({
       }
       globe.rotation.y = THREE.MathUtils.degToRad(spin.lon);
       globe.rotation.x = THREE.MathUtils.degToRad(spin.lat);
+      // O céu acompanha só uma fração do giro: paralaxe entre planeta e fundo.
+      stars.rotation.y = THREE.MathUtils.degToRad(spin.lon) * 0.16;
+      stars.rotation.x = THREE.MathUtils.degToRad(spin.lat) * 0.16;
+      if (!reduce) starMaterial.uniforms.uTime.value = (performance.now() - startedAt) / 1000;
       camera.position.setLength(spin.distance);
       camera.lookAt(0, 0, 0);
       camera.getWorldDirection(cameraDirection);
@@ -256,7 +315,10 @@ export default function GlobeView({
       canvas.removeEventListener('wheel', onWheel);
       sphere.geometry.dispose();
       sphere.material.map?.dispose();
+      for (const uniform of Object.values(sphere.material.uniforms || {})) uniform.value?.dispose?.();
       sphere.material.dispose();
+      starGeometry.dispose();
+      starMaterial.dispose();
       halo.geometry.dispose();
       halo.material.dispose();
       renderer.dispose();
@@ -264,10 +326,76 @@ export default function GlobeView({
     };
   }, [accent]);
 
+  // A Terra de verdade: dia, luzes das cidades no lado escuro e brilho do sol
+  // nos oceanos. O sol fica parado no espaço, então girar o planeta faz o
+  // amanhecer passar pelos continentes.
+  useEffect(() => {
+    const state = stateRef.current;
+    if (!state || !earth) return undefined;
+    const { sphere, halo } = state;
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    const load = url => new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+    Promise.all([load(EARTH_TEXTURES.day), load(EARTH_TEXTURES.night), load(EARTH_TEXTURES.water)])
+      .then(([day, night, water]) => {
+        if (cancelled) { day.dispose(); night.dispose(); water.dispose(); return; }
+        day.colorSpace = THREE.SRGBColorSpace; night.colorSpace = THREE.SRGBColorSpace;
+        day.anisotropy = 8; night.anisotropy = 4;
+        const previous = sphere.material;
+        sphere.material = new THREE.ShaderMaterial({
+          uniforms: {
+            uDay: { value: day }, uNight: { value: night }, uWater: { value: water },
+            uSun: { value: new THREE.Vector3(0.82, 0.32, 0.72).normalize() },
+          },
+          vertexShader: `
+            varying vec2 vUv; varying vec3 vWorldNormal; varying vec3 vWorldPosition;
+            void main(){
+              vUv = uv;
+              vWorldNormal = normalize(mat3(modelMatrix) * normal);
+              vec4 world = modelMatrix * vec4(position,1.0);
+              vWorldPosition = world.xyz;
+              gl_Position = projectionMatrix * viewMatrix * world;
+            }`,
+          fragmentShader: `
+            uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uWater;
+            uniform vec3 uSun;
+            varying vec2 vUv; varying vec3 vWorldNormal; varying vec3 vWorldPosition;
+            void main(){
+              vec3 normal = normalize(vWorldNormal);
+              vec3 view = normalize(cameraPosition - vWorldPosition);
+              float sun = dot(normal, uSun);
+              float daylight = smoothstep(-0.16, 0.34, sun);
+              vec3 day = texture2D(uDay, vUv).rgb;
+              vec3 night = texture2D(uNight, vUv).rgb;
+              // O lado escuro nunca fica preto: os continentes continuam
+              // legíveis para os locais marcados, com as cidades acesas por cima.
+              vec3 dark = day * 0.11 + night * vec3(1.5, 1.22, 0.86);
+              vec3 color = mix(dark, day * (0.42 + 0.78 * max(sun, 0.0)), daylight);
+              // Reflexo do sol só onde é água.
+              float ocean = texture2D(uWater, vUv).r;
+              vec3 halfway = normalize(uSun + view);
+              color += vec3(0.9, 0.95, 1.0) * pow(max(dot(normal, halfway), 0.0), 64.0) * ocean * 0.55 * daylight;
+              // Faixa quente no terminador: o amanhecer.
+              float dawn = smoothstep(-0.2, 0.05, sun) * (1.0 - smoothstep(0.05, 0.4, sun));
+              color += vec3(1.0, 0.45, 0.18) * dawn * 0.05;
+              // Atmosfera: a borda do planeta azula contra o espaço.
+              float rim = pow(1.0 - max(dot(normal, view), 0.0), 2.6);
+              color += vec3(0.30, 0.58, 1.0) * rim * (0.35 + 0.65 * daylight) * 0.75;
+              gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+            }`,
+        });
+        previous.map?.dispose();
+        previous.dispose();
+        halo.material.uniforms.uColor.value.set('#4DA3FF');
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [earth, ready]);
+
   // A textura do planeta: a mesma imagem do atlas, trocada sem recriar a cena.
   useEffect(() => {
     const state = stateRef.current;
-    if (!state) return undefined;
+    if (!state || earth) return undefined;
     const { sphere } = state;
     if (!image) {
       sphere.material.map?.dispose();
@@ -287,7 +415,7 @@ export default function GlobeView({
       sphere.material.needsUpdate = true;
     }, undefined, () => {});
     return () => { cancelled = true; };
-  }, [image, ready]);
+  }, [image, ready, earth]);
 
   // Posição 3D de cada pin, recalculada quando a lista muda.
   useLayoutEffect(() => {
@@ -312,7 +440,8 @@ export default function GlobeView({
   }
 
   return (
-    <div className={`globo-host${placing ? ' is-placing' : ''}`} ref={hostRef}>
+    <div className={`globo-host${placing ? ' is-placing' : ''}${earth ? ' is-earth' : ''}`} ref={hostRef}>
+      <div className="globo-universo" aria-hidden="true"><i /><i /></div>
       <canvas ref={canvasRef} className="globo-canvas" />
       <div className="globo-overlay" ref={overlayRef}>
         {pins.map(pin => {

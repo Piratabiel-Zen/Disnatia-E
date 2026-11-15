@@ -9,7 +9,9 @@ import {
   CAMPAIGN_THEMES, PRIMARY_CAMPAIGN, PRIMARY_CAMPAIGN_ID, campaignSlug, campaignTheme,
 } from '../../core/campaign';
 import PasswordVisibilityInput from '../../experience/PasswordVisibilityInput';
+import { isUnlocked, requiredPasswordHash, tryUnlock } from '../../core/campaignPassword.mjs';
 import './campanhas.css';
+import './portais.css';
 
 const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 
@@ -19,30 +21,72 @@ async function sha256(value) {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function CampaignCard({ campaign, onEnter, onRemove, canManage }) {
+// Cada mesa é um portal: um astrolábio que gira devagar em volta do sigilo.
+// Escolher a mesa abre o portal; se ela tem senha, é ali mesmo que se diz a
+// palavra de passagem.
+function CampaignPortal({ campaign, onEnter, onRemove, canManage }) {
   const theme = campaignTheme(campaign);
+  const locked = Boolean(requiredPasswordHash(campaign)) && !isUnlocked(campaign);
+  const [asking, setAsking] = useState(false);
+  const [word, setWord] = useState('');
+  const [wrong, setWrong] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const enter = () => {
+    if (locked) { setAsking(true); return; }
+    onEnter(campaign);
+  };
+  const speak = async event => {
+    event?.preventDefault();
+    if (!word || checking) return;
+    setChecking(true);
+    const ok = await tryUnlock(campaign, word);
+    setChecking(false);
+    if (ok) { onEnter(campaign); return; }
+    setWrong(true); setWord('');
+  };
+
   return (
     <article
-      className={`campaign-card${campaign.primary ? ' is-primary' : ''}`}
-      style={{ '--campaign-accent': theme.accent, '--campaign-soft': theme.accentSoft, '--campaign-bg': theme.bg }}
+      className={`portal${campaign.primary ? ' is-primary' : ''}${asking ? ' is-asking' : ''}${wrong ? ' is-wrong' : ''}`}
+      style={{ '--portal-accent': theme.accent, '--portal-soft': theme.accentSoft }}
     >
-      <div className="campaign-card-sigil" aria-hidden="true">{campaign.sigil || theme.sigil}</div>
-      <div className="campaign-card-body">
-        <span className="campaign-card-genre">{campaign.genre || theme.label}</span>
+      <button type="button" className="portal-orbit" onClick={enter} aria-label={`Entrar na mesa ${campaign.name}`}>
+        <span className="portal-ring portal-ring-a" aria-hidden="true" />
+        <span className="portal-ring portal-ring-b" aria-hidden="true" />
+        <span className="portal-ring portal-ring-c" aria-hidden="true" />
+        <span className="portal-core" aria-hidden="true">{campaign.sigil || theme.sigil}</span>
+      </button>
+      <div className="portal-text">
         <h2>{campaign.name}</h2>
-        {campaign.world ? <span className="campaign-card-world">⌖ {campaign.world}</span> : null}
+        <span className="portal-where">{[campaign.genre || theme.label, campaign.world].filter(Boolean).join(', em ')}</span>
         <p>{campaign.tagline || 'Uma mesa à espera da primeira cena.'}</p>
       </div>
-      <div className="campaign-card-actions">
-        <button className="campaign-enter" onClick={() => onEnter(campaign)}>
-          Entrar <span aria-hidden="true">→</span>
-        </button>
-        {canManage && !campaign.primary ? (
-          <button className="campaign-remove" onClick={() => onRemove(campaign)} title="Remover esta mesa da lista">
-            Remover
-          </button>
-        ) : null}
-      </div>
+      {asking ? (
+        <form className="portal-word" onSubmit={speak}>
+          <label>
+            Palavra de passagem
+            <PasswordVisibilityInput
+              value={word}
+              autoFocus
+              onChange={event => { setWord(event.target.value); setWrong(false); }}
+              placeholder="Diga a palavra para atravessar"
+            />
+          </label>
+          {wrong ? <span className="portal-word-error" role="alert">O portal não reconheceu essa palavra. Tente de novo.</span> : null}
+          <div className="portal-word-actions">
+            <button type="submit" className="portal-enter" disabled={!word || checking}>{checking ? 'Abrindo...' : 'Atravessar'}</button>
+            <button type="button" className="portal-back" onClick={() => { setAsking(false); setWord(''); setWrong(false); }}>Voltar</button>
+          </div>
+        </form>
+      ) : (
+        <div className="portal-actions">
+          <button type="button" className="portal-enter" onClick={enter}>{locked ? 'Entrar com senha' : 'Entrar na mesa'}</button>
+          {canManage && !campaign.primary ? (
+            <button type="button" className="portal-back" onClick={() => onRemove(campaign)} title="Remover esta mesa da lista">Remover</button>
+          ) : null}
+        </div>
+      )}
     </article>
   );
 }
@@ -112,18 +156,17 @@ export default function CampaignGate({ onChoose }) {
 
   return (
     <div className="campaign-gate">
-      <div className="campaign-stars" aria-hidden="true" />
+      <div className="portal-sky" aria-hidden="true"><i /><i /><i /></div>
       <section className="campaign-panel">
-        <header className="campaign-head">
-          <span className="campaign-kicker">AS MESAS</span>
-          <h1>Qual história começa agora?</h1>
-          <p>Cada mesa guarda seus próprios personagens, mapas e crônicas.</p>
+        <header className="portal-head">
+          <h1>Escolha a mesa</h1>
+          <p>Cada portal leva a um mundo, com seus personagens, mapas e crônicas.</p>
         </header>
 
-        <div className="campaign-grid">
+        <div className={`portal-row${campaigns.length === 1 ? ' is-single' : ''}`}>
           {campaigns.map(campaign => (
-            <CampaignCard
-              key={campaign.id}
+            <CampaignPortal
+              key={campaign.id + ':' + requiredPasswordHash(campaign)}
               campaign={campaign}
               onEnter={onChoose}
               onRemove={removeCampaign}

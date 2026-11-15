@@ -1,5 +1,5 @@
 import { onSnapshot } from '../adventure/sharedSnapshot';
-import { useEffect,useRef,useState } from "react";
+import { lazy,Suspense,useEffect,useRef,useState } from "react";
 import { doc} from "firebase/firestore";
 import { db } from "../core/firebase";
 import { publishDiceResult } from "../core/combatEvents";
@@ -7,6 +7,9 @@ import { CLASSES } from "../data/gameData";
 import PhysicalDiceTray from "../experience/PhysicalDiceTray";
 import { useThrowGesture } from "../experience/useThrowGesture";
 import "../experience/arremesso.css";
+import "../experience/mesa-de-dados.css";
+// O dado flutuante usa three.js; só baixa quando a mesa de dados é aberta.
+const FloatingDie = lazy(() => import("../experience/FloatingDie"));
 import { docIn } from '../core/campaign';
 export function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   const [display, setDisplay] = useState(finalValue);
@@ -151,11 +154,31 @@ function DiceWidget({ access }) {
   };
 
 
-  // O arremesso usa a mesma rolagem do clique: só o voo muda.
-  const { holding, pull, handlers } = useThrowGesture(
-    gesture => roll(gesture),
-    { disabled: physicalRolling },
-  );
+  // O dado flutuante: a mão segura, arrasta e solta. O gesto decide o voo; o
+  // resultado continua sendo o sorteado, para a mesa inteira ver o mesmo número.
+  const dieControl = useRef(null);
+  const [rearmed, setRearmed] = useState(true);
+  const throwDie = gesture => {
+    if (physicalRolling) return;
+    dieControl.current?.release(gesture);
+    setRearmed(false);
+    // O dado some no ar por um instante antes de a física assumir o voo.
+    window.setTimeout(() => roll(gesture), 160);
+  };
+  const { holding, handlers } = useThrowGesture(throwDie, { disabled: physicalRolling });
+  const mesaHandlers = {
+    onPointerDown: event => { if (physicalRolling) return; handlers.onPointerDown(event); dieControl.current?.grab(event.clientX, event.clientY); setRearmed(true); },
+    onPointerMove: event => { handlers.onPointerMove(event); dieControl.current?.drag(event.clientX, event.clientY); },
+    onPointerUp: event => { handlers.onPointerUp(event); },
+    onPointerCancel: event => { handlers.onPointerCancel(event); dieControl.current?.cancel(); },
+  };
+  // Depois que os dados param, um dado novo volta a flutuar para o próximo lance.
+  useEffect(() => {
+    if (!revealed) return undefined;
+    const timer = window.setTimeout(() => setRearmed(true), 1700);
+    return () => window.clearTimeout(timer);
+  }, [revealed, result?.ts]);
+  const dieAway = physicalRolling || !rearmed;
 
   return (
     <div className={`dice-widget ${open?'open':''}`} style={{position:'fixed', bottom: combatActive ? 96 : 24, right:16, zIndex:100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)'}}>
@@ -179,36 +202,35 @@ function DiceWidget({ access }) {
             <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Bônus</label>
             <input type="number" value={bonus} onChange={e=>setBonus(Number(e.target.value))} style={{flex:1, textAlign:'center', padding:'4px', fontSize:14}} />
           </div>
-          <div
-            className={'dice-throw-pad'+(holding?' is-holding':'')+(physicalRolling?' is-rolling':'')}
-            {...handlers}
-            onClick={() => { if (!holding && !physicalRolling) roll(null); }}
-            role="button"
-            tabIndex={0}
-            aria-label={`Rolar ${count > 1 ? `${count}D${dice}` : `D${dice}`}. Segure e arremesse para lançar com força.`}
-            onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); roll(null); } }}
-          >
-            <span className="dice-throw-die" style={{ transform: `translate(${pull.x}px, ${pull.y}px)` }} aria-hidden="true">🎲</span>
-            <b>{physicalRolling ? '✦ Dados em movimento…' : `Rolar ${count > 1 ? `${count}D${dice}` : `D${dice}`}`}</b>
-            <small>{physicalRolling ? '' : 'Clique, ou segure e arremesse'}</small>
-          </div>
-          {result && (
-            <div style={{marginTop:16, paddingTop:16, borderTop:'1px dashed rgba(255,255,255,0.1)', textAlign:'center'}}>
-              <PhysicalDiceTray
-                sides={result.sides}
-                finalValue={Array.isArray(result.values) ? result.values[0] : result.base}
-                finalValues={result.values}
-                rollTs={result.ts}
-                color={rollerProfile.color || (result.isCrit?'#4ADE80':result.isFail?'#E8193C':'#C8A8E8')}
-                total={result.total}
-                bonus={result.bonus}
-                throwGesture={throwGesture}
-                onSettled={()=>{setRevealed(true);setPhysicalRolling(false);}}
-              />
-
-
-            </div>
-          )}
+          <PhysicalDiceTray
+            className={'dice-mesa'+(holding?' is-holding':'')+(physicalRolling?' is-rolling':'')+(rearmed&&revealed?' is-rearmed':'')}
+            sides={result?.sides || dice}
+            finalValue={result ? (Array.isArray(result.values) ? result.values[0] : result.base) : 1}
+            finalValues={result?.values}
+            rollTs={result?.ts || 0}
+            color={rollerProfile.color || (result?.isCrit?'#4ADE80':result?.isFail?'#E8193C':'#C8A8E8')}
+            total={result?.total}
+            bonus={result?.bonus || 0}
+            throwGesture={throwGesture}
+            onSettled={()=>{setRevealed(true);setPhysicalRolling(false);}}
+            overlay={
+              <div
+                className="dice-mesa-stage"
+                {...mesaHandlers}
+                onClick={() => { if (!holding && !physicalRolling && rearmed) throwDie(null); }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Dado ${count > 1 ? `${count}D${dice}` : `D${dice}`} flutuando sobre a mesa. Segure e arremesse para rolar.`}
+                onKeyDown={event => { if ((event.key === 'Enter' || event.key === ' ') && !physicalRolling) { event.preventDefault(); throwDie(null); } }}
+              >
+                <Suspense fallback={null}>
+                  <FloatingDie sides={dice} count={count} color={rollerProfile.color || '#C8A8E8'} away={dieAway} controlRef={dieControl}/>
+                </Suspense>
+                {revealed && result && <div className={'dice-mesa-result'+(result.isCrit?' is-crit':result.isFail?' is-fail':'')} aria-live="polite"><small>{result.count>1?`${result.count}D${result.sides}`:`D${result.sides}`}{result.bonus?` ${result.bonus>0?'+':'−'} ${Math.abs(result.bonus)}`:''}</small><b>{result.total}</b></div>}
+                {!physicalRolling && <div className="dice-mesa-hint">{holding ? 'Solte para arremessar' : 'Segure o dado e arremesse'}</div>}
+              </div>
+            }
+          />
         </div>
       )}
     </div>

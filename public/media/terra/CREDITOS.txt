@@ -1,0 +1,2 @@
+Texturas da Terra: NASA Blue Marble / Black Marble (domínio público),
+distribuídas no pacote three-globe (MIT, Vasco Asturiano).

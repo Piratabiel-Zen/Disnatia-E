@@ -385,6 +385,7 @@ function MapaMundiSection({ masterMode }) {
               {showGlobe ? (
                 <Suspense fallback={<div style={{ position:'absolute', inset:0, display:'grid', placeItems:'center', color:'#61566F', fontFamily:'Cinzel,serif', fontSize:12 }}>Girando o planeta...</div>}>
                   <GlobeView
+                    earth
                     image={mapImage}
                     pins={visiblePins}
                     selectedPinId={selectedPin}

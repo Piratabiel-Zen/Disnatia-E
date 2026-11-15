@@ -4,6 +4,7 @@ import './experience/interface-clearance.css';
 import { ToastContainer } from './core/toast';
 import RealtimeBroadcasts from './experience/RealtimeBroadcasts';
 import MasterToggle from './shell/MasterToggle';
+import CampaignPasswordButton from './shell/CampaignPasswordButton';
 import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
@@ -64,6 +65,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
               {tab!=='mesaImersiva'&&<AmbientSoundPlayer masterMode={masterMode}/>}
               <VisitorCharacterPicker access={access}/>
               <PlayerIdentityChip access={access} onLogout={logout}/>
+              {access.role === 'master' && masterMode && <CampaignPasswordButton campaign={campaign}/>}
               {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>} 
             </div>
           </header>

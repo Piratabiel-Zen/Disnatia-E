@@ -8,6 +8,7 @@ import { compressImage } from "../../core/media";
 import { MILESTONES,ENTITIES_DATA,ARTEFATOS_DATA,getArtifactPowers,ArtifactGlyph } from "../../data/gameData";
 import { col, docIn } from '../../core/campaign';
 import PrologueSection from '../prologue/ProloguePage';
+import '../../styles/livro-ancestral.css';
 
 const BOOK_IMAGE_SAFE_LIMIT = 860000;
 
@@ -93,6 +94,46 @@ function LivroImageGallery({ scope, masterMode, compact=false }) {
     </label>}
     {lightbox&&<ImageViewer src={lightbox.img} title={lightbox.nome||"Ilustração ampliada"} onClose={()=>setLightbox(null)}/>}
   </div>;
+}
+
+// Estampa do artefato: a relíquia dentro de um selo de runas que gira devagar,
+// como uma iluminura viva. Se o Mestre anexou uma imagem ao artefato, é ela
+// que ocupa o centro do selo; sem imagem, fica o símbolo da relíquia.
+const RELIC_RUNES = 'ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ ᚺ ᚾ ᛁ ᛃ ᛇ ᛈ ᛉ ᛊ ᛏ ᛒ ᛖ ᛗ ᛚ ᛜ ᛞ ᛟ ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ';
+function RelicPlate({ art, masterMode }) {
+  const [images, setImages] = useState([]);
+  const [viewing, setViewing] = useState(false);
+  const scope = `artifact:${art.id}`;
+  useEffect(() => {
+    const unsub = onSnapshot(col('livro_media'), snap => {
+      setImages(snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(item => String(item.scope || '') === scope)
+        .sort((a, b) => Number(a.ts || 0) - Number(b.ts || 0)));
+    });
+    return () => unsub();
+  }, [scope]);
+  const cover = images[0];
+  const pathId = `relic-ring-${art.id}`;
+  return <>
+    <div className={'relic-plate' + (cover ? ' has-image' : '')}>
+      <div className="relic-rays" aria-hidden="true" />
+      <svg className="relic-runes" viewBox="0 0 240 240" aria-hidden="true">
+        <defs><path id={pathId} d="M120,120 m-104,0 a104,104 0 1,1 208,0 a104,104 0 1,1 -208,0" /></defs>
+        <circle cx="120" cy="120" r="116" className="relic-line" />
+        <circle cx="120" cy="120" r="92" className="relic-line" />
+        <text className="relic-rune-text"><textPath href={`#${pathId}`} startOffset="0">{RELIC_RUNES}</textPath></text>
+      </svg>
+      <svg className="relic-ticks" viewBox="0 0 240 240" aria-hidden="true">
+        <circle cx="120" cy="120" r="84" className="relic-dash" />
+        {[0, 60, 120, 180, 240, 300].map(angle => <path key={angle} d="M120 30 l5 9 -5 9 -5 -9z" className="relic-gem" transform={`rotate(${angle} 120 120)`} />)}
+      </svg>
+      {cover
+        ? <button type="button" className="relic-core" onClick={() => setViewing(true)} title="Ampliar a ilustração"><img src={cover.img} alt={`Ilustração de ${art.name}`} /></button>
+        : <div className="relic-core"><ArtifactGlyph art={art} size={92} /></div>}
+    </div>
+    {viewing && cover && <ImageViewer src={cover.img} title={art.name} onClose={() => setViewing(false)} />}
+    {(masterMode || images.length > 1) && <div className="relic-gallery"><LivroImageGallery scope={scope} masterMode={masterMode} compact /></div>}
+  </>;
 }
 
 const ELYON_CHAPTER_SPREADS = [
@@ -322,8 +363,9 @@ function LibroSection({masterMode}){
     const next=Math.max(0,Math.min(totals[activeTab]-1,spread+dir));
     if(next===spread)return;
     setTurnDir(dir);setTurning(true);
-    setTimeout(()=>{setTabPages(p=>({...p,[activeTab]:next}));setMobileSide(dir>0?0:1);},390);
-    setTimeout(()=>setTurning(false),900);
+    // A troca de conteúdo acontece com a folha de pé, tapando as duas páginas.
+    setTimeout(()=>{setTabPages(p=>({...p,[activeTab]:next}));setMobileSide(dir>0?0:1);},520);
+    setTimeout(()=>setTurning(false),1250);
   };
 
   useEffect(()=>{
@@ -359,7 +401,7 @@ function LibroSection({masterMode}){
   ]};
 
   const ArtifactPages=()=>{const art=ARTEFATOS_DATA[spread];const revealed=!!artefatosUnlocked[art.id];const canSee=masterMode||revealed;const powers=getArtifactPowers(art,artefatosHabs);return [
-    canSee?<div className="livro-record"><div className="livro-record-icon"><ArtifactGlyph art={art} size={96}/></div><div className="livro-record-name">{art.name}</div><div className="livro-status">{revealed?'Artefato revelado':'Visível apenas ao Mestre'}</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>{revealed?'Selar artefato':'Revelar'}</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar</button>}</div>,
+    canSee?<div className="livro-record relic-record"><RelicPlate key={art.id} art={art} masterMode={masterMode}/><div className="livro-record-name">{art.name}</div><div className="livro-status">{revealed?'Artefato revelado':'Visível apenas ao Mestre'}</div>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>{revealed?'Selar artefato':'Revelar'}</button>}</div>:<div className="livro-locked"><div className="livro-seal">◆</div><h3 className="livro-page-title">Artefato {spread+1}</h3><p>Esta relíquia permanece selada por uma magia poderosa.</p>{masterMode&&<button onClick={()=>toggleArtefato(art.id)} style={parchmentBtn}>Revelar</button>}</div>,
     canSee?<div>
       <h3 className="livro-page-title">{art.name}</h3>
       <div className="livro-section-label">Descrição & Origem</div>
@@ -388,7 +430,7 @@ function LibroSection({masterMode}){
     <nav className="livro-tabs" aria-label="Seções do Livro da Mandíbula">{tabs.map(t=><button className={`livro-tab ${activeTab===t.id?'active':''}`} key={t.id} onClick={()=>changeTab(t.id)}><span style={{marginRight:9}}>{t.icon}</span>{t.label}</button>)}</nav>
     {activeTab==='prologo'?<PrologueSection masterMode={masterMode}/>:acquired?<AcquiredKnowledge key={activeTab} section={activeTab}/>:<><div className={`livro-stage ${turning?'livro-turning':''}`} style={{'--flip-dir':`${turnDir*16}deg`}}>
       <button className="livro-arrow prev" onClick={()=>turnPage(-1)} disabled={!hasPrev} aria-label="Página anterior">‹</button>
-      <div className="livro-cover"><div className="livro-pages">{turning&&<div className={`livro-page-flip ${turnDir>0?'forward':'backward'}`} aria-hidden="true" onAnimationEnd={()=>setTurning(false)}/>}<section className={`livro-page left ${mobileSide===0?'mobile-visible':''}`}>{leftContent}</section><section className={`livro-page right ${mobileSide===1?'mobile-visible':''}`}>{rightContent}</section><div className="livro-gutter"/></div><div className="livro-bookmark"/></div>
+      <div className="livro-aura" aria-hidden="true">{Array.from({length:14}).map((_,i)=><i key={i} style={{'--mote':i}}/>)}</div><div className="livro-cover"><i className="livro-corner tl" aria-hidden="true"/><i className="livro-corner tr" aria-hidden="true"/><i className="livro-corner bl" aria-hidden="true"/><i className="livro-corner br" aria-hidden="true"/><div className="livro-pages">{turning&&<div className={`livro-page-flip ${turnDir>0?'forward':'backward'}`} aria-hidden="true" onAnimationEnd={event=>{if(event.target===event.currentTarget)setTurning(false);}}><span className="livro-leaf-front"/><span className="livro-leaf-back"/></div>}<section className={`livro-page left ${mobileSide===0?'mobile-visible':''}`}>{leftContent}</section><section className={`livro-page right ${mobileSide===1?'mobile-visible':''}`}>{rightContent}</section><div className="livro-gutter"/></div><div className="livro-bookmark"/></div>
       <button className="livro-arrow next" onClick={()=>turnPage(1)} disabled={!hasNext} aria-label="Próxima página">›</button>
     </div>
     <div className="livro-page-count">{tabs.find(t=>t.id===activeTab)?.label} · Página {spread+1} de {totals[activeTab]}</div></>}

@@ -7,9 +7,30 @@
 .globo-host:active{cursor:grabbing}
 .globo-host.is-placing{cursor:crosshair}
 .globo-host.is-placing:active{cursor:crosshair}
-.globo-canvas{display:block;width:100%;height:100%}
+.globo-canvas{position:relative;z-index:1;display:block;width:100%;height:100%}
 
-.globo-overlay{position:absolute;inset:0;pointer-events:none}
+/* O universo atrás do planeta: duas nuvens de nebulosa que derivam devagar.
+   As estrelas são desenhadas na própria cena 3D; aqui fica só a cor. */
+.globo-universo{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#03020A}
+.globo-universo i{position:absolute;inset:-22%;filter:blur(46px);opacity:.75;will-change:transform}
+.globo-universo i:first-child{
+  background:
+    radial-gradient(ellipse 34% 26% at 22% 30%,rgba(109,40,217,.46),transparent 70%),
+    radial-gradient(ellipse 30% 24% at 78% 72%,rgba(14,116,190,.36),transparent 70%);
+  animation:globoNebulaA 70s ease-in-out infinite alternate;
+}
+.globo-universo i:last-child{
+  background:
+    radial-gradient(ellipse 26% 20% at 74% 22%,rgba(192,38,211,.22),transparent 70%),
+    radial-gradient(ellipse 30% 22% at 18% 78%,rgba(56,189,248,.20),transparent 70%);
+  animation:globoNebulaB 96s ease-in-out infinite alternate;
+}
+@keyframes globoNebulaA{from{transform:translate3d(-2%,-1%,0) rotate(0deg) scale(1)}to{transform:translate3d(3%,2%,0) rotate(8deg) scale(1.08)}}
+@keyframes globoNebulaB{from{transform:translate3d(2%,1%,0) rotate(0deg) scale(1.05)}to{transform:translate3d(-3%,-2%,0) rotate(-10deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){.globo-universo i{animation:none}}
+html[data-quality="light"] .globo-universo i{animation:none}
+
+.globo-overlay{position:absolute;inset:0;z-index:2;pointer-events:none}
 
 .globo-pin{
   --pin-color:#9B7CFF;
@@ -40,7 +61,7 @@
 .globo-pin.is-unknown .globo-pin-name{color:#8A7FA6;font-style:italic}
 
 .globo-hint{
-  position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:3;position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
   padding:8px 15px;border-radius:999px;font-family:'Cinzel',Georgia,serif;font-size:10px;letter-spacing:.14em;
   color:#E4D9FB;background:rgba(14,10,26,.9);border:1px solid rgba(155,124,255,.34);
 }
