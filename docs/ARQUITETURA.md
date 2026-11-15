@@ -93,3 +93,36 @@ As chaves do `localStorage` seguem a mesma regra: a campanha principal mantém a
 chaves atuais e as outras ganham sufixo, então entrar numa mesa não autentica em
 outra. Cada campanha tem um tema (`CAMPAIGN_THEMES`) que define cor de acento e
 fundo; a principal continua com a atmosfera controlada pelo Mestre.
+
+## Globo do Mapa Múndi
+
+O mapa raiz do atlas é o planeta inteiro e abre como um globo 3D
+(`src/features/mapa-mundi/GlobeView.jsx`, three.js). Camadas internas do atlas
+(continentes, cidades, masmorras) continuam planas, e há um botão para alternar
+entre globo e mapa plano no mapa raiz.
+
+Os pins **não mudaram de formato**: continuam guardados como porcentagem da
+imagem (`x` e `y` de 0 a 100). Como a imagem é uma projeção equiretangular,
+essa porcentagem já é longitude e latitude; `globeMath.mjs` faz a conversão nos
+dois sentidos. Por isso o globo e o mapa plano mostram exatamente os mesmos
+locais, e nada precisou ser migrado.
+
+Detalhes que valem lembrar ao mexer:
+
+- os pins são elementos HTML sobre o canvas, reposicionados a cada quadro; o
+  canvas desenha só o planeta;
+- a seleção de um local é por **proximidade na tela**, não pelo clique no
+  elemento: o planeta pode girar entre apertar e soltar, e um alvo de 26px
+  escaparia do cursor;
+- a captura de ponteiro só começa quando o gesto vira arraste, senão o
+  `pointerup` mudaria de alvo e o clique no pin nunca aconteceria;
+- a deriva lenta do planeta pausa quando o ponteiro está sobre ele, e não existe
+  para quem pediu menos animação no sistema;
+- `vendor-three` é um pedaço separado de `vendor-dice-physics`: o globo não
+  carrega a física dos dados junto.
+
+`tests/browser/globe.cjs` abre o globo num navegador real e confere desenho,
+rotação, o lado oculto, o clique no local e a devolução do contexto de vídeo ao
+sair da página. Um canvas WebGL não pode ser lido de volta sem
+`preserveDrawingBuffer`, então a conferência de pixels usa a tela capturada e o
+decodificador em `tests/browser/png.cjs`.
