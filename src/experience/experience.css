@@ -222,10 +222,8 @@ input:focus,textarea:focus,select:focus{
   .immersive-topbar small{display:none}
 }
 
-@media(prefers-reduced-motion:reduce){
-  .immersive-topbar::before,.immersive-topbar .brand-mark,.grim-brand>span,.session-hero{animation:none!important}
-  .session-card,.journal-mini>div,.grim-icon,button,input,textarea,select{transition-duration:.01ms!important}
-}
+html[data-motion="reduced"] .immersive-topbar::before,html[data-motion="reduced"] .immersive-topbar .brand-mark,html[data-motion="reduced"] .grim-brand>span,html[data-motion="reduced"] .session-hero{animation:none!important}
+html[data-motion="reduced"] .session-card,html[data-motion="reduced"] .journal-mini>div,html[data-motion="reduced"] .grim-icon,html[data-motion="reduced"] button,html[data-motion="reduced"] input,html[data-motion="reduced"] textarea,html[data-motion="reduced"] select{transition-duration:.01ms!important}
 
 
 /* ATLAS EDITÁVEL · 2026-08-23 */
@@ -336,11 +334,9 @@ input:focus,textarea:focus,select:focus{
   .livro-pages{perspective:1500px!important}
   .livro-page-flip{width:100%!important;left:0!important}
 }
-@media(prefers-reduced-motion:reduce){
-  .chronicles-reading .chronicles-memory{transition:transform .22s ease-in-out!important}
-  .livro-page-flip.forward{animation:livroLeafForwardReduced .18s ease-out both!important}
-  .livro-page-flip.backward{animation:livroLeafBackwardReduced .18s ease-out both!important}
-}
+html[data-motion="reduced"] .chronicles-reading .chronicles-memory{transition:transform .22s ease-in-out!important}
+html[data-motion="reduced"] .livro-page-flip.forward{animation:livroLeafForwardReduced .18s ease-out both!important}
+html[data-motion="reduced"] .livro-page-flip.backward{animation:livroLeafBackwardReduced .18s ease-out both!important}
 @keyframes livroLeafForwardReduced{from{opacity:.45;transform:rotateY(0)}to{opacity:.1;transform:rotateY(-24deg)}}
 @keyframes livroLeafBackwardReduced{from{opacity:.45;transform:rotateY(0)}to{opacity:.1;transform:rotateY(24deg)}}
 
@@ -411,11 +407,7 @@ input:focus,textarea:focus,select:focus{
     transform:translate3d(-66.216%,-66.216%,0);
   }
 }
-@media (prefers-reduced-motion:reduce){
-  .chronicles-reading .chronicles-memory-hq{
-    transition:width .18s ease-out,transform .18s ease-out,opacity .08s linear!important;
-  }
-}
+html[data-motion="reduced"] .chronicles-reading .chronicles-memory-hq{transition:width .18s ease-out,transform .18s ease-out,opacity .08s linear!important;}
 
 /* VIDEO GLOBAL VISIVEL + BATTLEMAP PING · 2026-08-23 */
 
@@ -443,7 +435,8 @@ input:focus,textarea:focus,select:focus{
 @keyframes battlePingCore{from{transform:translate(-50%,-50%) scale(.86)}to{transform:translate(-50%,-50%) scale(1.18)}}
 @keyframes battlePingButtonPulse{0%,100%{box-shadow:0 7px 22px rgba(0,0,0,.42),0 0 12px color-mix(in srgb,var(--ping-color) 16%,transparent)}50%{box-shadow:0 8px 25px rgba(0,0,0,.44),0 0 28px color-mix(in srgb,var(--ping-color) 34%,transparent)}}
 @media(max-width:700px){.battlemap-ping-button{right:8px!important;top:auto!important;bottom:70px!important;min-height:40px}.battlemap-ping-button b{font-size:8px}.battlemap-ping>b{font-size:7px}}
-@media(prefers-reduced-motion:reduce){.battlemap-ping>i{animation-duration:1.8s}.battlemap-ping-button.active{animation:none}}
+html[data-motion="reduced"] .battlemap-ping>i{animation-duration:1.8s}
+html[data-motion="reduced"] .battlemap-ping-button.active{animation:none}
 
 /* WORLD + BOOK USABILITY V2 · 2026-09-02 */
 
@@ -466,7 +459,8 @@ input:focus,textarea:focus,select:focus{
 
 @media(max-width:900px){.class-ability-tooltip{left:0;top:calc(100% + 7px);width:min(360px,calc(100vw - 64px));transform:translate3d(0,-4px,0)}.class-ability-hover:hover .class-ability-tooltip,.class-ability-hover:focus .class-ability-tooltip{transform:translate3d(0,0,0)}}
 @media(max-width:700px){.journal-drawer{left:8px!important;right:8px!important;top:8px!important;width:auto!important;height:calc(100dvh - 82px)!important;max-height:calc(100dvh - 82px)!important;border-radius:15px!important}.journal-drawer>header{height:58px!important;min-height:58px!important;flex-basis:58px!important}.prophecy-stars{gap:14px;font-size:31px}.livro-page-flip{width:100%!important;left:0!important}}
-@media(prefers-reduced-motion:reduce){.prophecy-star.red{animation:none!important;opacity:1}.livro-page-flip.forward,.livro-page-flip.backward{animation-duration:.22s!important}}
+html[data-motion="reduced"] .prophecy-star.red{animation:none!important;opacity:1}
+html[data-motion="reduced"] .livro-page-flip.forward,html[data-motion="reduced"] .livro-page-flip.backward{animation-duration:.22s!important}
 
 /* COMBAT V2 2026-09-06 */
 .turn-current-name{height:46px;min-width:145px;max-width:220px;padding:7px 12px;border-radius:11px;border:1px solid rgba(168,85,247,.2);background:rgba(6,2,12,.94);display:flex;flex-direction:column;justify-content:center}.turn-current-name small{font:700 6px Cinzel,serif;letter-spacing:.22em;color:#76518d}.turn-current-name b{font:800 11px Cinzel,serif;color:#d4c0dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}.master-turn-order{margin:12px 0;padding:9px;border:1px solid rgba(168,85,247,.13);border-radius:10px;background:rgba(168,85,247,.035);display:grid;gap:5px;max-height:260px;overflow:auto}.master-turn-order>small{font:700 7px Cinzel,serif;color:#76627e}.master-turn-order>div{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:7px;padding:6px;border-radius:7px;border:1px solid rgba(255,255,255,.05)}.master-turn-order>div.active{border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.07)}.master-turn-order b{font:700 9px Cinzel,serif;color:#aaa}.master-turn-order button{width:27px;height:25px;border-radius:6px;border:1px solid rgba(168,85,247,.16);background:rgba(168,85,247,.055);color:#9c7caf}.combat-status-damage-fx{position:fixed;inset:0;z-index:24000;pointer-events:none;display:grid;place-items:center;animation:statusDamage 2.2s ease both;background:radial-gradient(circle,rgba(232,25,60,.09),transparent 38%)}.combat-status-damage-fx>div{padding:14px 22px;border-radius:16px;border:1px solid rgba(232,25,60,.25);background:rgba(17,3,8,.82);text-align:center;box-shadow:0 12px 42px rgba(0,0,0,.45),0 0 28px rgba(232,25,60,.12)}.combat-status-damage-fx strong{display:block;font:900 38px Cinzel Decorative,serif;color:#ff5570;text-shadow:0 0 20px rgba(232,25,60,.48)}.combat-status-damage-fx span{display:block;font:800 9px Cinzel,serif;color:#d78a97;margin-top:7px}.combat-status-damage-fx small{font-size:9px;color:#80616a}@keyframes statusDamage{0%,100%{opacity:0}12%,75%{opacity:1}}.summon-memory-popover{position:absolute;right:10px;bottom:76px;width:min(340px,calc(100vw - 28px));z-index:250;border:1px solid rgba(110,110,128,.35);border-radius:14px;background:rgba(7,6,12,.98);padding:11px;box-shadow:0 18px 52px rgba(0,0,0,.7)}.summon-memory-popover header{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:7px}.summon-memory-popover header small{display:block;font:700 6px Cinzel,serif;color:#666}.summon-memory-popover header b{font:800 10px Cinzel,serif;color:#bbb}.summon-memory-popover>p{font-size:10px;color:#777}.summon-memory-options{display:grid;gap:6px}.summon-memory-options>button{height:auto!important;min-height:46px!important;display:flex!important;gap:9px;align-items:center!important}.summon-memory-options b,.summon-memory-options small{display:block}.summon-memory-options em{font-size:10px;color:#666;padding:10px}.summon-memory-panel{display:grid;gap:9px}.summon-memory-help,.summon-memory-empty{font-size:10px;color:#777;padding:9px;text-align:center}.summon-memory-slot{border:1px solid color-mix(in srgb,var(--summon-color) 28%,transparent);border-radius:11px;padding:11px;background:rgba(6,5,10,.72)}.summon-memory-slot:not(.master){display:grid;grid-template-columns:1fr auto;gap:4px 12px}.summon-memory-slot:not(.master)>span{grid-column:1/3;font:700 6px Cinzel,serif;color:#666}.summon-memory-slot:not(.master)>strong{font:800 11px Cinzel,serif;color:#bbb}.summon-memory-slot:not(.master)>div{text-align:right}.summon-memory-slot:not(.master) b,.summon-memory-slot:not(.master) small{display:block;font:7px Cinzel,serif;color:#777}.summon-memory-slot.master>header{display:flex;justify-content:space-between;margin-bottom:9px}.summon-memory-slot.master header span,.summon-memory-attacks>small{font:700 6px Cinzel,serif;color:#666}.summon-memory-slot.master header b{display:block;font:800 10px Cinzel,serif;color:#aaa}.summon-memory-form{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.summon-memory-form label{font:700 7px Cinzel,serif;color:#777}.summon-memory-form label.wide{grid-column:span 2}.summon-memory-form input,.summon-memory-form select{width:100%;margin-top:3px}.summon-memory-attacks{margin-top:9px;border-top:1px solid rgba(255,255,255,.05);padding-top:7px}.summon-memory-attacks>div:not(.summon-memory-add-attack){position:relative;padding:6px 25px 6px 7px;margin-top:5px;border:1px solid rgba(255,255,255,.04);border-radius:6px}.summon-memory-add-attack{display:grid;grid-template-columns:1fr 80px 1.3fr 32px;gap:4px;margin-top:6px}.summon-memory-add{padding:9px;border-radius:8px;border:1px dashed rgba(110,110,128,.3);background:transparent;color:#888}@media(max-width:900px){.mobile-dock{grid-template-columns:repeat(4,1fr)!important}.hud-map-action{display:none!important}.turn-current-name{min-width:105px;height:39px}.turn-current-name b{font-size:8px}.summon-memory-popover{position:fixed;left:10px;right:10px;bottom:144px;width:auto}.summon-memory-form{grid-template-columns:repeat(2,1fr)}.global-turn-ribbon{z-index:480}}
@@ -517,7 +511,8 @@ input:focus,textarea:focus,select:focus{
   .mobile-dock button.active:after{opacity:1;transform:scaleX(1)}
   .immersive-content>div{animation:g3MobilePageEnter .42s cubic-bezier(.18,.86,.22,1) both!important;transform-origin:50% 46%}
   @keyframes g3MobilePageEnter{0%{opacity:0;transform:translate3d(14px,7px,0) scale(.992);filter:blur(2px)}55%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none;filter:none}}
-  @media(prefers-reduced-motion:reduce){.immersive-content>div{animation:none!important}.mobile-dock button{transition:none!important}}
+  html[data-motion="reduced"] .immersive-content>div{animation:none!important}
+html[data-motion="reduced"] .mobile-dock button{transition:none!important}
 }
 
 
@@ -553,7 +548,7 @@ input:focus,textarea:focus,select:focus{
 .master-turn-order>div.dragging{opacity:.45;transform:scale(.985)}
 .master-turn-order>div.drag-over{border-color:rgba(200,168,232,.62)!important;transform:translateY(-2px);box-shadow:0 0 0 1px rgba(168,85,247,.18)}
 @media(max-width:900px){.master-turn-order>div[draggable="true"]{cursor:default}}
-@media(prefers-reduced-motion:reduce){.hud-ability.ability-fired{animation:none!important}}
+html[data-motion="reduced"] .hud-ability.ability-fired{animation:none!important}
 
 
 /* COMBAT ACTION HUD 2026-09-19 */
@@ -575,7 +570,8 @@ html.dinastia-combat-hud .g3-actionbar{display:none!important}
 .combat-action-pulse-core{text-align:center;position:relative;z-index:2;animation:combatActionCore 2.6s cubic-bezier(.18,.77,.2,1) both}.combat-action-class-icon{display:block;font-size:64px;filter:drop-shadow(0 0 26px var(--action-color));animation:combatActionIcon 1s ease both}.combat-action-pulse-core small{display:block;margin-top:8px;font:800 7px Cinzel,serif;letter-spacing:.26em;color:color-mix(in srgb,var(--action-color) 65%,white)}.combat-action-pulse-core strong{display:block;margin-top:7px;max-width:80vw;font:900 clamp(28px,5vw,68px) Cinzel Decorative,serif;line-height:1.04;color:#f2e9f4;text-shadow:0 0 28px color-mix(in srgb,var(--action-color) 65%,transparent),0 4px 18px #000}.combat-action-pulse-core em{display:inline-block;margin-top:12px;padding:6px 13px;border-radius:999px;border:1px solid color-mix(in srgb,var(--action-color) 38%,transparent);background:rgba(5,2,10,.56);font:700 9px Cinzel,serif;color:#cdbfd2;font-style:normal}
 @keyframes combatActionWave{0%{transform:scale(.25);opacity:0}16%{opacity:.95}100%{transform:scale(9);opacity:0}}@keyframes combatActionCore{0%{opacity:0;transform:scale(.72)}14%{opacity:1;transform:scale(1.06)}25%,78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}@keyframes combatActionIcon{0%{transform:scale(.3) rotate(-12deg);opacity:0}30%{transform:scale(1.18) rotate(3deg);opacity:1}100%{transform:scale(1);opacity:1}}@keyframes combatPulseFade{0%,100%{opacity:0}8%,84%{opacity:1}}
 @media(max-width:900px){.combat-action-hud{left:8px;right:8px;bottom:62px;transform:none;width:auto;grid-template-columns:110px minmax(0,1fr);min-height:76px;padding:6px}.combat-action-character{grid-template-columns:38px minmax(0,1fr);padding:3px;border-right:0}.combat-action-portrait{width:36px;height:36px;font-size:17px}.combat-action-identity span,.combat-action-vitals{display:none}.combat-action-abilities{grid-column:2}.combat-ability{flex-basis:112px;min-height:60px}.combat-action-side{display:none}.combat-target-picker{width:calc(100vw - 18px);bottom:calc(100% + 7px)}.combat-target-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.combat-action-pulse-core strong{font-size:clamp(24px,9vw,44px)}.combat-action-class-icon{font-size:50px}}
-@media(prefers-reduced-motion:reduce){.combat-action-wave{display:none}.combat-action-pulse,.combat-action-pulse-core,.combat-action-class-icon{animation:none!important}}
+html[data-motion="reduced"] .combat-action-wave{display:none}
+html[data-motion="reduced"] .combat-action-pulse,html[data-motion="reduced"] .combat-action-pulse-core,html[data-motion="reduced"] .combat-action-class-icon{animation:none!important}
 
 /* COMBAT VISIBLE RUNTIME HOTFIX 2026-09-22 */
 .combat-action-hud{grid-template-columns:300px minmax(0,1fr) auto!important}
@@ -590,7 +586,8 @@ html.dinastia-combat-hud .g3-actionbar{display:none!important}
 .combat-floating-damage-layer{position:fixed;inset:0;z-index:30000;pointer-events:none}.combat-floating-damage{position:fixed;transform:translate(-50%,-50%);font:900 28px/1 'Cinzel Decorative',Cinzel,serif;color:#E8193C;text-shadow:0 2px 4px #000,0 0 16px rgba(232,25,60,.7);animation:combatFloatDamage 1.3s cubic-bezier(.18,.72,.2,1) forwards;will-change:transform,opacity}.combat-floating-damage.heal{color:#4ADE80;text-shadow:0 2px 4px #000,0 0 16px rgba(74,222,128,.7)}.combat-floating-damage.critical{color:#FFD700;font-size:39px;filter:drop-shadow(0 0 9px rgba(255,215,0,.72))}
 @keyframes combatOrbWave{0%{transform:translateX(-10px)}50%{transform:translateX(0)}100%{transform:translateX(-10px)}}@keyframes combatPulseCompactFade{0%,100%{opacity:0}8%,78%{opacity:1}}@keyframes combatActionWaveCompact{0%{transform:scale(.22);opacity:0}16%{opacity:.95}100%{transform:scale(10);opacity:0}}@keyframes combatActionCoreCompact{0%{opacity:0;transform:scale(.7)}16%{opacity:1;transform:scale(1.08)}28%,72%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}@keyframes combatFloatDamage{0%{opacity:0;transform:translate(-50%,-15%) scale(.7)}14%{opacity:1;transform:translate(-50%,-58%) scale(1.12)}72%{opacity:1}100%{opacity:0;transform:translate(-50%,-175%) scale(.94)}}
 @media(max-width:900px){.combat-action-hud{grid-template-columns:112px minmax(0,1fr)!important}.combat-action-character{grid-template-rows:48px!important;padding:3px!important}.combat-action-orbs{grid-template-columns:32px 40px 32px;gap:2px}.combat-resource-orb{width:32px;height:42px}.combat-resource-orb b{font-size:7px}.combat-resource-orb small{font-size:4px}.combat-action-portrait.g3-portrait-lg{width:38px!important;height:38px!important;min-width:38px}.combat-action-identity{display:none}.combat-ability>kbd{right:3px;top:3px;width:15px;height:15px}.combat-action-pulse.compact .combat-action-class-icon{font-size:46px}}
-@media(prefers-reduced-motion:reduce){.combat-orb-wave{animation:none!important}.combat-action-pulse.compact,.combat-action-pulse.compact .combat-action-wave,.combat-action-pulse.compact .combat-action-pulse-core,.combat-floating-damage{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+html[data-motion="reduced"] .combat-orb-wave{animation:none!important}
+html[data-motion="reduced"] .combat-action-pulse.compact,html[data-motion="reduced"] .combat-action-pulse.compact .combat-action-wave,html[data-motion="reduced"] .combat-action-pulse.compact .combat-action-pulse-core,html[data-motion="reduced"] .combat-floating-damage{animation-duration:.01ms!important;animation-iteration-count:1!important}
 
 /* NECROMANCER SUMMON CONTROL 2026-09-28 */
 .summon-memory-slot.master.is-revealed{box-shadow:inset 3px 0 0 var(--summon-color),0 0 18px color-mix(in srgb,var(--summon-color) 10%,transparent)}
@@ -603,7 +600,7 @@ html.dinastia-combat-hud .g3-actionbar{display:none!important}
 .summon-release-button.is-pulsing:not(:disabled){animation:summonReleaseReady 1.25s ease-in-out infinite;will-change:transform,box-shadow}
 .summon-store-row{margin-bottom:8px;border-color:color-mix(in srgb,var(--summon-color) 36%,transparent);background:linear-gradient(90deg,color-mix(in srgb,var(--summon-color) 9%,transparent),rgba(0,0,0,.14))}.summon-store-button{border-color:rgba(232,160,32,.46)!important;background:rgba(232,160,32,.1)!important;color:#f0c879!important}
 @keyframes summonReleaseReady{0%,100%{transform:scale(1);border-color:color-mix(in srgb,var(--summon-color) 42%,transparent);box-shadow:0 0 0 0 color-mix(in srgb,var(--summon-color) 0%,transparent)}50%{transform:scale(1.055);border-color:color-mix(in srgb,var(--summon-color) 88%,#fff);box-shadow:0 0 0 5px color-mix(in srgb,var(--summon-color) 8%,transparent),0 0 24px color-mix(in srgb,var(--summon-color) 42%,transparent)}}
-@media(prefers-reduced-motion:reduce){.summon-release-button.is-pulsing:not(:disabled){animation:none}}
+html[data-motion="reduced"] .summon-release-button.is-pulsing:not(:disabled){animation:none}
 
 /* SUMMON SKILLS MATCH CHARACTER SHEETS */
 .summon-memory-attacks>.summon-ability-card{display:flex;flex-wrap:wrap;align-items:flex-start;gap:5px 10px;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,.02)}

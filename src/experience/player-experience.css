@@ -34,7 +34,7 @@ html[data-effects=reduced] .g3-environment,html[data-effects=reduced] .cosmic-sh
 html[data-away=true] .g3-environment *,html[data-away=true] .g3-orb-wave{animation-play-state:paused!important}
 @keyframes playerPanel{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes playerFeedback{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){.g3-right-drawer,.g3-feedback,.g3-orb-wave{animation:none!important}}
+html[data-motion="reduced"] .g3-right-drawer,html[data-motion="reduced"] .g3-feedback,html[data-motion="reduced"] .g3-orb-wave{animation:none!important}
 @media(max-width:900px){
  .access-player .mobile-dock,.access-player .g3-mobile-session-hub,.access-player .g3-mobile-hud-toggle,.access-player .g3-utility-rail{display:none!important}
  .game3-root .g3-utility-rail{display:none!important}

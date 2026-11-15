@@ -45,17 +45,18 @@ test('a paralaxe afasta do cursor e respeita o limite', () => {
 test('paralaxe exige ponteiro fino, tela larga e permissao de movimento', () => {
   const fake = answers => ({ matchMedia: q => ({ matches: Boolean(answers[q]) }) });
   const desktop = {'(hover: hover)':true,'(pointer: fine)':true,'(min-width: 1024px)':true};
-  assert.equal(cosmicParallaxAllowed(fake(desktop)), true);
-  assert.equal(cosmicParallaxAllowed(fake({...desktop,'(prefers-reduced-motion: reduce)':true})), false);
-  assert.equal(cosmicParallaxAllowed(fake({...desktop,'(pointer: fine)':false})), false);
-  assert.equal(cosmicParallaxAllowed(fake({...desktop,'(min-width: 1024px)':false})), false);
+  assert.equal(cosmicParallaxAllowed(fake(desktop), false), true);
+  // Movimento reduzido agora é escolha do jogador, não da media query.
+  assert.equal(cosmicParallaxAllowed(fake(desktop), true), false);
+  assert.equal(cosmicParallaxAllowed(fake({...desktop,'(pointer: fine)':false}), false), false);
+  assert.equal(cosmicParallaxAllowed(fake({...desktop,'(min-width: 1024px)':false}), false), false);
 });
 
 test('as camadas profundas ficam fora do celular e do modo Leve', () => {
   const css = read('../src/experience/cosmico-profundo.css');
   assert.match(css, /@media \(max-width:1023px\)\{[\s\S]*?\.cosmum-depth,\.cosmum-dust,\.cosmum-cursor-bloom\{display:none!important\}/);
   assert.match(css, /html\[data-quality="light"\] \.cosmum-depth/);
-  assert.match(css, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*?\.cosmum-depth/);
+  assert.match(css, /html\[data-motion="reduced"\][\s\S]*?\.cosmum-depth/);
 });
 
 test('o anel de selecao continua visivel para quem pediu menos movimento', () => {

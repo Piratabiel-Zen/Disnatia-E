@@ -124,12 +124,9 @@
 }
 
 /* Quem pediu menos movimento fica só com a luz, sem deslocamento nem laço. */
-@media(prefers-reduced-motion:reduce){
-  .sheet-awakening,.sheet-awakening::after,.sheet-awakening .sheet-accent-bar,.sheet-awakening .sheet-column-scroll,.sheet-awakening .sheet-photo-main,
-  .ability-row:hover,.ability-row:hover::before,.ability-use-button:hover,.ability-use-button:hover::after{animation:none!important}
-  .sheet-awakening::after{display:none}
-  .ability-row:hover,.ability-use-button:hover:not(:disabled){transform:none!important}
-}
+html[data-motion="reduced"] .sheet-awakening,html[data-motion="reduced"] .sheet-awakening::after,html[data-motion="reduced"] .sheet-awakening .sheet-accent-bar,html[data-motion="reduced"] .sheet-awakening .sheet-column-scroll,html[data-motion="reduced"] .sheet-awakening .sheet-photo-main,html[data-motion="reduced"] .ability-row:hover,html[data-motion="reduced"] .ability-row:hover::before,html[data-motion="reduced"] .ability-use-button:hover,html[data-motion="reduced"] .ability-use-button:hover::after{animation:none!important}
+html[data-motion="reduced"] .sheet-awakening::after{display:none}
+html[data-motion="reduced"] .ability-row:hover,html[data-motion="reduced"] .ability-use-button:hover:not(:disabled){transform:none!important}
 
 /* Nada aqui é cortado pelo modo Leve. A resposta ao mouse é o que informa a
    força da habilidade antes de o jogador ler o custo: se ela muda de máquina

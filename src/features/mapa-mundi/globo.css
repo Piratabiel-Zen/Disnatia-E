@@ -27,7 +27,7 @@
 }
 @keyframes globoNebulaA{from{transform:translate3d(-2%,-1%,0) rotate(0deg) scale(1)}to{transform:translate3d(3%,2%,0) rotate(8deg) scale(1.08)}}
 @keyframes globoNebulaB{from{transform:translate3d(2%,1%,0) rotate(0deg) scale(1.05)}to{transform:translate3d(-3%,-2%,0) rotate(-10deg) scale(1)}}
-@media(prefers-reduced-motion:reduce){.globo-universo i{animation:none}}
+html[data-motion="reduced"] .globo-universo i{animation:none}
 html[data-quality="light"] .globo-universo i{animation:none}
 
 .globo-overlay{position:absolute;inset:0;z-index:2;pointer-events:none}
@@ -76,6 +76,4 @@ html[data-quality="light"] .globo-universo i{animation:none}
   .globo-pin-name{display:none}
   .globo-pin-dot{width:22px;height:22px;font-size:11px}
 }
-@media(prefers-reduced-motion:reduce){
-  .globo-pin,.globo-pin-dot{transition:none}
-}
+html[data-motion="reduced"] .globo-pin,html[data-motion="reduced"] .globo-pin-dot{transition:none}

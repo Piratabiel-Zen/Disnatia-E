@@ -176,10 +176,8 @@
   .sessao-acoes{display:grid}
   .sessao-acao-principal,.sessao-acao{width:100%}
 }
-@media(prefers-reduced-motion:reduce){
-  .sessao-ceu i,.sessao-local-astro i:first-child{animation:none}
-  .sessao-acao-principal:hover{transform:none}
-}
+html[data-motion="reduced"] .sessao-ceu i,html[data-motion="reduced"] .sessao-local-astro i:first-child{animation:none}
+html[data-motion="reduced"] .sessao-acao-principal:hover{transform:none}
 html[data-quality="light"] .sessao-ceu i:first-child{animation:none}
 
 /* A faixa rola quando a companhia não cabe. Sem um sinal, o corte no canto
@@ -347,7 +345,5 @@ html[data-quality="light"] .sessao-ceu i:first-child{animation:none}
   .sessao-capitulo-frente em{margin-left:auto;text-align:right}
 }
 
-@media(prefers-reduced-motion:reduce){
-  .sessao-capitulo{animation:none}
-  .sessao-capitulo-ficha:hover{transform:none}
-}
+html[data-motion="reduced"] .sessao-capitulo{animation:none}
+html[data-motion="reduced"] .sessao-capitulo-ficha:hover{transform:none}

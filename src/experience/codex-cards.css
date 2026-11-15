@@ -19,7 +19,7 @@
 @media(max-width:600px){.codex-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.codex-card-art{aspect-ratio:4/5}.codex-card-identity{left:10px;right:10px}.codex-card-identity strong{font-size:14px}.codex-card-body{padding:2px 10px 12px;gap:9px}.codex-card-category{left:8px;top:8px;font-size:8px;padding:4px}.codex-card-badge{top:34px;left:8px;right:auto;max-width:calc(100% - 16px);font-size:8px}.codex-card-description{font-size:13px}.codex-card-action{font-size:9px}}
 @media(max-width:350px){.codex-grid{grid-template-columns:1fr}}
 html[data-effects=reduced] .codex-card,html[data-effects=reduced] .codex-card *{animation:none!important;transition:none!important;transform:none!important}
-@media(prefers-reduced-motion:reduce){.codex-card,.codex-card *{animation:none!important;transition:none!important;transform:none!important}}
+html[data-motion="reduced"] .codex-card,html[data-motion="reduced"] .codex-card *{animation:none!important;transition:none!important;transform:none!important}
 
 
 .codex-card-natural-photo .codex-card-art{aspect-ratio:auto;min-height:120px;max-height:340px;display:flex;align-items:center;justify-content:center;background:#050710}

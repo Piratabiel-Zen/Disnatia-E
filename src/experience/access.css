@@ -22,7 +22,8 @@
 .access-password-toggle.is-open .access-eye-pupil{opacity:1;transform:scale(1);transition-delay:.12s}
 .access-password-toggle.is-open .access-eye-closed{opacity:0;transform:scaleY(.1)}
 @keyframes access-eye-opening{0%{transform:scaleY(.08)}45%{transform:scaleY(.08)}100%{transform:scaleY(1)}}
-@media(prefers-reduced-motion:reduce){.access-password-toggle,.access-password-toggle svg path,.access-password-toggle svg circle{transition:none!important}.access-password-toggle.is-open .access-eye-open{animation:none}}
+html[data-motion="reduced"] .access-password-toggle,html[data-motion="reduced"] .access-password-toggle svg path,html[data-motion="reduced"] .access-password-toggle svg circle{transition:none!important}
+html[data-motion="reduced"] .access-password-toggle.is-open .access-eye-open{animation:none}
 
 
 /* COSMIC ACCESS MOTION · 2026 */
@@ -76,9 +77,7 @@
   .access-character-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .access-character-strip button{padding:10px 7px}
 }
-@media(prefers-reduced-motion:reduce){
-  .access-gate::before,.access-gate::after,.access-panel::before,.access-sigil{animation:none!important}
-}
+html[data-motion="reduced"] .access-gate::before,html[data-motion="reduced"] .access-gate::after,html[data-motion="reduced"] .access-panel::before,html[data-motion="reduced"] .access-sigil{animation:none!important}
 
 /* VISIBLE ACCESS SYNC 2026-09-22 */
 .access-sync-status{width:max-content;max-width:100%;margin:11px auto 0;display:flex;align-items:center;justify-content:center;gap:7px;padding:6px 10px;border:1px solid rgba(88,217,255,.12);border-radius:999px;background:rgba(88,217,255,.035);font:700 7px/1 'Cinzel',serif;letter-spacing:.08em;color:#6f91a1}.access-sync-status i{width:6px;height:6px;border-radius:50%;background:#58d9ff;box-shadow:0 0 9px rgba(88,217,255,.65);animation:accessSyncPulse 1.25s ease-in-out infinite}.access-sync-status.ready{border-color:rgba(74,222,128,.14);background:rgba(74,222,128,.035);color:#759985}.access-sync-status.ready i{background:#4ADE80;box-shadow:0 0 9px rgba(74,222,128,.65);animation:none}.access-sync-status.error{border-color:rgba(232,25,60,.18);background:rgba(232,25,60,.05);color:#c2707e}.access-sync-status.error i{background:#E8193C;box-shadow:0 0 9px rgba(232,25,60,.55);animation:none}.access-roster-skeleton{display:grid;grid-template-columns:repeat(6,minmax(90px,1fr));gap:9px;margin:3px 0 16px}.access-roster-skeleton i{height:130px;border-radius:13px;border:1px solid rgba(168,85,247,.08);background:linear-gradient(105deg,rgba(255,255,255,.015) 25%,rgba(168,85,247,.06) 45%,rgba(255,255,255,.015) 65%);background-size:220% 100%;animation:accessRosterSweep 1.4s linear infinite}@keyframes accessSyncPulse{50%{opacity:.35;transform:scale(.72)}}@keyframes accessRosterSweep{to{background-position:-220% 0}}@media(max-width:900px){.access-roster-skeleton{grid-template-columns:repeat(2,minmax(0,1fr))}.access-roster-skeleton i{height:116px}}

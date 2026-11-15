@@ -294,10 +294,8 @@
 html[data-quality="light"] .classe-scene-front{display:none}
 html[data-quality="light"] .classe-scene i:nth-child(2n){display:none}
 /* Menos movimento: a cor do lugar permanece, o que se mexe para. */
-@media(prefers-reduced-motion:reduce){
-  .classe-scene-front{display:none}
-  .classe-scene,.classe-scene-glow,.classe-scene-glow::after,.classe-scene-flash{animation:none!important}
-  .classe-scene-flash{display:none}
-  .classe-scene i{animation:none!important;opacity:.5}
-  .scene-fogo i:nth-child(3n),.scene-corvos i,.scene-arcanjo i,.scene-marfim i,.scene-necromante i,.scene-bardo i,.scene-magos i:nth-child(6n){display:none}
-}
+html[data-motion="reduced"] .classe-scene-front{display:none}
+html[data-motion="reduced"] .classe-scene,html[data-motion="reduced"] .classe-scene-glow,html[data-motion="reduced"] .classe-scene-glow::after,html[data-motion="reduced"] .classe-scene-flash{animation:none!important}
+html[data-motion="reduced"] .classe-scene-flash{display:none}
+html[data-motion="reduced"] .classe-scene i{animation:none!important;opacity:.5}
+html[data-motion="reduced"] .scene-fogo i:nth-child(3n),html[data-motion="reduced"] .scene-corvos i,html[data-motion="reduced"] .scene-arcanjo i,html[data-motion="reduced"] .scene-marfim i,html[data-motion="reduced"] .scene-necromante i,html[data-motion="reduced"] .scene-bardo i,html[data-motion="reduced"] .scene-magos i:nth-child(6n){display:none}

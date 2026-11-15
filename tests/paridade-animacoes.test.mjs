@@ -8,7 +8,7 @@
    mexe em RESPOSTA DE INTERFACE — respiração do token, retorno da habilidade
    ao mouse, anúncio do golpe. Isso é igual no celular, no notebook e no
    desktop, em Chrome, Edge e Opera. Quem quer menos movimento diz isso ao
-   sistema (prefers-reduced-motion) ou nas preferências (data-effects). */
+   próprio site (Animações → Reduzidas) ou nas preferências (data-effects). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -104,8 +104,8 @@ test('o modo seguro de gráficos é do Opera GX, não de todo Opera', () => {
   assert.match(html, /localStorage\.setItem/);
 });
 
-test('quem pede menos movimento ao sistema continua sendo atendido', () => {
+test('quem escolhe menos movimento continua sendo atendido', () => {
   for (const arquivo of ['src/features/mapa-batalha/tokens-vivos.css', 'src/features/sheets/habilidades-vivas.css']) {
-    assert.match(ler(arquivo), /prefers-reduced-motion:\s*reduce/, `${arquivo} parou de respeitar prefers-reduced-motion`);
+    assert.match(ler(arquivo), /html\[data-motion="reduced"\]/, `${arquivo} parou de atender quem escolheu menos movimento`);
   }
 });

@@ -42,7 +42,7 @@
 @keyframes actionCrystalWave{0%{transform:scale(.3);opacity:.95}100%{transform:scale(3.2);opacity:0}}
 /* O anuncio de especial e combinada roda igual em todo lugar: e o que diz a
    mesa que algo grande acabou de acontecer. */
-@media(prefers-reduced-motion:reduce){.combat-action-pulse.compact.action-normal,.combat-action-pulse.compact.action-especial,.combat-action-pulse.compact.action-combinada,.combat-action-pulse.compact .combat-action-wave,.combat-action-pulse.compact .combat-action-pulse-core,.combat-action-backdrop{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+html[data-motion="reduced"] .combat-action-pulse.compact.action-normal,html[data-motion="reduced"] .combat-action-pulse.compact.action-especial,html[data-motion="reduced"] .combat-action-pulse.compact.action-combinada,html[data-motion="reduced"] .combat-action-pulse.compact .combat-action-wave,html[data-motion="reduced"] .combat-action-pulse.compact .combat-action-pulse-core,html[data-motion="reduced"] .combat-action-backdrop{animation-duration:.01ms!important;animation-iteration-count:1!important}
 
 /* All player ability uses receive a short focus vignette; higher tiers intensify it. */
 .combat-action-pulse.compact .combat-action-backdrop{background:radial-gradient(ellipse at center,rgba(4,5,12,.24),rgba(3,4,11,.72));animation:actionDimIn .22s ease both,actionDimOut var(--action-duration,1.9s) ease both}
@@ -65,7 +65,7 @@
 .action-especial .combat-action-pixels i{width:9px;height:9px;animation-duration:1.7s}
 .action-combinada .combat-action-pixels i{width:11px;height:11px;background:#ecf4ff;box-shadow:0 0 18px #d6e8ff;animation-duration:2.2s;animation-iteration-count:2}
 @keyframes actionPixelBurst{0%{opacity:0;transform:rotate(var(--angle)) translateX(12px) scale(.3)}18%{opacity:.95}100%{opacity:0;transform:rotate(var(--angle)) translateX(clamp(90px,22vw,300px)) scale(1)}}
-@media(prefers-reduced-motion:reduce){.combat-action-pixels i{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+html[data-motion="reduced"] .combat-action-pixels i{animation-duration:.01ms!important;animation-iteration-count:1!important}
 
 /* Roll broadcasts are raised above the battle map and centered in fullscreen. */
 .dinastia-map-fullscreen .rt-dice-replay{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);z-index:9998;width:min(420px,calc(100vw - 28px));animation:rtFullscreenDiceReplayIn .24s ease both}
@@ -90,4 +90,5 @@
 @keyframes rtSummonCopy{0%{opacity:0;transform:translateY(24px) scale(.82);filter:blur(9px)}14%,78%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}100%{opacity:0;transform:translateY(-14px) scale(1.04)}}
 @keyframes rtSummonIcon{from{transform:scale(.94)}to{transform:scale(1.08)}}
 @keyframes rtSummonTitle{from{opacity:.65;text-shadow:0 0 12px var(--event-color)}to{opacity:1;text-shadow:0 0 32px var(--event-color)}}
-@media(prefers-reduced-motion:reduce){.rt-summon_release,.rt-summon_release .rt-cosmic-ring,.rt-summon-release-copy,.rt-summon-release-copy>span,.rt-summon-release-copy>small{animation:none!important}.rt-summon_release{opacity:1}}
+html[data-motion="reduced"] .rt-summon_release,html[data-motion="reduced"] .rt-summon_release .rt-cosmic-ring,html[data-motion="reduced"] .rt-summon-release-copy,html[data-motion="reduced"] .rt-summon-release-copy>span,html[data-motion="reduced"] .rt-summon-release-copy>small{animation:none!important}
+html[data-motion="reduced"] .rt-summon_release{opacity:1}

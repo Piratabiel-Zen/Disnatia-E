@@ -64,7 +64,7 @@ test('cada linhagem tem o seu cenário', () => {
   const ids = [...data.slice(data.indexOf('const DINASTIA_E_CLASSES'), data.indexOf('export const ATTRS')).matchAll(/^    "id": "([^"]+)"/gm)].map(match => match[1]);
   assert.ok(ids.length >= 9, 'a lista de classes não foi lida');
   for (const id of ids) assert.match(css, new RegExp(`\\.scene-${id}[ .]`), `falta o cenário de ${id}`);
-  assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /html\[data-motion="reduced"\]/);
 });
 
 test('a força da habilidade escala a resposta ao mouse', () => {

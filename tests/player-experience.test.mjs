@@ -5,7 +5,17 @@ import { createSyncState } from '../src/adventure/syncState.mjs';
 import { createLeaseTracker } from '../src/adventure/tokenLease.mjs';
 
 test('local preferences clamp volume and reject invalid or corrupted choices', () => {
-  assert.deepEqual(normalizePreferences({ effects: 'broken', textSize: 'large', music: 900, ambience: -20, interface: 'x' }), { effects: 'normal', textSize: 'large', music: 100, ambience: 0, interface: 40 });
+  assert.deepEqual(
+    normalizePreferences({ effects: 'broken', textSize: 'large', music: 900, ambience: -20, interface: 'x' }),
+    { effects: 'normal', motion: 'full', textSize: 'large', music: 100, ambience: 0, interface: 40 },
+  );
+  // O movimento nasce ligado: a mesa se mexe mesmo para quem nunca abriu as
+  // preferências, e mesmo com o sistema pedindo menos animação.
+  assert.equal(normalizePreferences({}).motion, 'full');
+  assert.equal(normalizePreferences({ motion: 'nada disso' }).motion, 'full');
+  for (const escolha of ['full', 'system', 'reduced']) {
+    assert.equal(normalizePreferences({ motion: escolha }).motion, escolha);
+  }
 });
 test('mouse and shortcuts share level, turn, cooldown, resource and busy constraints', () => {
   const skill = { id: 'fire', cost: 3, req: 2 };

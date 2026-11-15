@@ -44,7 +44,7 @@
 .enemy-floating-sheet{--enemy-color:#ff4f65;border-color:color-mix(in srgb,var(--enemy-color) 46%,transparent)!important;background:rgba(13,5,12,.975)!important}.enemy-floating-head{padding:9px 12px;display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--enemy-color) 10%,rgba(8,4,14,.95));border-bottom:1px solid color-mix(in srgb,var(--enemy-color) 25%,transparent);cursor:grab;user-select:none}.enemy-floating-head b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11px 'Cinzel',serif;color:var(--enemy-color)}.enemy-float-body{overflow-y:auto;padding:12px;flex:1}.enemy-mini-ability{padding:8px;border:1px solid rgba(255,255,255,.055);border-radius:8px;background:rgba(255,255,255,.015);margin-bottom:6px}.enemy-mini-ability header{display:flex;justify-content:space-between;gap:8px}.enemy-mini-ability b{font:600 10px 'Cinzel',serif;color:#cbbac0}.enemy-mini-ability p{font-size:10px;color:#6c6068;line-height:1.5;margin:4px 0 0}.enemy-mini-actions{display:flex;gap:5px;margin-top:6px}.enemy-mini-actions button{padding:4px 7px;border-radius:5px;font:8px 'Cinzel',serif}
 @media(max-width:900px){.cosmic-side-rail{display:none}.immersive-content::before{left:0}.enemy-sheet-grid{grid-template-columns:1fr}.enemy-sheet-header{grid-template-columns:auto minmax(0,1fr)}.enemy-sheet-meta{grid-column:1/-1;justify-content:flex-start}.enemy-sheet-body{padding:12px}.enemy-form-grid{grid-template-columns:1fr}.enemy-form-field.wide{grid-column:auto}.enemy-ability-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.enemy-sheet-page{padding:12px 9px 82px}.enemy-icon-button{width:49px;height:49px}.enemy-sheet-header{padding:10px}.enemy-sheet-avatar{width:48px;height:48px}.enemy-sheet-tabs{overflow-x:auto}.enemy-sheet-tabs button{min-width:120px;flex:0 0 auto}.enemy-sheet-title h3{font-size:15px}}
-@media(prefers-reduced-motion:reduce){.cosmic-side-rail::before,.cosmic-side-rail::after,.cosmic-side-rail i,.immersive-topbar::after{animation:none!important}}
+html[data-motion="reduced"] .cosmic-side-rail::before,html[data-motion="reduced"] .cosmic-side-rail::after,html[data-motion="reduced"] .cosmic-side-rail i,html[data-motion="reduced"] .immersive-topbar::after{animation:none!important}
 
 
 /* STATIC LIGHTWEIGHT BACKDROP 2026-09-20 */
@@ -52,4 +52,4 @@
 .cosmic-living-bg.is-static{background:#080511}
 .cosmic-living-bg.is-static .cosmic-static-backdrop{opacity:1;animation:none!important;transform:none!important;filter:none!important}
 .cosmic-living-bg.is-immersive .cosmic-static-backdrop{opacity:.72}
-@media(prefers-reduced-motion:reduce){.cosmic-static-backdrop{animation:none!important}}
+html[data-motion="reduced"] .cosmic-static-backdrop{animation:none!important}

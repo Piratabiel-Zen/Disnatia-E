@@ -203,4 +203,4 @@
   .regras-topo{align-items:stretch}
   .regras-busca{max-width:none}
 }
-@media(prefers-reduced-motion:reduce){.regra-aberta{animation:none}}
+html[data-motion="reduced"] .regra-aberta{animation:none}

@@ -13,4 +13,4 @@
 @keyframes physicalDiceLoading{0%,100%{opacity:.32}50%{opacity:.95}}
 @keyframes physicalDiceFallback{0%{transform:translate3d(100px,-72px,0) rotate(0) scale(.72)}50%{transform:translate3d(-24px,18px,0) rotate(620deg) scale(1.06)}100%{transform:translate3d(0,0,0) rotate(1080deg) scale(1)}}
 @media(max-width:600px){.physical-dice-space{height:220px}.physical-dice-fallback b{width:58px;height:58px}}
-@media(prefers-reduced-motion:reduce){.physical-dice-loading,.physical-dice-fallback b{animation:none!important}}
+html[data-motion="reduced"] .physical-dice-loading,html[data-motion="reduced"] .physical-dice-fallback b{animation:none!important}

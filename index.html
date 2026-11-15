@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-quality="cinematic">
+<html lang="pt-BR" data-quality="cinematic" data-motion="full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -30,6 +30,25 @@
           if (isOperaGx || remembered || (asked !== null && asked !== '0' && asked !== 'off')) {
             document.documentElement.classList.add('opera-gx-safe');
             window.__DINASTIA_SAFE_GRAPHICS__ = true;
+          }
+        } catch (_) {}
+      })();
+
+      // MOVIMENTO · 2026-11-15
+      // O <html> já nasce com data-motion="full", então a mesa se mexe antes
+      // mesmo do React montar e nunca há um instante congelado na abertura.
+      // Aqui só corrigimos isso para quem escolheu outra coisa. A regra viva
+      // está em src/adventure/movimento.mjs; esta cópia existe porque o CSS
+      // é aplicado antes de qualquer módulo carregar.
+      (() => {
+        try {
+          const salvo = localStorage.getItem('dinastia_player_preferences_v1');
+          const escolha = salvo ? JSON.parse(salvo).motion : 'full';
+          if (escolha !== 'reduced' && escolha !== 'system') return;
+          const sistemaPedeReduzir = Boolean(window.matchMedia
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+          if (escolha === 'reduced' || sistemaPedeReduzir) {
+            document.documentElement.setAttribute('data-motion', 'reduced');
           }
         } catch (_) {}
       })();

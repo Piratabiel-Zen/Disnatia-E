@@ -7,6 +7,7 @@
 // assume — é ela que bate nas paredes e decide como o dado cai.
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { motionIsReduced } from '../adventure/movimento.mjs';
 
 const VIEW_DISTANCE = 6;
 const FOV = 35;
@@ -34,8 +35,8 @@ export function dieGeometry(sides, radius = 0.5) {
   }
 }
 
-const reducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// A escolha do jogador, não a do sistema operacional — ver movimento.mjs.
+const reducedMotion = () => motionIsReduced();
 
 export default function FloatingDie({ sides = 20, count = 1, color = '#C8A8E8', away = false, controlRef }) {
   const hostRef = useRef(null);

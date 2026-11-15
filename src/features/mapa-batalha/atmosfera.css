@@ -304,11 +304,9 @@
 
 /* Quem pede menos movimento fica com a luz e a cor, sem nada se mexendo:
    a cena continua tendo clima, só para de animar. */
-@media(prefers-reduced-motion:reduce){
-  .mapa-atm *,.mapa-atm{animation:none!important}
-  .mapa-atm-graos,.mapa-atm-areia,.mapa-atm-folhas,.mapa-atm-poeira,.mapa-atm-presenca{display:none}
-  .mapa-atm-vento{display:none}
-}
+html[data-motion="reduced"] .mapa-atm *,html[data-motion="reduced"] .mapa-atm{animation:none!important}
+html[data-motion="reduced"] .mapa-atm-graos,html[data-motion="reduced"] .mapa-atm-areia,html[data-motion="reduced"] .mapa-atm-folhas,html[data-motion="reduced"] .mapa-atm-poeira,html[data-motion="reduced"] .mapa-atm-presenca{display:none}
+html[data-motion="reduced"] .mapa-atm-vento{display:none}
 /* Modo Leve: ficam as camadas de luz, que são baratas, e saem as que
    repintam área grande a cada quadro. */
 html[data-quality="light"] .mapa-atm-graos,

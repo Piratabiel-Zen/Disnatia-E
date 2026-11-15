@@ -274,9 +274,7 @@ button{font-family:'Crimson Text',Georgia,serif;}
     box-shadow:0 11px 29px rgba(0,0,0,.34),0 0 18px rgba(232,160,32,.075)!important;
   }
 }
-@media(prefers-reduced-motion:reduce){
-  .chronicles-reading .chronicles-memory,.chronicles-reading .chronicles-memory img,.npc-grid-card,.bestiary-grid-card{transition-duration:.01ms!important}
-}
+html[data-motion="reduced"] .chronicles-reading .chronicles-memory,html[data-motion="reduced"] .chronicles-reading .chronicles-memory img,html[data-motion="reduced"] .npc-grid-card,html[data-motion="reduced"] .bestiary-grid-card{transition-duration:.01ms!important}
 
 
 /* CRONICAS CLEAN MODERN · 2026-09-15 */

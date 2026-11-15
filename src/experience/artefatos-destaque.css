@@ -102,6 +102,4 @@
   .artifact-powers{padding:15px 14px 14px}
   .artifact-powers>header strong{font-size:13.5px}
 }
-@media(prefers-reduced-motion:reduce){
-  .artifact-powers>article,.artifact-powers>article button,.artifact-select button{transition:none}
-}
+html[data-motion="reduced"] .artifact-powers>article,html[data-motion="reduced"] .artifact-powers>article button,html[data-motion="reduced"] .artifact-select button{transition:none}

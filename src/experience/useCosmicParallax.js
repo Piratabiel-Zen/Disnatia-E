@@ -1,20 +1,23 @@
 import { useEffect, useRef } from 'react';
+import { motionIsReduced } from '../adventure/movimento.mjs';
 
 // Paralaxe do fundo cósmico. O ponteiro e a rolagem só escrevem variáveis CSS;
 // quem move as camadas é o compositor, então a mesa não perde quadros mesmo
 // com o mapa de combate aberto.
 //
 // O efeito é gesto de mouse, não de dedo: em telas de toque ele não liga, o que
-// também mantém o celular leve. Quem pediu menos movimento no sistema nunca
-// recebe paralaxe.
+// também mantém o celular leve. Quem escolheu menos movimento no próprio site
+// (Animações → Reduzidas) nunca recebe paralaxe.
 export const PARALLAX_REACH = 18;
 
-export function cosmicParallaxAllowed(win = typeof window === 'undefined' ? null : window) {
+// O movimento reduzido entra por parâmetro para o teste poder variá-lo sem
+// precisar de um documento: é estado do <html>, não uma media query.
+export function cosmicParallaxAllowed(win = typeof window === 'undefined' ? null : window, reduzido = motionIsReduced()) {
   if (!win || typeof win.matchMedia !== 'function') return false;
   const asks = query => {
     try { return Boolean(win.matchMedia(query).matches); } catch { return false; }
   };
-  if (asks('(prefers-reduced-motion: reduce)')) return false;
+  if (reduzido) return false;
   if (!asks('(hover: hover)') || !asks('(pointer: fine)')) return false;
   return asks('(min-width: 1024px)');
 }

@@ -22,7 +22,7 @@ test('a ameaça do inimigo sobe junto com o visual da ficha', () => {
   // O extremo chama atenção sozinho.
   assert.match(threatCss, /animation:threatBeat/);
   // E quem pediu menos animação não recebe nenhuma.
-  assert.match(threatCss, /prefers-reduced-motion:reduce[\s\S]*animation:none/);
+  assert.match(threatCss, /html\[data-motion="reduced"\][\s\S]*animation:none/);
   // Cada nível diz o que significa, em vez de só mudar de cor.
   assert.match(enemy, /DANGER_WORDS/);
 });

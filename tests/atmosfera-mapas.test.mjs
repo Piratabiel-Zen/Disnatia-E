@@ -105,7 +105,7 @@ test('as camadas ficam entre a arte e os tokens, sem receber clique', () => {
 
 test('a atmosfera cede quando pedem menos movimento ou modo Leve', () => {
   const css = read('../src/features/mapa-batalha/atmosfera.css');
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{\s*\.mapa-atm \*,\.mapa-atm\{animation:none!important\}/);
+  assert.match(css, /html\[data-motion="reduced"\] \.mapa-atm \*[\s\S]{0,80}animation:none!important/);
   assert.match(css, /html\[data-quality="light"\] \.mapa-atm-vento/);
   assert.match(css, /html\[data-away="true"\] \.mapa-atm \*/);
 });

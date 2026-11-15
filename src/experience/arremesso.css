@@ -45,7 +45,5 @@
   background:linear-gradient(90deg,transparent,rgba(200,168,232,.7),transparent);
 }
 
-@media(prefers-reduced-motion:reduce){
-  .dice-throw-pad,.dice-throw-die{transition:none}
-  .dice-throw-pad.is-rolling .dice-throw-die{animation:none;opacity:.4}
-}
+html[data-motion="reduced"] .dice-throw-pad,html[data-motion="reduced"] .dice-throw-die{transition:none}
+html[data-motion="reduced"] .dice-throw-pad.is-rolling .dice-throw-die{animation:none;opacity:.4}

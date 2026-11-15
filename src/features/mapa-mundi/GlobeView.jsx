@@ -8,6 +8,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { lonLatToVector, percentToLonLat, vectorToLonLat, lonLatToPercent } from './globeMath.mjs';
 import './globo.css';
+import { motionIsReduced } from '../../adventure/movimento.mjs';
 
 const RADIUS = 1;
 const MIN_DISTANCE = 1.45;
@@ -17,8 +18,8 @@ const DEFAULT_DISTANCE = 2.9;
 // Texturas reais do planeta (NASA Blue Marble), servidas pelo próprio site.
 const EARTH_TEXTURES = { day: '/media/terra/dia.jpg', night: '/media/terra/noite.jpg', water: '/media/terra/agua.png' };
 
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// A escolha do jogador, não a do sistema operacional — ver movimento.mjs.
+const prefersReducedMotion = () => motionIsReduced();
 
 export default function GlobeView({
   image, pins = [], selectedPinId, onSelectPin, onPlacePin, placing = false,

@@ -68,8 +68,4 @@
 @media(max-width:900px){
   .enemy-threat{min-width:0}
 }
-@media(prefers-reduced-motion:reduce){
-  .enemy-threat-steps i,
-  .enemy-threat[data-threat="Extremo"] .enemy-threat-steps i:nth-child(4),
-  .enemy-sheet-shell[data-threat="Extremo"] .enemy-sheet-accent{animation:none;transition:none}
-}
+html[data-motion="reduced"] .enemy-threat-steps i,html[data-motion="reduced"] .enemy-threat[data-threat="Extremo"] .enemy-threat-steps i:nth-child(4),html[data-motion="reduced"] .enemy-sheet-shell[data-threat="Extremo"] .enemy-sheet-accent{animation:none;transition:none}

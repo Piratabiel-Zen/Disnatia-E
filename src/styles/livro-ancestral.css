@@ -146,10 +146,7 @@ button.relic-core{cursor:zoom-in}
 .relic-gallery{width:100%;margin-top:14px}
 
 @media(max-width:720px){.livro-corner{width:44px;height:44px}.relic-plate{width:min(240px,74%)}.livro-aura{display:none}}
-@media(prefers-reduced-motion:reduce){
-  .livro-page-flip,.livro-leaf-front::after,.livro-leaf-back::after,.livro-turning .livro-page>*,.livro-turning .livro-pages::after,
-  .livro-stage::before,.livro-aura i,.relic-rays,.relic-runes,.relic-ticks,.relic-core{animation:none!important}
-  .livro-aura{display:none}
-}
+html[data-motion="reduced"] .livro-page-flip,html[data-motion="reduced"] .livro-leaf-front::after,html[data-motion="reduced"] .livro-leaf-back::after,html[data-motion="reduced"] .livro-turning .livro-page>*,html[data-motion="reduced"] .livro-turning .livro-pages::after,html[data-motion="reduced"] .livro-stage::before,html[data-motion="reduced"] .livro-aura i,html[data-motion="reduced"] .relic-rays,html[data-motion="reduced"] .relic-runes,html[data-motion="reduced"] .relic-ticks,html[data-motion="reduced"] .relic-core{animation:none!important}
+html[data-motion="reduced"] .livro-aura{display:none}
 html[data-quality="light"] .livro-aura,html[data-quality="light"] .relic-rays{display:none}
 .relic-gallery{order:9}

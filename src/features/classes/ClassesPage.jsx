@@ -6,6 +6,7 @@ import { compressImage } from "../../core/media";
 import CosmicSelectionRing from "../../experience/CosmicSelectionRing";
 import ClassScene from "./ClassScene";
 import useCampaignClasses from "./useCampaignClasses";
+import { capaDaLinhagem } from "./artesDasLinhagens.mjs";
 import ClassForge from "./ClassForge";
 import { emptyClass } from "../../core/campaignModules.mjs";
 import "./classes.css";
@@ -34,7 +35,9 @@ function ClassesSection({ masterMode }) {
 }, []);
 
   const cls = classes.find(c => c.id === activeId) || classes[0] || null;
-  const cover = cls ? covers[cls.id] || '' : '';
+  // A capa enviada pelo Mestre vence; sem ela, a linhagem usa a arte que já
+  // vem com a campanha principal. Ver artesDasLinhagens.mjs.
+  const cover = cls ? capaDaLinhagem(cls.id, covers, builtIn) : '';
 
   const handleUpload = e => {
     const file = e.target.files[0];
@@ -42,7 +45,7 @@ function ClassesSection({ masterMode }) {
 
     const reader = new FileReader();
     reader.onload = async ev => {
-      const compressed = await compressImage(ev.target.result, 900, 1200, 0.78);
+      const compressed = await compressImage(ev.target.result, 1600, 1600, 0.82);
       setCovers(prev => ({ ...prev, [cls.id]: compressed }));
 
       try {

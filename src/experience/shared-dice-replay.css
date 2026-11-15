@@ -91,6 +91,4 @@
   .shared-dice-replay-card .physical-dice-space{height:170px}
   .shared-dice-replay-name{margin-top:8px}
 }
-@media(prefers-reduced-motion:reduce){
-  .shared-dice-replay-card,.shared-dice-replay-face,.shared-dice-replay-total strong,.shared-dice-replay-wait{animation:none}
-}
+html[data-motion="reduced"] .shared-dice-replay-card,html[data-motion="reduced"] .shared-dice-replay-face,html[data-motion="reduced"] .shared-dice-replay-total strong,html[data-motion="reduced"] .shared-dice-replay-wait{animation:none}

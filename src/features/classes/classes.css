@@ -50,27 +50,45 @@
 /* CARTAZ DA CLASSE */
 .classe-detail{--c:#9B7CFF;display:grid;gap:16px;min-width:0}
 
+/* O HERÓI DA LINHAGEM
+   Antes a caixa tinha altura fixa e a arte entrava com object-fit:cover — ou
+   seja, a caixa mandava e a imagem era recortada para caber. Como as artes não
+   têm todas a mesma proporção (16:9, 2:1, 2.44:1), sempre faltava um pedaço:
+   cabeças cortadas em cima, pés cortados embaixo.
+
+   Agora é o contrário: a arte entra no fluxo e é ELA que define a altura. A
+   caixa se ajusta a qualquer proporção que o Mestre enviar, sem cortar nada e
+   sem tarja preta. O título e os dados continuam por cima, no mesmo lugar,
+   empilhados na mesma célula da grade. */
 .classe-hero{
-  position:relative;border-radius:16px;overflow:hidden;min-height:308px;display:flex;align-items:flex-end;
+  position:relative;border-radius:16px;overflow:hidden;min-height:308px;
+  display:grid;grid-template-areas:'pilha';
   border:1px solid color-mix(in srgb,var(--c) 30%,transparent);
   background:linear-gradient(150deg,color-mix(in srgb,var(--c) 15%,transparent),rgba(9,6,16,.96));
   box-shadow:0 18px 48px rgba(0,0,0,.44);
 }
-.classe-hero-art{position:absolute;inset:0}
-.classe-hero-art img{width:100%;height:100%;object-fit:cover;display:block}
+.classe-hero-art,.classe-hero-empty,.classe-hero-copy{grid-area:pilha;min-width:0}
+/* line-height:0 tira o espaço de descida da linha sob a imagem, que apareceria
+   como uma faixa escura de uns 4px no pé do bloco. */
+.classe-hero-art{position:relative;width:100%;line-height:0;align-self:start}
+.classe-hero-art img{width:100%;height:auto;display:block}
+/* O véu existe para o título ser legível, não para esconder a arte. Ele foi
+   calibrado quando a caixa era baixa e recortada; numa caixa 16:9 inteira
+   aquele alcance apagava metade da ilustração. Agora ele se concentra na
+   faixa onde o texto realmente fica. */
 .classe-hero-art::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(7,5,13,.96) 4%,rgba(7,5,13,.62) 40%,transparent 78%),
-    linear-gradient(to right,rgba(7,5,13,.8),transparent 58%);
+  background:linear-gradient(to top,rgba(7,5,13,.94) 0%,rgba(7,5,13,.74) 12%,rgba(7,5,13,.22) 30%,transparent 46%),
+    linear-gradient(to right,rgba(7,5,13,.62),rgba(7,5,13,.12) 34%,transparent 52%);
 }
 .classe-hero-empty{
-  position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:11px;text-align:center;
+  display:grid;place-items:center;align-content:center;gap:11px;text-align:center;
 }
 .classe-hero-empty span{font-size:46px;opacity:.26}
 .classe-hero-empty small{
   font-family:'Cinzel',Georgia,serif;font-size:10.5px;letter-spacing:.08em;color:rgba(255,255,255,.22);
 }
-.classe-hero-copy{position:relative;display:grid;gap:9px;padding:26px 26px 24px;width:100%}
+.classe-hero-copy{position:relative;display:grid;gap:9px;padding:26px 26px 24px;width:100%;align-self:end}
 .classe-hero-role{
   justify-self:start;padding:4px 12px;border-radius:999px;
   font-family:'Cinzel',Georgia,serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;
@@ -169,10 +187,8 @@
   .classe-chip{flex:0 0 auto;min-width:168px}
   .classe-hero{min-height:230px}
 }
-@media(prefers-reduced-motion:reduce){
-  .classe-chip,.classe-ability{transition:none}
-  .classe-chip:hover,.classe-ability:hover{transform:none}
-}
+html[data-motion="reduced"] .classe-chip,html[data-motion="reduced"] .classe-ability{transition:none}
+html[data-motion="reduced"] .classe-chip:hover,html[data-motion="reduced"] .classe-ability:hover{transform:none}
 
 /* A lista de linhagens fica por cima do cenário, então precisa de fundo
    próprio: sem isto, o fogo azul passa por trás do nome e come o contraste. */

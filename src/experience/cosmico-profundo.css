@@ -91,10 +91,8 @@
 }
 
 /* A paralaxe é opcional; sem ela as camadas ficam paradas e ainda bonitas. */
-@media (prefers-reduced-motion:reduce){
-  .cosmum-depth,.cosmum-dust,.cosmum-cursor-bloom{animation:none!important;transform:none!important}
-  .cosmum-cursor-bloom{display:none}
-}
+html[data-motion="reduced"] .cosmum-depth,html[data-motion="reduced"] .cosmum-dust,html[data-motion="reduced"] .cosmum-cursor-bloom{animation:none!important;transform:none!important}
+html[data-motion="reduced"] .cosmum-cursor-bloom{display:none}
 /* Celular e tablet não carregam nenhuma camada profunda. */
 @media (max-width:1023px){
   .cosmum-depth,.cosmum-dust,.cosmum-cursor-bloom{display:none!important}
@@ -157,9 +155,7 @@ html[data-quality="light"] .cosmum-cursor-bloom{display:none!important}
   to{opacity:1;filter:blur(0)}
 }
 
-@media (prefers-reduced-motion:reduce){
-  .cosmum-orbit,.cosmum-orbit i,.cosmum-orbit::before{animation:none!important}
-  /* Sem movimento o anel ainda precisa dizer "este está selecionado". */
+html[data-motion="reduced"] .cosmum-orbit,html[data-motion="reduced"] .cosmum-orbit i,html[data-motion="reduced"] .cosmum-orbit::before{animation:none!important}
+html[data-motion="reduced"] /* Sem movimento o anel ainda precisa dizer "este está selecionado". */
   .cosmum-orbit::before{opacity:.7}
-}
 html[data-quality="light"] .cosmum-orbit i{animation-duration:9s}

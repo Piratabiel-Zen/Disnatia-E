@@ -34,4 +34,4 @@
 .dice-mesa-result.is-fail{border-color:#E8193C}.dice-mesa-result.is-fail b{color:#FDA4AF;text-shadow:0 0 16px #E8193C}
 @keyframes diceMesaResult{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
 @media(max-width:600px){.dice-mesa .physical-dice-space{height:210px}}
-@media(prefers-reduced-motion:reduce){.dice-mesa-hint,.dice-mesa-result{animation:none}}
+html[data-motion="reduced"] .dice-mesa-hint,html[data-motion="reduced"] .dice-mesa-result{animation:none}

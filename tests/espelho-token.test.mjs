@@ -27,7 +27,7 @@ test('o espelhamento viaja pelo canal ao vivo e chega nos outros aparelhos', () 
 });
 
 test('o giro do botao respeita quem pediu menos movimento', () => {
-  const reduced = css.slice(css.lastIndexOf('prefers-reduced-motion'));
+  const reduced = css.slice(css.lastIndexOf('data-motion'));
   assert.match(reduced, /battlemap-flip-dial\[data-spinning="true"\] span\{animation:none;\}/);
 });
 

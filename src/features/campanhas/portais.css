@@ -132,7 +132,5 @@
   .portal-orbit{width:170px}
   .portal-head p{font-size:1rem}
 }
-@media(prefers-reduced-motion:reduce){
-  .portal-sky i,.portal-ring,.portal-core,.portal-word{animation:none!important}
-  .portal-orbit{transition:none}
-}
+html[data-motion="reduced"] .portal-sky i,html[data-motion="reduced"] .portal-ring,html[data-motion="reduced"] .portal-core,html[data-motion="reduced"] .portal-word{animation:none!important}
+html[data-motion="reduced"] .portal-orbit{transition:none}

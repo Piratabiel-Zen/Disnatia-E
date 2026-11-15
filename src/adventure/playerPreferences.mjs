@@ -1,10 +1,12 @@
-export const DEFAULT_PREFERENCES = Object.freeze({ effects: 'normal', textSize: 'standard', music: 50, ambience: 80, interface: 40 });
+export const DEFAULT_PREFERENCES = Object.freeze({ effects: 'normal', motion: 'full', textSize: 'standard', music: 50, ambience: 80, interface: 40 });
 export const PREFERENCE_KEY = 'dinastia_player_preferences_v1';
 let memoryPreferences = { ...DEFAULT_PREFERENCES };
 export function normalizePreferences(input = {}) {
   if (!input || typeof input !== 'object') input = {};
   const value = { ...DEFAULT_PREFERENCES };
   value.effects = ['normal', 'subtle', 'reduced'].includes(input.effects) ? input.effects : value.effects;
+  // Nasce em 'full': o movimento aqui é conteúdo, não enfeite. Ver movimento.mjs.
+  value.motion = ['full', 'system', 'reduced'].includes(input.motion) ? input.motion : value.motion;
   value.textSize = ['standard', 'large'].includes(input.textSize) ? input.textSize : value.textSize;
   for (const key of ['music', 'ambience', 'interface']) {
     if (input[key] != null && Number.isFinite(Number(input[key]))) value[key] = Math.max(0, Math.min(100, Number(input[key])));

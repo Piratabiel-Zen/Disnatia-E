@@ -171,10 +171,8 @@
   .invocacao-vital-row{grid-template-columns:52px minmax(0,1fr);row-gap:7px}
   .invocacao-stepper{grid-column:1/-1;justify-content:flex-end}
 }
-@media(prefers-reduced-motion:reduce){
-  .invocacao-card::before,.invocacao-card .summon-release-button.is-pulsing:not(:disabled){animation:none}
-  .invocacao-hp-fill{transition:none}
-}
+html[data-motion="reduced"] .invocacao-card::before,html[data-motion="reduced"] .invocacao-card .summon-release-button.is-pulsing:not(:disabled){animation:none}
+html[data-motion="reduced"] .invocacao-hp-fill{transition:none}
 
 /* Envio do retrato, no formulário do Mestre. */
 .summon-photo-button{

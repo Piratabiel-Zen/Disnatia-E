@@ -46,9 +46,7 @@
    adesivo e alguém esperando a vez, e precisa ser igual no celular, no
    notebook e no desktop. Custa um transform composto por token — o compositor
    resolve na GPU. Só quem pede menos movimento no sistema fica sem ela. */
-@media(prefers-reduced-motion:reduce){
-  .map-token-body{animation:none!important}
-}
+html[data-motion="reduced"] .map-token-body{animation:none!important}
 
 /* ===== Espelhar token =====
    Mesma linguagem visual do punho de rotação (battlemap-facing-dial), mas como
@@ -85,6 +83,4 @@
   50%{transform:rotateY(90deg) scale(1.14);}
   to{transform:rotateY(180deg) scale(1);}
 }
-@media (prefers-reduced-motion:reduce){
-  .battlemap-flip-dial[data-spinning="true"] span{animation:none;}
-}
+html[data-motion="reduced"] .battlemap-flip-dial[data-spinning="true"] span{animation:none;}

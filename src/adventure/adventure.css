@@ -98,7 +98,8 @@ html[data-quality="light"] .g3-portrait,html[data-quality="light"] .g3-hud-orb,h
   .ad-lower-grid{grid-template-columns:1fr;gap:18px}.ad-panel{padding:20px}.ad-seal{width:32px;height:32px;font-size:27px}.ad-choice{font-size:15px}.ad-vote-count{font-size:9px}.ad-question{font-size:21px}.ad-footer{gap:12px;padding:26px 0}.ad-footer p{font-size:12px}.ad-turn-banner{padding:12px;gap:10px;flex-wrap:wrap}.ad-turn-banner strong{font-size:17px}.ad-turn-banner button{font-size:12px}.ad-turn-round{font-size:8px}.ad-director-bar{padding:18px}
   .adventure-shell:has(.page-stage-session) .g3-mobile-session-hub{display:none!important}.adventure-shell:has(.page-stage-session):not(:has(.game3-mode-combat)) .g3-mobile-hud-toggle{display:none!important}
 }
-@media(prefers-reduced-motion:reduce){.adventure-page *{transition:none!important}.cosmic-living-bg *,.g3-environment *{animation:none!important}}
+html[data-motion="reduced"] .adventure-page *{transition:none!important}
+html[data-motion="reduced"] .cosmic-living-bg *,html[data-motion="reduced"] .g3-environment *{animation:none!important}
 
 /* VISUAL BREATHING PASS 2026-09-25
    Uma cena dominante, companhia compacta e ferramentas progressivas.

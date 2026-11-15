@@ -142,14 +142,12 @@
 
 /* Ignora preferência do SO apenas para manter a experiência do RPG consistente entre máquinas.
    Uma opção interna de acessibilidade poderá ser adicionada depois, sem alterar por dispositivo. */
-@media(prefers-reduced-motion:reduce){
-  .cosmic-lite-nebula{animation:cosmicUnifiedNebula 28s ease-in-out infinite alternate!important}
-  .cosmic-lite-vortex::before{animation:cosmicVortexTurn 110s linear infinite!important}
-  .cosmic-lite-stars-far{animation:cosmicFarTwinkle 12s ease-in-out infinite!important}
-  .cosmic-lite-stars-near{animation:cosmicNearTwinkle 10s ease-in-out infinite!important}
-  .cosmic-bright-star{animation:cosmicDarkTwinkle var(--star-duration) ease-in-out var(--star-delay) infinite!important}
-  .cosmic-shooting-star{animation:cosmicMeteorRightToLeft var(--meteor-duration) linear var(--meteor-delay) infinite!important}
-  .immersive-topbar::after{animation:cosmicHeaderScan 8s ease-in-out infinite!important}
-  .session-sigil{animation:floatSigil 4s ease-in-out infinite!important}
-  .grim-live{animation:grimPulse 1.3s ease-in-out infinite!important}
-}
+html[data-motion="reduced"] .cosmic-lite-nebula{animation:cosmicUnifiedNebula 28s ease-in-out infinite alternate!important}
+html[data-motion="reduced"] .cosmic-lite-vortex::before{animation:cosmicVortexTurn 110s linear infinite!important}
+html[data-motion="reduced"] .cosmic-lite-stars-far{animation:cosmicFarTwinkle 12s ease-in-out infinite!important}
+html[data-motion="reduced"] .cosmic-lite-stars-near{animation:cosmicNearTwinkle 10s ease-in-out infinite!important}
+html[data-motion="reduced"] .cosmic-bright-star{animation:cosmicDarkTwinkle var(--star-duration) ease-in-out var(--star-delay) infinite!important}
+html[data-motion="reduced"] .cosmic-shooting-star{animation:cosmicMeteorRightToLeft var(--meteor-duration) linear var(--meteor-delay) infinite!important}
+html[data-motion="reduced"] .immersive-topbar::after{animation:cosmicHeaderScan 8s ease-in-out infinite!important}
+html[data-motion="reduced"] .session-sigil{animation:floatSigil 4s ease-in-out infinite!important}
+html[data-motion="reduced"] .grim-live{animation:grimPulse 1.3s ease-in-out infinite!important}

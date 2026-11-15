@@ -8,6 +8,6 @@
 .live-status.is-live i{box-shadow:0 0 7px #34D399;animation:liveStatusPulse 2.4s ease-in-out infinite}
 .live-status.is-slow{color:#E8A020;border-color:rgba(232,160,32,.3);background:rgba(232,160,32,.08)}
 @keyframes liveStatusPulse{0%,100%{opacity:.55}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.live-status.is-live i{animation:none}}
+html[data-motion="reduced"] .live-status.is-live i{animation:none}
 /* No celular sobra pouco espaço no topo: fica só a luz. */
 @media(max-width:900px){.live-status{padding:4px 7px}.live-status b{display:none}}

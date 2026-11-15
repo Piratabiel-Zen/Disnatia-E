@@ -120,10 +120,8 @@
 
 /* Onde o movimento cede: o livro continua lá, parado numa pose que mostra
    capa e lombada ao mesmo tempo. */
-@media(prefers-reduced-motion:reduce){
-  .tomo3d-corpo{animation:none;transform:rotateX(-14deg) rotateY(-32deg)}
-  .tomo3d-palco,.tomo3d-aura{animation:none}
-}
+html[data-motion="reduced"] .tomo3d-corpo{animation:none;transform:rotateX(-14deg) rotateY(-32deg)}
+html[data-motion="reduced"] .tomo3d-palco,html[data-motion="reduced"] .tomo3d-aura{animation:none}
 html[data-quality="light"] .tomo3d-aura{animation:none;opacity:.6}
 html[data-away="true"] .tomo3d-corpo{animation-play-state:paused}
 

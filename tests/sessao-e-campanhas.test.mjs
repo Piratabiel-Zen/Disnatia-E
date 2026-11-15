@@ -110,7 +110,7 @@ test('o tomo 3D tem as seis faces e para quando pedem menos movimento', () => {
   // A perspectiva precisa estar no pai do corpo, ou o giro vira achatamento.
   assert.match(css, /\.tomo3d-palco\{[\s\S]*?perspective:\d+px/);
   assert.match(css, /\.tomo3d-corpo\{[\s\S]*?transform-style:preserve-3d/);
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{[\s\S]*?\.tomo3d-corpo\{animation:none/);
+  assert.match(css, /html\[data-motion="reduced"\] \.tomo3d-corpo\{animation:none/);
   // E é CSS puro: a navegação fica montada o tempo todo, então nada de um
   // contexto de GPU vivo ali. O componente não importa nada além do estilo.
   const mark = read('../src/experience/BookMark3D.jsx');

@@ -47,7 +47,6 @@
   contain-intrinsic-size:auto 320px;
 }
 
-
 /* OPERA GX SAFE GRAPHICS · 2026-09-13 */
 html.opera-gx-safe .cosmic-loop-video{display:none!important}
 html.opera-gx-safe .cosmic-lite-nebula,
@@ -58,12 +57,12 @@ html.opera-gx-safe .immersive-topbar::after,
 html.opera-gx-safe .session-sigil,
 html.opera-gx-safe .grim-live,
 html.opera-gx-safe .access-sigil,
-html.opera-gx-safe .access-panel::before{animation:none!important;will-change:auto!important}
+html.opera-gx-safe .access-panel::before{will-change:auto!important}
 html.opera-gx-safe .cosmic-lite-nebula{transform:none!important;opacity:.90!important}
 html.opera-gx-safe .cosmic-lite-vortex,
 html.opera-gx-safe .cosmic-shooting-stars{display:none!important}
 html.opera-gx-safe .access-gate::before,
-html.opera-gx-safe .access-gate::after{animation:none!important;filter:none!important;opacity:.18!important}
+html.opera-gx-safe .access-gate::after{filter:none!important;opacity:.18!important}
 html.opera-gx-safe .access-panel,
 html.opera-gx-safe .grim-nav,
 html.opera-gx-safe .mobile-dock,
@@ -78,12 +77,10 @@ html.opera-gx-safe .cosmic-lite-nebula,
 html.opera-gx-safe .cosmic-living-vignette{mix-blend-mode:normal!important;filter:none!important}
 html.opera-gx-safe .session-card{content-visibility:visible!important;contain-intrinsic-size:auto!important}
 
-
 /* RUNTIME LIGHTWEIGHT · 2026-09-13 */
 .cosmic-lite-nebula,.cosmic-lite-vortex::before{will-change:auto!important}
 .prologue-cover,.class-illustration,.chronicles-memory{content-visibility:auto;contain-intrinsic-size:auto 460px}
 @media(max-width:900px){.prologue-cover,.class-illustration,.chronicles-memory{contain-intrinsic-size:auto 360px}}
-
 
 /* CROSS-PLATFORM VISUAL PARITY + SUBTLE CLARITY · 2026-09-14 */
 .cosmic-unified-starfield{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none;opacity:.82}
@@ -94,7 +91,6 @@ html.opera-gx-safe .session-card{content-visibility:visible!important;contain-in
 @keyframes cosmicUnifiedStarsB{0%{transform:translate3d(1.5%,-1.1%,0)}50%{transform:translate3d(-.7%,.7%,0)}100%{transform:translate3d(-2.4%,1.5%,0)}}
 html.opera-gx-safe .cosmic-unified-starfield,html.opera-gx-safe .cosmic-unified-starfield>i{display:block!important}
 
-
 /* OPERA GX BOOT-SAFE HARDENING · 2026-09-14 */
 html.opera-gx-safe,html.opera-gx-safe body,html.opera-gx-safe #root{visibility:visible!important;opacity:1!important;background:#030109!important}
 html.opera-gx-safe #root{filter:none!important;transform:none!important;mix-blend-mode:normal!important;isolation:auto!important}
@@ -102,8 +98,6 @@ html.opera-gx-safe *,html.opera-gx-safe *::before,html.opera-gx-safe *::after{-w
 html.opera-gx-safe .cosmic-loop-video video,html.opera-gx-safe .cosmic-living-bg canvas,html.opera-gx-safe .cosmic-loop-video{display:none!important}
 html.opera-gx-safe .immersive-content>div,html.opera-gx-safe .session-card,html.opera-gx-safe .character-card,html.opera-gx-safe .objective-card{content-visibility:visible!important;contain:none!important;filter:none!important}
 html.opera-gx-safe .cosmic-lite-nebula,html.opera-gx-safe .cosmic-lite-stars-far,html.opera-gx-safe .cosmic-lite-stars-near{will-change:auto!important;filter:none!important;mix-blend-mode:normal!important}
-html.opera-gx-safe .page-transition,html.opera-gx-safe .immersive-content>div{animation:none!important}
-
 
 /* COLORED SHOOTING STARS RETURN · 2026-09-15 */
 /* Transform-only: restaura estrelas cadentes sem reintroduzir vídeo/canvas pesado. */

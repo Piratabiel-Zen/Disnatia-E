@@ -23,7 +23,7 @@ test('o golpe escurece a mesa e mostra quem agiu', () => {
 
 test('o golpe respeita quem pediu menos movimento e o modo leve', () => {
   assert.match(strikeCss, /html\[data-quality=light\][\s\S]*?animation:none/);
-  assert.match(strikeCss, /prefers-reduced-motion:reduce[\s\S]*?animation:none/);
+  assert.match(strikeCss, /html\[data-motion="reduced"\][\s\S]*?animation:none/);
 });
 
 test('os tokens respiram conforme o estado, sem atrapalhar o arraste', () => {
@@ -40,5 +40,5 @@ test('os tokens respiram conforme o estado, sem atrapalhar o arraste', () => {
   // Cada peça tem seu próprio compasso.
   assert.match(battle, /'--breath-delay'/);
   // E nada disso roda para quem não quer movimento.
-  assert.match(tokenCss, /prefers-reduced-motion:reduce[\s\S]*?animation:none!important/);
+  assert.match(tokenCss, /html\[data-motion="reduced"\][\s\S]*?animation:none!important/);
 });

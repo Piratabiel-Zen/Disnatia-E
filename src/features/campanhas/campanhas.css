@@ -139,7 +139,5 @@
   .campaign-grid{grid-template-columns:1fr}
   .campaign-card{padding:20px 18px 18px}
 }
-@media(prefers-reduced-motion:reduce){
-  .campaign-card,.campaign-enter{transition:none}
-  .campaign-card:hover{transform:none}
-}
+html[data-motion="reduced"] .campaign-card,html[data-motion="reduced"] .campaign-enter{transition:none}
+html[data-motion="reduced"] .campaign-card:hover{transform:none}
