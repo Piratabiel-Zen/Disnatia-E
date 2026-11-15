@@ -9,6 +9,7 @@ import "./styles/livro.css";
 import "./experience/experience.css";
 import "./experience/access.css";
 import "./experience/realtime.css";
+import "./experience/golpes.css";
 import "./experience/cosmic-living-background.css";
 import "./experience/site-polish.css";
 

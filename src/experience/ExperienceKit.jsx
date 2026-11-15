@@ -958,6 +958,7 @@ function CombatHud({ onNavigate }){
 }
 
 function CombatActionPulse(){
+  const { sheets }=useExperience();
   const [event,setEvent]=useState(null);
   const [queue,setQueue]=useState([]);
   const queuedRef=useRef(new Set());
@@ -976,11 +977,24 @@ function CombatActionPulse(){
   useEffect(()=>{if(!event?.id)return undefined;const duration=event.abilityType==='combinada'?3500:event.abilityType==='especial'?2500:1900;const timer=window.setTimeout(()=>setEvent(null),duration);return()=>window.clearTimeout(timer);},[event?.id]);
   if(!event)return null;
   const kind=abilityType(event);
+  // Quem usou a habilidade aparece de rosto: o retrato da ficha, quando existe.
+  const actor=(Array.isArray(sheets)?sheets:[]).find(row=>String(row.id)===String(event.actorId||'').replace(/^p_/,''));
+  const tierLabel={passiva:'Passiva',normal:'Habilidade',especial:'Especial',combinada:'Combinada'}[kind]||'Habilidade';
   return <div className={`combat-action-pulse compact action-${kind}`} data-ability-type={kind} style={{'--action-color':event.color||'#A855F7'}}>
     <div className="combat-action-backdrop" aria-hidden="true"/>
     <div className="combat-action-wave wave-a"/><div className="combat-action-wave wave-b"/>
     <div className="combat-action-pixels" aria-hidden="true">{Array.from({length:12},(_,index)=><i key={index} style={{'--pixel-index':index}}/>)}</div>
-    <div className="combat-action-pulse-core"><span className="combat-action-class-icon">{event.icon||'✦'}</span><small>{event.actorName||'Personagem'}</small><strong>{event.abilityName||'Habilidade'}</strong></div>
+    <div className="combat-action-pulse-core">
+      <div className="combat-action-actor">
+        <span className="combat-action-portrait">
+          {actor?.foto?<img src={actor.foto} alt=""/>:<span className="combat-action-class-icon">{event.icon||'✦'}</span>}
+        </span>
+        <small>{event.actorName||'Personagem'}</small>
+      </div>
+      <span className="combat-action-tier">{tierLabel}</span>
+      <strong>{event.abilityName||'Habilidade'}</strong>
+      {event.cost>0&&<span className="combat-action-cost">{event.cost} VC</span>}
+    </div>
   </div>;
 }
 
