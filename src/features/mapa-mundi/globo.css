@@ -1,0 +1,60 @@
+/* GLOBO DE COSMUM */
+.globo-host{
+  position:relative;width:100%;height:100%;min-height:420px;overflow:hidden;border-radius:12px;
+  background:radial-gradient(circle at 50% 42%,rgba(60,40,110,.32),rgba(7,5,13,.96) 68%);
+  cursor:grab;touch-action:none;
+}
+.globo-host:active{cursor:grabbing}
+.globo-host.is-placing{cursor:crosshair}
+.globo-host.is-placing:active{cursor:crosshair}
+.globo-canvas{display:block;width:100%;height:100%}
+
+.globo-overlay{position:absolute;inset:0;pointer-events:none}
+
+.globo-pin{
+  --pin-color:#9B7CFF;
+  position:absolute;top:0;left:0;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:0;border:none;background:transparent;cursor:pointer;
+  transition:opacity .18s ease;will-change:transform,opacity;
+}
+.globo-pin-dot{
+  display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:12px;line-height:1;
+  color:#F2EAFF;background:radial-gradient(circle at 36% 30%,color-mix(in srgb,var(--pin-color) 82%,#fff),var(--pin-color));
+  border:1px solid rgba(255,255,255,.35);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--pin-color) 22%,transparent),0 4px 12px rgba(0,0,0,.5);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s;
+}
+.globo-pin:hover .globo-pin-dot{transform:scale(1.16)}
+.globo-pin.is-selected .globo-pin-dot{
+  transform:scale(1.22);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--pin-color) 38%,transparent),0 0 20px color-mix(in srgb,var(--pin-color) 60%,transparent);
+}
+.globo-pin.is-unknown .globo-pin-dot{
+  color:#9A8FB5;background:rgba(24,19,38,.9);border-style:dashed;border-color:rgba(155,124,255,.4);
+  box-shadow:none;
+}
+.globo-pin-name{
+  font-family:'Cinzel',Georgia,serif;font-size:9px;letter-spacing:.09em;white-space:nowrap;
+  color:#D9CEF2;text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.8);
+}
+.globo-pin.is-unknown .globo-pin-name{color:#8A7FA6;font-style:italic}
+
+.globo-hint{
+  position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+  padding:8px 15px;border-radius:999px;font-family:'Cinzel',Georgia,serif;font-size:10px;letter-spacing:.14em;
+  color:#E4D9FB;background:rgba(14,10,26,.9);border:1px solid rgba(155,124,255,.34);
+}
+
+.globo-fallback{
+  display:grid;place-items:center;height:100%;min-height:320px;padding:28px;text-align:center;
+  color:#9A8FB5;font-size:.95rem;background:rgba(10,7,18,.7);border-radius:12px;
+}
+
+@media(max-width:720px){
+  .globo-host{min-height:340px}
+  .globo-pin-name{display:none}
+  .globo-pin-dot{width:22px;height:22px;font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .globo-pin,.globo-pin-dot{transition:none}
+}

@@ -6,6 +6,9 @@ import { compressImage } from "../../core/media";
 import { pushToast } from "../../core/toast";
 import { btnStyle } from "../../core/ui";
 import { docIn } from '../../core/campaign';
+import { lazy, Suspense } from 'react';
+
+const GlobeView = lazy(() => import('./GlobeView'));
 function MapaMundiSection({ masterMode }) {
   const ROOT_MAP_ID = 'mundo';
   const TYPE_META = {
@@ -28,6 +31,9 @@ function MapaMundiSection({ masterMode }) {
   };
 
   const [atlas, setAtlas] = useState({ rootId: ROOT_MAP_ID, maps: {} });
+  // O mapa raiz é o planeta inteiro, então abre como globo; camadas internas
+  // (continentes, cidades, masmorras) continuam planas.
+  const [viewMode, setViewMode] = useState('globo');
   const [mapMedia, setMapMedia] = useState('');
   const [pinMedia, setPinMedia] = useState('');
   const [currentMapId, setCurrentMapId] = useState(ROOT_MAP_ID);
@@ -93,6 +99,9 @@ function MapaMundiSection({ masterMode }) {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [currentMapId]);
+
+  const isRootMap = String(currentMapId) === String(atlas.rootId || ROOT_MAP_ID);
+  const showGlobe = isRootMap && viewMode === 'globo';
 
   useEffect(() => {
     setMapMedia('');
@@ -211,15 +220,14 @@ function MapaMundiSection({ masterMode }) {
     e.target.value = '';
   };
 
-  const handleMapClick = e => {
-    if (!masterMode || dragging || !mapContentRef.current) return;
-    if (e.target.closest?.('[data-map-pin="true"]')) return;
-    const rect = mapContentRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+  // Criação de pin a partir de uma posição em porcentagem, venha do mapa plano
+  // ou do globo: os dois guardam o local no mesmo formato.
+  const createPinAt = ({ x, y }) => {
     const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const newPin = {
-      id, x, y,
+      id,
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
       titulo: 'Novo local',
       descricao: '',
       tipo: 'cidade',
@@ -230,6 +238,16 @@ function MapaMundiSection({ masterMode }) {
     };
     updateCurrentMap({ pins: [...(currentMap.pins || []), newPin] });
     setSelectedPin(id);
+  };
+
+  const handleMapClick = e => {
+    if (!masterMode || dragging || !mapContentRef.current) return;
+    if (e.target.closest?.('[data-map-pin="true"]')) return;
+    const rect = mapContentRef.current.getBoundingClientRect();
+    createPinAt({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
   };
 
   const openChildMap = pin => {
@@ -327,6 +345,7 @@ function MapaMundiSection({ masterMode }) {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {currentMap.parentId && <button onClick={goBack} style={btnStyle('#9B7CFF')}>← Voltar ao mapa anterior</button>}
+          {isRootMap && <button onClick={() => setViewMode(viewMode === 'globo' ? 'plano' : 'globo')} style={btnStyle('#9B7CFF')} title={viewMode === 'globo' ? 'Ver o mapa aberto, como uma carta' : 'Ver o planeta em 3D'}>{viewMode === 'globo' ? '🗺 Mapa plano' : '🌍 Globo'}</button>}
           {masterMode && <button onClick={() => fileRef.current?.click()} style={btnStyle('#9B7CFF')}>🗺 {mapImage ? 'Trocar imagem' : 'Enviar mapa'}</button>}
           <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
         </div>
@@ -363,7 +382,20 @@ function MapaMundiSection({ masterMode }) {
 
           <div style={{ minWidth: 0 }}>
             <div style={{ position: 'relative', height: 'calc(100vh - 205px)', minHeight: 560, maxHeight: 820, borderRadius: 15, overflow: 'hidden', border: '1px solid rgba(155,124,255,0.2)', background: '#05030A', boxShadow: '0 20px 65px rgba(0,0,0,0.62), 0 0 32px rgba(91,44,140,0.09)' }}>
-              {!mapImage ? (
+              {showGlobe ? (
+                <Suspense fallback={<div style={{ position:'absolute', inset:0, display:'grid', placeItems:'center', color:'#61566F', fontFamily:'Cinzel,serif', fontSize:12 }}>Girando o planeta...</div>}>
+                  <GlobeView
+                    image={mapImage}
+                    pins={visiblePins}
+                    selectedPinId={selectedPin}
+                    onSelectPin={id => setSelectedPin(id)}
+                    onPlacePin={masterMode ? createPinAt : undefined}
+                    placing={masterMode}
+                    pinTypes={TYPE_META}
+                    canSeePin={pin => masterMode || (pin.estado || (pin.descoberto === false ? 'unknown' : 'descoberto')) !== 'unknown'}
+                  />
+                </Suspense>
+              ) : !mapImage ? (
                 <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center', padding: 40 }}>
                   <div>
                     <div style={{ fontSize: 48, opacity: 0.28, marginBottom: 14 }}>🗺️</div>
@@ -408,7 +440,7 @@ function MapaMundiSection({ masterMode }) {
                 </div>
               )}
 
-              <div style={{ position: 'absolute', right: 14, bottom: 14, zIndex: 40, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ position: 'absolute', right: 14, bottom: 14, zIndex: 40, display: showGlobe ? 'none' : 'flex', flexDirection: 'column', gap: 6 }}>
                 <button onClick={() => adjustZoom(0.25)} style={{ width: 35, height: 35, borderRadius: 9, border: '1px solid rgba(155,124,255,.28)', background: 'rgba(7,5,13,.92)', color: '#BDAAF8', cursor: 'pointer', fontSize: 18 }}>+</button>
                 <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} style={{ width: 35, height: 35, borderRadius: 9, border: '1px solid rgba(155,124,255,.2)', background: 'rgba(7,5,13,.92)', color: '#706381', cursor: 'pointer', fontSize: 10 }}>{Math.round(zoom * 100)}%</button>
                 <button onClick={() => adjustZoom(-0.25)} style={{ width: 35, height: 35, borderRadius: 9, border: '1px solid rgba(155,124,255,.28)', background: 'rgba(7,5,13,.92)', color: '#BDAAF8', cursor: 'pointer', fontSize: 18 }}>−</button>
