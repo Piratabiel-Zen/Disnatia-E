@@ -126,3 +126,23 @@ rotação, o lado oculto, o clique no local e a devolução do contexto de víde
 sair da página. Um canvas WebGL não pode ser lido de volta sem
 `preserveDrawingBuffer`, então a conferência de pixels usa a tela capturada e o
 decodificador em `tests/browser/png.cjs`.
+
+## Dados arremessáveis
+
+Os dados 3D usam `@3d-dice/dice-box-threejs` com resultado predeterminado: a
+notação `3d20@4,19,7` força as faces, e é isso que garante que todos na mesa
+vejam o mesmo número.
+
+O arremesso com o mouse não muda esse contrato. `src/experience/useThrowGesture.js`
+mede direção e velocidade do gesto, e `PhysicalDiceTray` troca o método
+`startClickThrow` da instância — o único ponto onde a biblioteca sorteia a
+direção do lançamento — por uma versão que usa o gesto. O resultado continua
+vindo da notação; só o voo muda.
+
+Sem gesto (clique simples, ou o replay do lance de outro jogador) o método
+original volta a valer, então nada quebra quando o gesto não existe.
+
+`tests/browser/dados.cjs` confere num navegador real que o clique simples
+continua rolando, que a direção acompanha o lance nos dois eixos, que um lance
+rápido tem mais força que um lento e que um movimento mínimo é tratado como
+toque, não como arremesso.

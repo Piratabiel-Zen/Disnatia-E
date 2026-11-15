@@ -35,6 +35,7 @@ export default function PhysicalDiceTray({
   total,
   bonus = 0,
   onSettled,
+  throwGesture = null,
 }) {
   const reactId = useId();
   const sceneId = `dinastia-three-dice-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -43,6 +44,8 @@ export default function PhysicalDiceTray({
   const boxKeyRef = useRef('');
   const lastRollRef = useRef(0);
   const settledRef = useRef(onSettled);
+  const gestureRef = useRef(throwGesture);
+  gestureRef.current = throwGesture;
   const mountedRef = useRef(true);
   const [phase, setPhase] = useState('idle');
   const [fallback, setFallback] = useState(false);
@@ -129,6 +132,36 @@ export default function PhysicalDiceTray({
           // A biblioteca registra internamente um listener que não oferece API de
           // remoção. O componente já possui um listener limpo no unmount.
           box.resizeWorld = () => {};
+
+          // O arremesso do jogador no lugar do sorteio da biblioteca.
+          //
+          // startClickThrow monta os vetores iniciais do lançamento a partir de
+          // uma direção aleatória. Trocando só essa direção pela do gesto, o
+          // dado voa para onde a pessoa jogou, e o resultado continua sendo o
+          // que o sistema decidiu (a notação @valores força as faces), então
+          // todo mundo na mesa vê o mesmo número.
+          const originalThrow = box.startClickThrow.bind(box);
+          box.startClickThrow = notation => {
+            const gesture = gestureRef.current;
+            if (!gesture || !Number.isFinite(gesture.x) || !Number.isFinite(gesture.y)) {
+              return originalThrow(notation);
+            }
+            if (box.rolling) { box.clearDice(); box.rolling = false; }
+            const width = box.display?.currentWidth || 1;
+            const height = box.display?.currentHeight || 1;
+            // O gesto chega normalizado (-1 a 1) e vira coordenada da mesa.
+            const direction = {
+              x: Math.max(-1, Math.min(1, gesture.x)) * width,
+              y: Math.max(-1, Math.min(1, gesture.y)) * height,
+            };
+            if (!direction.x) direction.x = 0.01;
+            if (!direction.y) direction.y = 0.01;
+            const reach = Math.sqrt(direction.x * direction.x + direction.y * direction.y) + 100;
+            // Força do braço: um lance curto rola perto, um lance forte cruza a mesa.
+            const power = Math.max(0.45, Math.min(2.2, Number(gesture.power) || 1));
+            const impulse = (power + 2.5) * reach * box.strength;
+            return box.getNotationVectors(notation, direction, impulse, reach);
+          };
           await box.initialize();
           if (cancelled || !mountedRef.current) {
             disposeDiceBox(box, hostRef.current);

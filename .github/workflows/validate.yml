@@ -56,6 +56,18 @@ jobs:
           done
           CHROMIUM_PATH="$(npx playwright path chromium 2>/dev/null || true)" node tests/browser/globe.cjs
 
+      - name: Dice throw browser test
+        shell: bash
+        run: |
+          npx vite --config tests/browser/vite.config.mjs > /tmp/harness-dados.log 2>&1 &
+          harness_pid=$!
+          trap 'kill $harness_pid 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4179/dados.html > /dev/null; then break; fi
+            sleep 0.5
+          done
+          CHROMIUM_PATH="$(npx playwright path chromium 2>/dev/null || true)" node tests/browser/dados.cjs
+
       - name: Enforce bundle budget
         shell: bash
         run: |
