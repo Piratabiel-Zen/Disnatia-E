@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { setDoc } from 'firebase/firestore';
 import { activeCampaign, campaignTheme, docIn } from '../core/campaign';
 import { GROUP_KEYS, groupOf, readGroups, splitParty } from './grupos.mjs';
+import { meuCapitulo } from './meuCapitulo.mjs';
 import './sessao.css';
 
 // A TELA INICIAL DA SESSÃO
@@ -51,6 +52,77 @@ function LocationHead({ frente, único, masterMode, onRename }) {
   );
 }
 
+/* O CAPÍTULO DO JOGADOR
+   Vem depois de tudo, e só para quem joga. A ordem dentro dele segue a
+   pergunta que o jogador faz ao sentar: quem sou eu, de que lado estou, o que
+   eu quero. A lore entra resumida porque a tela inicial é um relance — quem
+   quiser o texto inteiro abre com um toque, sem sair da tela. */
+function MeuCapitulo({ capitulo, onPanel }) {
+  const [aberto, setAberto] = useState(false);
+  const { nome, lore, tracos, objetivos, frente } = capitulo;
+
+  return (
+    <section className="sessao-capitulo" aria-label={nome ? `Seu personagem, ${nome}` : 'Seu personagem'}>
+      <header className="sessao-capitulo-topo">
+        <div className="sessao-capitulo-quem">
+          <span className="sessao-capitulo-rotulo">Seu personagem</span>
+          {nome ? <strong>{nome}</strong> : null}
+        </div>
+        {frente.dividida && frente.nome ? (
+          <span className={`sessao-capitulo-frente frente-${frente.chave}`}>
+            <i aria-hidden="true" />
+            <span>
+              <small>Você está no</small>
+              <b>{frente.nome}</b>
+            </span>
+            {frente.local ? <em>{frente.local}</em> : null}
+          </span>
+        ) : null}
+      </header>
+
+      <div className="sessao-capitulo-corpo">
+      {lore.resumo ? (
+        <div className="sessao-capitulo-lore">
+          <p>{aberto ? lore.inteiro : lore.resumo}</p>
+          {lore.cortado && (
+            <button type="button" className="sessao-capitulo-mais" onClick={() => setAberto(v => !v)}>
+              {aberto ? 'Recolher' : 'Ler a história inteira'}
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      {(tracos.length > 0 || objetivos.length > 0) && (
+        <div className="sessao-capitulo-grade">
+          {tracos.length > 0 && (
+            <div className="sessao-capitulo-campo">
+              <span className="sessao-capitulo-rotulo">Personalidade</span>
+              <ul className="sessao-capitulo-tracos">
+                {tracos.map(traco => <li key={traco}>{traco}</li>)}
+              </ul>
+            </div>
+          )}
+          {objetivos.length > 0 && (
+            <div className="sessao-capitulo-campo">
+              <span className="sessao-capitulo-rotulo">Seus objetivos</span>
+              <ol className="sessao-capitulo-objetivos">
+                {objetivos.map(objetivo => (
+                  <li key={objetivo}><i aria-hidden="true">◇</i><span>{objetivo}</span></li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      )}
+      </div>
+
+      <button type="button" className="sessao-capitulo-ficha" onClick={() => onPanel('sheet')}>
+        {tracos.length || objetivos.length ? 'Abrir minha ficha' : 'Escrever na minha ficha'} →
+      </button>
+    </section>
+  );
+}
+
 export default function SessionHome({
   session, combat, combatState, sheets, playerId, masterMode, current, onPanel, onNavigate, activeMap, children,
 }) {
@@ -60,6 +132,8 @@ export default function SessionHome({
   const frentes = splitParty(sheets, groups);
   const mine = current && String(current.id) === String(playerId);
   const [busy, setBusy] = useState(false);
+  // Null para o Mestre e para quem ainda não tem nada escrito na ficha.
+  const capitulo = meuCapitulo({ sheets, playerId, groups, masterMode });
 
   const saveGroups = async next => {
     if (!masterMode || busy) return;
@@ -146,6 +220,8 @@ export default function SessionHome({
           >{groups.ativo ? 'Reunir em um grupo' : 'Dividir em dois grupos'}</button>
         )}
       </div>
+
+      {capitulo ? <MeuCapitulo capitulo={capitulo} onPanel={onPanel} /> : null}
     </div>
   );
 }

@@ -11,7 +11,8 @@
 .ability-edit-actions{display:flex;gap:5px}.ability-edit-actions button{min-width:30px;min-height:30px;border:1px solid #a855f755;border-radius:5px;background:#a855f711;color:#d8b7ee;cursor:pointer;display:grid;place-items:center}.ability-edit-actions button:last-child{border-color:#e8193c55;color:#ff7087;background:#e8193c11}.ability-edit-actions button:focus-visible{outline:2px solid #58d9ff;outline-offset:2px}.ability-edit-actions button:disabled{opacity:.4;cursor:wait}.ability-editor-error{color:#ff7087;font-size:13px;margin-top:8px}
 @keyframes abilityAuraRotate{to{transform:rotate(360deg)}}
 @keyframes abilityAuraPulse{50%{text-shadow:0 0 9px #58d9ff,0 0 12px #ff498e}}
-html[data-quality=light] .ability-type-especial::before,html[data-effects=reduced] .ability-type-especial::before,html[data-effects=subtle] .ability-type-especial::before,html[data-quality=light] .ability-type-especial b,html[data-effects=reduced] .ability-type-especial b,html[data-effects=subtle] .ability-type-especial b{animation:none}
+/* Só a escolha explicita de menos efeitos desliga o selo; o modo Leve nao. */
+html[data-effects=reduced] .ability-type-especial::before,html[data-effects=subtle] .ability-type-especial::before,html[data-effects=reduced] .ability-type-especial b,html[data-effects=subtle] .ability-type-especial b{animation:none}
 @media(prefers-reduced-motion:reduce){.ability-type-especial::before,.ability-type-especial b{animation:none}}
 @media(max-width:600px){.ability-edit-actions button{min-width:40px;min-height:40px}.ability-type-badge{font-size:8px}}
 

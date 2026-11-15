@@ -80,6 +80,89 @@ function PersonalityTags({ value, color, onChange }) {
     </div>
   );
 }
+
+/* OBJETIVOS PESSOAIS
+   A lore quem escreve é o Mestre; os traços e os objetivos são do jogador. Um
+   objetivo é mais longo que um traço — é uma frase, não uma etiqueta — então
+   ele é listado, não vira chip. Três no máximo: quem tem sete objetivos não
+   tem nenhum, e a tela inicial precisa caber na vista. */
+function ObjetivosPessoais({ value, color, onChange, readOnly = false }) {
+  const [input, setInput] = useState('');
+  const objetivos = Array.isArray(value) ? value : [];
+  const limite = 3;
+
+  const adicionar = () => {
+    const texto = input.trim();
+    if (!texto || objetivos.length >= limite) return;
+    if (objetivos.some(o => o.toLowerCase() === texto.toLowerCase())) { setInput(''); return; }
+    onChange([...objetivos, texto]);
+    setInput('');
+  };
+  const remover = i => onChange(objetivos.filter((_, idx) => idx !== i));
+
+  return (
+    <div>
+      <ol style={{ listStyle: 'none', margin: '0 0 8px', padding: 0, display: 'grid', gap: 6 }}>
+        {objetivos.length === 0 && (
+          <li style={{ fontSize: 12, color: '#4A4050', fontStyle: 'italic', fontFamily: 'Cinzel,serif' }}>
+            {readOnly ? 'Nenhum objetivo declarado.' : 'O que este personagem quer? Ainda não foi dito.'}
+          </li>
+        )}
+        {objetivos.map((objetivo, i) => (
+          <li key={i} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            padding: '7px 10px', borderRadius: 8,
+            border: `1px solid ${color}22`, borderLeft: `2px solid ${color}66`,
+            background: `${color}0A`,
+          }}>
+            <span aria-hidden="true" style={{ color: `${color}AA`, fontSize: 11, lineHeight: 1.6, flexShrink: 0 }}>◇</span>
+            <span style={{ flex: 1, fontSize: 13, lineHeight: 1.6, color: '#C8BAA8', fontFamily: "'Crimson Text',Georgia,serif" }}>
+              {objetivo}
+            </span>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => remover(i)}
+                title="Remover objetivo"
+                style={{ background: 'none', border: 'none', color: `${color}88`, cursor: 'pointer', fontSize: 11, padding: 0, lineHeight: 1.6, flexShrink: 0 }}
+              >✕</button>
+            )}
+          </li>
+        ))}
+      </ol>
+      {!readOnly && objetivos.length < limite && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && adicionar()}
+            placeholder="Ex: Descobrir quem matou meu irmão"
+            maxLength={90}
+            style={{ flex: 1, fontSize: 12 }}
+          />
+          <button
+            type="button"
+            onClick={adicionar}
+            disabled={!input.trim()}
+            style={{
+              padding: '5px 12px', borderRadius: 6, border: `1px solid ${color}55`,
+              background: input.trim() ? `${color}18` : 'rgba(255,255,255,0.02)',
+              color: input.trim() ? color : '#5A5070',
+              cursor: input.trim() ? 'pointer' : 'not-allowed',
+              fontFamily: 'Cinzel,serif', fontSize: 11, whiteSpace: 'nowrap',
+            }}
+          >+ Adicionar</button>
+        </div>
+      )}
+      {!readOnly && (
+        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.15)', marginTop: 6, fontFamily: 'Cinzel,serif' }}>
+          {objetivos.length}/{limite} objetivos
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AttrDots({ value, color, onChange, masterMode, attrPoints = 0, onSpendPoint }) {
   return (
     <div className="attr-dots" style={{ display: 'flex', gap: 4 }}>
@@ -806,7 +889,7 @@ function InvocacoesPanel({sheet,onChange,sheetColor,masterMode}){
   return <div className="summon-memory-panel"><div className="summon-memory-help">{masterMode?'Cadastre a criatura e use Revelar quando o necromante puder conhecê-la.':'Somente memórias reveladas pelo Mestre aparecem aqui. Uma memória autorizada pode ser liberada a qualquer momento.'}</div>{visible.map(summon=><SummonCard key={summon.id} summon={summon} ownerSheet={sheet} masterMode={masterMode} color={sheetColor} onChange={next=>save(invocations.map(item=>String(item.id)===String(summon.id)?next:item))} onDelete={()=>save(invocations.filter(item=>String(item.id)!==String(summon.id)))}/>)}{masterMode&&invocations.length<6&&<button className="summon-memory-add" onClick={add}>＋ Adicionar invocação ({invocations.length}/6)</button>}{!masterMode&&!visible.length&&<div className="summon-memory-empty">Nenhuma invocação foi revelada pelo Mestre.</div>}</div>;
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[], familiares:[]});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], objetivos_pessoais:[], cooldowns:{}, invocacoes:[], familiares:[]});
 function useIsMobile(breakpoint = 700) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= breakpoint);
   useEffect(() => {
@@ -1003,6 +1086,11 @@ function MobileSheetFull({sheet, onChange, masterMode, customAbilities, onSaveCu
           <div>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Personalidade</div>
             <PersonalityTags value={sheet.personalidade} color={sheetColor} onChange={v=>f('personalidade',v)}/>
+          </div>
+
+          <div>
+            <div style={{fontSize:10,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Objetivos</div>
+            <ObjetivosPessoais value={sheet.objetivos_pessoais} color={sheetColor} onChange={v=>f('objetivos_pessoais',v)}/>
           </div>
         </div>
         </>)}
@@ -1381,6 +1469,12 @@ function SheetFull({sheet, onChange, masterMode, customAbilities, onSaveCustomAb
             <div style={{fontSize:9,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Personalidade</div>
             <PersonalityTags value={sheet.personalidade} color={sheetColor} onChange={v=>f('personalidade',v)}/>
           </div>
+
+          {/* Objetivos do personagem — aparecem também na tela inicial da sessão */}
+          <div style={{marginBottom:SPACING}}>
+            <div style={{fontSize:9,letterSpacing:'0.3em',color:'#5A5070',fontFamily:'Cinzel,serif',marginBottom:9,textTransform:'uppercase'}}>Objetivos</div>
+            <ObjetivosPessoais value={sheet.objetivos_pessoais} color={sheetColor} onChange={v=>f('objetivos_pessoais',v)}/>
+          </div>
         </div>
 
         {/* divider */}
@@ -1582,4 +1676,4 @@ function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
   </div>;
 }
 
-export {PersonalityTags,AttrDots,VigosDots,VigosWithLocked,StatusPanel,AttrBonusStrip,resolveEquipIcon,CompactEquipSlot,CharSilhouette,CollapsibleSection,EquipamentoPanel,ArtefatoFichaPanel,CooldownBadge,HabilidadesPanel,SummonCard,InvocacoesPanel,useIsMobile,MobileSheetFull,SheetFull,newSheet};
+export {PersonalityTags,ObjetivosPessoais,AttrDots,VigosDots,VigosWithLocked,StatusPanel,AttrBonusStrip,resolveEquipIcon,CompactEquipSlot,CharSilhouette,CollapsibleSection,EquipamentoPanel,ArtefatoFichaPanel,CooldownBadge,HabilidadesPanel,SummonCard,InvocacoesPanel,useIsMobile,MobileSheetFull,SheetFull,newSheet};

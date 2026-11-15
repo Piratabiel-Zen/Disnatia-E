@@ -24,9 +24,9 @@
 .battlemap-master-mark{display:flex;align-items:center;gap:8px;margin-right:3px}
 .battlemap-master-mark>span:last-child{display:grid;gap:3px;font:700 9px 'Cinzel',serif;letter-spacing:.08em;color:#e5ca8d}.battlemap-master-mark small{font:9px 'Crimson Text',serif;letter-spacing:0;color:#99b59b}
 .grim-avatar.master-sigil{width:36px;height:40px;border-radius:8px!important}
-html[data-quality=light] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after,
+/* O brilho do botao Usar nao depende do modo de qualidade. */
 html[data-effects=reduced] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation:none!important;transition:none!important}
-html[data-quality=light] :is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger),html[data-effects=reduced] :is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger){transition:none!important;transform:none!important}
+html[data-effects=reduced] :is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger){transition:none!important;transform:none!important}
 html[data-effects=subtle] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation-iteration-count:1!important}
 html[data-away=true] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){:is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation:none!important;transition:none!important}:is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger){transition:none!important;transform:none!important}}

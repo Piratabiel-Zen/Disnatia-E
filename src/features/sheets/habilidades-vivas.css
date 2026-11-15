@@ -130,4 +130,8 @@
   .sheet-awakening::after{display:none}
   .ability-row:hover,.ability-use-button:hover:not(:disabled){transform:none!important}
 }
-html[data-quality="light"] .ability-row:hover::before,html[data-quality="light"] .ability-use-button:hover::after{animation:none}
+
+/* Nada aqui é cortado pelo modo Leve. A resposta ao mouse é o que informa a
+   força da habilidade antes de o jogador ler o custo: se ela muda de máquina
+   para máquina, a escala (passiva → combinada) deixa de significar algo. Roda
+   só enquanto o ponteiro está em cima, e pausa com a aba em segundo plano. */

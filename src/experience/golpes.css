@@ -109,14 +109,12 @@
   .combat-action-pulse-core small{font-size:10px;letter-spacing:.18em}
 }
 
-/* Modo leve: o véu continua, o movimento não. */
+/* Modo leve: o desfoque do véu sai (é caro e é enfeite). O golpe em si
+   continua se anunciando igual em qualquer máquina — é informação de combate,
+   não cenografia. */
 html[data-quality=light] .combat-action-pulse.compact .combat-action-backdrop{
   backdrop-filter:none;-webkit-backdrop-filter:none;
 }
-html[data-quality=light] .combat-action-portrait,
-html[data-quality=light] .combat-action-tier,
-html[data-quality=light] .combat-action-pulse-core strong,
-html[data-quality=light] .combat-action-cost{animation:none}
 
 @media(prefers-reduced-motion:reduce){
   .combat-action-portrait,.combat-action-tier,
