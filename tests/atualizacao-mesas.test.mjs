@@ -61,7 +61,7 @@ test('o globo é a Terra de verdade, com o universo ao fundo', () => {
 test('cada linhagem tem o seu cenário', () => {
   const css = read('../src/features/classes/cenarios.css');
   const data = read('../src/data/gameData.jsx');
-  const ids = [...data.slice(data.indexOf('export const CLASSES'), data.indexOf('export const ATTRS')).matchAll(/^    "id": "([^"]+)"/gm)].map(match => match[1]);
+  const ids = [...data.slice(data.indexOf('const DINASTIA_E_CLASSES'), data.indexOf('export const ATTRS')).matchAll(/^    "id": "([^"]+)"/gm)].map(match => match[1]);
   assert.ok(ids.length >= 9, 'a lista de classes não foi lida');
   for (const id of ids) assert.match(css, new RegExp(`\\.scene-${id}[ .]`), `falta o cenário de ${id}`);
   assert.match(css, /prefers-reduced-motion:reduce/);

@@ -19,7 +19,7 @@ test('Acquired knowledge keeps all nine originals with unique paths', () => {
 
 test('Necromancer skill preserves cost, cooldown and damage with two-hit condition', () => {
   const source = fs.readFileSync('src/data/gameData.jsx', 'utf8');
-  const marker = 'export const CLASSES=';
+  const marker = 'const DINASTIA_E_CLASSES=';
   const start = source.indexOf(marker) + marker.length;
   const end = source.indexOf('\n];', start) + 2;
   const classes = vm.runInNewContext(source.slice(start, end));

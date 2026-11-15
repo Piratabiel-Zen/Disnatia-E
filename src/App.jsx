@@ -27,6 +27,7 @@ import {
 } from "./experience/PlayerAccess";
 import { isMobileViewport, blockedOnThisDevice } from "./adventure/viewport.mjs";
 import { isUnlocked } from "./core/campaignPassword.mjs";
+import { campaignHasTab } from "./core/campaignModules.mjs";
 import {
   campaignTheme, clearStoredCampaign, docIn, globalDoc, restoreCampaignFromStorage, setActiveCampaign,
 } from "./core/campaign";
@@ -111,6 +112,8 @@ export default function App(){
     if(id==='visitantes'&&access?.role!=='master'&&access?.role!=='visitor')return;
     // MOBILE MAPS HIDDEN 2026-09-15
     if (blockedOnThisDevice(id, isMobileViewport())) return;
+    // Uma aba que esta campanha não tem não abre nem por link nem por foco.
+    if (!campaignHasTab(campaign, id)) return;
     prefetch(id);
     setTab(id);
   };

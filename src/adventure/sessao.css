@@ -1,0 +1,190 @@
+/* TELA INICIAL DA SESSÃO
+   -----------------------------------------------------------------------
+   Três camadas e nada mais: o céu da campanha ao fundo, o título, e as
+   frentes onde a companhia está. A cor vem do tema da campanha (--accent),
+   então uma mesa sombria e uma mesa cósmica usam o mesmo layout com
+   atmosferas diferentes.
+
+   A linha vertical que liga as frentes é estrutura, não enfeite: ela só
+   existe quando o grupo está dividido, e é o que diz "estes dois lugares
+   são a mesma companhia". */
+
+.sessao-home{
+  --accent:#A855F7;--accent-soft:#D6A7FF;
+  position:relative;z-index:1;display:grid;gap:clamp(20px,3vw,32px);
+  padding:clamp(16px,2.6vw,30px) 0 24px;max-width:1180px;
+  grid-template-areas:'titulo' 'turno' 'frentes' 'objetivo' 'acoes';
+}
+.sessao-titulo{grid-area:titulo}
+.sessao-turno{grid-area:turno}
+.sessao-frentes{grid-area:frentes}
+.sessao-objetivo{grid-area:objetivo}
+.sessao-acoes{grid-area:acoes}
+
+/* Em tela larga a página vira duas colunas: de um lado a história e o que
+   fazer com ela, do outro os lugares onde a companhia está. Assim o título
+   respira e a largura da tela deixa de ser espaço morto. */
+@media(min-width:1080px){
+  .sessao-home{
+    grid-template-columns:minmax(300px,.88fr) minmax(430px,1.12fr);
+    column-gap:clamp(34px,4vw,62px);
+    align-content:start;
+    grid-template-areas:
+      'titulo frentes'
+      'objetivo frentes'
+      'acoes frentes'
+      '. frentes';
+  }
+  .sessao-turno{grid-area:titulo;align-self:end;margin-top:14px}
+  .sessao-home:has(.sessao-turno){grid-template-areas:'titulo frentes' 'turno frentes' 'objetivo frentes' 'acoes frentes' '. frentes'}
+}
+
+/* ---- O céu ---- */
+.sessao-ceu{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.sessao-ceu i{position:absolute;inset:-20%}
+.sessao-ceu i:first-child{
+  background:
+    radial-gradient(ellipse 46% 36% at 24% 20%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 70%),
+    radial-gradient(ellipse 40% 32% at 80% 74%,color-mix(in srgb,var(--accent-soft) 14%,transparent),transparent 70%);
+  filter:blur(44px);animation:sessaoCeu 72s ease-in-out infinite alternate;
+}
+.sessao-ceu i:last-child{
+  inset:0;opacity:.5;
+  background-image:
+    radial-gradient(1.3px 1.3px at 14% 22%,#fff,transparent),radial-gradient(1px 1px at 37% 68%,var(--accent-soft),transparent),
+    radial-gradient(1.4px 1.4px at 63% 16%,#fff,transparent),radial-gradient(1px 1px at 82% 58%,var(--accent-soft),transparent),
+    radial-gradient(1.1px 1.1px at 92% 30%,#fff,transparent);
+  background-size:460px 420px;
+}
+@keyframes sessaoCeu{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(2%,2%,0) scale(1.07)}}
+
+/* ---- O título ---- */
+.sessao-titulo{display:grid;gap:10px;max-width:38rem}
+.sessao-kicker{
+  font:11px 'Cinzel',Georgia,serif;letter-spacing:.34em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--accent-soft) 76%,#fff);
+}
+.sessao-titulo h2{
+  margin:0;font-family:'Cinzel Decorative','Cinzel',Georgia,serif;font-weight:700;
+  font-size:clamp(2rem,4.4vw,3.3rem);line-height:1.1;letter-spacing:.01em;text-wrap:balance;
+  background:linear-gradient(176deg,#fff 6%,var(--accent-soft) 62%,color-mix(in srgb,var(--accent) 80%,#fff) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 30px color-mix(in srgb,var(--accent) 42%,transparent));
+}
+.sessao-titulo p{margin:0;max-width:40rem;font-size:1.1rem;line-height:1.62;color:#A99BBB}
+
+/* ---- As frentes ---- */
+.sessao-frentes{position:relative;display:grid;gap:clamp(18px,2.6vw,30px);align-content:start;min-width:0}
+/* Dividido: a linha corre entre os dois lugares. */
+.sessao-frentes.is-dividida::before{
+  content:'';position:absolute;left:19px;top:34px;bottom:34px;width:1px;
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 52%,transparent) 14%,color-mix(in srgb,var(--accent) 52%,transparent) 86%,transparent);
+}
+.sessao-frente{position:relative;display:grid;gap:14px;margin:0;z-index:1;align-content:start;min-width:0}
+
+.sessao-local{display:flex;align-items:center;gap:14px;min-width:0}
+.sessao-local-astro{position:relative;flex:0 0 38px;width:38px;height:38px;display:grid;place-items:center}
+.sessao-local-astro i{position:absolute;border-radius:50%}
+.sessao-local-astro i:first-child{
+  inset:0;border:1px solid color-mix(in srgb,var(--accent) 46%,transparent);
+  animation:sessaoOrbita 16s linear infinite;
+}
+.sessao-local-astro i:first-child::after{
+  content:'';position:absolute;top:-3px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;
+  background:#fff;box-shadow:0 0 8px var(--accent-soft);
+}
+.sessao-local-astro i:last-child{
+  inset:30%;background:radial-gradient(circle at 38% 34%,#fff,var(--accent-soft) 46%,var(--accent));
+  box-shadow:0 0 16px color-mix(in srgb,var(--accent) 70%,transparent);
+}
+@keyframes sessaoOrbita{to{transform:rotate(360deg)}}
+
+.sessao-local-texto{min-width:0;display:grid;gap:2px;flex:1}
+.sessao-local-texto small{
+  font:9.5px 'Cinzel',Georgia,serif;letter-spacing:.26em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--accent-soft) 64%,#8E7AA8);
+}
+.sessao-local-texto strong{
+  font:600 clamp(1.15rem,2.3vw,1.6rem)/1.25 'Cinzel',Georgia,serif;color:#EFE4FF;
+  overflow-wrap:anywhere;
+}
+.sessao-local-input{
+  width:100%;max-width:30ch;min-height:40px;padding:4px 11px;border-radius:9px;
+  font:600 1.2rem 'Cinzel',Georgia,serif;color:#EFE4FF;
+  background:rgba(6,4,14,.86);border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);
+}
+.sessao-local-input:focus{outline:none;border-color:var(--accent-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.sessao-local-editar{
+  flex-shrink:0;min-height:32px;padding:0 12px;border-radius:999px;cursor:pointer;
+  font:9.5px 'Cinzel',Georgia,serif;letter-spacing:.1em;color:color-mix(in srgb,var(--accent-soft) 86%,#fff);
+  background:transparent;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  opacity:0;transition:opacity .18s ease,border-color .18s ease;
+}
+.sessao-frente:hover .sessao-local-editar,.sessao-local-editar:focus-visible{opacity:1}
+.sessao-local-editar:hover{border-color:var(--accent)}
+
+/* A faixa de personagens herda o comportamento que já existia (.ad-party-row),
+   só o enquadramento mudou. */
+.sessao-frente .ad-party-viewport{min-height:0;padding-left:52px;min-width:0;max-width:100%}
+.sessao-frente .ad-party-row{min-height:0;gap:12px}
+.sessao-integrante{position:relative;display:grid;gap:5px}
+.sessao-vazio{margin:0;padding:14px 0;font-size:.98rem;color:#7A6A8A;font-style:italic}
+
+.sessao-mover{display:flex;gap:4px;justify-content:center}
+.sessao-mover button{
+  min-width:28px;min-height:24px;border-radius:6px;cursor:pointer;
+  font:9px 'Cinzel',Georgia,serif;letter-spacing:.08em;color:#8E7AA8;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);
+}
+.sessao-mover button.is-on{
+  color:#0A0518;font-weight:700;border-color:transparent;
+  background:linear-gradient(120deg,var(--accent-soft),var(--accent));
+}
+
+/* ---- Objetivo e ações ---- */
+.sessao-objetivo{
+  display:flex;align-items:flex-start;gap:11px;margin:0;padding:15px 18px;border-radius:13px;
+  font-size:1.05rem;line-height:1.55;color:#D8CBE8;
+  background:color-mix(in srgb,var(--accent) 7%,rgba(8,5,18,.6));
+  border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);
+  border-left:3px solid var(--accent);
+}
+.sessao-objetivo>span{color:var(--accent-soft);font-size:1.15rem;line-height:1.4}
+
+.sessao-acoes{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sessao-acao-principal,.sessao-acao{min-height:46px;padding:0 22px;border-radius:999px;cursor:pointer;font:12px 'Cinzel',Georgia,serif;letter-spacing:.06em}
+.sessao-acao-principal{
+  font-weight:700;color:#0A0518;border:none;
+  background:linear-gradient(120deg,var(--accent-soft),var(--accent));
+  box-shadow:0 8px 28px color-mix(in srgb,var(--accent) 40%,transparent);
+  transition:transform .2s,box-shadow .2s;
+}
+.sessao-acao-principal:hover{transform:translateY(-2px);box-shadow:0 12px 36px color-mix(in srgb,var(--accent) 56%,transparent)}
+.sessao-acao{color:#A99BBB;background:transparent;border:1px solid color-mix(in srgb,var(--accent) 26%,transparent)}
+.sessao-acao:hover{color:#EFE4FF;border-color:color-mix(in srgb,var(--accent) 54%,transparent)}
+.sessao-acao:disabled{opacity:.45;cursor:not-allowed}
+.sessao-acao-principal:focus-visible,.sessao-acao:focus-visible,.sessao-local-editar:focus-visible{outline:2px solid var(--accent-soft);outline-offset:3px}
+
+.sessao-turno{margin:0}
+
+@media(max-width:900px){
+  .sessao-home{gap:20px;padding-top:8px}
+  .sessao-frente .ad-party-viewport{padding-left:0}
+  .sessao-frentes.is-dividida::before{display:none}
+  .sessao-local-astro{flex-basis:30px;width:30px;height:30px}
+  .sessao-acoes{display:grid}
+  .sessao-acao-principal,.sessao-acao{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .sessao-ceu i,.sessao-local-astro i:first-child{animation:none}
+  .sessao-acao-principal:hover{transform:none}
+}
+html[data-quality="light"] .sessao-ceu i:first-child{animation:none}
+
+/* A faixa rola quando a companhia não cabe. Sem um sinal, o corte no canto
+   parece defeito — a borda que desvanece diz "tem mais para o lado". */
+.sessao-frente .ad-party-viewport{
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 46px),transparent);
+  mask-image:linear-gradient(90deg,#000 calc(100% - 46px),transparent);
+}
+.sessao-frente .ad-party-viewport:not(:hover){scrollbar-color:color-mix(in srgb,var(--accent) 40%,transparent) transparent}

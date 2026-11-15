@@ -19,6 +19,8 @@ import {artifactAbilities,artifactUseReason} from '../adventure/artifactRules.mj
 import { abilityType } from '../adventure/abilityPresentation.mjs';
 import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
 import { col, docIn } from '../core/campaign';
+import { campaignHasTab, filterNavGroups } from '../core/campaignModules.mjs';
+import BookMark3D from './BookMark3D';
 
 const ExperienceContext = createContext(null);
 const JOURNAL_LIMIT = 40;
@@ -645,22 +647,25 @@ export function useExperience(){
 export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterMode=false, campaign=null, onLeaveCampaign=null }){
   const [mobileMenu,setMobileMenu]=useState(false);
   const { combat, selectedSheet, access }=useExperience();
-  const desktopGroups = NAV_GROUPS.filter(group=>!group.masterOnly||masterMode).map(group=>({
+  // O Livro da Mandíbula e as Regras são conteúdo da Dinastia E: em outra
+  // mesa, essas abas simplesmente não existem.
+  const desktopGroups = filterNavGroups(NAV_GROUPS.filter(group=>!group.masterOnly||masterMode).map(group=>({
     ...group,
     items:group.items.map(item=>access?.role==='visitor'&&item.id==='fichas'?{...item,label:'Meus personagens'}:item),
-  })).filter(group=>group.items.length);
+  })),campaign).filter(group=>group.items.length);
   const go=id=>{ onNavigate(id); setMobileMenu(false); };
   // MOBILE CLEAN NAV 2026-09-15
   const mobileMain=[
     {id:'session',label:'Início',icon:'⌂'},
     {id:'fichas',label:access?.role==='visitor'?'Personagens':'Ficha',icon:'📋'},
     {id:'cronicas',label:'Crônicas',icon:'🗒️'},
-    {id:'livro',label:'Livro',icon:'✦'},
+    // A quarta vaga é do Livro onde ele existe; nas outras mesas, das Classes.
+    campaignHasTab(campaign,'livro')?{id:'livro',label:'Livro',icon:'✦'}:{id:'classes',label:'Classes',icon:'⚔️'},
   ];
   const mobileGroups=desktopGroups.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
   return <>
     <aside className="grim-nav">
-      <button className="grim-brand" onClick={()=>go('session')} title={campaign?.name||'Dinastia E'}><span>{campaign?.sigil||'DE'}</span><b>{campaign?.name||'Dinastia E'}</b></button>
+      <button className="grim-brand has-tomo" onClick={()=>go('session')} title={campaign?.name||'Dinastia E'}><BookMark3D sigil={campaign?.sigil||'\u2726'} title={campaign?.name||'Dinastia E'}/><b>{campaign?.name||'Dinastia E'}</b></button>
       <div className="grim-groups">
         {desktopGroups.map(group=><div className="grim-group" key={group.id}>
           <div className="grim-group-title"><span>{group.icon}</span><b>{group.label}</b></div>

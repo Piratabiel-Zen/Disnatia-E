@@ -9,6 +9,7 @@ import { logAbilityUsed } from "../../core/combatEvents";
 import { useExperience } from "../../experience/ExperienceKit";
 import { LevelUpScreen,hpColor } from "../../core/ui";
 import "./invocacoes.css";
+import { familiaresDaFicha, limiteDeFamiliares } from "../../adventure/familiares.mjs";
 import "./habilidades-vivas.css";
 import { SHEET_COLORS,SHEET_GLOWS,STATUS_LIST,CLASSES,ATTRS,getArtifactPowers,ArtifactGlyph,getClassBaseHp,getDurabilityHp,getSheetMaxHp } from "../../data/gameData";
 import { SummonAttrRows, SummonAbilityRow } from '../../experience/SummonSheetParts';
@@ -805,7 +806,7 @@ function InvocacoesPanel({sheet,onChange,sheetColor,masterMode}){
   return <div className="summon-memory-panel"><div className="summon-memory-help">{masterMode?'Cadastre a criatura e use Revelar quando o necromante puder conhecê-la.':'Somente memórias reveladas pelo Mestre aparecem aqui. Uma memória autorizada pode ser liberada a qualquer momento.'}</div>{visible.map(summon=><SummonCard key={summon.id} summon={summon} ownerSheet={sheet} masterMode={masterMode} color={sheetColor} onChange={next=>save(invocations.map(item=>String(item.id)===String(summon.id)?next:item))} onDelete={()=>save(invocations.filter(item=>String(item.id)!==String(summon.id)))}/>)}{masterMode&&invocations.length<6&&<button className="summon-memory-add" onClick={add}>＋ Adicionar invocação ({invocations.length}/6)</button>}{!masterMode&&!visible.length&&<div className="summon-memory-empty">Nenhuma invocação foi revelada pelo Mestre.</div>}</div>;
 }
 
-const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[], familiares:[newFamiliar(Date.now()+Math.random())]});
+const newSheet=id=>({id,nome:'',classe:'fogo',nivel:1,xp:0,hp:20,hp_bonus:0,vigos:5,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,attrPoints:0,especial1:false,especial2:false,lore_personagem:'',notas:'',foto:'',equip_mao_esq:{nome:'',dano:'',tipo:'Espada / Arma'},equip_mao_dir:{nome:'',dano:'',tipo:'Escudo / Arma'},equip_corpo:{nome:'',dano:'',tipo:'Armadura / Roupa'},status:{},senha:'',artefato_id:'', personalidade:[], cooldowns:{}, invocacoes:[], familiares:[]});
 function useIsMobile(breakpoint = 700) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= breakpoint);
   useEffect(() => {
@@ -1529,31 +1530,33 @@ const FAMILIAR_TYPES = [
   { id:'lobo', label:'Lobo', icon:'🐺' }, { id:'coruja', label:'Coruja', icon:'🦉' },
   { id:'raposa', label:'Raposa', icon:'🦊' }, { id:'outro', label:'Outro', icon:'✨' },
 ];
-const newFamiliar = id => ({ id, tipo:'cachorro', nome:'', hp:10, hpMax:10, vigos:2, habilidades:[] });
+const newFamiliar = id => ({ id, tipo:'', nome:'', hp:10, hpMax:10, vigos:2, habilidades:[] });
 function FamiliaresPanel({ sheet, onChange, masterMode, color }) {
   const saved = Array.isArray(sheet.familiares) ? sheet.familiares : [];
-  const limite = sheet.classe === 'corvos' ? 3 : 1;
-  // Limita a exibição também nas fichas antigas que já tenham mais familiares que o permitido.
-  const familiares = saved.length ? saved.slice(0,limite) : [newFamiliar('familiar-'+sheet.id)];
+  const limite = limiteDeFamiliares(sheet);
+  // Só o Mestre vê os rascunhos (sem nome), para poder batizar ou remover; para
+  // todos os outros, familiar sem nome simplesmente não existe.
+  const visiveis = masterMode ? saved : familiaresDaFicha(sheet);
+  const familiares = visiveis.slice(0, limite);
   const save = next => onChange({ ...sheet, familiares: next });
-  const update = (id, patch) => save(familiares.map(f => String(f.id) === String(id) ? { ...f, ...patch } : f));
-  const remove = id => { if (masterMode && saved.length) save(familiares.filter(f => String(f.id) !== String(id))); };
-  const add = () => { if (familiares.length < limite) save([...familiares, newFamiliar(Date.now() + Math.random())]); };
+  const update = (id, patch) => save(saved.map(f => String(f.id) === String(id) ? { ...f, ...patch } : f));
+  const remove = id => { if (masterMode) save(saved.filter(f => String(f.id) !== String(id))); };
+  const add = () => { if (saved.length < limite) save([...saved, newFamiliar(Date.now() + Math.random())]); };
   const updateAbility = (f, id, patch) => update(f.id, { habilidades: (f.habilidades || []).map(a => String(a.id) === String(id) ? { ...a, ...patch } : a) });
   const addAbility = f => update(f.id, { habilidades: [...(f.habilidades || []), { id: Date.now() + Math.random(), nome: '', efeito: '', descricao: '', custo:0 }] });
   const removeAbility = (f, id) => update(f.id, { habilidades: (f.habilidades || []).filter(a => String(a.id) !== String(id)) });
   return <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, flexWrap:'wrap' }}>
-      <div style={{ fontSize:10, color:'#8E7AA8', fontFamily:'Cinzel,serif' }}>Cada personagem pode ter 1 familiar; Corvos do Horizonte podem ter até 3. {familiares.length}/{limite}</div>
-      {masterMode && familiares.length < limite && <button onClick={add} style={{ border:'1px solid rgba(168,85,247,.48)', borderRadius:7, background:'rgba(168,85,247,.12)', color:'#D9BCFF', padding:'6px 10px', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10 }}>＋ Adicionar familiar</button>}
+      <div style={{ fontSize:10, color:'#8E7AA8', fontFamily:'Cinzel,serif' }}>Cada personagem pode ter 1 familiar; Corvos do Horizonte podem ter até 3. {familiaresDaFicha(sheet).length}/{limite}</div>
+      {masterMode && saved.length < limite && <button onClick={add} style={{ border:'1px solid rgba(168,85,247,.48)', borderRadius:7, background:'rgba(168,85,247,.12)', color:'#D9BCFF', padding:'6px 10px', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10 }}>＋ Adicionar familiar</button>}
     </div>
-    {!saved.length && !masterMode && <div style={{ border:'1px dashed rgba(255,255,255,.08)', borderRadius:8, padding:10, textAlign:'center', color:'#8E7AA8', fontFamily:'Cinzel,serif', fontSize:11 }}>Familiar ainda sem dados definidos pelo Mestre.</div>}
+    {!familiares.length && !masterMode && <div style={{ border:'1px dashed rgba(255,255,255,.08)', borderRadius:8, padding:10, textAlign:'center', color:'#8E7AA8', fontFamily:'Cinzel,serif', fontSize:11 }}>Familiar ainda sem dados definidos pelo Mestre.</div>}
     {familiares.map((f, index) => {
       const skills = Array.isArray(f.habilidades) ? f.habilidades : [];
       const hp = Math.max(0, Number(f.hp ?? 10) || 0);
       const hpMax = Math.max(1, Number(f.hpMax ?? 10) || 10);
       const vigor = Math.min(2, Math.max(0, Number(f.vigos ?? 2) || 0));
-      const kind = FAMILIAR_TYPES.find(t=>t.id===f.tipo)||FAMILIAR_TYPES[0];
+      const kind = FAMILIAR_TYPES.find(t=>t.id===f.tipo)||{id:'',label:'Escolha o tipo',icon:'◇'};
       const spend = ability => { const cost=Math.min(2,Math.max(0,Number(ability.custo)||0)); if(vigor>=cost) update(f.id,{vigos:vigor-cost}); };
       return <article key={f.id ?? index} style={{ border:'1px solid '+color+'66', borderRadius:10, padding:11, background:'linear-gradient(145deg,rgba(168,85,247,.13),rgba(8,5,18,.92))', boxShadow:'0 0 18px rgba(168,85,247,.12)' }}>
         <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:9, flexWrap:'wrap' }}>

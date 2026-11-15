@@ -20,15 +20,17 @@
   --c:#9B7CFF;
   position:relative;display:flex;align-items:center;gap:11px;padding:11px 13px 11px 15px;
   border-radius:11px;cursor:pointer;text-align:left;overflow:hidden;
-  background:rgba(255,255,255,.022);border:1px solid rgba(255,255,255,.06);
+  /* Fundo próprio e opaco: o cenário passa atrás da lista, não por dentro
+     do nome da linhagem. */
+  background:rgba(7,5,14,.76);border:1px solid rgba(255,255,255,.06);
   transition:background .2s,border-color .2s,transform .2s;
 }
 .classe-chip::before{
   content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c);opacity:.3;transition:opacity .2s;
 }
-.classe-chip:hover{background:rgba(255,255,255,.045);transform:translateX(2px)}
+.classe-chip:hover{background:rgba(14,10,26,.86);transform:translateX(2px)}
 .classe-chip.is-active{
-  background:color-mix(in srgb,var(--c) 12%,transparent);
+  background:color-mix(in srgb,var(--c) 14%,rgba(7,5,14,.8));
   border-color:color-mix(in srgb,var(--c) 44%,transparent);
 }
 .classe-chip.is-active::before{opacity:1}
@@ -171,3 +173,9 @@
   .classe-chip,.classe-ability{transition:none}
   .classe-chip:hover,.classe-ability:hover{transform:none}
 }
+
+/* A lista de linhagens fica por cima do cenário, então precisa de fundo
+   próprio: sem isto, o fogo azul passa por trás do nome e come o contraste. */
+.classe-nav{position:relative;z-index:2}
+.classe-chip{backdrop-filter:blur(7px)}
+.classe-detail{position:relative;z-index:2}

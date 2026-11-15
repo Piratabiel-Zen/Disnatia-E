@@ -1,0 +1,134 @@
+/* O TOMO QUE GIRA
+   -----------------------------------------------------------------------
+   Um livro sólido em CSS 3D: seis faces montadas em volta de um eixo, com
+   espessura real. As medidas estão em variáveis porque a proporção entre
+   largura, altura e lombada é o que faz parecer um livro em vez de uma
+   caixa — mexer numa sem as outras quebra a ilusão.
+
+   O giro é constante e lento. O que prende o olho não é a velocidade: é a
+   luz mudando de face conforme a capa, a lombada e o corte dourado passam
+   pela frente. */
+
+.tomo3d{
+  /* Com fallback, para quem usa o componente poder redimensionar de fora
+     definindo --tomo-larg/--tomo-alt/--tomo-lomb no elemento pai. */
+  --larg:var(--tomo-larg,30px);  /* largura da capa */
+  --alt:var(--tomo-alt,42px);    /* altura da capa */
+  --lomb:var(--tomo-lomb,11px);  /* espessura do livro */
+  --couro:#2B1143;
+  --couro-claro:#4A1F6E;
+  --ouro:#E8C86B;
+  --ouro-claro:#FFF0C2;
+  position:relative;display:inline-grid;place-items:center;
+  width:calc(var(--larg) + 26px);height:calc(var(--alt) + 14px);
+  flex-shrink:0;
+}
+
+/* O halo atrás: dá peso ao objeto e sugere que ele emite luz própria. */
+.tomo3d-aura{
+  position:absolute;inset:-18%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(168,85,247,.42),rgba(88,217,255,.12) 46%,transparent 70%);
+  filter:blur(7px);animation:tomoAura 5.2s ease-in-out infinite;
+}
+@keyframes tomoAura{0%,100%{opacity:.5;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}}
+
+/* A perspectiva vive aqui, no pai imediato do corpo: é ela que diferencia
+   um giro de verdade de um achatamento horizontal. */
+.tomo3d-palco{
+  position:relative;width:var(--larg);height:var(--alt);
+  perspective:340px;perspective-origin:50% 42%;
+  animation:tomoFlutua 4.6s ease-in-out infinite;
+}
+@keyframes tomoFlutua{0%,100%{transform:translateY(-2px)}50%{transform:translateY(2px)}}
+
+.tomo3d-corpo{
+  position:absolute;inset:0;transform-style:preserve-3d;
+  /* Inclinado para a frente: um livro visto de cima fica mais legível que um
+     visto de perfil exato, e o corte dourado aparece. */
+  animation:tomoGira 13s linear infinite;
+}
+@keyframes tomoGira{
+  from{transform:rotateX(-14deg) rotateY(0deg)}
+  to{transform:rotateX(-14deg) rotateY(360deg)}
+}
+
+/* Cada face nasce no centro exato do corpo (top/left 50% com margem negativa
+   de meia face) e só então gira e se afasta. Centrar pelo layout, e não pelo
+   transform, é o que garante que lombada, corte e capa se encontrem: foi por
+   não fazer isso que a lombada ficou flutuando ao lado do livro. */
+.tomo3d-face{
+  position:absolute;top:50%;left:50%;border-radius:2px;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+
+/* Capa e contracapa: couro escuro com brilho no canto de cima. */
+.tomo3d-face.capa,.tomo3d-face.contracapa{
+  width:var(--larg);height:var(--alt);
+  margin:calc(var(--alt) / -2) 0 0 calc(var(--larg) / -2);
+  background:
+    radial-gradient(ellipse 70% 50% at 26% 18%,rgba(214,167,255,.32),transparent 62%),
+    linear-gradient(142deg,var(--couro-claro) 0,var(--couro) 46%,#180826 100%);
+  border:1px solid rgba(232,200,107,.4);
+  box-shadow:inset 0 0 10px rgba(0,0,0,.6);
+}
+.tomo3d-face.capa{transform:translateZ(calc(var(--lomb) / 2));display:grid;place-items:center}
+.tomo3d-face.contracapa{transform:rotateY(180deg) translateZ(calc(var(--lomb) / 2))}
+
+.tomo3d-sigilo{
+  font-style:normal;font-size:calc(var(--larg) * .44);line-height:1;
+  color:var(--ouro-claro);
+  text-shadow:0 0 6px var(--ouro),0 0 14px rgba(232,200,107,.6);
+}
+
+/* Lombada: couro mais claro com três nervuras, como encadernação antiga. */
+.tomo3d-face.lombada{
+  width:var(--lomb);height:var(--alt);
+  margin:calc(var(--alt) / -2) 0 0 calc(var(--lomb) / -2);
+  display:flex;flex-direction:column;justify-content:center;
+  gap:calc(var(--alt) * .11);padding:calc(var(--alt) * .14) 0;
+  background:linear-gradient(90deg,#140621,var(--couro) 42%,var(--couro-claro) 100%);
+  border:1px solid rgba(232,200,107,.34);
+  transform:rotateY(-90deg) translateZ(calc(var(--larg) / 2));
+}
+.tomo3d-face.lombada i{display:block;height:1.5px;background:linear-gradient(90deg,transparent,var(--ouro),transparent);opacity:.85}
+
+/* Corte: o miolo de papel, listrado, com dourado nas bordas de cima e baixo. */
+.tomo3d-face.corte{
+  width:var(--lomb);height:var(--alt);
+  margin:calc(var(--alt) / -2) 0 0 calc(var(--lomb) / -2);
+  background:
+    linear-gradient(180deg,var(--ouro) 0 2px,transparent 2px calc(100% - 2px),var(--ouro) calc(100% - 2px)),
+    repeating-linear-gradient(90deg,#F2E7CE 0 1px,#C2B089 1px 2px);
+  transform:rotateY(90deg) translateZ(calc(var(--larg) / 2));
+}
+
+/* Topo e base: as páginas vistas de canto, com a capa fechando as pontas. */
+.tomo3d-face.topo,.tomo3d-face.base{
+  width:var(--larg);height:var(--lomb);
+  margin:calc(var(--lomb) / -2) 0 0 calc(var(--larg) / -2);
+  background:
+    linear-gradient(90deg,var(--couro) 0 2px,#E6D9BC 2px calc(100% - 2px),var(--couro) calc(100% - 2px)),
+    repeating-linear-gradient(0deg,rgba(60,40,10,.16) 0 1px,transparent 1px 2px);
+}
+.tomo3d-face.topo{transform:rotateX(90deg) translateZ(calc(var(--alt) / 2))}
+.tomo3d-face.base{transform:rotateX(-90deg) translateZ(calc(var(--alt) / 2))}
+
+/* No hover o livro acelera e cresce: responde a quem o procura. */
+.grim-brand:hover .tomo3d-corpo,.grim-brand:focus-visible .tomo3d-corpo{animation-duration:4.5s}
+.grim-brand:hover .tomo3d-palco,.grim-brand:focus-visible .tomo3d-palco{transform:scale(1.12)}
+.grim-brand:hover .tomo3d-aura{opacity:1;filter:blur(9px)}
+
+/* Onde o movimento cede: o livro continua lá, parado numa pose que mostra
+   capa e lombada ao mesmo tempo. */
+@media(prefers-reduced-motion:reduce){
+  .tomo3d-corpo{animation:none;transform:rotateX(-14deg) rotateY(-32deg)}
+  .tomo3d-palco,.tomo3d-aura{animation:none}
+}
+html[data-quality="light"] .tomo3d-aura{animation:none;opacity:.6}
+html[data-away="true"] .tomo3d-corpo{animation-play-state:paused}
+
+/* A marca da mesa com o tomo: o livro ocupa a altura toda da faixa e o nome
+   fica ao lado, sem o quadrado de sigilo que existia antes. */
+.grim-brand.has-tomo{gap:4px;padding-left:6px}
+.grim-brand.has-tomo{--tomo-larg:26px;--tomo-alt:36px;--tomo-lomb:9px}
+.grim-brand.has-tomo>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

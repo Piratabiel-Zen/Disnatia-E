@@ -3,15 +3,26 @@ import { useEffect,useRef,useState } from "react";
 import { collection,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
-import { CLASSES } from "../../data/gameData";
 import CosmicSelectionRing from "../../experience/CosmicSelectionRing";
 import ClassScene from "./ClassScene";
+import useCampaignClasses from "./useCampaignClasses";
+import ClassForge from "./ClassForge";
+import { emptyClass } from "../../core/campaignModules.mjs";
 import "./classes.css";
 import { col, docIn } from '../../core/campaign';
 function ClassesSection({ masterMode }) {
-  const [activeId, setActiveId] = useState(CLASSES[0].id);
+  const { classes, loading, builtIn, saveClass, removeClass } = useCampaignClasses();
+  const [activeId, setActiveId] = useState('');
   const [covers, setCovers] = useState({});
+  const [forging, setForging] = useState(null);
   const fileRef = useRef(null);
+
+  // A linhagem aberta acompanha a lista: numa mesa nova ela começa vazia e
+  // passa a existir assim que o Mestre cria a primeira.
+  useEffect(() => {
+    if (!classes.length) { setActiveId(''); return; }
+    if (!classes.some(entry => entry.id === activeId)) setActiveId(classes[0].id);
+  }, [classes, activeId]);
 
   useEffect(() => {
   const unsub = onSnapshot(col('class_covers'), snap => {
@@ -22,8 +33,8 @@ function ClassesSection({ masterMode }) {
   return () => unsub();
 }, []);
 
-  const cls = CLASSES.find(c => c.id === activeId) || CLASSES[0];
-  const cover = covers[cls.id] || '';
+  const cls = classes.find(c => c.id === activeId) || classes[0] || null;
+  const cover = cls ? covers[cls.id] || '' : '';
 
   const handleUpload = e => {
     const file = e.target.files[0];
@@ -55,6 +66,35 @@ function ClassesSection({ masterMode }) {
   const normais=(cls.normal||[]).filter(a=>a?.name);
   const especiais=(cls.specials||[]).filter(a=>a?.name);
 
+  if (forging) {
+    return <ClassForge
+      draft={forging}
+      onCancel={() => setForging(null)}
+      onSave={async entry => { await saveClass(entry); setActiveId(entry.id); setForging(null); }}
+    />;
+  }
+
+  if (!cls) {
+    return (
+      <div className="classe-page classe-page-empty">
+        <header className="classe-intro">
+          <span className="classe-intro-kicker">Esta mesa ainda não tem linhagens</span>
+          <h2>Classes</h2>
+          <p>{loading
+            ? 'Procurando as linhagens desta mesa…'
+            : masterMode
+              ? 'Cada mesa tem o seu sistema. Crie aqui as classes que os jogadores vão poder escolher.'
+              : 'O Mestre ainda não registrou as classes desta mesa.'}</p>
+        </header>
+        {masterMode && !loading && (
+          <button className="classe-forge-start" onClick={() => setForging(emptyClass('linhagem-' + Date.now().toString(36)))}>
+            Criar a primeira linhagem
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
     <ClassScene classId={cls.id} color={cls.color}/>
@@ -67,7 +107,7 @@ function ClassesSection({ masterMode }) {
 
       <div className="classe-layout">
         <nav className="classe-list" aria-label="Linhagens">
-          {CLASSES.map(c => (
+          {classes.map(c => (
             <button
               key={c.id}
               onClick={() => setActiveId(c.id)}
@@ -85,6 +125,11 @@ function ClassesSection({ masterMode }) {
               </span>
             </button>
           ))}
+          {masterMode && !builtIn && (
+            <button className="classe-forge-start is-inline" onClick={() => setForging(emptyClass('linhagem-' + Date.now().toString(36)))}>
+              ＋ Nova linhagem
+            </button>
+          )}
         </nav>
 
         <div className="classe-detail" style={{ '--c': cls.color }}>
@@ -103,6 +148,15 @@ function ClassesSection({ masterMode }) {
               </button>
             )}
             {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }}/>}
+            {masterMode && !builtIn && (
+              <div className="classe-forge-actions">
+                <button onClick={() => setForging({ ...emptyClass(cls.id), ...cls })}>Editar linhagem</button>
+                <button
+                  className="is-danger"
+                  onClick={() => { if (window.confirm(`Remover a linhagem "${cls.name || cls.id}" desta mesa?`)) removeClass(cls.id); }}
+                >Remover</button>
+              </div>
+            )}
             <div className="classe-hero-copy">
               <span className="classe-hero-role">{cls.role}</span>
               <h3>{cls.name}</h3>

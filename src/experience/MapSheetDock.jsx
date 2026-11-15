@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {CLASSES,SHEET_COLORS} from '../data/gameData';
+import { familiaresDaFicha } from '../adventure/familiares.mjs';
 
 function DockIcon({enemy=false}) {
   return <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">{enemy?<><path d="M6 4 3 2v7a9 9 0 0 0 18 0V2l-3 2M6 5h12v8l-6 7-6-7Z"/><path d="m8 9 2 2m6-2-2 2M10 15h4"/></>:<><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2M4 3h3M17 3h3"/></>}</svg>;
@@ -21,7 +22,7 @@ export default function MapSheetDock({masterMode,sheets,enemies,floatingSheets=[
   useEffect(()=>{if(!masterMode)setPanel('');},[masterMode]);
   const enemyPanel=panel==='enemies', familiarPanel=panel==='familiars';
   const rows=enemyPanel?enemies:sheets;
-  const familiarRows=sheets.flatMap(sheet=>(Array.isArray(sheet.familiares)?sheet.familiares:[]).map((f,index)=>({
+  const familiarRows=sheets.flatMap(sheet=>familiaresDaFicha(sheet).map((f,index)=>({
     sheet,f,index,key:String(f.id??index),sheetId:String(sheet.id),
   })));
   const selectedFamiliar=activeFamiliar&&familiarRows.find(row=>row.sheetId===activeFamiliar.sheetId&&row.key===activeFamiliar.familiarId);

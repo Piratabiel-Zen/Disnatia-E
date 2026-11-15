@@ -6,8 +6,32 @@
 
 .classe-scene{
   position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  /* Quanto maior a tela, maiores as peças do cenário. Sem isto, o mesmo
+     punhado de partículas se dilui num monitor e some; era por isso que no
+     celular a cena enchia a tela e no desktop parecia parada. */
+  --scene-scale:1;
   animation:sceneArrive .9s ease both;
 }
+@media(min-width:901px){.classe-scene{--scene-scale:1.4}}
+@media(min-width:1500px){.classe-scene{--scene-scale:1.85}}
+.classe-scene i{--sz:calc(var(--s) * var(--scene-scale))}
+
+/* A camada da frente: as mesmas peças passando POR CIMA do conteúdo, fracas.
+   É o que faz o cenário ser notado numa tela grande, onde os painéis ocupam o
+   meio e deixariam só as bordas à mostra. Nunca recebe clique. */
+.classe-scene-front{
+  z-index:3;opacity:.26;mix-blend-mode:screen;
+  /* A máscara abre buraco onde o texto vive: no miolo, onde ficam os painéis,
+     e na coluna da esquerda, onde fica a lista de linhagens. Legibilidade
+     ganha do espetáculo sempre que os dois disputam o mesmo pixel. */
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 56% 50%,transparent 42%,#000 92%),linear-gradient(90deg,transparent 0 22%,#000 34%);
+  mask-image:radial-gradient(ellipse 70% 60% at 56% 50%,transparent 42%,#000 92%),linear-gradient(90deg,transparent 0 22%,#000 34%);
+  -webkit-mask-composite:source-in;mask-composite:intersect;
+}
+/* As línguas de fogo são enormes; na frente elas viram só um calor difuso. */
+.classe-scene-front.scene-fogo i:not(:nth-child(3n)){opacity:.3;filter:blur(26px)}
+/* O brilho e o clarão pertencem ao fundo; a frente leva só as partículas. */
+.classe-scene-front .classe-scene-glow,.classe-scene-front .classe-scene-flash{display:none}
 @keyframes sceneArrive{from{opacity:0}to{opacity:1}}
 .classe-scene-glow{position:absolute;inset:0}
 .classe-scene i{position:absolute;display:block;will-change:transform,opacity}
@@ -21,6 +45,15 @@
 /* O conteúdo fica na frente e ganha um véu para o texto continuar legível. */
 .classe-page{position:relative;z-index:1}
 
+/* O brilho de fundo recua do canto inferior esquerdo, onde mora a lista de
+   linhagens: um cenário que apaga o texto não é imersão, é defeito. */
+@media(min-width:901px){
+  .classe-scene-glow{
+    -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.26) 0 15%,#000 32%);
+    mask-image:linear-gradient(90deg,rgba(0,0,0,.26) 0 15%,#000 32%);
+  }
+}
+
 /* ============ ASSASSINOS DO FOGO AZUL · o chão queima em azul ============ */
 .scene-fogo .classe-scene-glow{
   background:
@@ -31,7 +64,7 @@
 @keyframes fogoFlicker{0%,100%{opacity:.82}22%{opacity:1}40%{opacity:.7}63%{opacity:.95}81%{opacity:.76}}
 .scene-fogo i{
   left:var(--x);bottom:-9%;margin-left:-60px;
-  width:calc(150px * var(--s));height:calc(620px * var(--s));
+  width:calc(150px * var(--sz));height:calc(620px * var(--sz));
   background:radial-gradient(ellipse 50% 58% at 50% 100%,#F2FDFF 0,#7FE9FF 16%,#1EC8FF 36%,rgba(30,110,255,.55) 56%,transparent 74%);
   border-radius:50% 50% 30% 30% / 78% 78% 22% 22%;
   filter:blur(13px);mix-blend-mode:screen;transform-origin:50% 100%;
@@ -44,7 +77,7 @@
 }
 /* Uma em cada três vira fagulha: sobe até sumir. */
 .scene-fogo i:nth-child(3n){
-  bottom:-2%;margin:0;width:calc(5px * var(--s));height:calc(5px * var(--s));border-radius:50%;filter:none;
+  bottom:-2%;margin:0;width:calc(5px * var(--sz));height:calc(5px * var(--sz));border-radius:50%;filter:none;
   background:#DDFAFF;box-shadow:0 0 8px #5FE1FF,0 0 18px #1E90FF;
   animation:fogoFagulha var(--d) linear var(--dl) infinite;
 }
@@ -63,7 +96,7 @@
 }
 .scene-escarlate i{
   left:var(--x);top:var(--y);
-  width:calc(80px * var(--s));height:calc(98px * var(--s));
+  width:calc(80px * var(--sz));height:calc(98px * var(--sz));
   /* Faces duras, como pedra lascada: cada faixa é um plano pegando luz diferente. */
   background:linear-gradient(152deg,#FF7A90 0 9%,#E0213F 9% 30%,#8E0C22 30% 55%,#3D050E 55% 79%,#170205 79%);
   clip-path:polygon(38% 0,78% 9%,100% 42%,84% 86%,46% 100%,8% 78%,0 34%);
@@ -87,7 +120,7 @@
 }
 .scene-corvos i,.scene-arcanjo i{
   left:var(--x);top:-12%;
-  width:calc(15px * var(--s));height:calc(62px * var(--s));
+  width:calc(15px * var(--sz));height:calc(62px * var(--sz));
   border-radius:50% 50% 50% 50% / 14% 14% 86% 86%;
   background:
     linear-gradient(90deg,transparent 45%,color-mix(in srgb,var(--c) 62%,transparent) 47% 53%,transparent 55%),
@@ -126,14 +159,14 @@
     radial-gradient(ellipse 50% 40% at 16% 72%,rgba(88,217,255,.2),transparent 70%);
 }
 .scene-magos i{
-  left:var(--x);top:var(--y);width:calc(4px * var(--s));height:calc(4px * var(--s));border-radius:50%;
+  left:var(--x);top:var(--y);width:calc(4px * var(--sz));height:calc(4px * var(--sz));border-radius:50%;
   background:#fff;box-shadow:0 0 8px #E9D5FF,0 0 18px #A855F7;
   animation:magoEstrela calc(var(--d) * .5) ease-in-out var(--dl) infinite alternate;
 }
 @keyframes magoEstrela{from{opacity:.2;transform:scale(.6)}to{opacity:1;transform:scale(1.5)}}
 /* Uma em cada seis é um cometa atravessando o céu. */
 .scene-magos i:nth-child(6n){
-  top:calc(var(--y) * .5);left:-12%;width:calc(190px * var(--s));height:2px;border-radius:2px;
+  top:calc(var(--y) * .5);left:-12%;width:calc(190px * var(--sz));height:2px;border-radius:2px;
   background:linear-gradient(90deg,transparent,#A855F7 40%,#F3E8FF);box-shadow:0 0 12px #C084FC;
   animation:magoCometa calc(var(--d) * 1.1) cubic-bezier(.4,0,.6,1) var(--dl) infinite;
 }
@@ -152,7 +185,7 @@
     repeating-linear-gradient(-60deg,rgba(74,222,128,.045) 0 1px,transparent 1px 46px);
 }
 .scene-marfim i{
-  left:var(--x);bottom:-6%;width:calc(34px * var(--s));height:calc(34px * var(--s));border-radius:50%;
+  left:var(--x);bottom:-6%;width:calc(34px * var(--sz));height:calc(34px * var(--sz));border-radius:50%;
   border:1.5px solid rgba(134,239,172,.75);
   background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.7),rgba(74,222,128,.16) 34%,transparent 62%);
   box-shadow:0 0 14px rgba(74,222,128,.38),inset 0 0 10px rgba(74,222,128,.25);
@@ -184,7 +217,7 @@
 }
 @keyframes necroNevoa{from{transform:translate3d(-3%,0,0) scale(1.05)}to{transform:translate3d(3%,-1%,0) scale(1.1)}}
 .scene-necromante i{
-  left:var(--x);top:-4%;width:calc(4px * var(--s));height:calc(4px * var(--s));border-radius:40%;
+  left:var(--x);top:-4%;width:calc(4px * var(--sz));height:calc(4px * var(--sz));border-radius:40%;
   background:#9A9AA8;opacity:.7;
   animation:necroCinza calc(var(--d) * 1.6) linear var(--dl) infinite;
 }
@@ -194,7 +227,7 @@
 }
 /* Uma em cada quatro é uma alma: luz pálida que sobe ondulando. */
 .scene-necromante i:nth-child(4n){
-  top:auto;bottom:-4%;width:calc(13px * var(--s));height:calc(13px * var(--s));border-radius:50%;
+  top:auto;bottom:-4%;width:calc(13px * var(--sz));height:calc(13px * var(--sz));border-radius:50%;
   background:radial-gradient(circle,#F4FFFB,#A7F3D0 40%,transparent 72%);
   box-shadow:0 0 16px rgba(167,243,208,.75),0 22px 26px -6px rgba(167,243,208,.35);filter:blur(1px);
   animation:necroAlma calc(var(--d) * 1.5) ease-in-out var(--dl) infinite;
@@ -221,11 +254,11 @@
   animation:bardoNota calc(var(--d) * 1.2) ease-in-out var(--dl) infinite;
 }
 .scene-bardo i::before{
-  content:'♪';font-size:calc(30px * var(--s));line-height:1;color:#FFE9A8;font-style:normal;
+  content:'♪';font-size:calc(30px * var(--sz));line-height:1;color:#FFE9A8;font-style:normal;
   text-shadow:0 0 10px #FFD86B,0 0 24px rgba(255,180,60,.8);
 }
 .scene-bardo i:nth-child(2n)::before{content:'♫'}
-.scene-bardo i:nth-child(5n)::before{content:'✦';font-size:calc(13px * var(--s))}
+.scene-bardo i:nth-child(5n)::before{content:'✦';font-size:calc(13px * var(--sz))}
 @keyframes bardoNota{
   0%{transform:translate3d(0,0,0) rotate(var(--r));opacity:0}
   10%{opacity:1}
@@ -245,7 +278,7 @@
 }
 @keyframes relicSpinScene{to{transform:rotate(360deg)}}
 .scene-personalizado i{
-  left:var(--x);top:var(--y);width:calc(3px * var(--s));height:calc(3px * var(--s));border-radius:50%;
+  left:var(--x);top:var(--y);width:calc(3px * var(--sz));height:calc(3px * var(--sz));border-radius:50%;
   background:#E5E7EB;box-shadow:0 0 8px rgba(229,231,235,.8);
   animation:magoEstrela calc(var(--d) * .6) ease-in-out var(--dl) infinite alternate;
 }
@@ -253,13 +286,16 @@
 /* ---------- Onde o cenário cede ---------- */
 /* Celular: metade das partículas e nada de desfoque pesado. */
 @media(max-width:900px){
+  .classe-scene-front{display:none}
   .classe-scene i:nth-child(n+13){display:none}
   .scene-fogo i{filter:blur(9px)}
 }
 /* Modo Leve: o brilho de fundo fica, o enxame de partículas diminui. */
+html[data-quality="light"] .classe-scene-front{display:none}
 html[data-quality="light"] .classe-scene i:nth-child(2n){display:none}
 /* Menos movimento: a cor do lugar permanece, o que se mexe para. */
 @media(prefers-reduced-motion:reduce){
+  .classe-scene-front{display:none}
   .classe-scene,.classe-scene-glow,.classe-scene-glow::after,.classe-scene-flash{animation:none!important}
   .classe-scene-flash{display:none}
   .classe-scene i{animation:none!important;opacity:.5}
