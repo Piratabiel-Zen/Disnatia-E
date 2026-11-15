@@ -20,6 +20,7 @@ import { fitMapWithReference } from '../../adventure/mapFit.mjs';
 import { tokenIdsInMarquee } from '../../adventure/tokenSelection.mjs';
 import '../../experience/map-fullscreen.css';
 import { col, docIn } from '../../core/campaign';
+import CosmicSelectionRing from '../../experience/CosmicSelectionRing';
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
 // causava ReferenceError ao abrir a aba e deixava a aplicação totalmente branca.
@@ -2033,6 +2034,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                       '--breath-delay': `${(String(token.id || '').split('').reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % 24) / 10}s`,
                      }}>
                       {(controller||claimingToken===String(token.id))&&<span className="token-collaborator">{controller?controller+' movimentando':'Obtendo controle'}</span>}
+                        {isSelected && <CosmicSelectionRing color={info.color} radius="56%" dotSize={Math.max(3, Math.min(5, dispSize * .055))} />}
                         {token.foto
                           ? <img src={token.foto} alt="" draggable={false} style={{
                               width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none', userSelect: 'none',

@@ -25,6 +25,7 @@ import {
   loadStoredAccess,
   clearStoredAccess,
 } from "./experience/PlayerAccess";
+import { isMobileViewport, blockedOnThisDevice } from "./adventure/viewport.mjs";
 import {
   campaignTheme, clearStoredCampaign, docIn, restoreCampaignFromStorage, setActiveCampaign,
 } from "./core/campaign";
@@ -39,7 +40,7 @@ const TAB_LABELS = {
   visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
 };
 
-const isMobileViewport = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
+
 
 const pageLoaders = {
   visitantes:  () => import('./experience/VisitorsPage'),
@@ -94,14 +95,14 @@ export default function App(){
   const navigate = id => {
     if(id==='visitantes'&&access?.role!=='master'&&access?.role!=='visitor')return;
     // MOBILE MAPS HIDDEN 2026-09-15
-    if (isMobileViewport() && (id==='mapamundi' || id==='mapabatalha')) return;
+    if (blockedOnThisDevice(id, isMobileViewport())) return;
     prefetch(id);
     setTab(id);
   };
 
   useEffect(()=>{
     const keepMobileOutOfMaps = () => {
-      if (isMobileViewport() && (tab==='mapamundi' || tab==='mapabatalha')) setTab('session');
+      if (blockedOnThisDevice(tab, isMobileViewport())) setTab('session');
     };
     keepMobileOutOfMaps();
     window.addEventListener('resize', keepMobileOutOfMaps);
@@ -163,3 +164,4 @@ export default function App(){
 }
 
 import './experience/mobile-player-polish.css';
+import './experience/mobile-menos-e-mais.css';

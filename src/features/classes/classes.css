@@ -33,7 +33,7 @@
 }
 .classe-chip.is-active::before{opacity:1}
 .classe-chip-medal{
-  display:grid;place-items:center;width:32px;height:32px;border-radius:9px;font-size:16px;flex-shrink:0;
+  position:relative;display:grid;place-items:center;width:32px;height:32px;border-radius:9px;font-size:16px;flex-shrink:0;
   background:color-mix(in srgb,var(--c) 14%,transparent);
   border:1px solid color-mix(in srgb,var(--c) 30%,transparent);
 }

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
+import { isMobileViewport, visibleTabs } from '../adventure/viewport.mjs';
 
 export function PreferenceSurface() {
   const [preferences] = usePlayerPreferences();
@@ -30,5 +31,8 @@ export function PlayerDock({ panel, onPanel, onNavigate }) {
 }
 
 export function MorePanel({ onNavigate, onPreferences }) {
-  return <div className="player-more-grid">{[['session','Sessão atual'],['mapabatalha','Mapa de combate'],['mapamundi','Atlas'],['cronicas','Crônicas e OVA'],['fichas','Ficha completa'],['livro','Livro da Mandíbula'],['personagens','Personagens'],['bestiario','Bestiário'],['regras','Regras'],['classes','Classes'],['prologo','Prólogo']].map(([id, label]) => <button key={id} onClick={() => onNavigate(id)}>{label}</button>)}<button onClick={onPreferences}>Conforto e atalhos</button></div>;
+  // O MorePanel é o menu do celular. Mapa de combate e Atlas não cabem
+  // nesta tela, então aqui eles não são listados — nada de botão morto.
+  const mobile = isMobileViewport();
+  return <div className="player-more-grid">{visibleTabs([['session','Sessão atual'],['mapabatalha','Mapa de combate'],['mapamundi','Atlas'],['cronicas','Crônicas e OVA'],['fichas','Ficha completa'],['livro','Livro da Mandíbula'],['personagens','Personagens'],['bestiario','Bestiário'],['regras','Regras'],['classes','Classes'],['prologo','Prólogo']], mobile).map(([id, label]) => <button key={id} onClick={() => onNavigate(id)}>{label}</button>)}<button onClick={onPreferences}>Conforto e atalhos</button></div>;
 }

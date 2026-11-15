@@ -4,6 +4,7 @@ import { collection,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { CLASSES } from "../../data/gameData";
+import CosmicSelectionRing from "../../experience/CosmicSelectionRing";
 import "./classes.css";
 import { col, docIn } from '../../core/campaign';
 function ClassesSection({ masterMode }) {
@@ -71,7 +72,10 @@ function ClassesSection({ masterMode }) {
               style={{ '--c': c.color }}
               aria-current={c.id === activeId ? 'true' : undefined}
             >
-              <span className="classe-chip-medal" aria-hidden="true">{c.icon}</span>
+              <span className="classe-chip-medal" aria-hidden="true">
+                {c.icon}
+                {c.id === activeId && <CosmicSelectionRing color={c.color} radius="60%" dotSize={3} count={4} />}
+              </span>
               <span className="classe-chip-text">
                 <b>{c.name}</b>
                 <small>{String(c.role || '').split('·')[0].trim()}</small>

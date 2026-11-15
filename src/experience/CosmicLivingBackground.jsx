@@ -1,6 +1,8 @@
 import './cosmic-living-background.css';
+import './cosmico-profundo.css';
 import './performance-lite.css';
 import './performance-smooth.css';
+import useCosmicParallax from './useCosmicParallax';
 
 const BRIGHT_STARS = [
   ['8%','18%','4.8s','-1.2s','2px','#F7FBFF'],['17%','73%','7.1s','-4s','3px','#A9DCFF'],
@@ -18,12 +20,18 @@ const SHOOTING_STARS = [
 export default function CosmicLivingBackground({ variant = 'world', quality = 'light' }) {
   const gate = variant === 'gate';
   const immersive = quality === 'cinematic';
+  const hostRef = useCosmicParallax(immersive);
 
   return (
-    <div className={`cosmic-living-bg cosmic-lite-bg cosmic-dark-bg ${gate ? 'gate' : ''} ${immersive ? 'is-immersive' : 'is-static'}`} aria-hidden="true">
+    <div ref={hostRef} className={`cosmic-living-bg cosmic-lite-bg cosmic-dark-bg ${gate ? 'gate' : ''} ${immersive ? 'is-immersive' : 'is-static'}`} aria-hidden="true">
       <div className="cosmic-dark-space" />
       <div className="cosmic-static-backdrop" />
       {immersive && <>
+        {/* Camadas profundas primeiro: elas são o fundo do fundo. */}
+        <div className="cosmum-depth cosmum-depth-far" />
+        <div className="cosmum-depth cosmum-depth-mid" />
+        <div className="cosmum-depth cosmum-depth-near" />
+        <div className="cosmum-dust" />
         <div className="cosmic-lite-nebula" />
         <div className="cosmic-lite-vortex" />
         <div className="cosmic-lite-stars cosmic-lite-stars-far" />
@@ -35,6 +43,7 @@ export default function CosmicLivingBackground({ variant = 'world', quality = 'l
         <div className="cosmic-shooting-stars">
           {SHOOTING_STARS.map((meteor, index) => <i key={index} className="cosmic-shooting-star" style={{'--meteor-top':meteor[0],'--meteor-duration':meteor[1],'--meteor-delay':meteor[2],'--meteor-y':meteor[3],'--meteor-angle':meteor[4],'--meteor-length':meteor[5],'--meteor-color':meteor[6]}} />)}
         </div>
+        <div className="cosmum-cursor-bloom" />
       </>}
       <div className="cosmic-living-vignette" />
     </div>

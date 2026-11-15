@@ -1,0 +1,93 @@
+/* ===================================================================
+   CELULAR · menos é mais
+   -------------------------------------------------------------------
+   O problema do celular não era falta de recurso, era excesso de
+   camada: no rodapé havia até quatro barras flutuantes ao mesmo tempo
+   (dock, hub de sessão, botão de HUD, barra de ações) e, no topo,
+   enfeite que só faz sentido com espaço de sobra.
+
+   Aqui a regra é: o conteúdo é o personagem, a crônica, a ficha. Tudo
+   que é moldura cede espaço. Nada é removido do site — só deixa de
+   aparecer onde não cabe.
+
+   Carregado por último, de propósito: muitas regras antigas usam
+   !important, então estas precisam vir depois para valer.
+   =================================================================== */
+
+@media (max-width:900px){
+
+  /* ---- 1. Enfeite que não sobrevive a uma tela de 6 polegadas ---- */
+  /* Grade de fundo, trilhos laterais e varredura do cabeçalho existem
+     para dar textura num monitor. No celular viram ruído sobre o texto. */
+  .immersive-content::before{display:none!important}
+  .cosmic-side-rail{display:none!important}
+  .immersive-topbar::after{display:none!important}
+
+  /* ---- 2. Um rodapé, não quatro ---- */
+  /* O dock é a única barra sempre visível. O hub de sessão só aparece
+     em combate, quando realmente faz diferença. */
+  .access-player .game3-root:not(.game3-mode-combat) .g3-mobile-session-hub,
+  .access-player .game3-root:not(.game3-mode-combat) .g3-mobile-hud-toggle{
+    display:none!important;
+  }
+  /* Sem o hub no caminho, o conteúdo recupera ~76px de rolagem. */
+  .access-player .game3-root:not(.game3-mode-combat) ~ .immersive-content,
+  .access-player .game3-root:not(.game3-mode-combat) .immersive-content{
+    padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))!important;
+    scroll-padding-bottom:96px;
+  }
+
+  /* ---- 3. Texto para ler, não para apertar os olhos ---- */
+  .access-player .immersive-content p,
+  .access-player .chronicles-story p,
+  .access-player .livro-body p{
+    font-size:16.5px!important;line-height:1.72!important;
+  }
+  /* Rótulos em maiúscula com letra espaçada somem no celular: o
+     espaçamento come a largura e sobra pouco da palavra. */
+  .access-player .immersive-content [class*="kicker"],
+  .access-player .immersive-content h4{
+    letter-spacing:.12em!important;
+  }
+
+  /* ---- 4. Menos moldura dentro de moldura ---- */
+  /* Painéis aninhados somavam 3 bordas e ~40px de recuo antes do
+     primeiro caractere. Em tela estreita, uma borda basta. */
+  .access-player .session-card,
+  .access-player .chronicles-panel,
+  .access-player .enemy-sheet-panel{
+    clip-path:none!important;border-radius:14px!important;
+  }
+  .access-player .enemy-sheet-panel .enemy-sheet-panel,
+  .access-player .session-card .session-card{
+    border:0!important;background:transparent!important;padding:0!important;
+  }
+
+  /* ---- 5. Alvos de toque honestos ---- */
+  /* Qualquer coisa clicável com menos de 44px é uma armadilha de dedo. */
+  .access-player .immersive-content button,
+  .access-player .immersive-content select{
+    min-height:44px;
+  }
+  /* Campo com menos de 16px faz o iOS dar zoom e desalinhar a tela. */
+  .access-player input,
+  .access-player select,
+  .access-player textarea{
+    font-size:16px!important;
+  }
+
+  /* ---- 6. Nada de rolagem lateral ---- */
+  /* Uma única tabela larga empurrava a página inteira para o lado. */
+  .access-player .immersive-content{overflow-x:hidden!important}
+  .access-player .immersive-content table{display:block;overflow-x:auto;max-width:100%}
+  .access-player .immersive-content img,
+  .access-player .immersive-content video{max-width:100%;height:auto}
+}
+
+/* Telas bem estreitas: o mesmo princípio, mais firme. */
+@media (max-width:560px){
+  .access-player .immersive-content{padding-left:9px!important;padding-right:9px!important}
+  .access-player .brand-line small{display:none!important}
+  /* Três colunas de atalho em 360px dão botões de 100px com texto cortado. */
+  .access-player .player-more-grid{grid-template-columns:1fr 1fr!important}
+}
