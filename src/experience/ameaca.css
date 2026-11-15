@@ -1,0 +1,75 @@
+/* NÍVEL DE AMEAÇA
+   A ficha do inimigo fica mais pesada conforme a ameaça sobe: a cor esquenta,
+   a borda fecha e, no extremo, a própria ficha respira. */
+
+.enemy-threat{
+  --threat:#4ADE80;
+  display:grid;gap:6px;padding:10px 13px;border-radius:11px;min-width:180px;
+  background:color-mix(in srgb,var(--threat) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--threat) 32%,transparent);
+}
+.enemy-threat[data-threat="Médio"]{--threat:#E8A020}
+.enemy-threat[data-threat="Alto"]{--threat:#FF6B35}
+.enemy-threat[data-threat="Extremo"]{--threat:#E8193C}
+
+.enemy-threat-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.enemy-threat-head small{
+  font-family:'Cinzel',Georgia,serif;font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:#8A8094;
+}
+.enemy-threat-head b{font-family:'Cinzel',Georgia,serif;font-size:13px;color:var(--threat);letter-spacing:.04em}
+
+/* Degraus: quanto mais altos, mais largos e mais acesos. */
+.enemy-threat-steps{display:flex;gap:4px;align-items:flex-end;height:14px}
+.enemy-threat-steps i{
+  flex:1;border-radius:2px;background:rgba(255,255,255,.08);transition:background .24s,box-shadow .24s;
+}
+.enemy-threat-steps i:nth-child(1){height:50%}
+.enemy-threat-steps i:nth-child(2){height:68%}
+.enemy-threat-steps i:nth-child(3){height:85%}
+.enemy-threat-steps i:nth-child(4){height:100%}
+.enemy-threat-steps i.is-on{
+  background:var(--threat);
+  box-shadow:0 0 8px color-mix(in srgb,var(--threat) 52%,transparent);
+}
+.enemy-threat p{margin:0;font-size:10.5px;line-height:1.5;color:#8A8094}
+.enemy-threat[data-threat="Alto"] p,
+.enemy-threat[data-threat="Extremo"] p{color:color-mix(in srgb,var(--threat) 58%,#C8B8A0)}
+
+/* No extremo, o último degrau pulsa: o aviso não passa despercebido. */
+.enemy-threat[data-threat="Extremo"] .enemy-threat-steps i:nth-child(4){
+  animation:threatBeat 1.5s ease-in-out infinite;
+}
+@keyframes threatBeat{
+  0%,100%{box-shadow:0 0 8px color-mix(in srgb,var(--threat) 52%,transparent)}
+  50%{box-shadow:0 0 16px color-mix(in srgb,var(--threat) 92%,transparent)}
+}
+
+/* A ficha inteira acompanha o nível. */
+.enemy-sheet-shell[data-threat="Alto"]{
+  border-color:color-mix(in srgb,#FF6B35 34%,transparent);
+}
+.enemy-sheet-shell[data-threat="Extremo"]{
+  border-color:color-mix(in srgb,#E8193C 46%,transparent);
+  box-shadow:0 0 0 1px rgba(232,25,60,.16),0 18px 44px rgba(0,0,0,.5);
+}
+.enemy-sheet-shell[data-threat="Extremo"] .enemy-sheet-accent{
+  background:linear-gradient(90deg,#E8193C,color-mix(in srgb,#E8193C 25%,transparent),transparent);
+  animation:threatSweep 3.4s ease-in-out infinite;
+}
+@keyframes threatSweep{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* Vinheta discreta nas bordas da ficha extrema. */
+.enemy-sheet-shell[data-threat="Extremo"]::after{
+  content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 0 70px rgba(232,25,60,.13);
+}
+.enemy-sheet-shell{position:relative}
+
+@media(max-width:900px){
+  .enemy-threat{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .enemy-threat-steps i,
+  .enemy-threat[data-threat="Extremo"] .enemy-threat-steps i:nth-child(4),
+  .enemy-sheet-shell[data-threat="Extremo"] .enemy-sheet-accent{animation:none;transition:none}
+}

@@ -7,10 +7,36 @@ import { RestrictedAccess, hpColor } from '../core/ui';
 import { ARTEFATOS_DATA, ATTRS, CLASSES, SHEET_COLORS } from '../data/gameData';
 import { AttrDots, StatusPanel, ArtefatoFichaPanel } from '../features/sheets/SheetComponents';
 import { col, docIn } from '../core/campaign';
+import './ameaca.css';
 
 const ENEMY_DEFAULT = '#FF4F65';
 const DANGER_COLORS = { Baixo:'#4ADE80', Médio:'#E8A020', Alto:'#FF6B35', Extremo:'#E8193C' };
 const DANGER_LEVELS = ['Baixo','Médio','Alto','Extremo'];
+const DANGER_WORDS = {
+  Baixo:'Pouco provável que resista a um grupo preparado.',
+  Médio:'Capaz de ferir quem subestimar.',
+  Alto:'Vai cobrar um preço. Entre com um plano.',
+  Extremo:'Uma ameaça de verdade. Alguém pode não voltar.',
+};
+
+/** O nível de ameaça lido de relance: degraus acesos e uma frase de aviso. */
+function ThreatMeter({ level }) {
+  const index = Math.max(0, DANGER_LEVELS.indexOf(level || 'Médio'));
+  return (
+    <div className="enemy-threat" data-threat={DANGER_LEVELS[index]}>
+      <div className="enemy-threat-head">
+        <small>Ameaça</small>
+        <b>{DANGER_LEVELS[index]}</b>
+      </div>
+      <div className="enemy-threat-steps" role="img" aria-label={`Ameaça ${DANGER_LEVELS[index]}, ${index + 1} de ${DANGER_LEVELS.length}`}>
+        {DANGER_LEVELS.map((step, position) => (
+          <i key={step} className={position <= index ? 'is-on' : ''} />
+        ))}
+      </div>
+      <p>{DANGER_WORDS[DANGER_LEVELS[index]]}</p>
+    </div>
+  );
+}
 
 const makeAbility = () => ({
   id:`enemy_ab_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
@@ -175,7 +201,7 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
   const deleteAbility = id => onChange({...enemy,habilidades:(enemy.habilidades||[]).filter(a=>String(a.id)!==String(id))});
 
   return (
-    <div className="enemy-sheet-shell" style={{'--enemy-color':color}}>
+    <div className="enemy-sheet-shell" data-threat={enemy.perigo||'Médio'} style={{'--enemy-color':color}}>
       <div className="enemy-sheet-accent"/>
       <div className="enemy-sheet-header">
         <button className="enemy-sheet-avatar" onClick={()=>photoRef.current?.click()} title="Trocar imagem">
@@ -183,7 +209,8 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
         </button>
         <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
         <div className="enemy-sheet-title"><h3>{enemy.nome || 'Inimigo sem nome'}</h3><p>{cls ? `${cls.icon} ${cls.name}` : '◌ Sem classe'} · Nv {enemy.nivel || 1}{enemy.tipo?` · ${enemy.tipo}`:''}</p></div>
-        <div className="enemy-sheet-meta"><span style={{color:DANGER_COLORS[enemy.perigo]}}>Perigo {enemy.perigo || 'Médio'}</span><span>{abilities.length} habilidades</span><span>{hp}/{maxHp} HP</span><span style={{color}}>{currentVigos}/{maxVigos} VC</span></div>
+        <ThreatMeter level={enemy.perigo}/>
+        <div className="enemy-sheet-meta"><span>{abilities.length} habilidades</span><span>{hp}/{maxHp} HP</span><span style={{color}}>{currentVigos}/{maxVigos} VC</span></div>
       </div>
       <div className="enemy-sheet-tabs">
         {[['geral','◈ Visão Geral'],['combate','⚔ Combate & Habilidades'],['lore','✦ Lore & Inventário']].map(([id,label])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{label}</button>)}

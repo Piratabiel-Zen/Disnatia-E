@@ -8,6 +8,7 @@ import { pushToast } from "../../core/toast";
 import { logAbilityUsed } from "../../core/combatEvents";
 import { useExperience } from "../../experience/ExperienceKit";
 import { LevelUpScreen,hpColor } from "../../core/ui";
+import "./invocacoes.css";
 import { SHEET_COLORS,SHEET_GLOWS,STATUS_LIST,CLASSES,ATTRS,getArtifactPowers,ArtifactGlyph,getClassBaseHp,getDurabilityHp,getSheetMaxHp } from "../../data/gameData";
 const SHEET_TABS = [
   { id: 'geral',   label: 'Visão Geral',  icon: '🧙' },
@@ -618,7 +619,7 @@ const SUMMON_THREATS=['Baixa','Média','Alta','Extrema'];
 const SUMMON_ATTRS=[['forca','Força'],['agilidade','Agilidade'],['durabilidade','Durabilidade'],['inteligencia','Inteligência'],['percepcao','Percepção'],['sorte','Sorte']];
 const SUMMON_ICON='\uD83D\uDC80';
 const summonRequiredAbility=threat=>['Alta','Extrema'].includes(String(threat||'Baixa'))?'Invocação dos Lordes':'Animar os Mortos';
-const newSummon=id=>({id,nome:'',ameaca:'Baixa',hp:10,hp_bonus:0,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,ataques:[],revealed:false});
+const newSummon=id=>({id,nome:'',foto:'',ameaca:'Baixa',hp:10,hp_bonus:0,forca:0,agilidade:0,durabilidade:0,inteligencia:0,percepcao:0,sorte:0,ataques:[],revealed:false});
 const newSummonAttack=()=>({id:Date.now()+Math.random(),nome:'',dano:'',desc:'',custo:1,tipoHab:'normal'});
 
 function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
@@ -701,27 +702,111 @@ function SummonCard({summon,onChange,onDelete,masterMode,color,ownerSheet}){
     }catch(error){console.error('Falha ao guardar invocação:',error);pushToast('Falha ao sincronizar a invocação.',SUMMON_ICON,color);}finally{setBusy(false);}
   };
 
+  const photoRef=useRef(null);
+  const handleSummonPhoto=async event=>{
+    const file=event.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async loaded=>{
+      try{change('foto',await compressImage(loaded.target.result,420,420,0.76));}
+      catch(error){console.error('Falha ao processar a imagem da invocação:',error);pushToast('Não foi possível usar esta imagem.',SUMMON_ICON,color);}
+    };
+    reader.readAsDataURL(file);
+    event.target.value='';
+  };
+
   if(masterMode){
     return <div className={'summon-memory-slot master '+(summon.revealed?'is-revealed':'is-hidden')} style={{'--summon-color':color}}>
       <header><div><span>{SUMMON_ICON} SLOT DE MEMÓRIA</span><b>{summon.nome||'Nova invocação'}</b></div><div className="summon-master-actions"><button className="summon-reveal-button" onClick={()=>change('revealed',!summon.revealed)}>{summon.revealed?'Ocultar':'Revelar'}</button><button className="summon-delete-button" onClick={onDelete}>×</button></div></header>
       <div className="summon-reveal-state">{summon.revealed?'Visível para o necromante':'Oculta até o Mestre revelar'} · 3 VC</div>
-      <div className="summon-memory-form"><label className="wide">Nome<input value={summon.nome||''} onChange={event=>change('nome',event.target.value)} placeholder="Nome da criatura"/></label><label>Ameaça<select value={threat} onChange={event=>change('ameaca',event.target.value)}>{SUMMON_THREATS.map(item=><option key={item} value={item}>{item}</option>)}</select></label><label>Habilidade necessária<input value={required} readOnly/></label><label>HP base<input type="number" min="1" value={summon.hp??10} onChange={event=>change('hp',Math.max(1,Number(event.target.value)||1))}/></label><label>HP bônus<input type="number" min="0" value={summon.hp_bonus||0} onChange={event=>change('hp_bonus',Math.max(0,Number(event.target.value)||0))}/></label>{SUMMON_ATTRS.map(([key,label])=><label key={key}>{label}<input type="number" min="0" max="30" value={summon[key]||0} onChange={event=>change(key,Math.max(0,Math.min(30,Number(event.target.value)||0)))}/></label>)}</div>
+      <div className="summon-memory-form"><label className="wide">Retrato<button type="button" className="summon-photo-button" onClick={()=>photoRef.current?.click()}>{summon.foto?<img src={summon.foto} alt=""/>:<span>{SUMMON_ICON} Enviar imagem</span>}</button><input ref={photoRef} type="file" accept="image/*" onChange={handleSummonPhoto} style={{display:'none'}}/></label><label className="wide">Nome<input value={summon.nome||''} onChange={event=>change('nome',event.target.value)} placeholder="Nome da criatura"/></label><label>Ameaça<select value={threat} onChange={event=>change('ameaca',event.target.value)}>{SUMMON_THREATS.map(item=><option key={item} value={item}>{item}</option>)}</select></label><label>Habilidade necessária<input value={required} readOnly/></label><label>HP base<input type="number" min="1" value={summon.hp??10} onChange={event=>change('hp',Math.max(1,Number(event.target.value)||1))}/></label><label>HP bônus<input type="number" min="0" value={summon.hp_bonus||0} onChange={event=>change('hp_bonus',Math.max(0,Number(event.target.value)||0))}/></label>{SUMMON_ATTRS.map(([key,label])=><label key={key}>{label}<input type="number" min="0" max="30" value={summon[key]||0} onChange={event=>change(key,Math.max(0,Math.min(30,Number(event.target.value)||0)))}/></label>)}</div>
       <div className="summon-memory-attacks"><small>HABILIDADES · VC MÁXIMO 3</small>{(summon.ataques||[]).map(action=><article key={action.id} className={'summon-ability-card type-'+(action.tipoHab||'normal')}><div className="summon-ability-head"><b>{action.nome||'Habilidade'}</b><span>{({normal:'NORMAL',passiva:'PASSIVA',especial:'ESPECIAL'})[action.tipoHab||'normal']||'NORMAL'}</span><button onClick={()=>change('ataques',(summon.ataques||[]).filter(item=>item.id!==action.id))}>×</button></div><span className="summon-ability-meta">{action.dano||'—'} · {Math.max(0,Math.min(3,Number(action.custo??1)))} VC</span><p>{action.desc||''}</p><label>Tipo<select aria-label={'Tipo de habilidade '+(action.nome||'')} value={action.tipoHab||'normal'} onChange={event=>change('ataques',(summon.ataques||[]).map(item=>item.id===action.id?{...item,tipoHab:event.target.value}:item))}><option value="normal">Normal</option><option value="passiva">Passiva</option><option value="especial">Especial</option></select></label></article>)}<div className="summon-memory-add-attack"><input value={attackDraft.nome} onChange={event=>setAttackDraft(value=>({...value,nome:event.target.value}))} placeholder="Nome da habilidade"/><input value={attackDraft.dano} onChange={event=>setAttackDraft(value=>({...value,dano:event.target.value}))} placeholder="Dano / efeito"/><input type="number" min="0" max="3" value={attackDraft.custo} onChange={event=>setAttackDraft(value=>({...value,custo:Number(event.target.value)}))} aria-label="Custo em VC"/><input value={attackDraft.desc} onChange={event=>setAttackDraft(value=>({...value,desc:event.target.value}))} placeholder="Descrição"/><select aria-label="Tipo da nova habilidade" value={attackDraft.tipoHab||'normal'} onChange={event=>setAttackDraft(value=>({...value,tipoHab:event.target.value}))}><option value="normal">Normal</option><option value="passiva">Passiva</option><option value="especial">Especial</option></select><button onClick={addAttack}>＋</button></div></div>
     </div>;
   }
 
   if(summon.revealed!==true)return null;
   const canRelease=Boolean(!activeSummon&&!busy);
-  return <div className={'summon-memory-slot player-summon-card '+(activeSummon?'is-active':'is-revealed')} style={{'--summon-color':color}}>
-    <header><div><span>{SUMMON_ICON} MEMÓRIA REVELADA</span><strong>{summon.nome||'Invocação não nomeada'}</strong></div><div className="summon-threat"><b>Ameaça {threat}</b><small>{required}</small></div></header>
-    {activeSummon&&<div className="summon-readonly-stats">{SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}</div>}
-    <div className={'summon-release-row '+(activeSummon?'summon-store-row':'')}><div><b>{activeSummon?'Invocação em campo':'3 VC ao ser conjurada'}</b><small>{activeSummon?'Guarde para recolher a ficha e conjurar novamente depois.':'Autorizada pelo Mestre. Pode ser liberada agora.'}</small></div><button className={activeSummon?'summon-store-button':'summon-release-button is-pulsing'} onClick={activeSummon?store:release} disabled={activeSummon?busy:!canRelease}>{busy?(activeSummon?'Guardando...':'Liberando...'):(activeSummon?'Guardar':'Liberar')}</button></div>
-    {activeSummon&&<div className="summon-live-controls">
-      <div className="summon-vitals"><div><small>VIDA</small><span><button onClick={()=>adjustHp(-1)} disabled={displayedHp<=0}>−</button><b>{displayedHp}/{configuredMaxHp}</b><button onClick={()=>adjustHp(1)} disabled={displayedHp>=configuredMaxHp}>+</button></span></div><div><small>VIGOR CÓSMICO</small><span><button onClick={()=>adjustVc(-1)} disabled={displayedVc<=0}>−</button><b>{displayedVc}/3 VC</b><button onClick={()=>adjustVc(1)} disabled={displayedVc>=3}>+</button></span></div></div>
-      <div className="summon-turn-state">Invocação liberada · controle do necromante{isSummonTurn?' · turno atual':''}</div>
-      <div className="summon-player-actions">{(activeSummon.ataques||[]).map(action=>{const cost=Math.max(0,Math.min(3,Number(action.custo??1))),type=action.tipoHab||'normal',label=({normal:'NORMAL',passiva:'PASSIVA',especial:'ESPECIAL'})[type]||'NORMAL';return <article key={action.id||action.nome} className={'summon-ability-card type-'+type}><header><span className="summon-ability-type">{label}</span><b>{action.nome||'Habilidade'}</b></header><div className="summon-ability-meta">{action.dano||'Sem dano definido'}{type!=='passiva'?' · '+cost+' VC':''}</div>{action.desc&&<p>{action.desc}</p>}{type!=='passiva'&&<button disabled={!actionsAvailable||busy||displayedVc<cost||displayedHp<=0} onClick={()=>useAction(action)}>Usar habilidade <em>{cost} VC</em></button>}</article>})}{!(activeSummon.ataques||[]).length&&<div className="summon-no-actions">O Mestre ainda não cadastrou habilidades.</div>}</div>
-    </div>}
-  </div>;
+  const hpRatio=Math.round(displayedHp/Math.max(1,configuredMaxHp)*100);
+  const actions=activeSummon?.ataques||summon.ataques||[];
+  const typeLabel={normal:'NORMAL',passiva:'PASSIVA',especial:'ESPECIAL'};
+  return <article className="invocacao-card" data-threat={threat} data-state={activeSummon?'campo':'memoria'} style={{'--summon-color':color}}>
+    <header className="invocacao-head">
+      <div className="invocacao-portrait">{summon.foto?<img src={summon.foto} alt=""/>:<span aria-hidden="true">{SUMMON_ICON}</span>}</div>
+      <div className="invocacao-identity">
+        <span className="invocacao-kicker">{activeSummon?'Em campo':'Memória revelada'}</span>
+        <h4>{summon.nome||'Invocação não nomeada'}</h4>
+        <p>{required} · conjurar custa 3 VC</p>
+      </div>
+      <div className="invocacao-threat"><small>Ameaça</small><b>{threat}</b></div>
+    </header>
+
+    <div className="invocacao-action">
+      <div className="invocacao-action-copy">
+        <b>{activeSummon?'Invocação em campo':'Pronta para ser conjurada'}</b>
+        <small>{activeSummon?'Guarde para recolher a ficha e conjurar novamente depois.':'Autorizada pelo Mestre. Pode ser liberada agora.'}</small>
+      </div>
+      <button className={activeSummon?'summon-store-button':'summon-release-button is-pulsing'} onClick={activeSummon?store:release} disabled={activeSummon?busy:!canRelease}>
+        {busy?(activeSummon?'Guardando...':'Liberando...'):(activeSummon?'Guardar':'Liberar')}
+      </button>
+    </div>
+
+    {activeSummon&&<>
+      <div className="invocacao-vitals">
+        <div className="invocacao-vital-row">
+          <small>Vida</small>
+          <div className="invocacao-hp-track"><div className="invocacao-hp-fill" style={{width:hpRatio+'%',background:hpColor(displayedHp,configuredMaxHp)}}/></div>
+          <div className="invocacao-stepper">
+            <button onClick={()=>adjustHp(-1)} disabled={displayedHp<=0} aria-label="Tirar 1 de vida">−</button>
+            <b>{displayedHp}/{configuredMaxHp}</b>
+            <button onClick={()=>adjustHp(1)} disabled={displayedHp>=configuredMaxHp} aria-label="Dar 1 de vida">+</button>
+          </div>
+        </div>
+        <div className="invocacao-vital-row">
+          <small>Vigor</small>
+          <div className="invocacao-vc-pips" aria-label={displayedVc+' de 3 Vigor Cósmico'}>
+            {Array.from({length:3}).map((_,index)=><i key={index} className={index<displayedVc?'is-on':''}/>)}
+          </div>
+          <div className="invocacao-stepper">
+            <button onClick={()=>adjustVc(-1)} disabled={displayedVc<=0} aria-label="Tirar 1 de vigor">−</button>
+            <b>{displayedVc}/3 VC</b>
+            <button onClick={()=>adjustVc(1)} disabled={displayedVc>=3} aria-label="Dar 1 de vigor">+</button>
+          </div>
+        </div>
+      </div>
+      <div className={'invocacao-turn'+(isSummonTurn?' is-turn':'')}>
+        {isSummonTurn?'Turno da invocação · aja agora':'Sob controle do necromante'}
+      </div>
+    </>}
+
+    <section className="invocacao-section">
+      <h5>Atributos</h5>
+      <div className="invocacao-attrs">
+        {SUMMON_ATTRS.map(([key,label])=><div key={key}><small>{label}</small><b>{summon[key]||0}</b></div>)}
+      </div>
+    </section>
+
+    <section className="invocacao-section">
+      <h5>Habilidades</h5>
+      <div className="invocacao-abilities">
+        {actions.map(action=>{
+          const cost=Math.max(0,Math.min(3,Number(action.custo??1)));
+          const type=action.tipoHab||'normal';
+          return <article key={action.id||action.nome} className={'invocacao-ability type-'+type}>
+            <div className="invocacao-ability-head">
+              <b>{action.nome||'Habilidade'}</b>
+              <span className="invocacao-ability-type">{typeLabel[type]||'NORMAL'}</span>
+            </div>
+            <div className="invocacao-ability-meta">{action.dano||'Sem dano definido'}{type!=='passiva'?' · '+cost+' VC':''}</div>
+            {action.desc&&<p>{action.desc}</p>}
+            {type!=='passiva'&&<button disabled={!actionsAvailable||busy||displayedVc<cost||displayedHp<=0} onClick={()=>useAction(action)}>
+              Usar habilidade <em>{cost} VC</em>
+            </button>}
+          </article>;
+        })}
+        {!actions.length&&<div className="invocacao-empty">O Mestre ainda não cadastrou habilidades.</div>}
+      </div>
+    </section>
+  </article>;
 }
 
 function InvocacoesPanel({sheet,onChange,sheetColor,masterMode}){
