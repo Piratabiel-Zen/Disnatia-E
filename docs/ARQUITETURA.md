@@ -72,3 +72,24 @@ variável `VITE_RTDB_URL` na Vercel com a URL mostrada no console. Regras do ban
   }
 }
 ```
+
+## Campanhas
+
+O site hospeda várias mesas. A escolha acontece antes do acesso, em
+`src/features/campanhas/CampaignGate.jsx`, e a campanha ativa decide de onde cada
+listener lê, através de `src/core/campaign.js`.
+
+A **Dinastia E é a campanha principal e usa os caminhos originais** do Firestore
+(`sheets`, `config/session`, `battlemaps`...), então nada foi migrado. Campanhas
+novas recebem o prefixo `c__{id}__` no nome de cada coleção, o que as isola por
+completo: fichas, mapas, crônicas e combate não se misturam.
+
+Regra de uso no código: nunca chamar `collection(db, ...)` ou `doc(db, ...)`
+diretamente. Use `col('sheets')` e `docIn('config','session')`, que resolvem o
+caminho da campanha ativa. Para dados fora de qualquer campanha (a própria lista
+de mesas) existem `globalCol` e `globalDoc`.
+
+As chaves do `localStorage` seguem a mesma regra: a campanha principal mantém as
+chaves atuais e as outras ganham sufixo, então entrar numa mesa não autentica em
+outra. Cada campanha tem um tema (`CAMPAIGN_THEMES`) que define cor de acento e
+fundo; a principal continua com a atmosfera controlada pelo Mestre.

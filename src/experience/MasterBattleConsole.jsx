@@ -4,6 +4,7 @@ import { db } from '../core/firebase';
 import { SHEET_COLORS, getSheetMaxHp } from '../data/gameData';
 import { applyRoundAutomation } from './combatRoundEngine';
 import './master-battle.css';
+import { col, docIn } from '../core/campaign';
 
 const ENEMY_COLOR = '#E8193C';
 const asId = value => String(value ?? '');
@@ -68,10 +69,10 @@ export default function MasterBattleConsole() {
   const suppressClickUntil=useRef(0);
 
   useEffect(()=>{
-    const u1=onSnapshot(collection(db,'sheets'),snap=>setSheets(snap.docs.map(d=>({id:d.id,...d.data()}))));
-    const u2=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));
-    const u3=onSnapshot(doc(db,'config','combat'),snap=>setCombat(snap.exists()?(snap.data()||{active:false}):{active:false}));
-    const u4=onSnapshot(doc(db,'config','combat_state'),snap=>setState(snap.exists()?(snap.data()||{initiative:[],round:1,turnIdx:0,log:[]}):{initiative:[],round:1,turnIdx:0,log:[]}));
+    const u1=onSnapshot(col('sheets'),snap=>setSheets(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    const u2=onSnapshot(col('enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    const u3=onSnapshot(docIn('config','combat'),snap=>setCombat(snap.exists()?(snap.data()||{active:false}):{active:false}));
+    const u4=onSnapshot(docIn('config','combat_state'),snap=>setState(snap.exists()?(snap.data()||{initiative:[],round:1,turnIdx:0,log:[]}):{initiative:[],round:1,turnIdx:0,log:[]}));
     return()=>{u1();u2();u3();u4();};
   },[]);
 
@@ -116,8 +117,8 @@ export default function MasterBattleConsole() {
       const ts=Date.now();
       const log=[{msg:`🎲 Iniciativa rolada! ${first?.nome||'Combatente'} age primeiro (${first?.roll||0})`,color:'#A855F7',icon:'🎲',ts,round:1}];
       await Promise.all([
-        setDoc(doc(db,'config','combat_state'),{initiative:rolled,round:1,turnIdx:0,log}),
-        setDoc(doc(db,'config','combat'),{active:true,round:1,currentNome:first?.nome||'',currentColor:first?.color||ENEMY_COLOR,currentType:first?.type||'player',startedAt:ts,updatedAt:ts}),
+        setDoc(docIn('config','combat_state'),{initiative:rolled,round:1,turnIdx:0,log}),
+        setDoc(docIn('config','combat'),{active:true,round:1,currentNome:first?.nome||'',currentColor:first?.color||ENEMY_COLOR,currentType:first?.type||'player',startedAt:ts,updatedAt:ts}),
       ]);
       setMinimized(false);
     }catch(err){console.error(err);setError('Não foi possível iniciar o combate.');}
@@ -136,9 +137,9 @@ export default function MasterBattleConsole() {
     setBusy(true);
     try{
       await Promise.all([
-        setDoc(doc(db,'config','combat_state'),{...state,initiative,turnIdx:safe,round,log},{merge:true}),
-        setDoc(doc(db,'config','combat'),{active:true,round,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
-        setDoc(doc(db,'cosmic_events',turnEvent.id),turnEvent,{merge:true}),
+        setDoc(docIn('config','combat_state'),{...state,initiative,turnIdx:safe,round,log},{merge:true}),
+        setDoc(docIn('config','combat'),{active:true,round,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
+        setDoc(docIn('cosmic_events',turnEvent.id),turnEvent,{merge:true}),
       ]);
     }finally{setBusy(false);}
   };
@@ -158,8 +159,8 @@ export default function MasterBattleConsole() {
     setBusy(true);
     try{
       await Promise.all([
-        setDoc(doc(db,'config','combat_state'),{initiative:reordered,turnIdx:nextTurnIdx,round},{merge:true}),
-        setDoc(doc(db,'config','combat'),{active:true,round,currentNome:currentAfter.nome||'',currentColor:currentAfter.color||ENEMY_COLOR,currentType:currentAfter.type||'player',updatedAt:ts},{merge:true}),
+        setDoc(docIn('config','combat_state'),{initiative:reordered,turnIdx:nextTurnIdx,round},{merge:true}),
+        setDoc(docIn('config','combat'),{active:true,round,currentNome:currentAfter.nome||'',currentColor:currentAfter.color||ENEMY_COLOR,currentType:currentAfter.type||'player',updatedAt:ts},{merge:true}),
       ]);
     }catch(err){console.error(err);setError('Não foi possível reordenar a iniciativa.');}
     finally{setBusy(false);}
@@ -211,9 +212,9 @@ export default function MasterBattleConsole() {
     setBusy(true);
     try{
       await Promise.all([
-        setDoc(doc(db,'config','combat_state'),{...state,initiative:syncedInitiative,turnIdx:next,round:newRound,log},{merge:true}),
-        setDoc(doc(db,'config','combat'),{active:true,round:newRound,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
-        setDoc(doc(db,'cosmic_events',turnEvent.id),turnEvent,{merge:true}),
+        setDoc(docIn('config','combat_state'),{...state,initiative:syncedInitiative,turnIdx:next,round:newRound,log},{merge:true}),
+        setDoc(docIn('config','combat'),{active:true,round:newRound,currentNome:target.nome||'',currentColor:target.color||ENEMY_COLOR,currentType:target.type||'player',updatedAt:ts},{merge:true}),
+        setDoc(docIn('cosmic_events',turnEvent.id),turnEvent,{merge:true}),
       ]);
     }finally{setBusy(false);}
   };
@@ -224,8 +225,8 @@ export default function MasterBattleConsole() {
     try{
       const ts=Date.now();
       await Promise.all([
-        setDoc(doc(db,'config','combat'),{active:false,endedAt:ts,updatedAt:ts},{merge:true}),
-        setDoc(doc(db,'config','combat_state'),{initiative:[],round:1,turnIdx:0,log:[]}),
+        setDoc(docIn('config','combat'),{active:false,endedAt:ts,updatedAt:ts},{merge:true}),
+        setDoc(docIn('config','combat_state'),{initiative:[],round:1,turnIdx:0,log:[]}),
       ]);
       setConfirmEnd(false);setSetupOpen(false);setMinimized(false);
     }finally{setBusy(false);}

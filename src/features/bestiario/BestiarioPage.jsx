@@ -5,6 +5,7 @@ import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
+import { col, docIn } from '../../core/campaign';
 const BESTIARIO_AMEACA_CORES = {"Baixo":"#4ADE80","Médio":"#E8A020","Alto":"#E8193C","Supremo":"#A855F7","Catastrófico":"#1EC8FF"};
 const newBestiary = id => ({ id, nome: '', tipo: '', nivel: 1, foto: '', descricao: '', nivelAmeaca: 'Médio' });
 
@@ -72,7 +73,7 @@ function BestiarioSection({ masterMode }) {
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'bestiario'), snap => {
+    const unsub = onSnapshot(col('bestiario'), snap => {
       setBestiario(snap.docs.map(d => ({id:d.id,...d.data()}))); setLoaded(true);
     });
     return () => unsub();
@@ -81,13 +82,13 @@ function BestiarioSection({ masterMode }) {
   const saveItem = item => {
     clearTimeout(saveTimeout.current[item.id]);
     saveTimeout.current[item.id] = setTimeout(async () => {
-      try { await setDoc(doc(db,'bestiario',String(item.id)),item); } catch(e) { console.error(e); }
+      try { await setDoc(docIn('bestiario',String(item.id)),item); } catch(e) { console.error(e); }
     }, 800);
   };
 
-  const add = () => { const item = newBestiary(Date.now()); setDoc(doc(db,'bestiario',String(item.id)),item); setExpandedId(String(item.id)); };
+  const add = () => { const item = newBestiary(Date.now()); setDoc(docIn('bestiario',String(item.id)),item); setExpandedId(String(item.id)); };
   const upd = (id, data) => { setBestiario(prev => prev.map(b => b.id===id?data:b)); saveItem(data); };
-  const del = async id => { await deleteDoc(doc(db,'bestiario',String(id))); if(String(id)===expandedId)setExpandedId(null); };
+  const del = async id => { await deleteDoc(docIn('bestiario',String(id))); if(String(id)===expandedId)setExpandedId(null); };
 
   const pesosAmeaca = {"Baixo":1,"Médio":2,"Alto":3,"Supremo":4,"Catastrófico":5};
   const tiposDisponiveis = [...new Set(bestiario.map(b=>b.tipo).filter(Boolean))];

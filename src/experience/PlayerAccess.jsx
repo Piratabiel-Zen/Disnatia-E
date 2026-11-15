@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { storageSuffix } from '../core/campaign';
 import { isVisitorSheet, verifyVisitorPassword } from '../adventure/visitorAccess.mjs';
 import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
 import PasswordVisibilityInput from './PasswordVisibilityInput';
+import { col } from '../core/campaign';
 
-const ACCESS_KEY = 'dinastia_access_v1';
-const PLAYER_SHEET_KEY = 'dinastia_player_sheet';
+// As chaves são por campanha: entrar numa mesa não autentica em outra.
+// A campanha principal não recebe sufixo, então quem já estava logado continua.
+const accessKey = () => `dinastia_access_v1${storageSuffix()}`;
+const playerSheetKey = () => `dinastia_player_sheet${storageSuffix()}`;
 const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 
 async function sha256(value) {
@@ -18,7 +22,7 @@ async function sha256(value) {
 
 export function loadStoredAccess() {
   try {
-    const raw = localStorage.getItem(ACCESS_KEY);
+    const raw = localStorage.getItem(accessKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || !['player','master','visitor'].includes(parsed.role)) return null;
@@ -31,19 +35,19 @@ export function loadStoredAccess() {
 
 export function saveStoredAccess(access) {
   try {
-    if (!access) localStorage.removeItem(ACCESS_KEY);
-    else localStorage.setItem(ACCESS_KEY, JSON.stringify(access));
+    if (!access) localStorage.removeItem(accessKey());
+    else localStorage.setItem(accessKey(), JSON.stringify(access));
   } catch (_) {}
 }
 
 export function clearStoredAccess() {
   try {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(PLAYER_SHEET_KEY);
+    localStorage.removeItem(accessKey());
+    localStorage.removeItem(playerSheetKey());
   } catch (_) {}
 }
 
-export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMasterMode }) {
+export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMasterMode, campaign, onLeaveCampaign }) {
   const [sheets, setSheets] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState('');
@@ -56,11 +60,11 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
   const [busy,setBusy]=useState(false);
   useEffect(()=>{
     if(mode!=='visitor')return;
-    return onSnapshot(collection(db,'visitors'),snap=>{setVisitors(snap.docs.map(item=>({id:item.id,...item.data()})).filter(row=>row.active!==false));setVisitorsLoaded(true);},()=>{setVisitorsLoaded(true);setError('Não foi possível consultar os visitantes. Confira sua conexão.');});
+    return onSnapshot(col('visitors'),snap=>{setVisitors(snap.docs.map(item=>({id:item.id,...item.data()})).filter(row=>row.active!==false));setVisitorsLoaded(true);},()=>{setVisitorsLoaded(true);setError('Não foi possível consultar os visitantes. Confira sua conexão.');});
   },[mode]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'sheets'), snap => {
+    const unsub = onSnapshot(col('sheets'), snap => {
       const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(sheet=>!isVisitorSheet(sheet));
       setSheets(rows);
       setLoaded(true);
@@ -100,7 +104,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
       photo: selected.foto || '',
       ts: Date.now(),
     };
-    try { localStorage.setItem(PLAYER_SHEET_KEY, String(selected.id)); } catch (_) {}
+    try { localStorage.setItem(playerSheetKey(), String(selected.id)); } catch (_) {}
     saveStoredAccess(payload);
     setError('');
     onAccess?.(payload);
@@ -139,7 +143,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
       <div className="access-stars" />
       <section className="access-panel">
         <div className="access-sigil">✦</div>
-        <div className="access-kicker">DINASTIA E · ACESSO À CAMPANHA</div>
+        <div className="access-kicker">{(campaign?.name || 'DINASTIA E').toUpperCase()} · ACESSO À CAMPANHA</div>
         <h1>Quem atravessa o Véu?</h1>
         <p>Escolha seu personagem. A partir daqui, sua experiência fica vinculada à sua própria ficha.</p>
 
@@ -197,6 +201,11 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
         {error && <div className="access-error">{error}</div>}
         {!loaded && <div className="access-loading">Consultando as fichas...</div>}
+        {onLeaveCampaign && (
+          <button className="access-campaign-back" onClick={onLeaveCampaign}>
+            <span aria-hidden="true">←</span> Trocar de mesa
+          </button>
+        )}
       </section>
     </div>
   );

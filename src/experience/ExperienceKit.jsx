@@ -18,16 +18,19 @@ import { mergeSessionContext, readSessionCache, writeSessionCache } from '../adv
 import {artifactAbilities,artifactUseReason} from '../adventure/artifactRules.mjs';
 import { abilityType } from '../adventure/abilityPresentation.mjs';
 import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
+import { col, docIn } from '../core/campaign';
 
 const ExperienceContext = createContext(null);
 const JOURNAL_LIMIT = 40;
 
+// Navegação enxuta: o Prólogo virou seção do Livro, a Mesa Imersiva saiu e o
+// que é só do Mestre ficou num grupo próprio, para o jogador ver menos.
 const NAV_GROUPS = [
-  { id:'session', label:'Sessão', icon:'✦', items:[{id:'session',label:'Sessão Atual',icon:'✦'}] },
+  { id:'session', label:'Sessão', icon:'✦', items:[{id:'session',label:'Sessão Atual',icon:'✦'},{id:'mapabatalha',label:'Mapa de Batalha',icon:'🗡️'}] },
   { id:'character', label:'Personagem', icon:'◆', items:[{id:'fichas',label:'Fichas',icon:'📋'},{id:'classes',label:'Classes',icon:'⚔️'}] },
   { id:'world', label:'Mundo', icon:'◈', items:[{id:'mapamundi',label:'Mapa Múndi',icon:'🌍'},{id:'personagens',label:'Personagens',icon:'👤'},{id:'bestiario',label:'Bestiário',icon:'🐉'}] },
-  { id:'knowledge', label:'Conhecimento', icon:'◇', items:[{id:'livro',label:'Livro da Mandíbula',icon:'✦'},{id:'cronicas',label:'Crônicas',icon:'🗒️'},{id:'regras',label:'Regras',icon:'📖'},{id:'prologo',label:'Prólogo',icon:'📜'}] },
-  { id:'table', label:'Mesa', icon:'⚔', items:[{id:'mapabatalha',label:'Mapa de Batalha',icon:'🗡️'},{id:'inimigos',label:'Inimigos',icon:'💀'},{id:'visitantes',label:'Visitantes',icon:'\u2726'},{id:'mesaImersiva',label:'Mesa Imersiva',icon:'🎭'}] },
+  { id:'knowledge', label:'Conhecimento', icon:'◇', items:[{id:'livro',label:'Livro da Mandíbula',icon:'✦'},{id:'cronicas',label:'Crônicas',icon:'🗒️'},{id:'regras',label:'Regras',icon:'📖'}] },
+  { id:'master', label:'Mesa do Mestre', icon:'⚔', masterOnly:true, items:[{id:'inimigos',label:'Inimigos',icon:'💀'},{id:'visitantes',label:'Visitantes',icon:'\u2726'}] },
 ];
 
 const SOUNDSCAPE_PRESETS = {
@@ -89,11 +92,11 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
   useEffect(()=>{
     const unsubscribers=[];
     const sheetSource=masterMode
-      ?collection(db,'sheets')
+      ?col('sheets')
       :access?.role==='visitor'
-        ?query(collection(db,'sheets'),where('visitorId','==',String(access.visitorId||'invalid')))
+        ?query(col('sheets'),where('visitorId','==',String(access.visitorId||'invalid')))
         :playerSheetId
-          ?doc(db,'sheets',String(playerSheetId))
+          ?docIn('sheets',String(playerSheetId))
           :null;
     if(sheetSource)unsubscribers.push(onSnapshot(sheetSource,snap=>{
       const records=Array.isArray(snap.docs)
@@ -119,30 +122,30 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
       setSheets(rows);
     }));
     const ownSheetId=String(playerSheetId||selectedSheetId||'');
-    const summonSource=masterMode?collection(db,'combat_summons'):ownSheetId
-      ?query(collection(db,'combat_summons'),where('ownerSheetId','==',ownSheetId)):null;
+    const summonSource=masterMode?col('combat_summons'):ownSheetId
+      ?query(col('combat_summons'),where('ownerSheetId','==',ownSheetId)):null;
     if(summonSource)unsubscribers.push(onSnapshot(summonSource,snap=>setSummons(snap.docs.map(d=>({summonDocId:d.id,...d.data()})).filter(row=>row.active!==false))));
     else setSummons([]);
-    unsubscribers.push(onSnapshot(doc(db,'config','customAbilities'),snap=>setCustomAbilities(normalizeDoc(snap,{}))));
-    unsubscribers.push(onSnapshot(doc(db,'config','combat'),snap=>setCombat(normalizeDoc(snap,{active:false}))));
-    unsubscribers.push(onSnapshot(doc(db,'config','combat_state'),snap=>setCombatState(normalizeDoc(snap,{initiative:[],turnIdx:0,round:1,log:[]}))));
-    unsubscribers.push(onSnapshot(doc(db,'config','session'),{includeMetadataChanges:true},snap=>{const next=normalizeDoc(snap,{active:false,title:'',location:'',objective:'',subtitle:''});writeSessionCache(next);setSession(next);}));
-    unsubscribers.push(onSnapshot(doc(db,'config','ambient'),snap=>setAmbient(normalizeDoc(snap,{}))));
-    unsubscribers.push(onSnapshot(doc(db,'config','soundscape'),snap=>setSoundscapeState({...SOUNDSCAPE_PRESETS.silencio,...normalizeDoc(snap,{})})));
-    unsubscribers.push(onSnapshot(doc(db,'config','battlemap_active'),snap=>setActiveMapState(normalizeDoc(snap,{activeId:''}))));
-    const journalQuery=query(collection(db,'session_journal'),orderBy('ts','desc'),limit(JOURNAL_LIMIT));
+    unsubscribers.push(onSnapshot(docIn('config','customAbilities'),snap=>setCustomAbilities(normalizeDoc(snap,{}))));
+    unsubscribers.push(onSnapshot(docIn('config','combat'),snap=>setCombat(normalizeDoc(snap,{active:false}))));
+    unsubscribers.push(onSnapshot(docIn('config','combat_state'),snap=>setCombatState(normalizeDoc(snap,{initiative:[],turnIdx:0,round:1,log:[]}))));
+    unsubscribers.push(onSnapshot(docIn('config','session'),{includeMetadataChanges:true},snap=>{const next=normalizeDoc(snap,{active:false,title:'',location:'',objective:'',subtitle:''});writeSessionCache(next);setSession(next);}));
+    unsubscribers.push(onSnapshot(docIn('config','ambient'),snap=>setAmbient(normalizeDoc(snap,{}))));
+    unsubscribers.push(onSnapshot(docIn('config','soundscape'),snap=>setSoundscapeState({...SOUNDSCAPE_PRESETS.silencio,...normalizeDoc(snap,{})})));
+    unsubscribers.push(onSnapshot(docIn('config','battlemap_active'),snap=>setActiveMapState(normalizeDoc(snap,{activeId:''}))));
+    const journalQuery=query(col('session_journal'),orderBy('ts','desc'),limit(JOURNAL_LIMIT));
     unsubscribers.push(onSnapshot(journalQuery,snap=>setJournal(snap.docs.map(d=>({id:d.id,...d.data()})))));
     return()=>unsubscribers.forEach(fn=>fn());
   },[access?.role,access?.visitorId,masterMode,playerSheetId,selectedSheetId]);
 
   useEffect(()=>{
     if(!(tab==='mapabatalha' || (masterMode && tab==='session'))) { setMaps([]); return; }
-    return onSnapshot(collection(db,'battlemaps'),snap=>setMaps(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    return onSnapshot(col('battlemaps'),snap=>setMaps(snap.docs.map(d=>({id:d.id,...d.data()}))));
   },[masterMode,tab]);
 
   useEffect(()=>{
     if(!(tab==='mapamundi' || tab==='session')) { setAtlas([]); return; }
-    return onSnapshot(collection(db,'atlas_discoveries'),snap=>{
+    return onSnapshot(col('atlas_discoveries'),snap=>{
       const rows=visibleSheets(snap.docs.map(d=>({id:d.id,...d.data()})),access,masterMode);
       rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
       setAtlas(rows);
@@ -172,7 +175,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
   const addJournal=useCallback(async(text,type='story',extra={})=>{
     if(!String(text||'').trim()) return;
     const id=extra.id||nowId('journal');
-    await setDoc(doc(db,'session_journal',id),{
+    await setDoc(docIn('session_journal',id),{
       text:String(text).trim(), type, ts:extra.ts||Date.now(), round:extra.round??combatState.round??null,
       memory:!!extra.memory, icon:extra.icon||'', color:extra.color||'', source:extra.source||'site',
     });
@@ -180,12 +183,12 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
 
   const updateJournal=useCallback(async(id,text)=>{
     const clean=String(text||'').trim(); if(!masterMode||!id||!clean)return;
-    await updateDoc(doc(db,'session_journal',String(id)),{text:clean,editedAt:Date.now()});
+    await updateDoc(docIn('session_journal',String(id)),{text:clean,editedAt:Date.now()});
   },[masterMode]);
 
   const deleteJournal=useCallback(async id=>{
     if(!masterMode||!id)return;
-    await deleteDoc(doc(db,'session_journal',String(id)));
+    await deleteDoc(docIn('session_journal',String(id)));
   },[masterMode]);
 
   useEffect(()=>{
@@ -202,7 +205,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     if(!fresh.length) return;
     fresh.forEach(entry=>{
       const ts=Number(entry.ts||Date.now());
-      setDoc(doc(db,'session_journal',`combat_${ts}`),{
+      setDoc(docIn('session_journal',`combat_${ts}`),{
         text:entry.msg||'Ação de combate',type:'combat',ts,round:entry.round??combatState.round,
         icon:entry.icon||'⚔',color:entry.color||'#E8193C',source:'combat',memory:false,
       }).catch(()=>{});
@@ -215,7 +218,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     if(patch.active===true && !session.active) payload.startedAt=Date.now();
     const next=mergeSessionContext(session,payload);
     writeSessionCache(next);setSession(next);
-    await setDoc(doc(db,'config','session'),payload,{merge:true});
+    await setDoc(docIn('config','session'),payload,{merge:true});
   },[session]);
 
   const startSession=useCallback(async draft=>{
@@ -229,7 +232,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     const next=mergeSessionContext(session,payload);
     writeSessionCache(next);setSession(next);
-    await setDoc(doc(db,'config','session'),payload,{merge:true});
+    await setDoc(docIn('config','session'),payload,{merge:true});
     await addJournal(`Sessão iniciada${payload.title?`: ${payload.title}`:''}.`,'session',{icon:'✦',color:'#A855F7'});
   },[session,addJournal]);
 
@@ -237,30 +240,30 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     const payload={active:false,endedAt:Date.now(),updatedAt:Date.now()};
     const next=mergeSessionContext(session,payload);
     writeSessionCache(next);setSession(next);
-    await setDoc(doc(db,'config','session'),payload,{merge:true});
+    await setDoc(docIn('config','session'),payload,{merge:true});
     await addJournal('A sessão foi encerrada.','session',{icon:'◌',color:'#6A5A7A',memory:true});
   },[session,addJournal]);
 
   const setAtmosphere=useCallback(async key=>{
     if(!ATMOSPHERES[key]) return;
-    await setDoc(doc(db,'config','atmosphere'),{key,updatedAt:Date.now()},{merge:true});
+    await setDoc(docIn('config','atmosphere'),{key,updatedAt:Date.now()},{merge:true});
   },[]);
 
   const setSoundscape=useCallback(async patch=>{
     const payload={...patch,updatedAt:Date.now()};
-    await setDoc(doc(db,'config','soundscape'),payload,{merge:true});
+    await setDoc(docIn('config','soundscape'),payload,{merge:true});
   },[]);
 
   const applySoundscapePreset=useCallback(async preset=>{
     const value=SOUNDSCAPE_PRESETS[preset];
     if(!value) return;
-    await setDoc(doc(db,'config','soundscape'),{...value,preset,updatedAt:Date.now()},{merge:true});
+    await setDoc(docIn('config','soundscape'),{...value,preset,updatedAt:Date.now()},{merge:true});
   },[]);
 
   const triggerCosmicEvent=useCallback(async(type='message',text='')=>{
     const info=EVENT_TYPES[type]||EVENT_TYPES.message;
     const event={id:nowId('cosmic'),type,text:String(text||info.label),ts:Date.now(),color:info.color,icon:info.icon};
-    await setDoc(doc(db,'cosmic_events',event.id),event,{merge:true});
+    await setDoc(docIn('cosmic_events',event.id),event,{merge:true});
     await addJournal(event.text,'event',{id:`event_${event.id}`,ts:event.ts,icon:event.icon,color:event.color,source:'cosmic'});
   },[addJournal]);
 
@@ -268,7 +271,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     const id=String(mapId||'');
     const map=maps.find(m=>String(m.id)===id);
     const revision=Date.now()*1000+Math.floor(Math.random()*1000);
-    await setDoc(doc(db,'config','battlemap_active'),{activeId:id,revision,updatedAt:Date.now()});
+    await setDoc(docIn('config','battlemap_active'),{activeId:id,revision,updatedAt:Date.now()});
     await addJournal(id?`Mapa alterado para ${map?.nome||map?.name||'novo cenário'}.`:'Mapa de batalha ocultado.','world',{icon:'🗺️',color:'#8B5CF6'});
   },[maps,addJournal]);
 
@@ -296,9 +299,9 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     const turnEvent={id:'turn_'+ts+'_'+next,type:'turn_announce',icon:'\u2694',text:current.nome||'Combatente',subtitle:current.className||current.classeName||current.classe||(current.type==='enemy'?'Inimigo':'Aventureiro'),color:current.color||'#A855F7',soft:false,ts,publishedAt:serverTimestamp()};
     window.dispatchEvent(new CustomEvent('dinastia:cosmic-live',{detail:turnEvent}));
     await Promise.all([
-      setDoc(doc(db,'config','combat_state'),{initiative:syncedInit,turnIdx:next,round:newRound,log:nextLog,updatedAt:ts,revision:ts},{merge:true}),
-      setDoc(doc(db,'config','combat'),{active:true,round:newRound,currentNome:current.nome||'',currentColor:current.color||'#E8193C',currentType:current.type||'player',updatedAt:ts},{merge:true}),
-      setDoc(doc(db,'cosmic_events',turnEvent.id),turnEvent,{merge:true}),
+      setDoc(docIn('config','combat_state'),{initiative:syncedInit,turnIdx:next,round:newRound,log:nextLog,updatedAt:ts,revision:ts},{merge:true}),
+      setDoc(docIn('config','combat'),{active:true,round:newRound,currentNome:current.nome||'',currentColor:current.color||'#E8193C',currentType:current.type||'player',updatedAt:ts},{merge:true}),
+      setDoc(docIn('cosmic_events',turnEvent.id),turnEvent,{merge:true}),
     ]);
   },[combatState,combat]);
 
@@ -309,20 +312,20 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     const [moved]=list.splice(fromIndex,1);list.splice(toIndex,0,moved);
     const nextIdx=Math.max(0,list.findIndex(c=>String(c.id)===currentId));const current=list[nextIdx]||{};const ts=Date.now();
     await Promise.all([
-      setDoc(doc(db,'config','combat_state'),{initiative:list,turnIdx:nextIdx,round:Number(combatState.round||1),updatedAt:ts,revision:ts},{merge:true}),
-      setDoc(doc(db,'config','combat'),{active:true,round:Number(combatState.round||1),currentNome:current.nome||'',currentColor:current.color||'#E8193C',currentType:current.type||'player',updatedAt:ts},{merge:true}),
+      setDoc(docIn('config','combat_state'),{initiative:list,turnIdx:nextIdx,round:Number(combatState.round||1),updatedAt:ts,revision:ts},{merge:true}),
+      setDoc(docIn('config','combat'),{active:true,round:Number(combatState.round||1),currentNome:current.nome||'',currentColor:current.color||'#E8193C',currentType:current.type||'player',updatedAt:ts},{merge:true}),
     ]);
   },[combatState]);
 
   const endCombat=useCallback(async()=>{
-    const ts=Date.now();await Promise.all([setDoc(doc(db,'config','combat'),{active:false,endedAt:ts,updatedAt:ts,revision:ts},{merge:true}),setDoc(doc(db,'config','combat_state'),{turnIdx:0,round:1,updatedAt:ts,revision:ts},{merge:true})]);
+    const ts=Date.now();await Promise.all([setDoc(docIn('config','combat'),{active:false,endedAt:ts,updatedAt:ts,revision:ts},{merge:true}),setDoc(docIn('config','combat_state'),{turnIdx:0,round:1,updatedAt:ts,revision:ts},{merge:true})]);
     await addJournal('Combate encerrado.','combat',{icon:'⚔',color:'#6A5A7A',memory:true});
   },[addJournal]);
 
   const addAtlasDiscovery=useCallback(async entry=>{
     const name=String(entry?.name||'').trim(); if(!name) return;
     const id=nowId('atlas');
-    await setDoc(doc(db,'atlas_discoveries',id),{
+    await setDoc(docIn('atlas_discoveries',id),{
       name,status:entry.status||'rumor',note:String(entry.note||''),session:session.title||'',
       createdAt:Date.now(),updatedAt:Date.now(),
     });
@@ -342,16 +345,16 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     let cost=Math.max(0,Number(ability.cost??ability.custo??0)||0);
     let turns=parseCooldown(ability.cooldown||ability.tempo);
     const accepted=await runTransaction(db,async transaction=>{
-      const sheetRef=doc(db,'sheets',String(actingSheet.id));
+      const sheetRef=docIn('sheets',String(actingSheet.id));
       const snapshot=await transaction.get(sheetRef);
-      const stateSnapshot=await transaction.get(doc(db,'config','combat_state'));
-      const combatSnapshot=await transaction.get(doc(db,'config','combat'));
+      const stateSnapshot=await transaction.get(docIn('config','combat_state'));
+      const combatSnapshot=await transaction.get(docIn('config','combat'));
       if(!snapshot.exists())return false;
       const latest=snapshot.data();
       if(ability._artifactId){
         const artifact=ARTEFATOS_DATA.find(row=>row.id===ability._artifactId);
-        const visibility=await transaction.get(doc(db,'config','artefatos'));
-        const powers=await transaction.get(doc(db,'config','artefatos_habilidades'));
+        const visibility=await transaction.get(docIn('config','artefatos'));
+        const powers=await transaction.get(docIn('config','artefatos_habilidades'));
         if(!visibility.data()?.unlocked?.[artifact?.id]||artifactUseReason(artifact,latest))return false;
         const registered=artifactAbilities(artifact,powers.data()||{}).find(row=>row.id===abilityId);
         if(!registered||registered.tipoHab==='passiva')return false;
@@ -376,7 +379,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     const broadcasts=await Promise.allSettled([
       addJournal(`${actingSheet.nome||'Personagem'} usou ${ability.name||ability.nome}.`,'ability',{icon:'\u2726',color:actingClass?.color||'#A855F7'}),
-      setDoc(doc(db,'cosmic_events',abilityEvent.id),abilityEvent,{merge:true}),
+      setDoc(docIn('cosmic_events',abilityEvent.id),abilityEvent,{merge:true}),
     ]);
     if(broadcasts.some(row=>row.status==='rejected'))console.warn('Habilidade utilizada; anúncio aguardando confirmação.');
     return true;
@@ -404,8 +407,8 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
       durabilidade:attr('durabilidade'),inteligencia:attr('inteligencia'),percepcao:attr('percepcao'),
       sorte:attr('sorte'),ataques:attacks,
     };
-    const summonRef=doc(db,'combat_summons',summonId);
-    const stateRef=doc(db,'config','combat_state');
+    const summonRef=docIn('combat_summons',summonId);
+    const stateRef=docIn('config','combat_state');
     const released=await runTransaction(db,async transaction=>{
       const existing=await transaction.get(summonRef);
       const stateSnapshot=combat?.active?await transaction.get(stateRef):null;
@@ -442,7 +445,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     await Promise.all([
       addJournal(`${summoned.nome} foi invocado por ${selectedSheet.nome||'Necromante'}.`,'ability',{icon:event.icon,color:event.color,source:'summon-release'}),
-      setDoc(doc(db,'cosmic_events',event.id),event),
+      setDoc(docIn('cosmic_events',event.id),event),
     ]);
     return true;
   },[selectedSheet,selectedClass,combat?.active,combatState.round,summons,addJournal]);
@@ -455,8 +458,8 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     if(!owns)return false;
     const summonDocId=String(record.summonDocId||record.id||'').replace(/^s_/,'');
     if(!summonDocId)return false;
-    const summonRef=doc(db,'combat_summons',summonDocId);
-    const stateRef=doc(db,'config','combat_state');
+    const summonRef=docIn('combat_summons',summonDocId);
+    const stateRef=docIn('config','combat_state');
     const result=await runTransaction(db,async transaction=>{
       const summonSnapshot=await transaction.get(summonRef);
       if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return false;
@@ -494,8 +497,8 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     if(!owns)return false;
     const summonDocId=String(record.summonDocId||record.id||'').replace(/^s_/,'');
     if(!summonDocId)return false;
-    const summonRef=doc(db,'combat_summons',summonDocId);
-    const stateRef=doc(db,'config','combat_state');
+    const summonRef=docIn('combat_summons',summonDocId);
+    const stateRef=docIn('config','combat_state');
     const result=await runTransaction(db,async transaction=>{
       const summonSnapshot=await transaction.get(summonRef);
       if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return false;
@@ -529,8 +532,8 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     if(!owns)return false;
     const summonDocId=String(record.summonDocId||record.id||'').replace(/^s_/,'');
     if(!summonDocId)return false;
-    const summonRef=doc(db,'combat_summons',summonDocId);
-    const stateRef=doc(db,'config','combat_state');
+    const summonRef=docIn('combat_summons',summonDocId);
+    const stateRef=docIn('config','combat_state');
     const result=await runTransaction(db,async transaction=>{
       const summonSnapshot=await transaction.get(summonRef);
       if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return null;
@@ -569,7 +572,7 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     };
     const broadcasts=await Promise.allSettled([
       addJournal(event.text,'ability',{icon:event.icon,color:event.color}),
-      setDoc(doc(db,'cosmic_events',event.id),event),
+      setDoc(docIn('cosmic_events',event.id),event),
     ]);
     if(broadcasts.some(item=>item.status==='rejected'))console.warn('Ação usada; parte do anúncio global não foi gravada.');
     return true;
@@ -583,9 +586,9 @@ export function ExperienceProvider({ children, tab, masterMode, playerSheetId=''
     if(!owns)return false;
     const summonDocId=String(record.summonDocId||record.id||'').replace(/^s_/,'');
     if(!summonDocId)return false;
-    const summonRef=doc(db,'combat_summons',summonDocId);
-    const stateRef=doc(db,'config','combat_state');
-    const combatRef=doc(db,'config','combat');
+    const summonRef=docIn('combat_summons',summonDocId);
+    const stateRef=docIn('config','combat_state');
+    const combatRef=docIn('config','combat');
     const result=await runTransaction(db,async transaction=>{
       const summonSnapshot=await transaction.get(summonRef);
       if(!summonSnapshot.exists()||summonSnapshot.data()?.active===false)return null;
@@ -637,15 +640,14 @@ export function useExperience(){
 }
 
 // MOBILE NAVIGATION FIX 2026-09-10
-const MOBILE_ALLOWED_NAV_IDS = new Set(['session','fichas','bestiario','personagens','prologo','classes','cronicas','livro','regras','mesaImersiva']);
 
 // DESKTOP FULL NAV 2026-09-11
-export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterMode=false }){
+export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterMode=false, campaign=null, onLeaveCampaign=null }){
   const [mobileMenu,setMobileMenu]=useState(false);
   const { combat, selectedSheet, access }=useExperience();
-  const desktopGroups = NAV_GROUPS.map(group=>({
+  const desktopGroups = NAV_GROUPS.filter(group=>!group.masterOnly||masterMode).map(group=>({
     ...group,
-    items:group.items.filter(item=>(item.id!=='inimigos'||masterMode)&&(item.id!=='visitantes'||masterMode)).map(item=>access?.role==='visitor'&&item.id==='fichas'?{...item,label:'Meus personagens'}:item),
+    items:group.items.map(item=>access?.role==='visitor'&&item.id==='fichas'?{...item,label:'Meus personagens'}:item),
   })).filter(group=>group.items.length);
   const go=id=>{ onNavigate(id); setMobileMenu(false); };
   // MOBILE CLEAN NAV 2026-09-15
@@ -655,11 +657,10 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
     {id:'cronicas',label:'Crônicas',icon:'🗒️'},
     {id:'livro',label:'Livro',icon:'✦'},
   ];
-  const mobileAllowedGroups20260910 = NAV_GROUPS.map(group=>({ ...group, items:group.items.filter(item=>MOBILE_ALLOWED_NAV_IDS.has(item.id)) })).filter(group=>group.items.length);
   const mobileGroups=desktopGroups.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
   return <>
     <aside className="grim-nav">
-      <button className="grim-brand" onClick={()=>go('session')} title="Dinastia E"><span>DE</span><b>Dinastia E</b></button>
+      <button className="grim-brand" onClick={()=>go('session')} title={campaign?.name||'Dinastia E'}><span>{campaign?.sigil||'DE'}</span><b>{campaign?.name||'Dinastia E'}</b></button>
       <div className="grim-groups">
         {desktopGroups.map(group=><div className="grim-group" key={group.id}>
           <div className="grim-group-title"><span>{group.icon}</span><b>{group.label}</b></div>
@@ -669,6 +670,7 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
           </button>)}
         </div>)}
       </div>
+      {onLeaveCampaign&&<button className="grim-switch-table" onClick={onLeaveCampaign} title="Escolher outra mesa"><span>⇄</span><span className="grim-label">Trocar de mesa</span></button>}
       <div className="grim-player-mini">
         <div className={masterMode?"grim-avatar master-sigil":"grim-avatar"}>{masterMode?'M':selectedSheet?.foto?<img src={selectedSheet.foto}/>:<span>{selectedSheet?.nome?.[0]||'?'}</span>}</div>
         <div><b>{masterMode?'Mestre':selectedSheet?.nome||'Escolha sua ficha'}</b><small>{masterMode?'Conduzindo a mesa':combat?.active?'Em combate':'Explorando Cosmum'}</small></div>
@@ -848,7 +850,7 @@ function CombatHud({ onNavigate }){
 
   useEffect(()=>{
     if(!selectedSheet?.id){setCustom([]);return;}
-    return onSnapshot(doc(db,'config','customAbilities'),snap=>{
+    return onSnapshot(docIn('config','customAbilities'),snap=>{
       const data=snap.exists()?(snap.data()||{}):{};
       const rows=Array.isArray(data?.[String(selectedSheet.id)])?data[String(selectedSheet.id)]:[];
       setCustom(rows.filter(Boolean));
@@ -884,7 +886,7 @@ function CombatHud({ onNavigate }){
     try{
       let accepted=true;
       if(simple){
-        await updateDoc(doc(db,'sheets',String(selectedSheet.id)),{vigos:Math.max(0,vc-1)});
+        await updateDoc(docIn('sheets',String(selectedSheet.id)),{vigos:Math.max(0,vc-1)});
       }else{
         accepted=await useQuickAbility(pending);
       }
@@ -902,7 +904,7 @@ function CombatHud({ onNavigate }){
         simple,cost,round:Number(combatState?.round||1),
       };
       await Promise.all([
-        setDoc(doc(db,'combat_action_events',id),event,{merge:true}),
+        setDoc(docIn('combat_action_events',id),event,{merge:true}),
       ]);
       await addJournal?.(`${event.actorName} usou ${abilityName}${target?.nome?` em ${target.nome}`:' sem alvo'}.`,'combat',{
         id,ts,round:event.round,icon:event.icon,color:event.color,source:'combat-action',
@@ -961,7 +963,7 @@ function CombatActionPulse(){
   const queuedRef=useRef(new Set());
   useEffect(()=>{
     const gate = createLiveEventGate();
-    const feed=query(collection(db,'combat_action_events'),orderBy('ts','desc'),limit(30));
+    const feed=query(col('combat_action_events'),orderBy('ts','desc'),limit(30));
     return onSnapshot(feed,{includeMetadataChanges:true},snap=>{
       const entries = snap.docs.map(row=>({key:row.id,value:row.data()}));
       const fresh=gate(snap,entries).map(entry=>entry.value).filter(value=>value?.id&&!queuedRef.current.has(value.id));
@@ -998,7 +1000,7 @@ function CombatStatusDamageFx(){
   useEffect(()=>{
     if(!selectedSheet?.id)return;
     primed.current=false;seen.current=new Set();
-    const q=query(collection(db,'combat_effect_events'),orderBy('ts','desc'),limit(20));
+    const q=query(col('combat_effect_events'),orderBy('ts','desc'),limit(20));
     const unsub=onSnapshot(q,snap=>{
       if(!primed.current){primed.current=true;snap.docs.forEach(d=>seen.current.add(d.id));return;}
       snap.docChanges().forEach(change=>{
@@ -1051,12 +1053,12 @@ function AtlasDiscoveryPanel(){
   const saveEdit=async item=>{
     const name=String(draft.name||'').trim();
     if(!name)return;
-    await setDoc(doc(db,'atlas_discoveries',String(item.id)),{name,status:draft.status||'rumor',note:String(draft.note||''),updatedAt:Date.now()},{merge:true});
+    await setDoc(docIn('atlas_discoveries',String(item.id)),{name,status:draft.status||'rumor',note:String(draft.note||''),updatedAt:Date.now()},{merge:true});
     cancelEdit();
   };
   const removeEntry=async item=>{
     if(!window.confirm('Excluir este registro de exploração?'))return;
-    await deleteDoc(doc(db,'atlas_discoveries',String(item.id)));
+    await deleteDoc(docIn('atlas_discoveries',String(item.id)));
     if(String(editingId)===String(item.id))cancelEdit();
   };
   return <aside className={'atlas-overlay '+(open?'open':'')}>

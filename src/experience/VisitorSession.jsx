@@ -3,11 +3,12 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { useExperience } from './ExperienceKit';
 import './visitor-summons.css';
+import { docIn } from '../core/campaign';
 
 export function VisitorSessionGuard({access,onLogout}) {
   useEffect(()=>{
     if(access?.role!=='visitor')return;
-    return onSnapshot(doc(db,'visitors',String(access.visitorId||'invalid')),snap=>{
+    return onSnapshot(docIn('visitors',String(access.visitorId||'invalid')),snap=>{
       const visitor=snap.exists()?snap.data():null;
       if(!visitor||visitor.active===false||Number(visitor.authVersion||1)!==Number(access.authVersion||1))onLogout();
     });

@@ -6,6 +6,8 @@ import { collection,deleteDoc,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { MILESTONES,ENTITIES_DATA,ARTEFATOS_DATA,getArtifactPowers,ArtifactGlyph } from "../../data/gameData";
+import { col, docIn } from '../../core/campaign';
+import PrologueSection from '../prologue/ProloguePage';
 
 const BOOK_IMAGE_SAFE_LIMIT = 860000;
 
@@ -33,7 +35,7 @@ function LivroImageGallery({ scope, masterMode, compact=false }) {
   const [uploading,setUploading]=useState(false);
 
   useEffect(()=>{
-    const unsub=onSnapshot(collection(db,'livro_media'),snap=>{
+    const unsub=onSnapshot(col('livro_media'),snap=>{
       const rows=snap.docs
         .map(d=>({id:d.id,...d.data()}))
         .filter(item=>String(item.scope||'')===String(scope))
@@ -55,7 +57,7 @@ function LivroImageGallery({ scope, masterMode, compact=false }) {
       });
       const img=await prepareLivroImage(dataUrl);
       const id=String(Date.now())+'_'+Math.random().toString(36).slice(2,8);
-      await setDoc(doc(db,'livro_media',id),{
+      await setDoc(docIn('livro_media',id),{
         scope:String(scope),
         img,
         nome:file.name||'Imagem do Livro',
@@ -71,7 +73,7 @@ function LivroImageGallery({ scope, masterMode, compact=false }) {
   };
 
   const remove=async id=>{
-    try{await deleteDoc(doc(db,'livro_media',String(id)));}catch(err){console.error(err);}
+    try{await deleteDoc(docIn('livro_media',String(id)));}catch(err){console.error(err);}
   };
 
   return <div className={'livro-hq-gallery '+(compact?'compact':'')}>
@@ -216,11 +218,11 @@ const newMasterPage=id=>({id,titulo:'',dataAquisicao:new Date().toLocaleDateStri
 function MasterPagesBook({masterMode}){
   const[pages,setPages]=useState([]);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(null);
   const saveTimeout=useRef({});
-  useEffect(()=>{const unsub=onSnapshot(collection(db,'livro_pages'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setPages(data);setLoaded(true);});return()=>unsub();},[]);
-  const save=p=>{clearTimeout(saveTimeout.current[p.id]);saveTimeout.current[p.id]=setTimeout(async()=>{try{await setDoc(doc(db,'livro_pages',String(p.id)),p);}catch(e){console.error(e);}},700);};
-  const add=()=>{const p=newMasterPage(Date.now());setDoc(doc(db,'livro_pages',String(p.id)),p);setOpen(p.id);};
+  useEffect(()=>{const unsub=onSnapshot(col('livro_pages'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>b.id-a.id);setPages(data);setLoaded(true);});return()=>unsub();},[]);
+  const save=p=>{clearTimeout(saveTimeout.current[p.id]);saveTimeout.current[p.id]=setTimeout(async()=>{try{await setDoc(docIn('livro_pages',String(p.id)),p);}catch(e){console.error(e);}},700);};
+  const add=()=>{const p=newMasterPage(Date.now());setDoc(docIn('livro_pages',String(p.id)),p);setOpen(p.id);};
   const upd=(id,data)=>{setPages(prev=>prev.map(p=>p.id===id?data:p));save(data);};
-  const del=async id=>{await deleteDoc(doc(db,'livro_pages',String(id)));if(open===id)setOpen(null);};
+  const del=async id=>{await deleteDoc(docIn('livro_pages',String(id)));if(open===id)setOpen(null);};
 
   return(
     <div>
@@ -280,21 +282,22 @@ function LibroSection({masterMode}){
   const [formHab,setFormHab]=useState({});
 
   useEffect(()=>{
-    const u1=onSnapshot(doc(db,'config','entities'),snap=>{if(snap.exists())setUnlocked(snap.data().unlocked||{});});
-    const u2=onSnapshot(doc(db,'config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlocked(snap.data().unlocked||{});});
-    const u3=onSnapshot(doc(db,'config','prophecy'),snap=>{if(snap.exists())setCoordRevealed(snap.data().coordRevealed||false);});
-    const u4=onSnapshot(doc(db,'config','artefatos_habilidades'),snap=>{if(snap.exists())setArtefatosHabs(snap.data()||{});});
+    const u1=onSnapshot(docIn('config','entities'),snap=>{if(snap.exists())setUnlocked(snap.data().unlocked||{});});
+    const u2=onSnapshot(docIn('config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlocked(snap.data().unlocked||{});});
+    const u3=onSnapshot(docIn('config','prophecy'),snap=>{if(snap.exists())setCoordRevealed(snap.data().coordRevealed||false);});
+    const u4=onSnapshot(docIn('config','artefatos_habilidades'),snap=>{if(snap.exists())setArtefatosHabs(snap.data()||{});});
     return()=>{u1();u2();u3();u4();};
   },[]);
 
-  const toggleUnlock=async id=>{const updated={...unlocked,[id]:!unlocked[id]};await setDoc(doc(db,'config','entities'),{unlocked:updated});};
-  const toggleArtefato=async id=>{const updated={...artefatosUnlocked,[id]:!artefatosUnlocked[id]};await setDoc(doc(db,'config','artefatos'),{unlocked:updated});};
-  const toggleCoord=async()=>setDoc(doc(db,'config','prophecy'),{coordRevealed:!coordRevealed});
-  const saveHab=async artefatoId=>{const nova=formHab[artefatoId];if(!nova?.nome)return;const next={...artefatosHabs,[artefatoId]:[...(artefatosHabs[artefatoId]||[]),{...nova,id:Date.now()}]};await setDoc(doc(db,'config','artefatos_habilidades'),next);setFormHab(p=>({...p,[artefatoId]:{nome:'',descricao:'',custo:'',dano:'',cooldown:''}}));};
-  const deleteHab=async(artefatoId,habId)=>{const next={...artefatosHabs,[artefatoId]:(artefatosHabs[artefatoId]||[]).filter(h=>h.id!==habId)};await setDoc(doc(db,'config','artefatos_habilidades'),next);};
+  const toggleUnlock=async id=>{const updated={...unlocked,[id]:!unlocked[id]};await setDoc(docIn('config','entities'),{unlocked:updated});};
+  const toggleArtefato=async id=>{const updated={...artefatosUnlocked,[id]:!artefatosUnlocked[id]};await setDoc(docIn('config','artefatos'),{unlocked:updated});};
+  const toggleCoord=async()=>setDoc(docIn('config','prophecy'),{coordRevealed:!coordRevealed});
+  const saveHab=async artefatoId=>{const nova=formHab[artefatoId];if(!nova?.nome)return;const next={...artefatosHabs,[artefatoId]:[...(artefatosHabs[artefatoId]||[]),{...nova,id:Date.now()}]};await setDoc(docIn('config','artefatos_habilidades'),next);setFormHab(p=>({...p,[artefatoId]:{nome:'',descricao:'',custo:'',dano:'',cooldown:''}}));};
+  const deleteHab=async(artefatoId,habId)=>{const next={...artefatosHabs,[artefatoId]:(artefatosHabs[artefatoId]||[]).filter(h=>h.id!==habId)};await setDoc(docIn('config','artefatos_habilidades'),next);};
   const isEntityRevealed=(ent,i)=>i<2||!!unlocked[ent.id];
 
   const tabs=[
+    {id:'prologo',label:'Prólogo',icon:'📜'},
     {id:'marcos',label:'Marcos & Profecia',icon:'▣'},
     {id:'entidades',label:'As Seis Entidades',icon:'◈'},
     {id:'artefatos',label:'Os 6 Artefatos',icon:'✧'},
@@ -305,11 +308,13 @@ function LibroSection({masterMode}){
   ];
   const totals={marcos:2,entidades:ENTITIES_DATA.length,artefatos:ARTEFATOS_DATA.length,elyon:ELYON_CHAPTER_SPREADS.length,mestre:1};
   const spread=tabPages[activeTab]||0;
+  // Seções com layout próprio, fora do formato de página dupla.
+  const standalone=activeTab==='magias'||activeTab==='arquivos'||activeTab==='prologo';
   const acquired=activeTab==='magias'||activeTab==='arquivos';
 
   const changeTab=id=>{if(turning)return;setActiveTab(id);setMobileSide(0);};
   const turnPage=dir=>{
-    if(turning||acquired)return;
+    if(turning||standalone)return;
     if(window.innerWidth<=720){
       if(dir>0&&mobileSide===0){setTurnDir(1);setTurning(true);setTimeout(()=>setMobileSide(1),390);setTimeout(()=>setTurning(false),900);return;}
       if(dir<0&&mobileSide===1){setTurnDir(-1);setTurning(true);setTimeout(()=>setMobileSide(0),390);setTimeout(()=>setTurning(false),900);return;}
@@ -381,7 +386,7 @@ function LibroSection({masterMode}){
   return <div className={`livro-shell ${activeTab==='artefatos'?'livro-artifacts-premium':''}`} onTouchStart={e=>touchStart.current=e.touches[0]?.clientX} onTouchEnd={e=>{if(touchStart.current==null)return;const dx=e.changedTouches[0].clientX-touchStart.current;if(Math.abs(dx)>45)turnPage(dx<0?1:-1);touchStart.current=null;}}>
     <header className="livro-heading"><div className="livro-kicker">{activeTab==='artefatos'?'Relíquias Supremas · Registros Selados':'O Artefato da Profecia'}</div><h2 className="livro-title">Livro da Mandíbula</h2><div className="livro-ornament"/></header>
     <nav className="livro-tabs" aria-label="Seções do Livro da Mandíbula">{tabs.map(t=><button className={`livro-tab ${activeTab===t.id?'active':''}`} key={t.id} onClick={()=>changeTab(t.id)}><span style={{marginRight:9}}>{t.icon}</span>{t.label}</button>)}</nav>
-    {acquired?<AcquiredKnowledge key={activeTab} section={activeTab}/>:<><div className={`livro-stage ${turning?'livro-turning':''}`} style={{'--flip-dir':`${turnDir*16}deg`}}>
+    {activeTab==='prologo'?<PrologueSection masterMode={masterMode}/>:acquired?<AcquiredKnowledge key={activeTab} section={activeTab}/>:<><div className={`livro-stage ${turning?'livro-turning':''}`} style={{'--flip-dir':`${turnDir*16}deg`}}>
       <button className="livro-arrow prev" onClick={()=>turnPage(-1)} disabled={!hasPrev} aria-label="Página anterior">‹</button>
       <div className="livro-cover"><div className="livro-pages">{turning&&<div className={`livro-page-flip ${turnDir>0?'forward':'backward'}`} aria-hidden="true" onAnimationEnd={()=>setTurning(false)}/>}<section className={`livro-page left ${mobileSide===0?'mobile-visible':''}`}>{leftContent}</section><section className={`livro-page right ${mobileSide===1?'mobile-visible':''}`}>{rightContent}</section><div className="livro-gutter"/></div><div className="livro-bookmark"/></div>
       <button className="livro-arrow next" onClick={()=>turnPage(1)} disabled={!hasNext} aria-label="Próxima página">›</button>

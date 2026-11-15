@@ -262,3 +262,11 @@ html[data-quality="cinematic"] .cosmic-shooting-star:nth-child(n+4){display:none
 
 /* FINAL DESKTOP HUD CENTERING 2026-09-21 */
 @media(min-width:901px){html body .adventure-shell:has(.page-stage-session) .game3-tab-session .g3-utility-rail{position:fixed!important;top:50%!important;bottom:auto!important;right:14px!important;left:auto!important;transform:translate3d(0,-50%,0)!important}}
+
+
+/* TELA INICIAL ENXUTA · 2026-11
+   Sem faixa decorativa, sem dock repetido e sem rodapé de frase: os cabeçalhos
+   de seção agora são só o título e um dado útil à direita. */
+.ad-section-head{align-items:baseline}
+.ad-section-head>h3{margin:0}
+.ad-scene-copy .ad-objective{margin-top:16px}

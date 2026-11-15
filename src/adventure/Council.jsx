@@ -3,8 +3,9 @@ import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { onSnapshot } from './sharedSnapshot';
 import { prepareDecision, recordVote, resolveDecision } from './sessionModel';
+import { docIn } from '../core/campaign';
 
-const decisionRef = () => doc(db, 'config', 'party_decision');
+const decisionRef = () => docIn('config', 'party_decision');
 
 export function CouncilView({ decision, masterMode, playerId, busy, error, onPublish, onVote, onResolve, onCancel, onEdit }) {
   const [question, setQuestion] = useState('');
@@ -76,7 +77,7 @@ export default function Council({ masterMode, playerId }) {
     const snap = await tx.get(decisionRef());
     const result = resolveDecision(snap.data(), decision?.id, optionId);
     tx.update(decisionRef(), { status: result.status, result: result.result, updatedAt: serverTimestamp() });
-    tx.set(doc(db, 'session_journal', `decision_${decision.id}`), { text: result.text, type: 'story', source: 'party-decision', icon: '◇', color: '#c6a66b', memory: true, ts: Date.now(), committedAt: serverTimestamp() });
+    tx.set(docIn('session_journal', `decision_${decision.id}`), { text: result.text, type: 'story', source: 'party-decision', icon: '◇', color: '#c6a66b', memory: true, ts: Date.now(), committedAt: serverTimestamp() });
   }));
   const cancel = () => act(() => runTransaction(db, async tx => {
     if (!masterMode) throw new Error('Apenas o mestre pode encerrar decisões.');

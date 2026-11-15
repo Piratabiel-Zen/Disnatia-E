@@ -7,6 +7,7 @@ import { pushToast } from "../../core/toast";
 import { hpColor } from "../../core/ui";
 import { publishDiceResult } from "../../core/combatEvents";
 import { SHEET_COLORS,STATUS_LIST,getSheetMaxHp } from "../../data/gameData";
+import { col, docIn } from '../../core/campaign';
 const ENEMY_COLOR='#FF4444';
 export default function CombatMode({ sheets, enemies, onClose, masterMode }) {
   const [round, setRound] = useState(1);
@@ -48,7 +49,7 @@ const syncStatusToSheet = async (combatant, statusId, active) => {
   try {
     const collectionName = combatant.type === 'player' ? 'sheets' : 'enemies';
     const entityId = combatant.id.replace(combatant.type === 'player' ? 'p_' : 'e_', '');
-    const ref = doc(db, collectionName, String(entityId));
+    const ref = docIn(collectionName, String(entityId));
     await updateDoc(ref, { [`status.${statusId}`]: active });
     const s = STATUS_LIST.find(s => s.id === statusId);
     if (s) pushToast(`${combatant.nome}: ${active ? s.label : `Sem ${s.label}`}`, s.icon, active ? s.color : '#888');
@@ -60,7 +61,7 @@ const [showSelector, setShowSelector] = useState(true);
 const initialLoadDone = useRef(false);
 
 useEffect(() => {
-  const unsub = onSnapshot(doc(db, 'config', 'combat_state'), snap => {
+  const unsub = onSnapshot(docIn('config', 'combat_state'), snap => {
     if (!snap.exists()) return;
     const d = snap.data();
     if (d.initiative !== undefined) setInitiative(d.initiative);
@@ -73,14 +74,14 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  const unsub = onSnapshot(collection(db, 'combat_summons'), snap => {
+  const unsub = onSnapshot(col('combat_summons'), snap => {
     setReleasedSummons(snap.docs.map(item => ({ summonDocId:item.id, ...item.data() })).filter(item => item.active !== false));
   });
   return () => unsub();
 }, []);
 
 useEffect(() => {
-  const unsub = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
+  const unsub = onSnapshot(docIn('config', 'public_dice_roll'), snap => {
     if (!snap.exists()) return;
     const d = snap.data();
     if (!d.ts || Date.now() - d.ts > 8000) return;
@@ -139,7 +140,7 @@ const buildCombatants = () => [
   const persist = async (newInit, newRound, newTurnIdx, newLog) => {
     const ts=Date.now();
     try {
-      await setDoc(doc(db,'config','combat_state'),{
+      await setDoc(docIn('config','combat_state'),{
         initiative:newInit ?? initiative,
         round:newRound ?? round,
         turnIdx:newTurnIdx ?? turnIdx,
@@ -169,8 +170,8 @@ const buildCombatants = () => [
       const newLog=[...log,{msg:`🎲 Iniciativa rolada! ${rolled[0]?.nome} age primeiro (${rolled[0]?.roll})`,color:'#A855F7',icon:'🎲',ts,round:1}].slice(-60);
       setInitiative(rolled);setTurnIdx(0);setRound(1);setLog(newLog);setShowSelector(false);
       await Promise.all([
-        setDoc(doc(db,'config','combat_state'),{initiative:rolled,round:1,turnIdx:0,log:newLog,updatedAt:ts,revision:ts},{merge:true}),
-        setDoc(doc(db,'config','combat'),{active:true,round:1,currentNome:rolled[0]?.nome||'',currentColor:rolled[0]?.color||'#E8193C',currentType:rolled[0]?.type||'player',startedAt:ts,updatedAt:ts,revision:ts},{merge:true}),
+        setDoc(docIn('config','combat_state'),{initiative:rolled,round:1,turnIdx:0,log:newLog,updatedAt:ts,revision:ts},{merge:true}),
+        setDoc(docIn('config','combat'),{active:true,round:1,currentNome:rolled[0]?.nome||'',currentColor:rolled[0]?.color||'#E8193C',currentType:rolled[0]?.type||'player',startedAt:ts,updatedAt:ts,revision:ts},{merge:true}),
       ]);
       loadedRef.current=true;
     }catch(error){
@@ -226,8 +227,8 @@ const buildCombatants = () => [
     window.dispatchEvent(new CustomEvent('dinastia:cosmic-live',{detail:turnEvent}));
     try{
       await Promise.all([
-        setDoc(doc(db,'config','combat'),{active:true,round:newRound,currentNome:combatant.nome||'',currentColor:combatant.color||'#E8193C',currentType:combatant.type||'player',updatedAt:ts},{merge:true}),
-        setDoc(doc(db,'cosmic_events',turnEvent.id),turnEvent,{merge:true}),
+        setDoc(docIn('config','combat'),{active:true,round:newRound,currentNome:combatant.nome||'',currentColor:combatant.color||'#E8193C',currentType:combatant.type||'player',updatedAt:ts},{merge:true}),
+        setDoc(docIn('cosmic_events',turnEvent.id),turnEvent,{merge:true}),
       ]);
     }catch(_){}
     await persist(syncedInit,newRound,next,newLog);
@@ -311,7 +312,7 @@ const handleClose = () => { onClose(); };
           setRound(1);
           setTurnIdx(0);
           setInitiative([]);
-          setDoc(doc(db, 'config', 'combat_state'), {
+          setDoc(docIn('config', 'combat_state'), {
             initiative: [], round: 1, turnIdx: 0, log: []
           }).catch(() => {});
         }}
@@ -336,8 +337,8 @@ const handleClose = () => { onClose(); };
           <button onClick={() => setShowDice(p => !p)} style={btnStyle('#4ADE80')}>🎲 {showDice ? 'Fechar Dado' : 'Dado Público'}</button>
           {masterMode && (
             <button onClick={async () => {
-              await setDoc(doc(db, 'config', 'combat'), { active: false });
-              await setDoc(doc(db, 'config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] });
+              await setDoc(docIn('config', 'combat'), { active: false });
+              await setDoc(docIn('config', 'combat_state'), { initiative: [], round: 1, turnIdx: 0, log: [] });
               onClose();
             }} style={{ ...btnStyle('#E8193C'), fontWeight: 700, border: '1px solid rgba(232,25,60,0.6)' }}>
               ⚔️ Fim do Combate

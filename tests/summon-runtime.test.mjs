@@ -9,12 +9,12 @@ const runtime=kit.slice(start,end);
 function harness(){
   const data=new Map();const summons=[];
   const selectedSheet={id:'necro',nome:'Necromante'};
-  const doc=(_db,...parts)=>parts.join('/');
+  const docIn=(...parts)=>parts.join('/');
   const set=(key,value)=>{data.set(key,{...data.get(key),...value});if(key.startsWith('combat_summons/')){const i=summons.findIndex(row=>row.summonDocId===key.split('/')[1]);const row={...data.get(key),summonDocId:key.split('/')[1]};if(i>=0)summons[i]=row;else summons.push(row);}};
   const transaction={get:async key=>({exists:()=>data.has(key),data:()=>data.get(key)}),set};
-  const names=['useCallback','selectedSheet','selectedClass','combat','combatState','summons','db','doc','runTransaction','setDoc','addJournal','nowId','masterMode'];
+  const names=['useCallback','selectedSheet','selectedClass','combat','combatState','summons','db','docIn','runTransaction','setDoc','addJournal','nowId','masterMode'];
   const factory=new Function(...names,runtime+';return {useSummonAbility,updateSummonHp,updateSummonVc,useSummonAction,storeSummon};');
-  const api=factory(fn=>fn,selectedSheet,{color:'#aaa'},{active:false},{round:1},summons,{},doc,async(_db,fn)=>fn(transaction),async(k,v)=>set(k,v),async()=>{},()=>String(Math.random()),false);
+  const api=factory(fn=>fn,selectedSheet,{color:'#aaa'},{active:false},{round:1},summons,{},docIn,async(_db,fn)=>fn(transaction),async(k,v)=>set(k,v),async()=>{},()=>String(Math.random()),false);
   return {api,data,summons};
 }
 test('revealed summon retains configured HP, edits resources outside turns, stores and reopens',async()=>{

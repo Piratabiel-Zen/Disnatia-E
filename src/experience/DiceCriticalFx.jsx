@@ -3,6 +3,7 @@ import { collection, doc, limit, onSnapshot, orderBy, query } from 'firebase/fir
 import { db } from '../core/firebase';
 import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';
 import './dice-critical-fx.css';
+import { col, docIn } from '../core/campaign';
 
 const EFFECT_DURATION = 3100;
 const firstNameOf = value => {
@@ -55,7 +56,7 @@ export default function DiceCriticalFx() {
   useEffect(() => {
     const feedGate = createLiveSnapshotGate();
     const configGate = createLiveSnapshotGate();
-    const feedQuery = query(collection(db, 'public_dice_events'), orderBy('publishedAt', 'desc'), limit(20));
+    const feedQuery = query(col('public_dice_events'), orderBy('publishedAt', 'desc'), limit(20));
     const unsubFeed = onSnapshot(feedQuery, { includeMetadataChanges: true }, snap => {
       if (!feedGate.shouldDeliver(snap.metadata)) {
         snap.docs.forEach(item => remember(eventIdOf({ _feedId: item.id, ...(item.data() || {}) })));
@@ -65,7 +66,7 @@ export default function DiceCriticalFx() {
         if (isNewLiveDocument(change)) ingest({ _feedId: change.doc.id, ...(change.doc.data() || {}) });
       });
     }, () => {});
-    const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), { includeMetadataChanges: true }, snap => {
+    const unsubConfig = onSnapshot(docIn('config', 'public_dice_roll'), { includeMetadataChanges: true }, snap => {
       if (!snap.exists()) return;
       const payload = snap.data() || {};
       if (!configGate.shouldDeliver(snap.metadata)) {
