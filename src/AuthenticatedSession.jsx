@@ -5,6 +5,7 @@ import { ToastContainer } from './core/toast';
 import RealtimeBroadcasts from './experience/RealtimeBroadcasts';
 import MasterToggle from './shell/MasterToggle';
 import CampaignPasswordButton from './shell/CampaignPasswordButton';
+import LiveStatus from './shell/LiveStatus';
 import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
@@ -61,6 +62,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
               </div>
             </div>
             <div className="top-actions">
+              <LiveStatus/>
               <button className="ad-quality" title="Alternar entre fundo estático e atmosfera imersiva com estrelas cadentes" aria-pressed={quality==='light'} onClick={()=>setQuality(quality==='light'?'cinematic':'light')}>{quality==='light'?'◈ Leve':'✦ Imersivo'}</button>
               {tab!=='mesaImersiva'&&<AmbientSoundPlayer masterMode={masterMode}/>}
               <VisitorCharacterPicker access={access}/>
