@@ -5,7 +5,7 @@ import {db} from '../core/firebase';
 import {ARTEFATOS_DATA,ArtifactGlyph} from '../data/gameData';
 import {artifactAbilities,artifactRequirements,artifactUseReason} from '../adventure/artifactRules.mjs';
 import {abilityAvailability} from '../adventure/playerPreferences.mjs';
-import {useExperience} from './ExperienceKit.generated';
+import {useExperience} from './ExperienceKit';
 import './artifact-powers.css';
 
 export function ArtifactPowerControls({sheet}) {

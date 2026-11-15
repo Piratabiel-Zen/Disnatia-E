@@ -16,3 +16,6 @@ html[data-quality=light] .ability-type-especial::before,html[data-effects=reduce
 @media(max-width:600px){.ability-edit-actions button{min-width:40px;min-height:40px}.ability-type-badge{font-size:8px}}
 
 .custom-ability-editor button{min-height:36px}.custom-ability-editor fieldset>button:last-child{border-radius:7px;border:1px solid #ffffff20;background:#ffffff07;color:#b0a3b9;font:11px Cinzel,serif;cursor:pointer}
+
+.enemy-combined-fields{grid-column:1/-1;border:1px solid rgba(255,225,125,.4);border-radius:9px;padding:10px;background:linear-gradient(125deg,rgba(255,225,125,.08),rgba(168,85,247,.12));display:grid;grid-template-columns:1fr 1fr;gap:8px}.enemy-combined-fields>b,.enemy-combined-fields>small{grid-column:1/-1;color:#ffe58a;font:10px Cinzel,serif;letter-spacing:.12em}.enemy-combined-fields label{font:9px Cinzel,serif;color:#e9d5ff}.enemy-combined-note{display:grid;gap:4px;margin:6px 0 10px;padding:8px 10px;border:1px solid #ffe58a55;border-radius:8px;background:linear-gradient(110deg,#a855f71a,#ffe58a10);color:#e9d5ff;font-size:11px}.enemy-combined-note b{font:10px Cinzel,serif;color:#ffe58a;text-shadow:0 0 8px #c084fc}.enemy-combined-note small{color:#bda8cf}
+@media(max-width:620px){.enemy-combined-fields{grid-template-columns:1fr}}

@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { useExperience } from '../experience/ExperienceKit.generated';
+import { useExperience } from '../experience/ExperienceKit';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
 import Council from './Council';
 

@@ -1,7 +1,7 @@
 export function abilityType(ability, fallback = 'normal') {
  const type = String(ability?.tipoHab || ability?.tipo || ability?.type || fallback).toLowerCase();
  if (type === 'combinada' || type === 'combined' || type === 'combination') return 'combinada';
- return type === 'passiva' || type === 'passive' ? 'passiva' : type === 'especial' || type === 'special' ? 'especial' : 'normal';
+ return type === 'combinada' || type === 'combined' ? 'combinada' : type === 'passiva' || type === 'passive' ? 'passiva' : type === 'especial' || type === 'special' ? 'especial' : 'normal';
 }
 export function replaceCustomAbility(abilities, draft, editingId) {
  const current = Array.isArray(abilities) ? abilities : [];

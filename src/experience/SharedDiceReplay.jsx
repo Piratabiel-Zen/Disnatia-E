@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';
 import PhysicalDiceTray from './PhysicalDiceTray';
 import './shared-dice-replay.css';
 
@@ -55,7 +56,7 @@ export default function SharedDiceReplay({ access }) {
     remember(id);
 
     // Cada cliente, inclusive quem rolou e o mestre, recebe a animação global.
-    setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-12));
+    setQueue(prev => [...prev, { ...payload, _replayId: id }].slice(-5));
   }, [remember]);
 
   useEffect(() => {
@@ -68,27 +69,28 @@ export default function SharedDiceReplay({ access }) {
   }, []);
 
   useEffect(() => {
-    let feedPrimed = false;
-    let configPrimed = false;
-    const feedQuery = query(collection(db, 'public_dice_events'), orderBy('ts', 'desc'), limit(20));
+    // O Firebase pode entregar cache local e servidor em callbacks diferentes.
+    // Cada conexão precisa de uma linha de corte confirmada pelo servidor antes
+    // de aceitar eventos; reconexões formam uma nova linha de corte silenciosa.
+    const feedGate = createLiveSnapshotGate();
+    const configGate = createLiveSnapshotGate();
+    const feedQuery = query(collection(db, 'public_dice_events'), orderBy('publishedAt', 'desc'), limit(20));
 
-    const unsubFeed = onSnapshot(feedQuery, snap => {
-      if (!feedPrimed) {
-        feedPrimed = true;
-        snap.docs.forEach(d => remember(getReplayId({ _feedId: d.id, ...(d.data() || {}) })));
+    const unsubFeed = onSnapshot(feedQuery, { includeMetadataChanges: true }, snap => {
+      if (!feedGate.shouldDeliver(snap.metadata)) {
+        snap.docs.forEach(item => remember(getReplayId({ _feedId: item.id, ...(item.data() || {}) })));
         return;
       }
       snap.docChanges().forEach(change => {
-        if (change.type === 'removed') return;
+        if (!isNewLiveDocument(change)) return;
         enqueue({ _feedId: change.doc.id, ...(change.doc.data() || {}) });
       });
     }, error => console.error('Falha no feed do replay compartilhado:', error));
 
-    const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), snap => {
-      if (!snap.exists()) { configPrimed = true; return; }
+    const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), { includeMetadataChanges: true }, snap => {
+      if (!snap.exists()) return;
       const payload = snap.data() || {};
-      if (!configPrimed) {
-        configPrimed = true;
+      if (!configGate.shouldDeliver(snap.metadata)) {
         remember(getReplayId(payload));
         return;
       }
@@ -107,7 +109,7 @@ export default function SharedDiceReplay({ access }) {
 
   useEffect(() => {
     if (!active) return undefined;
-    const guard = window.setTimeout(() => setActive(null), 14000);
+    const guard = window.setTimeout(() => setActive(null), 9000);
     return () => window.clearTimeout(guard);
   }, [active?._replayId]);
 
@@ -128,11 +130,12 @@ export default function SharedDiceReplay({ access }) {
   const total = Number.isFinite(Number(active.total)) ? Number(active.total) : base + bonus;
   const color = active.rollerColor || (active.isCrit ? '#4ADE80' : active.isFail ? '#E8193C' : '#C8A8E8');
   const firstName = firstNameOf(active.roller);
+  const isMasterRoll = active.rollerRole === 'master' || String(active.roller || '').trim().toLowerCase() === 'mestre';
 
   return createPortal(
-    <div className="shared-dice-replay" aria-live="polite" aria-label={`${firstName} rolou ${values.length > 1 ? `${values.length} dados` : 'um dado'}`}>
+    <div className="shared-dice-replay" aria-live="polite" aria-label={`${isMasterRoll ? 'Mestre' : firstName} rolou ${values.length > 1 ? `${values.length} dados` : 'um dado'}`}>
       <div className="shared-dice-replay-card" style={{ '--replay-accent': color }}>
-        <div className="shared-dice-replay-kicker">rolagem compartilhada</div>
+        <div className="shared-dice-replay-kicker">{isMasterRoll ? 'rolagem do mestre' : 'rolagem compartilhada'}</div>
         <PhysicalDiceTray
           sides={sides}
           finalValue={values[0]}
@@ -143,7 +146,7 @@ export default function SharedDiceReplay({ access }) {
           bonus={bonus}
           onSettled={() => setSettled(true)}
         />
-        <div className="shared-dice-replay-name">{firstName}</div>
+        <div className="shared-dice-replay-name">{isMasterRoll ? 'Mestre' : firstName}</div>
         <div className={`shared-dice-replay-result ${settled ? 'is-settled' : ''}`}>
           {settled ? (
             <>

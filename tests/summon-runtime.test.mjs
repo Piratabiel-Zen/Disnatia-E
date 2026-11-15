@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import vm from 'node:vm';
 
-const patch=fs.readFileSync(new URL('../scripts/live-dice-necromancer-summons-final-patch.mjs',import.meta.url),'utf8');
-const literal=patch.slice(patch.indexOf('const summonRuntime = ')+22,patch.indexOf('\n\nkit = replaceRange(',patch.indexOf('const summonRuntime = '))).trim().replace(/;$/,'');
-const runtime=vm.runInNewContext(literal);
+const kit=fs.readFileSync(new URL('../src/experience/ExperienceKit.jsx',import.meta.url),'utf8');
+const start=kit.indexOf('  const useSummonAbility=useCallback');
+const end=kit.indexOf('\n\n',kit.indexOf('const storeSummon=useCallback'));
+const runtime=kit.slice(start,end);
 function harness(){
   const data=new Map();const summons=[];
   const selectedSheet={id:'necro',nome:'Necromante'};

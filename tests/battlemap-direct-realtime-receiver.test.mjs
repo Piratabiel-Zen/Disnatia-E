@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const battle = fs.readFileSync('.generated/src/features/mapa-batalha/BattleMapPage.jsx', 'utf8');
-const css = fs.readFileSync('.generated/src/experience/game-experience-3.css', 'utf8');
+const battle = fs.readFileSync('src/features/mapa-batalha/BattleMapPage.jsx', 'utf8');
+const css = fs.readFileSync('src/experience/game-experience-3.css', 'utf8');
 
 test('token movement and pings bypass the pooled snapshot transport', () => {
   assert.match(battle, /onSnapshot as liveSnapshot/);
@@ -26,9 +26,4 @@ test('quick sheet portraits keep the photo but hide class ornaments', () => {
   assert.match(css, /\.combat-action-portrait\.g3-portrait\[data-classe\]::before/);
   assert.match(css, /\.g3-sheet-hero \.g3-portrait\[data-classe\]::after/);
   assert.match(css, /overflow:hidden!important/);
-});
-
-test('the physical dice implementation is not part of this patch', () => {
-  const patch = fs.readFileSync('scripts/battlemap-direct-realtime-receiver-fix-2026-09-24.mjs', 'utf8');
-  assert.doesNotMatch(patch, /PhysicalDiceTray|SharedDiceReplay|DiceWidget|public_dice_events/);
 });
