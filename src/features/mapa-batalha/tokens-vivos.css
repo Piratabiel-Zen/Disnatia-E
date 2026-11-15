@@ -47,3 +47,42 @@ html[data-quality=light] .map-token-body{animation:none}
 @media(prefers-reduced-motion:reduce){
   .map-token-body{animation:none!important}
 }
+
+/* ===== Espelhar token =====
+   Mesma linguagem visual do punho de rotação (battlemap-facing-dial), mas como
+   botão: quem controla o token pode virar o personagem para o outro lado. */
+.battlemap-flip-dial{
+  display:grid;place-items:center;border-radius:50%;
+  background:rgba(39,43,57,.88);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 3px 9px rgba(0,0,0,.52),0 0 8px rgba(255,255,255,.035);
+  backdrop-filter:blur(5px);
+  color:rgba(255,255,255,.9);
+  cursor:pointer;padding:0;line-height:1;
+  opacity:.84;pointer-events:auto;touch-action:manipulation;
+  transition:opacity .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.battlemap-flip-dial:hover,
+.battlemap-flip-dial:focus-visible{
+  opacity:1;
+  border-color:rgba(168,85,247,.55);
+  box-shadow:0 3px 11px rgba(0,0,0,.56),0 0 12px rgba(168,85,247,.32);
+  outline:none;
+}
+.battlemap-flip-dial[aria-pressed="true"]{
+  border-color:rgba(168,85,247,.42);
+  color:#E9D5FF;
+}
+/* O giro do botão acompanha o giro da arte, então o gesto e o resultado
+   parecem a mesma ação. */
+.battlemap-flip-dial[data-spinning="true"] span{
+  animation:flipDialSpin .46s cubic-bezier(.34,.9,.3,1);
+}
+@keyframes flipDialSpin{
+  from{transform:rotateY(0deg) scale(1);}
+  50%{transform:rotateY(90deg) scale(1.14);}
+  to{transform:rotateY(180deg) scale(1);}
+}
+@media (prefers-reduced-motion:reduce){
+  .battlemap-flip-dial[data-spinning="true"] span{animation:none;}
+}

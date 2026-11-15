@@ -27,7 +27,7 @@ const TOKEN_TYPES = {
   jogador: { label: 'Jogador', color: '#4ADE80', ring: 'rgba(74,222,128,0.6)' },
   inimigo: { label: 'Inimigo', color: '#E8193C', ring: 'rgba(232,25,60,0.6)' },
 };
-const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false, hp: 0, maxHp: 0, status: {}, rangeMeters: 0, rotation: 0 });
+const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false, hp: 0, maxHp: 0, status: {}, rangeMeters: 0, rotation: 0, flipped: false });
 const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', tokens: [] });
 
 function EquipMiniList({ sheet, color }) {
@@ -384,6 +384,9 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const remotePositionFrameRef = useRef(0);
   const authoritativePositionRef = useRef({});
   const authoritativeRotationRef = useRef({});
+  const authoritativeFlipRef = useRef({});
+  const [flippingId, setFlippingId] = useState('');
+  const flipTimerRef = useRef(null);
   const remoteMotionVersionRef = useRef({});
   const rotationLastWriteRef = useRef({});
   const rotationPointerRef = useRef({ tokenId: null, element: null });
@@ -570,15 +573,18 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
           if (!patch) return token;
           const hasPosition = Number.isFinite(patch.x) && Number.isFinite(patch.y);
           const hasRotation = Number.isFinite(patch.rotation);
+          const hasFlip = typeof patch.flipped === 'boolean';
           const sameX = !hasPosition || Math.abs(Number(token.x || 0) - patch.x) < 0.00001;
           const sameY = !hasPosition || Math.abs(Number(token.y || 0) - patch.y) < 0.00001;
           const sameRotation = !hasRotation || Math.abs(Number(token.rotation || 0) - patch.rotation) < 0.01;
-          if (sameX && sameY && sameRotation) return token;
+          const sameFlip = !hasFlip || Boolean(token.flipped) === patch.flipped;
+          if (sameX && sameY && sameRotation && sameFlip) return token;
           changed = true;
           return {
             ...token,
             ...(hasPosition ? { x: patch.x, y: patch.y } : {}),
             ...(hasRotation ? { rotation: patch.rotation } : {}),
+            ...(hasFlip ? { flipped: patch.flipped } : {}),
           };
         });
         if (!changed) return prev;
@@ -648,6 +654,13 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
           const normalizedRotation = ((rotation % 360) + 360) % 360;
           authoritativeRotationRef.current[String(currentMapId) + ':' + tokenId] = normalizedRotation;
           nextPatch.rotation = normalizedRotation;
+          changed = true;
+        }
+
+        // Espelhamento: o personagem "se vira" para quem olha o mapa de outro aparelho.
+        if (typeof data.flipped === 'boolean') {
+          authoritativeFlipRef.current[String(currentMapId) + ':' + tokenId] = data.flipped;
+          nextPatch.flipped = data.flipped;
           changed = true;
         }
 
@@ -1059,6 +1072,32 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       clientId: liveClientIdRef.current,
       rotationUpdatedAt: Date.now(),
     }, { merge: true }).catch(e => console.error('Erro ao transmitir rotação:', e));
+  };
+
+  // Espelhamento do token. Vai pelo mesmo canal da rotação para chegar na mesma
+  // velocidade, e também pelo documento do mapa para sobreviver a um recarregamento.
+  const writeLiveFlip = (mapId, tokenId, flipped) => {
+    const id = String(mapId);
+    const tid = String(tokenId);
+    authoritativeFlipRef.current[`${id}:${tid}`] = Boolean(flipped);
+    setDoc(docIn('battlemap_live_positions', `${id}_${tid}`), {
+      mapId: id,
+      tokenId: tid,
+      flipped: Boolean(flipped),
+      clientId: liveClientIdRef.current,
+      flipUpdatedAt: Date.now(),
+    }, { merge: true }).catch(e => console.error('Erro ao transmitir espelhamento:', e));
+  };
+
+  const toggleTokenFlip = token => {
+    if (!currentMap || !token) return;
+    const tokenId = String(token.id);
+    const next = !token.flipped;
+    clearTimeout(flipTimerRef.current);
+    setFlippingId(tokenId);
+    flipTimerRef.current = setTimeout(() => setFlippingId(''), 520);
+    updateToken(token.id, { flipped: next });
+    writeLiveFlip(currentMap.id, tokenId, next);
   };
 
   const persistTokens = (mapId, tokens) => {
@@ -1988,6 +2027,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                       width: dispSize, height: dispSize,
                       background: 'transparent', overflow: 'visible',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      // Dá profundidade ao rotateY: o token gira como uma peça virando, não como um decalque.
+                      perspective: `${Math.max(320, dispSize * 7)}px`,
                       // Cada peça respira no seu próprio tempo; em sincronia pareceria um relógio.
                       '--breath-delay': `${(String(token.id || '').split('').reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % 24) / 10}s`,
                      }}>
@@ -1995,16 +2036,20 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                         {token.foto
                           ? <img src={token.foto} alt="" draggable={false} style={{
                               width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none', userSelect: 'none',
-                              transform: `rotate(${Number(token.rotation || 0)}deg)`, transformOrigin: '50% 50%',
+                              transform: `rotate(${Number(token.rotation || 0)}deg) rotateY(${token.flipped ? 180 : 0}deg)`, transformOrigin: '50% 50%',
                               /* HP HEALTH CONTOUR 2026-09-17 */
                               filter: draggingId === token.id
                                 ? `drop-shadow(0 0 1px rgba(255,255,255,.98)) drop-shadow(0 0 ${Math.max(7,9*tokenScale)}px ${info.color})`
                                 : isSelected
                                   ? `drop-shadow(0 0 1px rgba(255,255,255,.96)) drop-shadow(0 0 ${Math.max(5,7*tokenScale)}px ${info.color})`
                                   : (displayMaxHp>0 ? `drop-shadow(0 0 1px ${healthRingColor}) drop-shadow(0 0 ${Math.max(3,4*tokenScale)}px ${healthRingColor}99) drop-shadow(0 2px 4px rgba(0,0,0,.68))` : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))'),
-                              transition: (draggingId === token.id || rotatingId === token.id) ? 'none' : 'filter .14s ease, transform .12s linear',
+                              transition: (draggingId === token.id || rotatingId === token.id)
+                                ? 'none'
+                                : flippingId === String(token.id)
+                                  ? 'filter .14s ease, transform .46s cubic-bezier(.34,.9,.3,1)'
+                                  : 'filter .14s ease, transform .12s linear',
                             }} />
-                          : <span style={{ fontSize: dispSize * 0.4, filter: isSelected ? `drop-shadow(0 0 6px ${info.color})` : 'none', transform:`rotate(${Number(token.rotation || 0)}deg)`, transition:rotatingId===token.id?'none':'transform .12s linear' }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
+                          : <span style={{ fontSize: dispSize * 0.4, filter: isSelected ? `drop-shadow(0 0 6px ${info.color})` : 'none', transform:`rotate(${Number(token.rotation || 0)}deg) rotateY(${token.flipped?180:0}deg)`, transition:rotatingId===token.id?'none':flippingId===String(token.id)?'transform .46s cubic-bezier(.34,.9,.3,1)':'transform .12s linear' }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                       </div>
                       <div style={{ fontSize: 10 * labelScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: Math.max(3, 5 * labelScale), padding: `${Math.max(1, labelScale)}px ${Math.max(3, 7 * labelScale)}px`, whiteSpace: 'nowrap', maxWidth: Math.max(56, 90 * labelScale), overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
@@ -2028,6 +2073,26 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                         >
                           <span style={{fontSize:Math.max(13,Math.min(17,dispSize*.16)),lineHeight:1,color:'rgba(255,255,255,.9)',pointerEvents:'none',transform:'translateY(-.5px)'}}>↻</span>
                         </div>
+                      )}
+                      {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && !multiSelectMode && (
+                        <button
+                          type="button"
+                          className="battlemap-flip-dial"
+                          title="Espelhar o token (vira o personagem para o outro lado)"
+                          aria-label="Espelhar token"
+                          aria-pressed={Boolean(token.flipped)}
+                          data-spinning={flippingId === String(token.id) ? 'true' : 'false'}
+                          onPointerDown={e=>e.stopPropagation()}
+                          onClick={e=>{e.stopPropagation();toggleTokenFlip(token);}}
+                          style={{
+                            position:'absolute',left:'50%',top:-Math.max(2,Math.min(7,dispSize*.05)),
+                            transform:`translate(calc(-50% + ${Math.max(26,Math.min(35,dispSize*.33))}px),-100%)`,
+                            width:Math.max(24,Math.min(32,dispSize*.30)),height:Math.max(24,Math.min(32,dispSize*.30)),
+                            zIndex:31,
+                          }}
+                        >
+                          <span aria-hidden="true" style={{fontSize:Math.max(12,Math.min(16,dispSize*.15))}}>⇋</span>
+                        </button>
                       )}
                       {token.status && Object.entries(token.status).some(([,v])=>v) && <div style={{display:'flex',gap:2*tokenScale,flexWrap:'wrap',justifyContent:'center',maxWidth:100*tokenScale}}>{STATUS_LIST.filter(st=>token.status?.[st.id]).map(st=><span key={st.id} title={st.label} style={{fontSize:10*tokenScale,filter:'drop-shadow(0 0 3px #000)'}}>{st.icon}</span>)}</div>}
                       {floatingEffects.filter(f=>String(f.mapId)===String(currentMap.id)&&String(f.tokenId)===String(token.id)).map(f=><div key={f.id} style={{position:'absolute',left:'50%',top:-8*tokenScale,color:f.color||'#fff',fontFamily:'Cinzel Decorative,serif',fontWeight:900,fontSize:16*tokenScale,textShadow:'0 2px 6px #000,0 0 10px currentColor',whiteSpace:'nowrap',pointerEvents:'none',animation:'floatingCombatText 2.7s ease-out forwards',zIndex:50}}>{f.text}</div>)}
