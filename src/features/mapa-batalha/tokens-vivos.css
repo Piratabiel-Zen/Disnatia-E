@@ -1,0 +1,49 @@
+/* TOKENS VIVOS
+   Uma peça parada no mapa parece um adesivo. Com uma respiração de amplitude
+   muito baixa, ela parece alguém esperando a própria vez.
+
+   A animação roda sobre o invólucro do token, não sobre a imagem: a imagem já
+   usa transform para a rotação que o Mestre define, e as duas brigariam. */
+
+.map-token-body{
+  animation:tokenBreath var(--breath-time,4.4s) ease-in-out var(--breath-delay,0s) infinite;
+  transform-origin:50% 72%; /* o peito sobe, os pés ficam no chão */
+  will-change:transform;
+}
+
+@keyframes tokenBreath{
+  0%,100%{transform:scale(1) translateY(0)}
+  50%{transform:scale(1.022) translateY(-1.5%)}
+}
+
+/* Ferido: respiração mais curta e mais rápida. */
+.map-token-body[data-vitals="ferido"]{
+  --breath-time:2.6s;
+  animation-name:tokenBreathHurt;
+}
+@keyframes tokenBreathHurt{
+  0%,100%{transform:scale(1) translateY(0)}
+  50%{transform:scale(1.013) translateY(-.8%)}
+}
+
+/* Caído: não respira. */
+.map-token-body[data-vitals="caido"]{animation:none}
+
+/* Em movimento ou girando: a respiração sai da frente. */
+.map-token-body[data-still="false"]{animation:none}
+
+/* Na vez de agir, o token ganha um realce lento, sem roubar a cena. */
+.map-token-body[data-turn="true"]{
+  --breath-time:3s;
+  animation-name:tokenBreathReady;
+}
+@keyframes tokenBreathReady{
+  0%,100%{transform:scale(1) translateY(0)}
+  50%{transform:scale(1.045) translateY(-2.4%)}
+}
+
+/* O modo leve e quem pediu menos movimento não recebem nada disso. */
+html[data-quality=light] .map-token-body{animation:none}
+@media(prefers-reduced-motion:reduce){
+  .map-token-body{animation:none!important}
+}

@@ -7,6 +7,7 @@ import { onSnapshot, onSnapshot as liveSnapshot } from '../../adventure/sharedSn
 import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,getDocFromServer,getDocs,runTransaction,query,serverTimestamp,setDoc,where } from "firebase/firestore";
 import { db } from "../../core/firebase";
+import './tokens-vivos.css';
 import { publishTokenMotion, subscribeTokenMotion, publishPing, subscribePing, liveChannelConnected, onLiveConnection } from "../../core/liveChannel";
 import { compressImage,compressImagePNG } from "../../core/media";
 import { pushToast } from "../../core/toast";
@@ -1979,10 +1980,16 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                     >
                      {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,borderRadius:'50%',border:`${1.5*tokenScale}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
                      {displayMaxHp>0 && <>{canSeeTokenHp && (<div style={{fontSize:9*labelScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*labelScale,padding:`${Math.max(1,labelScale)}px ${Math.max(3,6*labelScale)}px`,marginBottom:Math.max(0,1*labelScale),textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*labelScale,dispSize*labelScale),height:Math.max(4,5*labelScale),borderRadius:5*labelScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${Math.max(.5,.7*labelScale)}px solid rgba(255,255,255,.2)`,marginBottom:Math.max(0,1*labelScale)}}>{displayBonusHp>0?<div style={{display:'flex',height:'100%',width:'100%'}}><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(greenHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(greenHp,baseHpCapacity),transition:'width .25s'}}/><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(blueHp/Math.max(1,displayMaxHp))*100))}%`,background:'#38BDF8',boxShadow:'0 0 5px rgba(56,189,248,.7)',transition:'width .25s'}}/></div>:<div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/>}</div></>}
-                     <div style={{
+                     <div
+                      className="map-token-body"
+                      data-vitals={displayMaxHp > 0 ? (displayHp <= 0 ? 'caido' : displayHp / displayMaxHp <= 0.34 ? 'ferido' : 'ok') : 'ok'}
+                      data-still={draggingId === token.id || rotatingId === token.id ? 'false' : 'true'}
+                      style={{
                       width: dispSize, height: dispSize,
                       background: 'transparent', overflow: 'visible',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      // Cada peça respira no seu próprio tempo; em sincronia pareceria um relógio.
+                      '--breath-delay': `${(String(token.id || '').split('').reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % 24) / 10}s`,
                      }}>
                       {(controller||claimingToken===String(token.id))&&<span className="token-collaborator">{controller?controller+' movimentando':'Obtendo controle'}</span>}
                         {token.foto

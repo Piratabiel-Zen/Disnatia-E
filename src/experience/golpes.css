@@ -1,0 +1,131 @@
+/* GOLPES CINEMATOGRÁFICOS
+   Quando alguém usa uma habilidade, a mesa inteira escurece por um instante e
+   só duas coisas ficam legíveis: quem agiu e o que foi usado. A intensidade
+   acompanha o tipo da habilidade. */
+
+/* O véu cobre a tela toda, sem buraco claro no meio. */
+.combat-action-pulse.compact .combat-action-backdrop{
+  background:
+    radial-gradient(ellipse at center,color-mix(in srgb,var(--action-color) 10%,transparent) 0%,transparent 42%),
+    rgba(3,3,9,.74);
+  backdrop-filter:blur(2px) saturate(.72);
+  -webkit-backdrop-filter:blur(2px) saturate(.72);
+}
+.combat-action-pulse.compact.action-passiva .combat-action-backdrop{background:rgba(3,6,8,.56);backdrop-filter:blur(1px)}
+.combat-action-pulse.compact.action-especial .combat-action-backdrop{
+  background:
+    radial-gradient(ellipse at center,color-mix(in srgb,var(--action-color) 16%,transparent) 0%,transparent 46%),
+    rgba(2,2,8,.84);
+  backdrop-filter:blur(3px) saturate(.6);
+  -webkit-backdrop-filter:blur(3px) saturate(.6);
+}
+.combat-action-pulse.compact.action-combinada .combat-action-backdrop{
+  background:
+    radial-gradient(ellipse at center,rgba(222,234,255,.17) 0%,transparent 44%),
+    rgba(2,3,10,.88);
+  backdrop-filter:blur(4px) saturate(.5);
+  -webkit-backdrop-filter:blur(4px) saturate(.5);
+}
+
+/* NÚCLEO: retrato, nome de quem agiu, selo do tipo e o nome da habilidade. */
+.combat-action-pulse-core{
+  display:grid;justify-items:center;gap:9px;text-align:center;padding:0 24px;max-width:min(640px,92vw);
+}
+.combat-action-actor{display:grid;justify-items:center;gap:7px}
+.combat-action-portrait{
+  display:grid;place-items:center;width:76px;height:76px;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 36% 30%,color-mix(in srgb,var(--action-color) 32%,transparent),rgba(6,4,14,.92));
+  border:2px solid color-mix(in srgb,var(--action-color) 68%,transparent);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb,var(--action-color) 16%,transparent),
+    0 0 38px color-mix(in srgb,var(--action-color) 52%,transparent);
+  animation:strikePortrait .5s cubic-bezier(.2,.9,.25,1) both;
+}
+.combat-action-portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.combat-action-portrait .combat-action-class-icon{font-size:33px;line-height:1}
+@keyframes strikePortrait{
+  0%{transform:scale(.6);opacity:0}
+  60%{transform:scale(1.07)}
+  100%{transform:scale(1);opacity:1}
+}
+
+.combat-action-pulse-core small{
+  display:block;margin:0;color:#E4D9EE;
+  font:600 11px/1.2 'Cinzel',Georgia,serif;letter-spacing:.24em;text-transform:uppercase;
+  text-shadow:0 2px 10px #000;
+}
+
+.combat-action-tier{
+  padding:3px 13px;border-radius:999px;
+  font-family:'Cinzel',Georgia,serif;font-size:8.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--action-color) 86%,#fff);
+  background:color-mix(in srgb,var(--action-color) 14%,rgba(0,0,0,.55));
+  border:1px solid color-mix(in srgb,var(--action-color) 46%,transparent);
+  animation:strikeRise .42s cubic-bezier(.2,.9,.25,1) .08s both;
+}
+
+/* O nome da habilidade é a coisa mais legível da tela. Os estilos antigos o
+   tratavam como uma pílula estreita; aqui ele volta a ser texto grande. */
+.combat-action-pulse.compact .combat-action-pulse-core strong{
+  display:block;margin-top:0;padding:0;border:none;background:none;border-radius:0;
+  max-width:100%;
+  font-family:'Cinzel Decorative','Cinzel',Georgia,serif;
+  font-size:clamp(1.5rem,4.4vw,2.6rem);font-weight:700;line-height:1.15;letter-spacing:.012em;
+  color:#F6EEFF;
+  text-shadow:
+    0 2px 18px rgba(0,0,0,.96),
+    0 0 44px color-mix(in srgb,var(--action-color) 60%,transparent);
+  animation:strikeRise .46s cubic-bezier(.2,.9,.25,1) .12s both;
+}
+@keyframes strikeRise{
+  0%{transform:translateY(14px);opacity:0;filter:blur(5px)}
+  100%{transform:translateY(0);opacity:1;filter:blur(0)}
+}
+
+.combat-action-cost{
+  font-family:'Cinzel',Georgia,serif;font-size:11px;letter-spacing:.14em;
+  color:color-mix(in srgb,var(--action-color) 72%,#C8B8A0);
+  animation:strikeRise .42s cubic-bezier(.2,.9,.25,1) .18s both;
+}
+
+/* Especial e combinada ganham mais presença, sem virar outra coisa. */
+.combat-action-pulse.compact.action-especial .combat-action-pulse-core strong{font-size:clamp(1.7rem,5.2vw,3.1rem)}
+.combat-action-pulse.compact.action-combinada .combat-action-pulse-core strong{
+  font-size:clamp(1.8rem,5.6vw,3.4rem);
+  color:#F2F7FF;
+  border:none;background:none;
+  text-shadow:0 2px 20px rgba(0,0,0,.96),0 0 52px rgba(196,219,255,.72);
+}
+.action-combinada .combat-action-portrait{
+  border-color:rgba(226,238,255,.86);
+  box-shadow:0 0 0 5px rgba(206,224,255,.18),0 0 46px rgba(196,219,255,.6);
+}
+.combat-action-pulse.compact.action-passiva .combat-action-pulse-core strong{font-size:clamp(1.25rem,3.4vw,1.9rem)}
+.action-passiva .combat-action-portrait{width:62px;height:62px}
+
+@media(max-width:720px){
+  .combat-action-portrait{width:62px;height:62px}
+  .combat-action-pulse-core{gap:7px;padding:0 16px}
+  .combat-action-pulse-core small{font-size:10px;letter-spacing:.18em}
+}
+
+/* Modo leve: o véu continua, o movimento não. */
+html[data-quality=light] .combat-action-pulse.compact .combat-action-backdrop{
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+html[data-quality=light] .combat-action-portrait,
+html[data-quality=light] .combat-action-tier,
+html[data-quality=light] .combat-action-pulse-core strong,
+html[data-quality=light] .combat-action-cost{animation:none}
+
+@media(prefers-reduced-motion:reduce){
+  .combat-action-portrait,.combat-action-tier,
+  .combat-action-pulse-core strong,.combat-action-cost{animation:none}
+  .combat-action-pulse.compact .combat-action-backdrop{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+
+
+/* As ondas acompanham, mas não disputam com o nome da habilidade. */
+.combat-action-pulse.compact .combat-action-wave{opacity:.34}
+.combat-action-pulse.compact.action-combinada .combat-action-wave{opacity:.46}
+.combat-action-pulse.compact .combat-action-portrait .combat-action-class-icon{display:grid;font-size:33px;filter:none;animation:none}
