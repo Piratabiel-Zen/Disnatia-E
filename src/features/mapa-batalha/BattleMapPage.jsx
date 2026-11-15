@@ -21,6 +21,10 @@ import { tokenIdsInMarquee } from '../../adventure/tokenSelection.mjs';
 import '../../experience/map-fullscreen.css';
 import { col, docIn } from '../../core/campaign';
 import CosmicSelectionRing from '../../experience/CosmicSelectionRing';
+import MapAtmosphere from './MapAtmosphere';
+import { listaDeAtmosferas } from './atmosferas.mjs';
+import { mapasProntosDe } from './mapasProntos.mjs';
+import { activeCampaign } from '../../core/campaign';
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
 // causava ReferenceError ao abrir a aba e deixava a aplicação totalmente branca.
@@ -29,7 +33,7 @@ const TOKEN_TYPES = {
   inimigo: { label: 'Inimigo', color: '#E8193C', ring: 'rgba(232,25,60,0.6)' },
 };
 const newToken = id => ({ id, nome: '', foto: '', tipo: 'jogador', x: 50, y: 50, size: 70, locked: false, hp: 0, maxHp: 0, status: {}, rangeMeters: 0, rotation: 0, flipped: false });
-const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', tokens: [] });
+const newBattleMap = id => ({ id, nome: 'Novo Mapa', img: '', atmosfera: '', tokens: [] });
 
 function EquipMiniList({ sheet, color }) {
   const slots = [
@@ -186,6 +190,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [marquee,setMarquee]=useState(null);
   const marqueeStartRef=useRef(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showReadyMaps, setShowReadyMaps] = useState(false);
+  const prontos = mapasProntosDe(activeCampaign());
   const [formNome, setFormNome] = useState('');
   const [formTipo, setFormTipo] = useState('jogador');
   const [formFoto, setFormFoto] = useState('');
@@ -1166,6 +1172,23 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     setDoc(docIn('battlemap_tokens', String(m.id)), { tokens: tokens || [] });
     setEditingId(String(m.id));
   };
+  // Mapa pronto: grava só o caminho da arte, que o site já serve. O
+  // documento fica minúsculo e a mesa inteira carrega o mapa na hora.
+  const addReadyMap = async pronto => {
+    const existente = mapsRef.current.find(m => String(m.id) === String(pronto.id));
+    const id = String(pronto.id);
+    const meta = {
+      nome: pronto.nome, img: pronto.img, atmosfera: pronto.atmosfera,
+      order: existente?.order ?? mapsRef.current.length + 1,
+    };
+    await setDoc(docIn('battlemaps', id), meta, { merge: true });
+    // Os tokens de um mapa que já existia continuam onde estavam.
+    if (!existente) await setDoc(docIn('battlemap_tokens', id), { tokens: [] });
+    setEditingId(id);
+    setShowReadyMaps(false);
+    pushToast(`${pronto.nome} ${existente ? 'atualizado' : 'adicionado'} aos mapas.`, '🗺', '#4ADE80');
+  };
+
   const deleteMap = async (id) => {
     const doomed = mapsRef.current.find(m => String(m.id) === String(id));
     if (doomed?.imgUploadId && doomed?.imgChunkCount) {
@@ -1859,6 +1882,20 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   )}
                   <button onClick={() => fileRef.current?.click()} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,25,60,0.3)', background: 'rgba(232,25,60,0.12)', color: '#E8193C', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter:'none' }}>◫ {currentMap.img ? 'Cenário' : 'Adicionar cenário'}</button>
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleMapUpload} style={{ display: 'none' }} />
+                  {prontos.length > 0 && (
+                    <button
+                      onClick={() => setShowReadyMaps(v => !v)}
+                      title="Mapas que já vêm com a campanha"
+                      style={{ padding:'5px 9px',borderRadius:7,border:'1px solid rgba(232,200,107,.4)',background:showReadyMaps?'rgba(232,200,107,.22)':'rgba(4,6,15,.7)',color:'#E8C86B',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:9,letterSpacing:'.08em' }}
+                    >🗺 Mapas da campanha</button>
+                  )}
+                  <label className="battlemap-atm-select" title="Luz, clima e movimento por cima da arte deste mapa">
+                    <span aria-hidden="true">☀</span>
+                    <select value={currentMap.atmosfera || ''} onChange={e => updCurrentMap({ atmosfera: e.target.value })}>
+                      <option value="">Sem atmosfera</option>
+                      {listaDeAtmosferas().map(item => <option key={item.id} value={item.id} title={item.descricao}>{item.nome}</option>)}
+                    </select>
+                  </label>
                   <button onClick={() => setShowAddForm(o => !o)} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(74,222,128,0.35)', background: 'rgba(74,222,128,0.12)', color: '#4ADE80', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter:'none' }}>✦ Token</button>
                   <button onClick={() => setShowTokenLibrary(v=>!v)} style={{ padding:'5px 9px',borderRadius:7,border:'1px solid rgba(168,85,247,.38)',background:showTokenLibrary?'rgba(168,85,247,.2)':'rgba(4,6,15,.7)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>◇ Biblioteca</button>
                   <button onClick={() => {setPingMode(false);setRulerMode(v=>!v);setFogMode('off');setRuler(null);}} style={{ padding:'5px 9px',borderRadius:7,border:`1px solid ${rulerMode?'rgba(30,200,255,.65)':'rgba(30,200,255,.25)'}`,background:rulerMode?'rgba(30,200,255,.18)':'rgba(4,6,15,.7)',color:'#58D9FF',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>⌁ Medir</button>
@@ -1894,6 +1931,30 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
           )}
 
           {/* FORM DE NOVO TOKEN — flutuante */}
+          {showReadyMaps && masterMode && (
+            <div className="battlemap-prontos" role="dialog" aria-label="Mapas da campanha">
+              <header>
+                <b>Mapas da campanha</b>
+                <button type="button" aria-label="Fechar" onClick={() => setShowReadyMaps(false)}>{'\u00D7'}</button>
+              </header>
+              <div className="battlemap-prontos-lista">
+                {prontos.map(pronto => {
+                  const jaExiste = maps.some(m => String(m.id) === String(pronto.id));
+                  return (
+                    <button type="button" key={pronto.id} onClick={() => addReadyMap(pronto)}>
+                      <img src={pronto.img} alt="" loading="lazy" decoding="async" />
+                      <span>
+                        <b>{pronto.nome}</b>
+                        <small>{pronto.descricao}</small>
+                        <em>{jaExiste ? 'Já está na mesa — clique para restaurar a arte' : 'Adicionar à mesa'}</em>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {showAddForm && masterMode && currentMap && (
             <div style={{ position: 'absolute', top: 70, left: 10, zIndex: 41, width: 300, border: '1px solid rgba(74,222,128,0.3)', borderRadius: 12, background: 'rgba(8,10,20,0.96)', backdropFilter:'none', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
               <div style={{ fontSize: 9, letterSpacing: '0.3em', color: '#4ADE80', fontFamily: 'Cinzel,serif', marginBottom: 10, textTransform: 'uppercase' }}>Novo Token</div>
@@ -1973,6 +2034,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                 }}
               >
                 <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                <MapAtmosphere atmosfera={currentMap.atmosfera} img={currentMap.img} />
                 {marquee && <div aria-hidden="true" style={{position:'absolute',left:`${Math.min(marquee.left,marquee.right)}%`,top:`${Math.min(marquee.top,marquee.bottom)}%`,width:`${Math.abs(marquee.right-marquee.left)}%`,height:`${Math.abs(marquee.bottom-marquee.top)}%`,border:'1px solid rgba(113,196,255,.95)',background:'rgba(65,145,255,.18)',boxShadow:'0 0 14px rgba(65,145,255,.28)',pointerEvents:'none',zIndex:90}}/>}
                 {ruler && (()=>{const dx=(ruler.end.x-ruler.start.x)/100*(baseSize.w||1)*zoom;const dy=(ruler.end.y-ruler.start.y)/100*(baseSize.h||1)*zoom;const meters=Math.sqrt(dx*dx+dy*dy)/(pixelsPerMeter*tokenScale);return <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:24,overflow:'visible'}}><line x1={`${ruler.start.x}%`} y1={`${ruler.start.y}%`} x2={`${ruler.end.x}%`} y2={`${ruler.end.y}%`} stroke='#58D9FF' strokeWidth={2*zoom} strokeDasharray={`${7*zoom} ${5*zoom}`}/><circle cx={`${ruler.start.x}%`} cy={`${ruler.start.y}%`} r={4*zoom} fill='#58D9FF'/><circle cx={`${ruler.end.x}%`} cy={`${ruler.end.y}%`} r={4*zoom} fill='#58D9FF'/><text x={`${(ruler.start.x+ruler.end.x)/2}%`} y={`${(ruler.start.y+ruler.end.y)/2}%`} fill='#D7F7FF' fontSize={12*zoom} textAnchor='middle' style={{paintOrder:'stroke',stroke:'#02040A',strokeWidth:4*zoom,fontFamily:'Cinzel,serif'}}>{meters.toFixed(1)} m</text></svg>;})()}
                 {(currentMap.tokens || []).map(token => {

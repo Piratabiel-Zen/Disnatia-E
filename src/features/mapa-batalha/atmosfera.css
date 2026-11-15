@@ -1,0 +1,229 @@
+/* ATMOSFERA DO MAPA DE BATALHA
+   -----------------------------------------------------------------------
+   Camadas por cima da arte e por baixo dos tokens. Nenhuma recebe clique,
+   nenhuma muda o tamanho do tabuleiro, e todas animam só opacity, transform
+   e background-position — o que o compositor resolve sozinho, sem roubar
+   quadros de quem está arrastando um token. */
+
+.mapa-atm{
+  position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;
+  border-radius:inherit;
+}
+.mapa-atm>*{position:absolute;pointer-events:none}
+
+/* =================== DESERTO =================== */
+
+/* O sol batendo nas estruturas. Sobe e desce de intensidade devagar, como
+   luz forte atravessando ar quente. */
+.mapa-atm-sol{
+  inset:0;mix-blend-mode:soft-light;
+  background:radial-gradient(
+    ellipse 62% 78% at var(--lx) var(--ly),
+    var(--luz-cor) 0%,
+    color-mix(in srgb,var(--luz-cor) 42%,transparent) 32%,
+    transparent 68%);
+  opacity:var(--luz-forca);
+  animation:atmRespiraLuz var(--respiro) ease-in-out infinite;
+}
+@keyframes atmRespiraLuz{
+  0%,100%{opacity:calc(var(--luz-forca) * .62);transform:translate3d(-.5%,-.6%,0) scale(1.01)}
+  50%{opacity:var(--luz-forca);transform:translate3d(.5%,.6%,0) scale(1.05)}
+}
+
+/* A contraparte: as sombras se alongam quando a luz recua. Por isso a
+   animação corre ao contrário da anterior, no mesmo compasso. */
+.mapa-atm-sombra{
+  inset:0;mix-blend-mode:multiply;
+  background:linear-gradient(104deg,
+    var(--sombra-cor) 0%,
+    color-mix(in srgb,var(--sombra-cor) 40%,transparent) 26%,
+    transparent 52%);
+  opacity:var(--sombra-forca);
+  animation:atmRespiraSombra var(--respiro) ease-in-out infinite;
+}
+@keyframes atmRespiraSombra{
+  0%,100%{opacity:var(--sombra-forca);transform:translate3d(0,0,0) scaleX(1.04)}
+  50%{opacity:calc(var(--sombra-forca) * .5);transform:translate3d(-1%,0,0) scaleX(1)}
+}
+
+/* Véus de areia atravessando o terreno. Cada faixa é uma listra difusa que
+   corre da esquerda para a direita; o tamanho de fundo em 200% e o deslocamento
+   de 200% fazem o laço fechar sem emenda visível. */
+.mapa-atm-areia{
+  left:-10%;width:120%;
+  mix-blend-mode:screen;opacity:var(--op);
+  background-image:
+    radial-gradient(ellipse 30% 60% at 12% 50%,rgba(255,226,170,.85),transparent 68%),
+    radial-gradient(ellipse 22% 50% at 42% 42%,rgba(255,214,150,.6),transparent 70%),
+    radial-gradient(ellipse 34% 66% at 72% 58%,rgba(248,222,180,.7),transparent 68%);
+  background-size:calc(100% * var(--escala)) 100%;
+  background-repeat:repeat-x;
+  filter:blur(9px);
+  animation:atmAreia var(--dur) linear var(--atraso) infinite;
+}
+@keyframes atmAreia{
+  from{background-position:-100% 50%}
+  to{background-position:100% 50%}
+}
+
+/* Grãos soltos: pontinhos claros cruzando a tela, mais rápidos que os véus. */
+.mapa-atm-graos{inset:0}
+.mapa-atm-graos i{
+  position:absolute;left:-2%;
+  width:calc(2.5px * var(--escala));height:calc(2.5px * var(--escala));
+  border-radius:50%;background:rgba(255,232,190,.9);
+  box-shadow:0 0 4px rgba(255,214,150,.7);
+  animation:atmGrao var(--dur) linear var(--atraso) infinite;
+}
+@keyframes atmGrao{
+  0%{transform:translate3d(0,0,0);opacity:0}
+  8%{opacity:.85}
+  88%{opacity:.6}
+  100%{transform:translate3d(104vw,-14px,0);opacity:0}
+}
+
+/* =================== NOITE =================== */
+
+.mapa-atm-noite{
+  inset:0;mix-blend-mode:multiply;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 50%,color-mix(in srgb,var(--noite-cor) 55%,transparent),var(--noite-cor) 100%);
+  opacity:var(--noite-forca);
+}
+
+.mapa-atm-luar{
+  inset:0;mix-blend-mode:screen;
+  background:radial-gradient(ellipse 70% 80% at var(--lx) var(--ly),
+    var(--luz-cor) 0%,
+    color-mix(in srgb,var(--luz-cor) 32%,transparent) 36%,
+    transparent 70%);
+  opacity:var(--luz-forca);
+  animation:atmRespiraLuz var(--respiro) ease-in-out infinite;
+}
+
+/* O poço de luz de cada poste. O tremor é pequeno e irregular de propósito:
+   lâmpada de rua nunca é perfeitamente estável. */
+.mapa-atm-poste{
+  width:calc(var(--raio) * 2);aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  mix-blend-mode:screen;
+  background:radial-gradient(circle,
+    rgba(255,228,164,.95) 0%,
+    rgba(255,198,110,.5) 22%,
+    rgba(255,176,80,.22) 46%,
+    transparent 70%);
+  opacity:var(--forca);
+  animation:atmLampada 4.3s ease-in-out var(--atraso) infinite;
+}
+@keyframes atmLampada{
+  0%,100%{opacity:calc(var(--forca) * .86);transform:translate(-50%,-50%) scale(1)}
+  38%{opacity:var(--forca);transform:translate(-50%,-50%) scale(1.05)}
+  44%{opacity:calc(var(--forca) * .72)}
+  52%{opacity:calc(var(--forca) * .98)}
+  70%{opacity:calc(var(--forca) * .9);transform:translate(-50%,-50%) scale(1.02)}
+}
+
+/* O VENTO
+   Uma cópia da própria arte, recortada só nas bordas — onde o desenho é
+   folhagem e mais nada — balançando poucos pixels. O recorte tem margem
+   desfocada para a emenda não aparecer, e o movimento é lento e irregular,
+   como copa de árvore pegando rajada. */
+.mapa-atm-vento{
+  inset:0;
+  background-size:100% 100%;background-position:center;background-repeat:no-repeat;
+  -webkit-mask-image:
+    linear-gradient(90deg,#000 0,#000 calc(var(--borda) * .55),transparent var(--borda)),
+    linear-gradient(270deg,#000 0,#000 calc(var(--borda) * .55),transparent var(--borda)),
+    linear-gradient(180deg,#000 0,#000 calc(var(--borda) * .4),transparent calc(var(--borda) * .8));
+  mask-image:
+    linear-gradient(90deg,#000 0,#000 calc(var(--borda) * .55),transparent var(--borda)),
+    linear-gradient(270deg,#000 0,#000 calc(var(--borda) * .55),transparent var(--borda)),
+    linear-gradient(180deg,#000 0,#000 calc(var(--borda) * .4),transparent calc(var(--borda) * .8));
+  -webkit-mask-composite:source-over;mask-composite:add;
+  transform-origin:50% 100%;
+  animation:atmVento var(--dur) ease-in-out infinite;
+}
+@keyframes atmVento{
+  0%,100%{transform:skewX(0deg) translate3d(0,0,0)}
+  26%{transform:skewX(.16deg) translate3d(var(--forca),0,0)}
+  52%{transform:skewX(-.06deg) translate3d(calc(var(--forca) * -.35),0,0)}
+  74%{transform:skewX(.1deg) translate3d(calc(var(--forca) * .6),0,0)}
+}
+
+/* Sombras de folhas correndo pelo terreno: é isso que o vento numa copa
+   produz visto de cima, e é o que espalha o movimento para o centro do mapa. */
+.mapa-atm-folhas{
+  inset:-8%;mix-blend-mode:multiply;opacity:var(--op);
+  background-image:
+    radial-gradient(ellipse 7% 11% at 18% 24%,rgba(4,10,24,.9),transparent 62%),
+    radial-gradient(ellipse 5% 9% at 42% 62%,rgba(4,10,24,.8),transparent 64%),
+    radial-gradient(ellipse 9% 13% at 68% 30%,rgba(4,10,24,.85),transparent 60%),
+    radial-gradient(ellipse 6% 10% at 83% 70%,rgba(4,10,24,.8),transparent 64%),
+    radial-gradient(ellipse 8% 12% at 30% 82%,rgba(4,10,24,.75),transparent 62%);
+  filter:blur(6px);
+  animation:atmFolhas var(--dur) ease-in-out infinite alternate;
+}
+@keyframes atmFolhas{
+  from{transform:translate3d(-1.4%,-.8%,0) scale(1)}
+  to{transform:translate3d(1.6%,1%,0) scale(1.05)}
+}
+
+/* =================== LIMITES =================== */
+
+/* Quem pede menos movimento fica com a luz e a cor, sem nada se mexendo:
+   a cena continua tendo clima, só para de animar. */
+@media(prefers-reduced-motion:reduce){
+  .mapa-atm *,.mapa-atm{animation:none!important}
+  .mapa-atm-graos,.mapa-atm-areia,.mapa-atm-folhas{display:none}
+  .mapa-atm-vento{display:none}
+}
+/* Modo Leve: ficam as camadas de luz, que são baratas, e saem as que
+   repintam área grande a cada quadro. */
+html[data-quality="light"] .mapa-atm-graos,
+html[data-quality="light"] .mapa-atm-vento,
+html[data-quality="light"] .mapa-atm-folhas{display:none}
+html[data-quality="light"] .mapa-atm-areia:nth-of-type(n+3){display:none}
+/* Com a aba em segundo plano nada disso precisa continuar rodando. */
+html[data-away="true"] .mapa-atm *{animation-play-state:paused!important}
+
+/* Seletor de atmosfera, no mesmo tom dos outros controles do Mestre. */
+.battlemap-atm-select{
+  display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:7px;
+  background:rgba(4,6,15,.7);border:1px solid rgba(255,200,100,.26);
+  font:9px 'Cinzel',Georgia,serif;letter-spacing:.06em;color:#E8C86B;
+}
+.battlemap-atm-select select{
+  background:transparent;border:none;color:#E8C86B;font:inherit;cursor:pointer;outline:none;max-width:140px;
+}
+.battlemap-atm-select select option{background:#0A0714;color:#E8DCC0}
+
+/* Acervo de mapas prontos. */
+.battlemap-prontos{
+  position:absolute;z-index:60;left:50%;top:54px;transform:translateX(-50%);
+  width:min(560px,calc(100% - 28px));max-height:min(70vh,520px);overflow:auto;
+  display:grid;gap:10px;padding:14px 15px;border-radius:14px;
+  background:rgba(7,5,16,.96);border:1px solid rgba(232,200,107,.34);
+  box-shadow:0 24px 70px rgba(0,0,0,.72);backdrop-filter:blur(8px);
+}
+.battlemap-prontos>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.battlemap-prontos>header b{font:700 11px 'Cinzel',Georgia,serif;letter-spacing:.22em;text-transform:uppercase;color:#E8C86B}
+.battlemap-prontos>header button{
+  width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px;line-height:1;
+  color:#C8B8A0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+}
+.battlemap-prontos-lista{display:grid;gap:9px}
+.battlemap-prontos-lista>button{
+  display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center;text-align:left;
+  padding:9px;border-radius:11px;cursor:pointer;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);
+  transition:border-color .18s ease,background .18s ease,transform .18s ease;
+}
+.battlemap-prontos-lista>button:hover{
+  border-color:rgba(232,200,107,.55);background:rgba(232,200,107,.08);transform:translateY(-1px);
+}
+.battlemap-prontos-lista img{width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:7px;display:block;border:1px solid rgba(0,0,0,.5)}
+.battlemap-prontos-lista span{display:grid;gap:3px;min-width:0}
+.battlemap-prontos-lista b{font:700 13px 'Cinzel',Georgia,serif;color:#EADCC0}
+.battlemap-prontos-lista small{font-size:12.5px;line-height:1.45;color:#8A7A6A}
+.battlemap-prontos-lista em{font-style:normal;font:9px 'Cinzel',Georgia,serif;letter-spacing:.1em;text-transform:uppercase;color:#E8C86B}
+@media(max-width:900px){.battlemap-prontos-lista>button{grid-template-columns:1fr}}
