@@ -1,0 +1,51 @@
+/* ÁREA DE ARREMESSO
+   O botão de rolar vira uma mesa: dá para clicar, como sempre, ou segurar o
+   dado e arremessar. O arraste puxa o dado, como quem arma o lance. */
+
+.dice-throw-pad{
+  position:relative;display:grid;justify-items:center;gap:4px;
+  width:100%;padding:13px 12px 11px;border-radius:11px;cursor:grab;overflow:hidden;
+  background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.42);
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  transition:background .18s,border-color .18s,transform .14s;
+}
+.dice-throw-pad:hover:not(.is-rolling){background:rgba(168,85,247,.19)}
+.dice-throw-pad:focus-visible{outline:2px solid #C8A8E8;outline-offset:2px}
+.dice-throw-pad.is-holding{
+  cursor:grabbing;background:rgba(168,85,247,.24);border-color:rgba(200,168,232,.7);
+}
+.dice-throw-pad.is-rolling{cursor:default;opacity:.62}
+
+.dice-throw-die{
+  font-size:25px;line-height:1;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.55));
+  transition:transform .14s cubic-bezier(.2,.8,.2,1);
+}
+.dice-throw-pad.is-holding .dice-throw-die{
+  transition:none; /* durante o gesto o dado segue o dedo, sem atraso */
+  filter:drop-shadow(0 4px 12px rgba(200,168,232,.6));
+}
+.dice-throw-pad.is-rolling .dice-throw-die{animation:diceSpinAway .7s ease-in both}
+@keyframes diceSpinAway{
+  0%{transform:translateY(0) rotate(0);opacity:1}
+  100%{transform:translateY(-14px) rotate(220deg);opacity:.25}
+}
+
+.dice-throw-pad b{
+  font-family:'Cinzel',Georgia,serif;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:#F0E4FF;
+}
+.dice-throw-pad small{
+  font-size:9.5px;letter-spacing:.1em;color:rgba(200,168,232,.62);min-height:12px;
+}
+
+/* Rastro curto que aparece enquanto o lance é armado. */
+.dice-throw-pad.is-holding::after{
+  content:'';position:absolute;left:50%;bottom:8px;width:44px;height:2px;border-radius:999px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,rgba(200,168,232,.7),transparent);
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dice-throw-pad,.dice-throw-die{transition:none}
+  .dice-throw-pad.is-rolling .dice-throw-die{animation:none;opacity:.4}
+}
