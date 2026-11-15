@@ -10,6 +10,6 @@
 @keyframes acquiredGlow{50%{opacity:.65;text-shadow:0 0 14px #a855f730}}
 @media(max-width:600px){.acquired-knowledge{padding:20px 4px 60px}.acquired-spell{grid-template-columns:1fr;padding:22px;gap:8px}.acquired-spell-rune{font-size:38px;text-align:left}.acquired-spell h4{font-size:21px}.acquired-file-grid{gap:14px}}
 @media(prefers-reduced-motion:reduce){.acquired-spell-rune{animation:none}.acquired-file{transition:none}}
-html[data-quality=light] .acquired-spell-rune,html[data-effects=reduced] .acquired-spell-rune{animation:none}
+html[data-effects=reduced] .acquired-spell-rune{animation:none}
 .adventure-shell .livro-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));align-items:stretch;overflow:visible;gap:10px;padding:0;margin-bottom:20px;max-width:100%}
 .adventure-shell .livro-tab{flex:0 1 auto;min-width:0;min-height:44px;white-space:normal;padding:10px 14px}

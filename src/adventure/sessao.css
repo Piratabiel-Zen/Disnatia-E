@@ -20,6 +20,7 @@
 .sessao-frentes{grid-area:frentes}
 .sessao-objetivo{grid-area:objetivo}
 .sessao-acoes{grid-area:acoes}
+.sessao-capitulo{grid-column:1/-1}
 
 /* Em tela larga a página vira duas colunas: de um lado a história e o que
    fazer com ela, do outro os lugares onde a companhia está. Assim o título
@@ -188,3 +189,165 @@ html[data-quality="light"] .sessao-ceu i:first-child{animation:none}
   mask-image:linear-gradient(90deg,#000 calc(100% - 46px),transparent);
 }
 .sessao-frente .ad-party-viewport:not(:hover){scrollbar-color:color-mix(in srgb,var(--accent) 40%,transparent) transparent}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   O CAPÍTULO DO JOGADOR
+   Entra depois de tudo e só para quem joga. A tela acima é da mesa; esta
+   faixa é da pessoa. Por isso ela não é outro cartão arredondado: é um
+   colofão — uma régua de luz no topo, uma espinha na cor da campanha à
+   esquerda, e o texto apoiado direto no céu. A tipografia faz o trabalho,
+   não a moldura.
+   ════════════════════════════════════════════════════════════════════════ */
+.sessao-capitulo{
+  position:relative;
+  display:grid;gap:18px;
+  margin-top:clamp(10px,2vw,22px);
+  padding:clamp(22px,2.6vw,30px) 0 6px clamp(18px,2vw,26px);
+  border-top:1px solid color-mix(in srgb,var(--accent) 26%,transparent);
+  animation:capituloEntra .62s cubic-bezier(.2,.9,.25,1) both;
+}
+/* A espinha: um fio vertical que desbota para baixo, como a lombada de uma
+   página solta. Diz "isto é um bloco" sem fechar uma caixa em volta. */
+.sessao-capitulo::before{
+  content:'';position:absolute;left:0;top:0;bottom:18px;width:2px;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--accent) 72%,transparent),
+    color-mix(in srgb,var(--accent) 18%,transparent) 55%,
+    transparent);
+  border-radius:2px;
+}
+@keyframes capituloEntra{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+.sessao-capitulo-topo{
+  display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 20px;
+}
+.sessao-capitulo-quem{display:grid;gap:4px}
+.sessao-capitulo-quem strong{
+  font:700 clamp(21px,2.6vw,27px)/1.1 'Cinzel Decorative','Cinzel',serif;
+  color:#F2E8DA;letter-spacing:.015em;
+}
+.sessao-capitulo-rotulo{
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.3em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--accent-soft) 62%,#8B8296);
+}
+
+/* ---- Em que frente você está ----
+   É a única peça com moldura aqui, porque é a única que o jogador precisa
+   achar num relance — "de que lado eu caí nesta cena". A letra do grupo fica
+   no selo à esquerda; o lugar, embaixo, em itálico. */
+.sessao-capitulo-frente{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 15px 9px 11px;border-radius:12px;
+  border:1px solid color-mix(in srgb,var(--frente-cor) 42%,transparent);
+  background:color-mix(in srgb,var(--frente-cor) 11%,rgba(10,7,18,.55));
+  --frente-cor:var(--accent);
+}
+.sessao-capitulo-frente.frente-b{--frente-cor:#4FD1C5}
+.sessao-capitulo-frente>i{
+  display:grid;place-items:center;flex-shrink:0;
+  width:30px;height:30px;border-radius:9px;
+  border:1px solid color-mix(in srgb,var(--frente-cor) 55%,transparent);
+  background:color-mix(in srgb,var(--frente-cor) 22%,transparent);
+  font:700 13px/1 'Cinzel',serif;color:#fff;font-style:normal;
+}
+.sessao-capitulo-frente.frente-a>i::before{content:'A'}
+.sessao-capitulo-frente.frente-b>i::before{content:'B'}
+.sessao-capitulo-frente>span{display:grid;gap:2px;min-width:0}
+.sessao-capitulo-frente small{
+  font:600 8px/1 'Cinzel',serif;letter-spacing:.24em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--frente-cor) 70%,#9A92A6);
+}
+.sessao-capitulo-frente b{
+  font:700 13px/1.2 'Cinzel',serif;letter-spacing:.04em;
+  color:color-mix(in srgb,var(--frente-cor) 36%,#F2E8DA);
+}
+.sessao-capitulo-frente em{
+  font:italic 12px/1.3 'Crimson Text',Georgia,serif;
+  color:#9A8E7E;padding-left:11px;
+  border-left:1px solid color-mix(in srgb,var(--frente-cor) 26%,transparent);
+}
+
+/* ---- A lore ----
+   Medida curta de propósito: 62 caracteres por linha é onde o olho volta sem
+   perder a linha. Serifado, porque é narrativa, não interface. */
+.sessao-capitulo-lore p{
+  margin:0;max-width:62ch;
+  font:400 clamp(14.5px,1.45vw,16px)/1.62 'Crimson Text',Georgia,serif;
+  color:#C3B5A4;white-space:pre-wrap;
+}
+.sessao-capitulo-mais{
+  margin-top:9px;padding:0;border:0;background:none;cursor:pointer;
+  font:600 10px/1 'Cinzel',serif;letter-spacing:.17em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--accent-soft) 78%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+  padding-bottom:3px;transition:color .2s ease,border-color .2s ease;
+}
+.sessao-capitulo-mais:hover,.sessao-capitulo-mais:focus-visible{
+  color:#F2E8DA;border-color:color-mix(in srgb,var(--accent) 78%,transparent);outline:none;
+}
+
+/* ---- Personalidade e objetivos, lado a lado ---- */
+/* O corpo: a narrativa de um lado, os fatos do outro. Em tela larga isso
+   ocupa a faixa inteira — antes a lore parava em 62ch e sobrava meia tela
+   vazia à direita, o que fazia o bloco parecer um erro de alinhamento. */
+.sessao-capitulo-corpo{display:grid;gap:18px}
+@media(min-width:960px){
+  .sessao-capitulo-corpo{
+    grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);
+    gap:clamp(28px,4vw,56px);
+    align-items:start;
+  }
+}
+.sessao-capitulo-grade{display:grid;gap:18px;align-content:start}
+.sessao-capitulo-campo{display:grid;gap:9px;align-content:start}
+
+.sessao-capitulo-tracos{
+  display:flex;flex-wrap:wrap;gap:7px;margin:0;padding:0;list-style:none;
+}
+.sessao-capitulo-tracos li{
+  padding:5px 12px;border-radius:20px;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  font:600 11px/1.3 'Cinzel',serif;letter-spacing:.04em;
+  color:color-mix(in srgb,var(--accent-soft) 60%,#E4D8C6);
+}
+
+.sessao-capitulo-objetivos{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.sessao-capitulo-objetivos li{display:flex;align-items:flex-start;gap:9px}
+.sessao-capitulo-objetivos i{
+  flex-shrink:0;font-style:normal;line-height:1.6;font-size:10px;
+  color:color-mix(in srgb,var(--accent) 66%,transparent);
+}
+.sessao-capitulo-objetivos span{
+  font:400 14px/1.62 'Crimson Text',Georgia,serif;color:#C3B5A4;
+}
+
+.sessao-capitulo-ficha{
+  justify-self:start;
+  padding:9px 18px;border-radius:10px;cursor:pointer;
+  border:1px solid color-mix(in srgb,var(--accent) 36%,transparent);
+  background:color-mix(in srgb,var(--accent) 9%,transparent);
+  font:600 11px/1 'Cinzel',serif;letter-spacing:.14em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--accent-soft) 74%,#E4D8C6);
+  transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s cubic-bezier(.2,.9,.3,1);
+}
+.sessao-capitulo-ficha:hover,.sessao-capitulo-ficha:focus-visible{
+  background:color-mix(in srgb,var(--accent) 20%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 72%,transparent);
+  color:#F7EFE2;transform:translateY(-1px);outline:none;
+}
+
+/* No celular a faixa encosta menos na borda e o selo da frente vai para
+   baixo do nome, senão os dois disputam a mesma linha estreita. */
+@media(max-width:560px){
+  .sessao-capitulo{padding-left:14px;gap:16px}
+  .sessao-capitulo-topo{align-items:flex-start;flex-direction:column}
+  .sessao-capitulo-frente{width:100%}
+  .sessao-capitulo-frente em{margin-left:auto;text-align:right}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .sessao-capitulo{animation:none}
+  .sessao-capitulo-ficha:hover{transform:none}
+}

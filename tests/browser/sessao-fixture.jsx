@@ -10,7 +10,10 @@ import SessionHome from '../../src/adventure/SessionHome';
 
 const SHEETS = [
   { id: '1', nome: 'Ignácio', classe: 'fogo', hp: 18, grupo: 'a' },
-  { id: '2', nome: 'Jansen', classe: 'escarlate', hp: 24, grupo: 'a' },
+  { id: '2', nome: "Jansen D'Loros", classe: 'escarlate', hp: 24, grupo: 'a',
+    lore_personagem: 'Nasceu no Triângulo das Bermudas, filho de um cartógrafo que saiu para medir a corrente e nunca voltou. Aprendeu a ler estrelas antes de ler palavras, e por isso ninguém o convence de que o céu mente.\n\nFoi recrutado pelo Instituto aos dezenove anos. Saiu de lá sem lembrar dos três meses do meio, com uma cicatriz que não é dele e um nome que não para de reaparecer em papel velho.',
+    personalidade: ['Cético', 'Leal até o osso', 'Sarcástico'],
+    objetivos_pessoais: ['Descobrir o que o Instituto apagou dos três meses', 'Achar o pai, vivo ou o que sobrou dele'] },
   { id: '3', nome: 'Kenai', classe: 'corvos', hp: 12, grupo: 'b' },
   { id: '4', nome: 'Jack Daniels', classe: 'bardo', hp: 15, grupo: 'b' },
 ];

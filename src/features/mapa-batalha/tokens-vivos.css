@@ -42,8 +42,10 @@
   50%{transform:scale(1.045) translateY(-2.4%)}
 }
 
-/* O modo leve e quem pediu menos movimento não recebem nada disso. */
-html[data-quality=light] .map-token-body{animation:none}
+/* A respiração NÃO depende do modo Leve/Imersivo. Ela é a diferença entre um
+   adesivo e alguém esperando a vez, e precisa ser igual no celular, no
+   notebook e no desktop. Custa um transform composto por token — o compositor
+   resolve na GPU. Só quem pede menos movimento no sistema fica sem ela. */
 @media(prefers-reduced-motion:reduce){
   .map-token-body{animation:none!important}
 }

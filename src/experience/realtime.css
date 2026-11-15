@@ -40,8 +40,8 @@
 @keyframes actionDimOut{0%,78%{opacity:1}100%{opacity:0}}
 @keyframes crystalFlash{0%,100%{opacity:.35}50%{opacity:.88}}
 @keyframes actionCrystalWave{0%{transform:scale(.3);opacity:.95}100%{transform:scale(3.2);opacity:0}}
-html[data-quality=light] .action-combinada .combat-action-backdrop,html[data-quality=light] .action-combinada .combat-action-wave{animation:none!important;opacity:.65}
-html[data-quality=light] .combat-action-pulse.compact.action-especial .combat-action-backdrop{animation:none!important;opacity:.45}
+/* O anuncio de especial e combinada roda igual em todo lugar: e o que diz a
+   mesa que algo grande acabou de acontecer. */
 @media(prefers-reduced-motion:reduce){.combat-action-pulse.compact.action-normal,.combat-action-pulse.compact.action-especial,.combat-action-pulse.compact.action-combinada,.combat-action-pulse.compact .combat-action-wave,.combat-action-pulse.compact .combat-action-pulse-core,.combat-action-backdrop{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 
 /* All player ability uses receive a short focus vignette; higher tiers intensify it. */

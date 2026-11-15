@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 
+/* O modo nasce Imersivo. Antes nascia Leve, e como a escolha é guardada por
+   aparelho, a mesma pessoa via duas mesas diferentes: o notebook onde ela
+   trocou para Imersivo e o desktop onde nunca trocou. Quem quiser menos pode
+   descer para Leve — isso agora tira só cenografia (fundo cósmico, poeira do
+   mapa, cenas de classe), nunca a resposta da interface. */
 export function loadQuality() {
-  try { return localStorage.getItem('dinastia_quality_v1') === 'cinematic' ? 'cinematic' : 'light'; } catch { return 'light'; }
+  try { return localStorage.getItem('dinastia_quality_v1') === 'light' ? 'light' : 'cinematic'; } catch { return 'cinematic'; }
 }
 
 export function usePerformance() {
