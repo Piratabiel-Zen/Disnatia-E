@@ -7,6 +7,7 @@ import {artifactAbilities,artifactRequirements,artifactUseReason} from '../adven
 import {abilityAvailability} from '../adventure/playerPreferences.mjs';
 import {useExperience} from './ExperienceKit';
 import './artifact-powers.css';
+import './artefatos-destaque.css';
 import { docIn } from '../core/campaign';
 
 export function ArtifactPowerControls({sheet}) {
