@@ -101,26 +101,158 @@
   animation:atmRespiraLuz var(--respiro) ease-in-out infinite;
 }
 
-/* O poço de luz de cada poste. O tremor é pequeno e irregular de propósito:
-   lâmpada de rua nunca é perfeitamente estável. */
-.mapa-atm-poste{
+/* AS LUZES
+   Cada fonte do desenho — tocha, poste, tubo criogênico, tela — acende no
+   lugar dela. O que muda entre uma câmara acolhedora e um corredor
+   assombrado não é a cor: é o compasso. */
+.mapa-atm-luz{
   width:calc(var(--raio) * 2);aspect-ratio:1;
   transform:translate(-50%,-50%);
   mix-blend-mode:screen;
   background:radial-gradient(circle,
-    rgba(255,228,164,.95) 0%,
-    rgba(255,198,110,.5) 22%,
-    rgba(255,176,80,.22) 46%,
+    color-mix(in srgb,var(--cor) 92%,#fff) 0%,
+    color-mix(in srgb,var(--cor) 55%,transparent) 24%,
+    color-mix(in srgb,var(--cor) 22%,transparent) 48%,
     transparent 70%);
   opacity:var(--forca);
-  animation:atmLampada 4.3s ease-in-out var(--atraso) infinite;
 }
+
+/* Chama: variação rápida e pequena. Nunca apaga, nunca fica parada. */
+.mapa-atm-luz.padrao-tocha{animation:atmTocha var(--dur) ease-in-out var(--atraso) infinite}
+@keyframes atmTocha{
+  0%,100%{opacity:calc(var(--forca) * .88);transform:translate(-50%,-50%) scale(1)}
+  17%{opacity:var(--forca);transform:translate(-50%,-50%) scale(1.06)}
+  31%{opacity:calc(var(--forca) * .79);transform:translate(-50%,-50%) scale(.97)}
+  48%{opacity:calc(var(--forca) * .97);transform:translate(-50%,-50%) scale(1.04)}
+  63%{opacity:calc(var(--forca) * .83);transform:translate(-50%,-50%) scale(.99)}
+  81%{opacity:calc(var(--forca) * .94);transform:translate(-50%,-50%) scale(1.03)}
+}
+
+/* Poste de rua: quase firme, com uma queda de vez em quando. */
+.mapa-atm-luz.padrao-lampada{animation:atmLampada var(--dur) ease-in-out var(--atraso) infinite}
 @keyframes atmLampada{
   0%,100%{opacity:calc(var(--forca) * .86);transform:translate(-50%,-50%) scale(1)}
   38%{opacity:var(--forca);transform:translate(-50%,-50%) scale(1.05)}
   44%{opacity:calc(var(--forca) * .72)}
   52%{opacity:calc(var(--forca) * .98)}
   70%{opacity:calc(var(--forca) * .9);transform:translate(-50%,-50%) scale(1.02)}
+}
+
+/* LÂMPADA QUEBRADA.
+   O susto não está no piscar: está no tempo apagado. A lâmpada fica morta a
+   maior parte do ciclo, estoura em dois ou três quadros e morre de novo. Os
+   cortes são secos (steps), porque fluorescente com defeito não tem transição. */
+.mapa-atm-luz.padrao-falha{animation:atmFalha var(--dur) steps(1,end) var(--atraso) infinite}
+@keyframes atmFalha{
+  0%{opacity:calc(var(--forca) * .06)}
+  6%{opacity:var(--forca)}
+  8%{opacity:calc(var(--forca) * .05)}
+  11%{opacity:calc(var(--forca) * .92)}
+  12%{opacity:calc(var(--forca) * .1)}
+  26%{opacity:calc(var(--forca) * .08)}
+  28%{opacity:var(--forca)}
+  33%{opacity:calc(var(--forca) * .55)}
+  34%{opacity:calc(var(--forca) * .04)}
+  58%{opacity:calc(var(--forca) * .04)}
+  60%{opacity:calc(var(--forca) * .85)}
+  61%{opacity:calc(var(--forca) * .12)}
+  63%{opacity:var(--forca)}
+  69%{opacity:calc(var(--forca) * .3)}
+  70%{opacity:calc(var(--forca) * .05)}
+  100%{opacity:calc(var(--forca) * .06)}
+}
+
+/* Brilho frio: pulsa devagar e respira, sem nada de quente. */
+.mapa-atm-luz.padrao-frio{animation:atmFrio var(--dur) ease-in-out var(--atraso) infinite}
+@keyframes atmFrio{
+  0%,100%{opacity:calc(var(--forca) * .62);transform:translate(-50%,-50%) scale(.96)}
+  50%{opacity:var(--forca);transform:translate(-50%,-50%) scale(1.08)}
+}
+
+/* Alerta: compasso lento e regular, que é o que faz parecer sistema, não fogo. */
+.mapa-atm-luz.padrao-pulso{animation:atmPulso var(--dur) ease-in-out var(--atraso) infinite}
+@keyframes atmPulso{
+  0%,100%{opacity:calc(var(--forca) * .18);transform:translate(-50%,-50%) scale(.9)}
+  46%{opacity:var(--forca);transform:translate(-50%,-50%) scale(1.12)}
+  58%{opacity:calc(var(--forca) * .5)}
+}
+
+/* Tela avariada: treme e corta. Cortes secos, como sinal falhando. */
+.mapa-atm-luz.padrao-glitch{animation:atmGlitch var(--dur) steps(1,end) var(--atraso) infinite}
+@keyframes atmGlitch{
+  0%,13%{opacity:calc(var(--forca) * .76);transform:translate(-50%,-50%) scale(1)}
+  14%{opacity:var(--forca);transform:translate(-50.8%,-50%) scale(1.03)}
+  16%{opacity:calc(var(--forca) * .2);transform:translate(-49.4%,-50%) scale(.98)}
+  18%{opacity:calc(var(--forca) * .9);transform:translate(-50%,-50%) scale(1)}
+  47%{opacity:calc(var(--forca) * .82)}
+  49%{opacity:calc(var(--forca) * .1);transform:translate(-50.6%,-49.6%) scale(.96)}
+  51%{opacity:var(--forca);transform:translate(-50%,-50%) scale(1.02)}
+  76%{opacity:calc(var(--forca) * .7)}
+  78%{opacity:calc(var(--forca) * .95);transform:translate(-49.6%,-50.4%)}
+  100%{opacity:calc(var(--forca) * .76);transform:translate(-50%,-50%) scale(1)}
+}
+
+/* A SALA RESPIRA
+   A escuridão dos cantos avança e recua. É o que transforma "está escuro" em
+   "tem alguma coisa errada aqui". */
+.mapa-atm-respiracao{
+  inset:0;mix-blend-mode:multiply;
+  background:radial-gradient(ellipse 76% 72% at 50% 50%,transparent 34%,#03050C 100%);
+  opacity:var(--forca);
+  animation:atmRespiracao var(--dur) ease-in-out infinite;
+}
+@keyframes atmRespiracao{
+  0%,100%{opacity:calc(var(--forca) * .62);transform:scale(1.06)}
+  50%{opacity:var(--forca);transform:scale(.97)}
+}
+
+/* ALGO ATRAVESSA
+   Uma massa escura sem forma definida cruzando a cena, devagar, de tempos em
+   tempos. O que assusta é não dar para nomear — por isso é só um borrão, e
+   por isso passa longe uma vez a cada meio minuto em vez de ficar à mostra. */
+.mapa-atm-presenca{
+  top:-20%;left:-30%;width:46%;height:140%;
+  mix-blend-mode:multiply;opacity:0;
+  background:radial-gradient(ellipse 50% 40% at 50% 50%,#01020A 0%,rgba(1,2,10,.72) 38%,transparent 72%);
+  filter:blur(26px);
+  animation:atmPresenca var(--dur) ease-in-out infinite;
+}
+@keyframes atmPresenca{
+  0%,8%{transform:translate3d(0,0,0) scaleY(1);opacity:0}
+  18%{opacity:var(--op)}
+  50%{transform:translate3d(120%,4%,0) scaleY(1.1);opacity:calc(var(--op) * .9)}
+  74%{opacity:calc(var(--op) * .5)}
+  86%,100%{transform:translate3d(240%,0,0) scaleY(1);opacity:0}
+}
+
+/* POEIRA SUSPENSA
+   Em ambiente fechado a poeira não atravessa o cômodo: ela paira e desenha
+   devagar na luz da tocha. Por isso o movimento é curto e volta ao lugar. */
+.mapa-atm-poeira{inset:0;opacity:var(--op)}
+.mapa-atm-poeira i{
+  position:absolute;
+  width:calc(2px * var(--escala));height:calc(2px * var(--escala));
+  border-radius:50%;background:rgba(255,226,180,.85);
+  box-shadow:0 0 4px rgba(255,206,130,.6);
+  animation:atmMota var(--dur) ease-in-out var(--atraso) infinite alternate;
+}
+@keyframes atmMota{
+  from{transform:translate3d(0,0,0);opacity:.25}
+  50%{opacity:.9}
+  to{transform:translate3d(14px,-22px,0);opacity:.35}
+}
+
+/* O OURO RESPONDE AO FOGO
+   Um brilho lento percorrendo a câmara, que é o que ouro faz sob luz viva. */
+.mapa-atm-ouro{
+  inset:-20%;mix-blend-mode:soft-light;opacity:var(--op);
+  background:linear-gradient(106deg,transparent 32%,rgba(255,224,150,.9) 48%,rgba(255,246,214,.7) 52%,transparent 68%);
+  background-size:260% 100%;
+  animation:atmOuro var(--dur) ease-in-out infinite;
+}
+@keyframes atmOuro{
+  0%{background-position:130% 0}
+  100%{background-position:-50% 0}
 }
 
 /* O VENTO
@@ -174,14 +306,15 @@
    a cena continua tendo clima, só para de animar. */
 @media(prefers-reduced-motion:reduce){
   .mapa-atm *,.mapa-atm{animation:none!important}
-  .mapa-atm-graos,.mapa-atm-areia,.mapa-atm-folhas{display:none}
+  .mapa-atm-graos,.mapa-atm-areia,.mapa-atm-folhas,.mapa-atm-poeira,.mapa-atm-presenca{display:none}
   .mapa-atm-vento{display:none}
 }
 /* Modo Leve: ficam as camadas de luz, que são baratas, e saem as que
    repintam área grande a cada quadro. */
 html[data-quality="light"] .mapa-atm-graos,
 html[data-quality="light"] .mapa-atm-vento,
-html[data-quality="light"] .mapa-atm-folhas{display:none}
+html[data-quality="light"] .mapa-atm-folhas,
+html[data-quality="light"] .mapa-atm-poeira{display:none}
 html[data-quality="light"] .mapa-atm-areia:nth-of-type(n+3){display:none}
 /* Com a aba em segundo plano nada disso precisa continuar rodando. */
 html[data-away="true"] .mapa-atm *{animation-play-state:paused!important}

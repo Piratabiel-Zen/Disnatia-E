@@ -1,4 +1,4 @@
-import { atmosferaDe, graosDeAreia } from './atmosferas.mjs';
+import { atmosferaDe, compassoDaLuz, graosDeAreia } from './atmosferas.mjs';
 import './atmosfera.css';
 
 // As camadas que dão vida ao mapa.
@@ -73,19 +73,50 @@ export default function MapAtmosphere({ atmosfera, img }) {
           }}
         />
       )}
-      {(preset.postes || []).map((poste, index) => (
-        <div
-          key={`poste-${index}`}
-          className="mapa-atm-poste"
-          style={{
-            left: `${poste.x}%`, top: `${poste.y}%`,
-            '--raio': `${poste.raio}%`, '--forca': poste.forca,
-            // Cada lâmpada treme no seu próprio compasso; em sincronia
-            // pareceria um pisca-pisca, não iluminação.
-            '--atraso': `${-(index * 1.37).toFixed(2)}s`,
-          }}
-        />
-      ))}
+      {(preset.luzes || []).map((luz, index) => {
+        const compasso = compassoDaLuz(luz, index);
+        return (
+          <div
+            key={`luz-${index}`}
+            className={`mapa-atm-luz padrao-${compasso.padrao}`}
+            style={{
+              left: `${luz.x}%`, top: `${luz.y}%`,
+              '--raio': `${luz.raio}%`, '--forca': luz.forca,
+              '--cor': luz.cor || '#FFC46E',
+              '--dur': `${compasso.duracao}s`,
+              '--atraso': `${compasso.atraso}s`,
+            }}
+          />
+        );
+      })}
+      {/* A escuridão dos cantos avança e recua: a sala respira. */}
+      {preset.respiracao && (
+        <div className="mapa-atm-respiracao" style={{ '--dur': `${preset.respiracao.duracao}s`, '--forca': preset.respiracao.forca }} />
+      )}
+      {/* Algo atravessa a cena. Sem forma definida, de propósito. */}
+      {preset.presenca && (
+        <div className="mapa-atm-presenca" style={{ '--dur': `${preset.presenca.duracao}s`, '--op': preset.presenca.opacidade }} />
+      )}
+      {/* Poeira suspensa: em lugar fechado ela paira, não atravessa. */}
+      {preset.poeira && (
+        <div className="mapa-atm-poeira" style={{ '--op': preset.poeira.opacidade }}>
+          {graosDeAreia(preset.poeira.quantidade).map((mota, index) => (
+            <i
+              key={`mota-${index}`}
+              style={{
+                top: `${mota.topo}%`, left: `${mota.esquerda}%`,
+                '--dur': `${(preset.poeira.duracao * (0.6 + mota.escala * 0.4)).toFixed(2)}s`,
+                '--atraso': `${mota.atraso}s`,
+                '--escala': mota.escala,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {/* O ouro responde ao fogo: um brilho lento percorrendo a câmara. */}
+      {preset.ouro && (
+        <div className="mapa-atm-ouro" style={{ '--dur': `${preset.ouro.duracao}s`, '--op': preset.ouro.opacidade }} />
+      )}
       {/* O vento usa a própria arte: uma cópia das bordas, onde só há
           folhagem, balançando de leve. Mascarada e com movimento de poucos
           pixels, lê como vento — não como a imagem escorregando. */}

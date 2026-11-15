@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
-import { ATMOSFERAS, atmosferaDe, graosDeAreia, listaDeAtmosferas } from '../src/features/mapa-batalha/atmosferas.mjs';
+import { ATMOSFERAS, PADROES_DE_LUZ, atmosferaDe, compassoDaLuz, graosDeAreia, listaDeAtmosferas } from '../src/features/mapa-batalha/atmosferas.mjs';
 import { MAPAS_PRONTOS, mapasProntosDe } from '../src/features/mapa-batalha/mapasProntos.mjs';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -30,17 +30,58 @@ test('o Instituto é noturno, com postes acesos e vento', () => {
   const noite = atmosferaDe('instituto');
   assert.ok(noite.noite.forca > 0 && noite.brilho < 1, 'a cena precisa escurecer');
   assert.ok(noite.luar.forca > 0, 'a lua ilumina a cena');
-  assert.equal(noite.postes.length, 6, 'um poço de luz para cada poste do desenho');
-  for (const poste of noite.postes) {
-    assert.ok(poste.x > 0 && poste.x < 100, 'poste fora do mapa');
-    assert.ok(poste.y > 0 && poste.y < 100, 'poste fora do mapa');
-  }
+  assert.equal(noite.luzes.length, 6, 'um poço de luz para cada poste do desenho');
   assert.ok(noite.vento.forca > 0 && noite.vento.borda > 0, 'o vento precisa de força e de uma borda para recortar');
 });
 
-test('as lâmpadas não piscam em sincronia', () => {
-  const kit = read('../src/features/mapa-batalha/MapAtmosphere.jsx');
-  assert.match(kit, /'--atraso': `\$\{-\(index \* 1\.37\)\.toFixed\(2\)\}s`/);
+test('toda luz cai dentro do mapa e usa um padrão que existe', () => {
+  for (const atm of listaDeAtmosferas()) {
+    for (const luz of atm.luzes || []) {
+      assert.ok(luz.x > 0 && luz.x < 100, `luz fora do mapa em ${atm.id}`);
+      assert.ok(luz.y > 0 && luz.y < 100, `luz fora do mapa em ${atm.id}`);
+      assert.ok(luz.raio > 0 && luz.forca > 0, `luz sem brilho em ${atm.id}`);
+      assert.ok(PADROES_DE_LUZ[luz.padrao], `padrão desconhecido "${luz.padrao}" em ${atm.id}`);
+    }
+  }
+});
+
+test('duas lâmpadas iguais nunca piscam juntas', () => {
+  const luzes = atmosferaDe('arcadia').luzes;
+  const compassos = luzes.map((luz, index) => compassoDaLuz(luz, index));
+  const assinaturas = new Set(compassos.map(c => `${c.duracao}:${c.atraso}`));
+  assert.equal(assinaturas.size, luzes.length, 'em sincronia viraria pisca-pisca de festa');
+  // E o compasso é estável entre renders, ou a cena tremeria a cada repintura.
+  assert.deepEqual(compassos, luzes.map((luz, index) => compassoDaLuz(luz, index)));
+});
+
+test('cada padrão de luz tem a sua animação em CSS', () => {
+  const css = read('../src/features/mapa-batalha/atmosfera.css');
+  for (const padrao of Object.keys(PADROES_DE_LUZ)) {
+    if (padrao === 'estavel') continue;
+    assert.match(css, new RegExp(`\\.mapa-atm-luz\\.padrao-${padrao}\\{animation:`), `falta a animação de ${padrao}`);
+  }
+  // A lâmpada quebrada corta seco: fluorescente com defeito não tem transição.
+  assert.match(css, /\.mapa-atm-luz\.padrao-falha\{animation:atmFalha var\(--dur\) steps\(1,end\)/);
+});
+
+test('a tumba é quente e enigmática, não assombrada', () => {
+  const tumba = atmosferaDe('tumba');
+  assert.ok(tumba.brilho > 1, 'a câmara é iluminada, não sombria');
+  assert.ok(tumba.noite.forca < 0.4, 'o escuro entra só o bastante para o fogo brilhar');
+  assert.ok(!tumba.presenca, 'nada de vulto rondando a tumba');
+  const tochas = tumba.luzes.filter(luz => luz.padrao === 'tocha');
+  assert.ok(tochas.length >= 9, 'o fogo é a única luz da câmara');
+  assert.ok(tumba.poeira && tumba.ouro, 'poeira no ar e ouro respondendo ao fogo');
+});
+
+test('o Arcádia é escuro, pisca sem parar e tem algo rondando', () => {
+  const arcadia = atmosferaDe('arcadia');
+  assert.ok(arcadia.brilho < 0.75 && arcadia.noite.forca > 0.6, 'a cena precisa ser escura');
+  const quebradas = arcadia.luzes.filter(luz => luz.padrao === 'falha' || luz.padrao === 'glitch');
+  assert.ok(quebradas.length >= 8, 'o terror vem das lâmpadas falhando sem parar');
+  assert.ok(arcadia.luzes.some(luz => luz.padrao === 'pulso'), 'faltam as luzes de emergência');
+  assert.ok(arcadia.luzes.some(luz => luz.padrao === 'frio'), 'falta o frio do laboratório');
+  assert.ok(arcadia.presenca && arcadia.respiracao, 'falta o elemento paranormal');
 });
 
 test('o vento usa a própria arte, recortada só nas bordas', () => {
@@ -70,7 +111,7 @@ test('a atmosfera cede quando pedem menos movimento ou modo Leve', () => {
 });
 
 test('os mapas prontos guardam o caminho da arte, não a imagem inteira', () => {
-  assert.equal(MAPAS_PRONTOS.length, 2);
+  assert.equal(MAPAS_PRONTOS.length, 4);
   for (const mapa of MAPAS_PRONTOS) {
     assert.match(mapa.img, /^\/media\/mapas\/.+\.webp$/, 'a arte é servida pelo site');
     assert.ok(atmosferaDe(mapa.atmosfera), `${mapa.nome} sem atmosfera válida`);
@@ -81,11 +122,17 @@ test('os mapas prontos guardam o caminho da arte, não a imagem inteira', () => 
     // motivo de a arte morar em arquivo e não dentro do mapa.
     assert.ok(bytes < 1_000_000, `${mapa.img} está pesado demais (${bytes} bytes)`);
   }
-  assert.deepEqual(MAPAS_PRONTOS.map(m => m.nome), ['Pirâmide de Salomão', 'Instituto Arcádia — Entrada']);
+  assert.deepEqual(MAPAS_PRONTOS.map(m => m.nome), [
+    'Pirâmide de Salomão',
+    'Instituto Arcádia — Entrada',
+    'Pirâmide de Salomão — Interior',
+    'Instituto Arcádia',
+  ]);
+  assert.equal(new Set(MAPAS_PRONTOS.map(m => m.id)).size, MAPAS_PRONTOS.length, 'ids repetidos sobrescreveriam o mapa anterior');
 });
 
 test('os mapas da Dinastia E só aparecem na Dinastia E', () => {
-  assert.equal(mapasProntosDe({ id: 'dinastia-e', primary: true }).length, 2);
+  assert.equal(mapasProntosDe({ id: 'dinastia-e', primary: true }).length, 4);
   assert.equal(mapasProntosDe({ id: 'arquivo-de-veneza' }).length, 0);
 });
 

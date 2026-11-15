@@ -25,6 +25,20 @@ export const MAPAS_PRONTOS = [
     atmosfera: 'instituto',
     descricao: 'O portão, o pátio e o prédio principal, à noite.',
   },
+  {
+    id: 'piramide-interior',
+    nome: 'Pirâmide de Salomão — Interior',
+    img: '/media/mapas/piramide-interior.webp',
+    atmosfera: 'tumba',
+    descricao: 'A câmara dos sarcófagos, o corredor e o tesouro, à luz das tochas.',
+  },
+  {
+    id: 'instituto-arcadia',
+    nome: 'Instituto Arcádia',
+    img: '/media/mapas/instituto-arcadia.webp',
+    atmosfera: 'arcadia',
+    descricao: 'O salão central, o alojamento e o laboratório — depois da catástrofe.',
+  },
 ];
 
 export function mapasProntosDe(campaign) {
