@@ -2,6 +2,7 @@ import { onSnapshot } from '../adventure/sharedSnapshot';
 import { useEffect, useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
+import { docIn } from '../core/campaign';
 const toastListeners=[];
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
@@ -18,7 +19,7 @@ export function ToastContainer() {
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'lastToast'), snap => {
+    const unsub = onSnapshot(docIn('config', 'lastToast'), snap => {
       if (!snap.exists()) return;
       const d = snap.data();
       if (!d.msg || !d.ts) return;
@@ -55,7 +56,7 @@ export function ToastContainer() {
 
 export async function pushToast(msg, icon='✦', color='#C8A8E8') {
   try {
-    await setDoc(doc(db, 'config', 'lastToast'), { msg, icon, color, ts: Date.now() });
+    await setDoc(docIn('config', 'lastToast'), { msg, icon, color, ts: Date.now() });
   } catch(e) { console.error(e); }
 }
 

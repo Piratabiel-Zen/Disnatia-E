@@ -24,21 +24,24 @@ import {
   loadStoredAccess,
   clearStoredAccess,
 } from "./experience/PlayerAccess";
+import {
+  campaignTheme, clearStoredCampaign, docIn, restoreCampaignFromStorage, setActiveCampaign,
+} from "./core/campaign";
+
+const CampaignGate = lazy(() => import('./features/campanhas/CampaignGate'));
 
 const AuthenticatedSession = lazy(() => import('./AuthenticatedSession'));
 
 const TAB_LABELS = {
-  session:'Sessão Atual', prologo:'Prólogo', classes:'Classes', fichas:'Fichas',
+  session:'Sessão Atual', classes:'Classes', fichas:'Fichas',
   personagens:'Personagens', inimigos:'Inimigos', bestiario:'Bestiário', regras:'Regras',
   visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
-  mesaImersiva:'Mesa Imersiva',
 };
 
 const isMobileViewport = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
 
 const pageLoaders = {
   visitantes:  () => import('./experience/VisitorsPage'),
-  prologo:      () => import("./features/prologue/ProloguePage"),
   classes:      () => import("./features/classes/ClassesPage"),
   fichas:       () => import("./features/sheets/SheetsPage"),
   personagens:  () => import("./features/personagens/PersonagensPage"),
@@ -49,7 +52,6 @@ const pageLoaders = {
   cronicas:     () => import("./features/cronicas/CronicasPage"),
   mapamundi:    () => import("./features/mapa-mundi/MapaMundiPage"),
   mapabatalha:  () => import("./features/mapa-batalha/BattleMapPage"),
-  mesaImersiva: () => import("./features/mesa-imersiva/MesaImersivaPage"),
 };
 
 const LazyPages = Object.fromEntries(
@@ -61,18 +63,26 @@ export default function App(){
   const [tab,setTab]=useState('session');
   const [masterMode,setMasterMode]=useState(false);
   const [atmosphere,setAtmosphere]=useState('neutro');
-  const [access,setAccess]=useState(()=>loadStoredAccess());
+  // A campanha é resolvida antes de tudo: ela decide quais dados o site lê.
+  const [campaign,setCampaign]=useState(()=>restoreCampaignFromStorage());
+  const [access,setAccess]=useState(()=>(campaign?loadStoredAccess():null));
 
   useEffect(()=>{
-    const unsub=onSnapshot(doc(db,'config','atmosphere'),snap=>{
+    if(!campaign)return;
+    const unsub=onSnapshot(docIn('config','atmosphere'),snap=>{
       if(snap.exists()) setAtmosphere(snap.data().key||'neutro');
     });
     return()=>unsub();
-  },[]);
+  },[campaign?.id]);
 
-  const atm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
-  const lockPageScroll = tab === 'mapabatalha' || tab === 'mesaImersiva';
-  const ActivePage = tab === 'session' ? null : (LazyPages[tab] || LazyPages.prologo);
+  const theme = campaignTheme(campaign);
+  const baseAtm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
+  // Fora da campanha principal, o tema da mesa manda na cor de fundo e no acento.
+  const atm = campaign && campaign.primary === false
+    ? { ...baseAtm, bg:theme.bg, accent:theme.accent }
+    : baseAtm;
+  const lockPageScroll = tab === 'mapabatalha';
+  const ActivePage = tab === 'session' ? null : (LazyPages[tab] || LazyPages.livro);
   const playerSheetId = access?.role === 'player' ? String(access.sheetId || '') : '';
 
   const prefetch = id => {
@@ -104,6 +114,35 @@ export default function App(){
     setTab('session');
   },[]);
 
+  const chooseCampaign = useCallback(record => {
+    const chosen = setActiveCampaign(record);
+    setMasterMode(false);
+    setTab('session');
+    setAccess(loadStoredAccess());
+    setCampaign(chosen);
+  },[]);
+
+  // Voltar para a lista de mesas: desloga da mesa atual e esquece a escolha.
+  const leaveCampaign = useCallback(() => {
+    clearStoredAccess();
+    clearStoredCampaign();
+    setAccess(null);
+    setMasterMode(false);
+    setTab('session');
+    setCampaign(null);
+  },[]);
+
+  if (!campaign) {
+    return (
+      <div style={{height:'100vh',overflow:'auto',background:'#07050F',color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif"}}>
+        <ToastContainer/>
+        <Suspense fallback={<div role="status" className="lazy-page-skeleton">Reunindo as mesas...</div>}>
+          <CampaignGate onChoose={chooseCampaign}/>
+        </Suspense>
+      </div>
+    );
+  }
+
   const accessReady = !!access && (access.role === 'player' || access.role === 'visitor' || masterMode);
   if (!accessReady) {
     return (
@@ -112,13 +151,13 @@ export default function App(){
         <ToastContainer/>
         <RealtimeBroadcasts/>
         <EnhancedSoundscape/>
-        <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode}/>
+        <PlayerAccessGate access={access} onAccess={setAccess} onLogout={logout} masterMode={masterMode} setMasterMode={setMasterMode} campaign={campaign} onLeaveCampaign={leaveCampaign}/>
       </div>
     );
   }
 
-  return <Suspense fallback={<div style={{height:'100vh',background:atm.bg,color:'#C8B8A0'}}><CosmicLivingBackground quality={quality}/><div role="status" className="lazy-page-skeleton">Abrindo a mesa...</div></div>}>
-    <AuthenticatedSession access={access} playerSheetId={playerSheetId} tab={tab} masterMode={masterMode} quality={quality} setQuality={setQuality} atm={atm} logout={logout} navigate={navigate} prefetch={prefetch} lockPageScroll={lockPageScroll} ActivePage={ActivePage} setMasterMode={setMasterMode} TAB_LABELS={TAB_LABELS}/>
+  return <Suspense key={campaign.id} fallback={<div style={{height:'100vh',background:atm.bg,color:'#C8B8A0'}}><CosmicLivingBackground quality={quality}/><div role="status" className="lazy-page-skeleton">Abrindo a mesa...</div></div>}>
+    <AuthenticatedSession campaign={campaign} onLeaveCampaign={leaveCampaign} access={access} playerSheetId={playerSheetId} tab={tab} masterMode={masterMode} quality={quality} setQuality={setQuality} atm={atm} logout={logout} navigate={navigate} prefetch={prefetch} lockPageScroll={lockPageScroll} ActivePage={ActivePage} setMasterMode={setMasterMode} TAB_LABELS={TAB_LABELS}/>
   </Suspense>;
 }
 

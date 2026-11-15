@@ -8,8 +8,8 @@ const css = fs.readFileSync('src/experience/game-experience-3.css', 'utf8');
 test('token movement and pings bypass the pooled snapshot transport', () => {
   assert.match(battle, /onSnapshot as liveSnapshot/);
   assert.match(battle, /liveSnapshot\(positionsQuery/);
-  assert.match(battle, /liveSnapshot\(doc\(db,'config','battlemap_ping'\)/);
-  assert.match(battle, /liveSnapshot\(collection\(db,'battlemap_ping_live'\)/);
+  assert.match(battle, /liveSnapshot\(docIn\('config','battlemap_ping'\)/);
+  assert.match(battle, /liveSnapshot\(col\('battlemap_ping_live'\)/);
   assert.match(battle, /channel: 'motion-v2'/);
   assert.match(battle, /channel: 'position-final-v1'/);
 });

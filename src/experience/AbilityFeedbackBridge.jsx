@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { docIn } from '../core/campaign';
 
 export default function AbilityFeedbackBridge(){
   useEffect(()=>{
@@ -22,7 +23,7 @@ export default function AbilityFeedbackBridge(){
         abilityType:String(detail.abilityType||'normal'),
         icon:String(detail.icon||'✦'),color:String(detail.color||'#A855F7'),cost:Math.max(0,Number(detail.cost)||0),
       };
-      setDoc(doc(db,'combat_action_events',id),action,{merge:true})
+      setDoc(docIn('combat_action_events',id),action,{merge:true})
         .catch(()=>console.warn('Não foi possível publicar o uso da habilidade para a mesa.'));
     };
     document.addEventListener('click',onClick,true);

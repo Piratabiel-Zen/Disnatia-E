@@ -6,6 +6,7 @@ import { compressImage } from '../core/media';
 import { RestrictedAccess, hpColor } from '../core/ui';
 import { ARTEFATOS_DATA, ATTRS, CLASSES, SHEET_COLORS } from '../data/gameData';
 import { AttrDots, StatusPanel, ArtefatoFichaPanel } from '../features/sheets/SheetComponents';
+import { col, docIn } from '../core/campaign';
 
 const ENEMY_DEFAULT = '#FF4F65';
 const DANGER_COLORS = { Baixo:'#4ADE80', Médio:'#E8A020', Alto:'#FF6B35', Extremo:'#E8193C' };
@@ -267,18 +268,18 @@ export default function EnemySheetExperience({ masterMode }) {
   const saveTimeout=useRef({});
 
   useEffect(()=>{
-    const u1=onSnapshot(collection(db,'enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));setEnemies(data);setLoaded(true);});
-    const u2=onSnapshot(doc(db,'config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlocked(snap.data().unlocked||{});});
-    const u3=onSnapshot(doc(db,'config','artefatos_habilidades'),snap=>{if(snap.exists())setArtefatosHabs(snap.data()||{});});
+    const u1=onSnapshot(col('enemies'),snap=>{const data=snap.docs.map(d=>({id:d.id,...d.data()}));data.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));setEnemies(data);setLoaded(true);});
+    const u2=onSnapshot(docIn('config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlocked(snap.data().unlocked||{});});
+    const u3=onSnapshot(docIn('config','artefatos_habilidades'),snap=>{if(snap.exists())setArtefatosHabs(snap.data()||{});});
     return()=>{u1();u2();u3();};
   },[]);
 
   useEffect(()=>{if(loaded&&enemies.length&&!enemies.some(e=>String(e.id)===String(activeId)))setActiveId(String(enemies[0].id));},[loaded,enemies,activeId]);
 
-  const save = enemy => {clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(()=>setDoc(doc(db,'enemies',String(enemy.id)),enemy).catch(console.error),650);};
+  const save = enemy => {clearTimeout(saveTimeout.current[enemy.id]);saveTimeout.current[enemy.id]=setTimeout(()=>setDoc(docIn('enemies',String(enemy.id)),enemy).catch(console.error),650);};
   const update = (id,data) => {setEnemies(prev=>prev.map(e=>String(e.id)===String(id)?data:e));save(data);};
-  const add = async()=>{if(enemies.length>=15)return;const enemy=makeEnemy(Date.now());await setDoc(doc(db,'enemies',String(enemy.id)),enemy);setActiveId(String(enemy.id));};
-  const remove = async id=>{await deleteDoc(doc(db,'enemies',String(id)));setActiveId(null);};
+  const add = async()=>{if(enemies.length>=15)return;const enemy=makeEnemy(Date.now());await setDoc(docIn('enemies',String(enemy.id)),enemy);setActiveId(String(enemy.id));};
+  const remove = async id=>{await deleteDoc(docIn('enemies',String(id)));setActiveId(null);};
   const active=enemies.find(e=>String(e.id)===String(activeId));
   const revealedArtefatos=ARTEFATOS_DATA.filter(a=>artefatosUnlocked[a.id]);
 

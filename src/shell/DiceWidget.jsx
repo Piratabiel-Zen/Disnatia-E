@@ -5,6 +5,7 @@ import { db } from "../core/firebase";
 import { publishDiceResult } from "../core/combatEvents";
 import { CLASSES } from "../data/gameData";
 import PhysicalDiceTray from "../experience/PhysicalDiceTray";
+import { docIn } from '../core/campaign';
 export function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   const [display, setDisplay] = useState(finalValue);
   const [phase, setPhase] = useState('idle');
@@ -81,7 +82,7 @@ function DiceWidget({ access }) {
       });
       return undefined;
     }
-    const unsub = onSnapshot(doc(db, 'sheets', String(access.sheetId)), snap => {
+    const unsub = onSnapshot(docIn('sheets', String(access.sheetId)), snap => {
       const sheet = snap.exists() ? (snap.data() || {}) : {};
       const classId = sheet.classe || access?.classId || '';
       const cls = CLASSES.find(c => String(c.id) === String(classId));
@@ -96,7 +97,7 @@ function DiceWidget({ access }) {
   }, [access?.role, access?.sheetId, access?.name, access?.color, access?.classId, access?.className]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+    const unsub = onSnapshot(docIn('config', 'combat'), snap => {
       if (snap.exists()) setCombatActive(snap.data().active || false);
     });
     return () => unsub();

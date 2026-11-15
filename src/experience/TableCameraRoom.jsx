@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { collection,deleteDoc,doc,getDocs,limit,onSnapshot,orderBy,query,serverTimestamp,setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { activeCameraMembers,CAMERA_LIMIT,CAMERA_VIDEO,cameraName,cameraPosition,cameraProfileForParticipants,createCameraPeer,cameraMemberRows,timestampMs } from '../adventure/cameraPeer.mjs';
+import { col, docIn } from '../core/campaign';
 
 function VideoTile({row,stream,state,index,local,layoutVersion,onRetry,immersive=false}){
   const video=useRef(null),tile=useRef(null),drag=useRef(null);
@@ -83,14 +84,14 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
     setBusy(true);setError('');const generation=++operation.current;
     if(immersive){
       try{
-        const existing=await getDocs(query(collection(db,cameraCollection),orderBy('updatedAt','desc'),limit(32)));
+        const existing=await getDocs(query(col(cameraCollection),orderBy('updatedAt','desc'),limit(32)));
         const active=activeCameraMembers(cameraMemberRows(existing.docs),Date.now());
         const existingMaster=active.some(row=>row.role==='master');
         const playerCount=active.filter(row=>row.role!=='master').length;
         if(masterMode?existingMaster:playerCount>=6){setError(masterMode?'A vaga do mestre já está ocupada.':'As seis vagas dos jogadores já estão ocupadas.');setBusy(false);return;}
       }catch{setError('Não foi possível conferir as vagas. Tente novamente.');setBusy(false);return;}
     }
-    const id=crypto.randomUUID(),ref=doc(db,cameraCollection,id);
+    const id=crypto.randomUUID(),ref=docIn(cameraCollection,id);
     const room={id,ref,peers:new Map(),calls:new Map(),offset:0,rows:[],ownStamp:0,active:null,rosterReady:false,rosterCached:false,rosterRetries:0};session.current=room;
     try{
       await setDoc(ref,{...identity.current,online:true,cameraOn:false,updatedAt:serverTimestamp()});
@@ -114,7 +115,7 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
         room.peers.forEach((peer,remoteId)=>{if(!ids.has(remoteId)){peer.close();room.peers.delete(remoteId);setStreams(previous=>{const next={...previous};delete next[remoteId];return next;});setStates(previous=>{const next={...previous};delete next[remoteId];return next;});const callRef=room.calls.get(remoteId);room.calls.delete(remoteId);if(callRef)deleteDoc(callRef).catch(()=>{});}});
         visible.forEach(row=>{
           if(row.id===id||room.peers.has(row.id))return;
-          const callRef=doc(db,callCollection,[id,row.id].sort().join('_'));room.calls.set(row.id,callRef);
+          const callRef=docIn(callCollection,[id,row.id].sort().join('_'));room.calls.set(row.id,callRef);
           const peer=createCameraPeer({localId:id,remoteId:row.id,iceServers,...cameraProfile,
             publish:data=>setDoc(callRef,{...data,updatedAt:serverTimestamp()},{merge:true}),
             subscribe:(callback,onError)=>onSnapshot(callRef,snap=>{if(snap.exists())callback(snap.data(),snap.metadata);},onError),
@@ -129,7 +130,7 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
       const watchRoster=()=>{
         if(session.current!==room)return;
         room.unsubscribe?.();
-        room.unsubscribe=onSnapshot(query(collection(db,cameraCollection),orderBy('updatedAt','desc'),limit(32)),{includeMetadataChanges:true},snap=>{
+        room.unsubscribe=onSnapshot(query(col(cameraCollection),orderBy('updatedAt','desc'),limit(32)),{includeMetadataChanges:true},snap=>{
           if(session.current!==room)return;
           room.rosterCached=!!snap.metadata.fromCache;
           if(!room.rosterCached){room.rosterRetries=0;setError(previous=>previous==='Recuperando a conexão das câmeras...'?'':previous);}

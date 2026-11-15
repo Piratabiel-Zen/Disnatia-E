@@ -37,7 +37,7 @@ test('a revealed summon can be released outside combat and persists for future i
   assert.doesNotMatch(patch, /summon\.revealed!==true\|\|!combat\?\.active/);
   assert.match(patch, /const canRelease=Boolean\(!activeSummon&&!busy\)/);
   assert.match(patch, /Autorizada pelo Mestre\. Pode ser liberada agora/);
-  assert.match(patch, /collection\(db,'combat_summons'\)/);
+  assert.match(patch, /col\('combat_summons'\)/);
   assert.match(patch, /const actionsAvailable=Boolean\(activeSummon\)/);
   assert.doesNotMatch(patch, /!masterMode&&combat\?\.active&&!isTurn/);
 });

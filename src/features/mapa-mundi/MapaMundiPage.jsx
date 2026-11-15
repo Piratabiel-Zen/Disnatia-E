@@ -5,6 +5,7 @@ import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { pushToast } from "../../core/toast";
 import { btnStyle } from "../../core/ui";
+import { docIn } from '../../core/campaign';
 function MapaMundiSection({ masterMode }) {
   const ROOT_MAP_ID = 'mundo';
   const TYPE_META = {
@@ -42,7 +43,7 @@ function MapaMundiSection({ masterMode }) {
   const saveTimeout = useRef(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'mapamundi'), snap => {
+    const unsub = onSnapshot(docIn('config', 'mapamundi'), snap => {
       if (snap.exists()) {
         const d = snap.data();
         if (d.maps && Object.keys(d.maps).length) {
@@ -95,7 +96,7 @@ function MapaMundiSection({ masterMode }) {
 
   useEffect(() => {
     setMapMedia('');
-    const unsub = onSnapshot(doc(db, 'mapamundi_media', `map_${currentMapId}`), snap => {
+    const unsub = onSnapshot(docIn('mapamundi_media', `map_${currentMapId}`), snap => {
       setMapMedia(snap.exists() ? String(snap.data()?.img || '') : '');
     }, () => setMapMedia(''));
     return () => unsub();
@@ -104,7 +105,7 @@ function MapaMundiSection({ masterMode }) {
   useEffect(() => {
     setPinMedia('');
     if (!selectedPin) return;
-    const unsub = onSnapshot(doc(db, 'mapamundi_media', `pin_${currentMapId}_${selectedPin}`), snap => {
+    const unsub = onSnapshot(docIn('mapamundi_media', `pin_${currentMapId}_${selectedPin}`), snap => {
       setPinMedia(snap.exists() ? String(snap.data()?.img || '') : '');
     }, () => setPinMedia(''));
     return () => unsub();
@@ -123,7 +124,7 @@ function MapaMundiSection({ masterMode }) {
     clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(async () => {
       try {
-        await setDoc(doc(db, 'config', 'mapamundi'), {
+        await setDoc(docIn('config', 'mapamundi'), {
           rootId: newAtlas.rootId,
           maps: newAtlas.maps,
           updatedAt: Date.now(),
@@ -179,7 +180,7 @@ function MapaMundiSection({ masterMode }) {
       try {
         const compressed = await compressAtlasMedia(ev.target.result, 'map');
         setMapMedia(compressed);
-        await setDoc(doc(db, 'mapamundi_media', `map_${currentMapId}`), { img: compressed, mapId: String(currentMapId), kind: 'map', updatedAt: Date.now() });
+        await setDoc(docIn('mapamundi_media', `map_${currentMapId}`), { img: compressed, mapId: String(currentMapId), kind: 'map', updatedAt: Date.now() });
         pushToast(`Mapa atualizado: ${currentMap.titulo}`, '🗺️', '#9B7CFF');
       } catch (err) {
         console.error('Erro ao enviar imagem do mapa:', err);
@@ -199,7 +200,7 @@ function MapaMundiSection({ masterMode }) {
       try {
         const compressed = await compressAtlasMedia(ev.target.result, 'pin');
         setPinMedia(compressed);
-        await setDoc(doc(db, 'mapamundi_media', `pin_${currentMapId}_${pinId}`), { img: compressed, mapId: String(currentMapId), pinId, kind: 'pin', updatedAt: Date.now() });
+        await setDoc(docIn('mapamundi_media', `pin_${currentMapId}_${pinId}`), { img: compressed, mapId: String(currentMapId), pinId, kind: 'pin', updatedAt: Date.now() });
         pushToast('Imagem do local atualizada.', '✦', '#9B7CFF');
       } catch (err) {
         console.error('Erro ao enviar imagem do local:', err);
@@ -263,7 +264,7 @@ function MapaMundiSection({ masterMode }) {
       }
     });
     const inheritedImage = String(pin.id)===String(selectedPin) ? selectedPinImage : (pin.imagemLocal || '');
-    if (inheritedImage) setDoc(doc(db, 'mapamundi_media', `map_${childId}`), { img: inheritedImage, mapId: String(childId), kind: 'map', updatedAt: Date.now() }).catch(()=>{});
+    if (inheritedImage) setDoc(docIn('mapamundi_media', `map_${childId}`), { img: inheritedImage, mapId: String(childId), kind: 'map', updatedAt: Date.now() }).catch(()=>{});
     setCurrentMapId(childId);
   };
 

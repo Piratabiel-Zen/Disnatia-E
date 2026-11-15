@@ -4,12 +4,13 @@ import { doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { PROLOGUE } from "../../data/gameData";
+import { docIn } from '../../core/campaign';
 function PrologueSection({ masterMode }) {
   const [capa, setCapa] = useState('');
   const fileRef = useRef(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'prologue_cover'), snap => {
+    const unsub = onSnapshot(docIn('config', 'prologue_cover'), snap => {
       if (snap.exists()) setCapa(snap.data().img || '');
     });
     return () => unsub();
@@ -25,7 +26,7 @@ function PrologueSection({ masterMode }) {
       setCapa(compressed);
 
       try {
-        await setDoc(doc(db, 'config', 'prologue_cover'), { img: compressed });
+        await setDoc(docIn('config', 'prologue_cover'), { img: compressed });
       } catch (err) {
         alert('Erro ao salvar a imagem do prólogo. Tente uma imagem menor.');
         console.error(err);
