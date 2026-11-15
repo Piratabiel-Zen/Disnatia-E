@@ -19,6 +19,7 @@ import {ArtifactPowerControls} from './ArtifactPowers';
 import { ComfortPanel, MorePanel, PlayerDock } from './PlayerComfort';
 import { abilityAvailability, isTyping } from '../adventure/playerPreferences.mjs';
 import { abilityType } from '../adventure/abilityPresentation.mjs';
+import { col, docIn } from '../core/campaign';
 /* SESSION OPENING CINEMATIC 2026-09-10 */
 /* GAME EXPERIENCE 3 POLISH + LIVE EVENTS 2026-09-10 */
 
@@ -288,7 +289,7 @@ function ActionBar({mode,selectedSheet,selectedClass,combat,combatState,onNaviga
   </div>;
 }
 
-function UtilityRail({tab,panel,setPanel,masterMode,onNavigate,preset,setPreset,onPing}){
+function UtilityRail({tab,panel,setPanel,masterMode,onPing}){
   const toggle=name=>setPanel(panel===name?'':name);
   return <div className="g3-utility-rail">
     <button className={panel==='sheet'?'active':''} onClick={()=>toggle('sheet')} title="Ficha e atributos"><span>◆</span><small>Ficha</small></button>
@@ -298,9 +299,6 @@ function UtilityRail({tab,panel,setPanel,masterMode,onNavigate,preset,setPreset,
     {tab==='mapabatalha'&&<button onClick={onPing} title="Abrir roda de ping"><span>◎</span><small>Ping</small></button>}
     {masterMode&&<button className={panel==='director'?'active':''} onClick={()=>toggle('director')} title="Direção da sessão"><span>✦</span><small>Direção</small></button>}
     <button className={panel==='preferences'?'active':''} onClick={()=>toggle('preferences')} title="Conforto e atalhos"><span>{'\u2699'}</span><small>Conforto</small></button>
-    <div className="g3-rail-separator"/>
-    <button className="g3-preset-button" onClick={()=>setPreset(preset==='standard'?'tactical':preset==='tactical'?'cinematic':'standard')} title={`HUD: ${HUD_PRESETS[preset]?.label||'Padrão'}`}><span>{HUD_PRESETS[preset]?.icon||'✦'}</span><small>HUD</small></button>
-    <button onClick={()=>onNavigate('session')} title="Sessão atual"><span>⌂</span><small>Sessão</small></button>
   </div>;
 }
 
@@ -583,13 +581,13 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
   const entityPrimedRef=useRef(false);
 
   const patchGame=useCallback(async patch=>{
-    await setDoc(doc(db,'config',GAME_DOC),{...patch,updatedAt:Date.now()},{merge:true});
+    await setDoc(docIn('config',GAME_DOC),{...patch,updatedAt:Date.now()},{merge:true});
   },[]);
 
   // SHARED SESSION REALTIME 2026-09-21
   // Um único documento pequeno permanece ativo em todas as páginas. Assim mapa,
   // cena, chefe e estado do mundo não dependem da rota que o jogador está vendo.
-  useEffect(()=>onSnapshot(doc(db,'config',GAME_DOC),snap=>{
+  useEffect(()=>onSnapshot(docIn('config',GAME_DOC),snap=>{
     setGame(snap.exists()?{worldMode:'exploration',environment:{type:'none',intensity:45},...(snap.data()||{})}:{worldMode:'exploration',environment:{type:'none',intensity:45}});
     setGameReady(true);
   },error=>console.error('Erro no canal global da sessão:',error)),[]);
@@ -603,8 +601,8 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     }
     // Inventory is the only surface that consumes this collection. Avoid
     // keeping a campaign-wide item listener active while the player is on the map.
-    const u3=panel==='inventory'?onSnapshot(collection(db,'campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)))):()=>{};
-    const u4=onSnapshot(collection(db,'enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    const u3=panel==='inventory'?onSnapshot(col('campaign_items'),snap=>setItems(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)))):()=>{};
+    const u4=onSnapshot(col('enemies'),snap=>setEnemies(snap.docs.map(d=>({id:d.id,...d.data()}))));
     return()=>{u3();u4();};
   },[g3LiveSurface,panel]);
 
@@ -615,12 +613,12 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     openingVisible&&game?.openingScene?.imageRef,
   ].filter(Boolean).map(String))].sort());
   useEffect(()=>{
-    if(masterMode&&panel==='director')return onSnapshot(collection(db,'director_media'),snap=>{
+    if(masterMode&&panel==='director')return onSnapshot(col('director_media'),snap=>{
       setDirectorMedia(Object.fromEntries(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}])));
     });
     const ids=JSON.parse(liveMediaIds);
     setDirectorMedia(prev=>Object.fromEntries(ids.filter(id=>prev[id]).map(id=>[id,prev[id]])));
-    const stops=ids.map(id=>onSnapshot(doc(db,'director_media',id),snap=>setDirectorMedia(prev=>({...prev,[id]:snap.exists()?snap.data():null}))));
+    const stops=ids.map(id=>onSnapshot(docIn('director_media',id),snap=>setDirectorMedia(prev=>({...prev,[id]:snap.exists()?snap.data():null}))));
     return()=>stops.forEach(stop=>stop());
   },[g3LiveSurface,masterMode,panel,liveMediaIds]);
 
@@ -639,7 +637,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
       if(String(data).length>850000)data=await compressImage(raw,1000,760,.60);
       if(String(data).length>950000)throw new Error('Imagem ainda muito grande após compressão');
       const id=`director_${String(kind||'media').replace(/[^a-z0-9_-]/gi,'_')}`;
-      await setDoc(doc(db,'director_media',id),{data,name:file.name||'imagem',type:file.type||'image/jpeg',kind:String(kind||'media'),updatedAt:Date.now()},{merge:true});
+      await setDoc(docIn('director_media',id),{data,name:file.name||'imagem',type:file.type||'image/jpeg',kind:String(kind||'media'),updatedAt:Date.now()},{merge:true});
       pushFeedback({kind:'ability',icon:'✓',name:'Imagem salva',text:'A arte ficou armazenada no Game Director.'});
       return id;
     }catch(error){
@@ -728,7 +726,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     const ok=await useQuickAbility(ability);
     if(!ok){pushFeedback({kind:'warning',icon:'⚠',name:abilityName(ability),text:'Sem Vigor suficiente ou habilidade em cooldown.'});setTargeting(null);return;}
     const actionEvent={id:nowId('combat_action'),type:'combat_action',ts:Date.now(),source:'game3-actionbar',actorId:String(selectedSheet?.id||''),actorName:selectedSheet?.nome||'Personagem',abilityName:abilityName(ability),abilityType:abilityType(ability),targetId:String(target?.id||''),targetName:target?.nome||'',targetType:target?'combatant':'none',icon:selectedClass?.icon||'⚡',color:selectedClass?.color||'#A855F7',round:Number(combatState?.round||1)};
-    const announcements=await Promise.allSettled([setDoc(doc(db,'combat_action_events',actionEvent.id),actionEvent,{merge:true})]);
+    const announcements=await Promise.allSettled([setDoc(docIn('combat_action_events',actionEvent.id),actionEvent,{merge:true})]);
     if(announcements.some(row=>row.status==='rejected'))pushFeedback({kind:'warning',name:'Habilidade utilizada',text:'Parte do anúncio não foi confirmada. Não repita a ação.'});
     if(target) await addJournal(`${selectedSheet?.nome||'Personagem'} definiu ${target.nome||'combatente'} como alvo de ${abilityName(ability)}.`,'ability',{icon:selectedClass?.icon||'⌖',color:selectedClass?.color||'#a855f7'}).catch(()=>{});
     pushFeedback({kind:'ability',icon:actionEvent.icon,color:actionEvent.color,name:abilityName(ability),text:target?`Alvo: ${target.nome||'combatente'}`:'Ação manifestada'});
@@ -771,7 +769,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
 
   const createItem=useCallback(async form=>{
     const id=nowId('item');
-    await setDoc(doc(db,'campaign_items',id),{name:String(form?.name||'Item').trim(),icon:form?.icon||'◆',description:String(form?.description||''),ownerSheetId:String(form?.ownerSheetId||'group'),createdAt:Date.now(),updatedAt:Date.now()});
+    await setDoc(docIn('campaign_items',id),{name:String(form?.name||'Item').trim(),icon:form?.icon||'◆',description:String(form?.description||''),ownerSheetId:String(form?.ownerSheetId||'group'),createdAt:Date.now(),updatedAt:Date.now()});
     await addJournal(`${form?.name||'Um item'} entrou na campanha.`,'item',{icon:form?.icon||'◆',color:'#d6a7ff'});
     await patchGame({discovery:{id:nowId('item_discovery'),type:'item',title:form?.name||'Novo item',subtitle:'Registrado no inventário da campanha',createdAt:Date.now(),expiresAt:Date.now()+4800}});
   },[addJournal,patchGame]);
@@ -779,18 +777,18 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
   const transferItem=useCallback(async(itemId,ownerSheetId)=>{
     const item=items.find(x=>String(x.id)===String(itemId)); if(!item)return;
     const owner=sheets.find(s=>String(s.id)===String(ownerSheetId));
-    await setDoc(doc(db,'campaign_items',String(itemId)),{ownerSheetId:String(ownerSheetId),updatedAt:Date.now()},{merge:true});
+    await setDoc(docIn('campaign_items',String(itemId)),{ownerSheetId:String(ownerSheetId),updatedAt:Date.now()},{merge:true});
     await addJournal(`${item.name||'Item'} foi entregue ${ownerSheetId==='group'?'ao grupo':`a ${owner?.nome||'outro personagem'}`}.`,'item',{icon:item.icon||'◆',color:'#c8a8e8'});
   },[items,sheets,addJournal]);
 
   const updateItem=useCallback(async(itemId,form)=>{
     if(!masterMode||!itemId||!form?.name?.trim())return;
-    await setDoc(doc(db,'campaign_items',String(itemId)),{name:String(form.name).trim(),icon:form.icon||'◆',description:String(form.description||''),ownerSheetId:String(form.ownerSheetId||'group'),updatedAt:Date.now()},{merge:true});
+    await setDoc(docIn('campaign_items',String(itemId)),{name:String(form.name).trim(),icon:form.icon||'◆',description:String(form.description||''),ownerSheetId:String(form.ownerSheetId||'group'),updatedAt:Date.now()},{merge:true});
   },[masterMode]);
 
   const deleteItem=useCallback(async itemId=>{
     if(!masterMode||!itemId)return;
-    await deleteDoc(doc(db,'campaign_items',String(itemId)));
+    await deleteDoc(docIn('campaign_items',String(itemId)));
   },[masterMode]);
 
   const completeObjective=useCallback(async()=>{
@@ -822,7 +820,7 @@ export default function GameExperience3({access,masterMode,tab,onNavigate}){
     {tab!=='mesaImersiva'&&<TableCameras access={access} selectedSheet={selectedSheet} selectedClass={selectedClass} masterMode={masterMode}/>}
     <WorldParticles type={game?.environment?.type||'none'} intensity={game?.environment?.intensity||45}/>
     <TopContext mode={effectiveMode} session={session} combat={combat} combatState={combatState} selectedSheet={selectedSheet} masterMode={masterMode} onCompleteObjective={completeObjective}/>
-    <UtilityRail tab={tab} panel={panel} setPanel={setPanel} masterMode={masterMode} onNavigate={onNavigate} preset={preset} setPreset={setPreset} onPing={()=>setPingOpen(true)}/>
+    <UtilityRail tab={tab} panel={panel} setPanel={setPanel} masterMode={masterMode} onPing={()=>setPingOpen(true)}/>
     {!masterMode&&<PlayerDock panel={panel} onPanel={setPanel} onNavigate={onNavigate}/>}
     {masterMode&&<MasterQuickBar onOpen={openDirector} onNavigate={onNavigate} onPatchGame={patchGame} currentMode={game?.worldMode||'exploration'}/>} 
     <ActionBar mode={effectiveMode} selectedSheet={selectedSheet} selectedClass={selectedClass} combat={combat} combatState={combatState} onNavigate={onNavigate} onAbility={chooseAbility} onOpenSheet={()=>setPanel('sheet')} onOpenInventory={()=>setPanel('inventory')} busy={abilityBusy} masterMode={masterMode}/>

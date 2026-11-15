@@ -76,8 +76,8 @@ test('writer supports a roster larger than 1 MiB without a map-sized document', 
   };
   const tokens = Array.from({ length: 30 }, (_, id) => ({ id, nome: `Enemy ${id}`, foto: 'data:image/png;base64,' + 'a'.repeat(80000), x: id, hp: 10 }));
   assert.ok(Buffer.byteLength(JSON.stringify({ tokens })) > 1048576);
-  const writer = new Function('tokenOutbox', 'runTransaction', 'db', 'doc', 'mapTokensRef', 'pushToast', 'localLeaseRef', 'liveClientIdRef', 'setDoc', source.slice(start, end) + 'return writeLiveTokens;')
-    (outbox, runTransaction, {}, (_, collection, key) => key, { current: { m: tokens } }, () => {}, {current:null}, {current:'test'}, setDoc);
+  const writer = new Function('tokenOutbox', 'runTransaction', 'docIn', 'mapTokensRef', 'pushToast', 'localLeaseRef', 'liveClientIdRef', 'setDoc', source.slice(start, end) + 'return writeLiveTokens;')
+    (outbox, runTransaction, (collection, key) => key, { current: { m: tokens } }, () => {}, {current:null}, {current:'test'}, setDoc);
   await writer('m', tokens, true);
   assert.equal(documents.size, 30);
   await writer('m', [{ id: 1, x: 70 }], true);
@@ -99,8 +99,8 @@ test('canonical receiver keeps both clients consistent despite stale legacy list
     let state = {};
     const outbox = createTokenOutbox();
     const ref = { current: {} };
-    const attach = new Function('liveSnapshot', 'collection', 'db', 'tokenOutbox', 'resolveTokenRoster', 'mergeIncomingTokenState', 'setMapTokens', 'mapTokensRef', 'canonicalRosterReadyRef', source.slice(start, end));
-    attach((_, options, callback) => { receive = callback; return () => {}; }, () => {}, {}, outbox, resolveTokenRoster, (_, tokens) => tokens, update => { state = update(state); }, ref, {current:false});
+    const attach = new Function('liveSnapshot', 'col', 'tokenOutbox', 'resolveTokenRoster', 'mergeIncomingTokenState', 'setMapTokens', 'mapTokensRef', 'canonicalRosterReadyRef', source.slice(start, end));
+    attach((_, options, callback) => { receive = callback; return () => {}; }, () => {}, outbox, resolveTokenRoster, (_, tokens) => tokens, update => { state = update(state); }, ref, {current:false});
     return { outbox, snapshot: rows => receive({ docs: rows.map(([id, data]) => ({ id, data: () => data, metadata: { hasPendingWrites: false, fromCache: false } })) }), roster: () => resolveTokenRoster(state.m || [], [], outbox.operations('m')) };
   };
   const a = createClient(), b = createClient();
@@ -135,8 +135,8 @@ test('authoritative snapshots replace boot ghosts and do not resurrect deleted o
   const start=source.indexOf('    const u1b = liveSnapshot('),end=source.indexOf('    // Canal leve de sincronização ao vivo.',start);
   const clients=Array.from({length:7},()=>{
     let receive,state={m:[{id:'ghost',nome:'Old boot copy'}]};const ref={current:state},outbox=createTokenOutbox();
-    new Function('liveSnapshot','collection','db','tokenOutbox','resolveTokenRoster','mergeIncomingTokenState','setMapTokens','mapTokensRef','canonicalRosterReadyRef',source.slice(start,end))
-      ((_,options,callback)=>{receive=callback;return()=>{};},()=>{}, {},outbox,resolveTokenRoster,(_,tokens)=>tokens,update=>{state=update(state);},ref,{current:false});
+    new Function('liveSnapshot','col','tokenOutbox','resolveTokenRoster','mergeIncomingTokenState','setMapTokens','mapTokensRef','canonicalRosterReadyRef',source.slice(start,end))
+      ((_,options,callback)=>{receive=callback;return()=>{};},()=>{},outbox,resolveTokenRoster,(_,tokens)=>tokens,update=>{state=update(state);},ref,{current:false});
     return {outbox,roster:()=>state.m,snapshot:(rows,cached=false)=>receive({metadata:{fromCache:cached},docs:rows.map(([id,data])=>({id,data:()=>data,metadata:{hasPendingWrites:false,fromCache:cached}}))})};
   });
   const roster=Array.from({length:8},(_,id)=>({id:String(id),enemyId:id<6?'glass':'vampire',nome:id<6?'Vidro':'Vampiro',x:id*8,y:50}));

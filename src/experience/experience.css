@@ -617,3 +617,13 @@ html.dinastia-combat-hud .g3-actionbar{display:none!important}
 .summon-player-actions .summon-ability-card>.summon-ability-meta{margin-left:auto;text-align:right}
 .summon-player-actions .summon-ability-card>p{flex:1 0 100%;font-size:13px;color:#7A6A5A;line-height:1.6}
 .summon-player-actions .summon-ability-card>button{flex:1 0 100%;min-height:30px}
+
+/* Trocar de mesa: sai da campanha atual e volta para a lista. */
+.grim-switch-table{
+  display:flex;align-items:center;gap:9px;width:100%;margin-top:auto;padding:9px 10px;
+  border-radius:9px;cursor:pointer;font-family:'Crimson Text',Georgia,serif;font-size:.84rem;
+  color:rgba(200,184,160,.6);background:transparent;border:1px solid rgba(168,85,247,.16);
+  transition:color .18s,background .18s,border-color .18s;
+}
+.grim-switch-table:hover{color:#D6C7A8;background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3)}
+.grim-switch-table>span:first-child{flex:none;width:20px;text-align:center;font-size:.95rem}

@@ -7,6 +7,7 @@ import {artifactAbilities,artifactRequirements,artifactUseReason} from '../adven
 import {abilityAvailability} from '../adventure/playerPreferences.mjs';
 import {useExperience} from './ExperienceKit';
 import './artifact-powers.css';
+import { docIn } from '../core/campaign';
 
 export function ArtifactPowerControls({sheet}) {
   const {sheets,masterMode,access,selectedSheet,combat,combatState,useQuickAbility}=useExperience();
@@ -14,8 +15,8 @@ export function ArtifactPowerControls({sheet}) {
   const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const pending=useRef(false);
   useEffect(()=>{
-    const off=onSnapshot(doc(db,'config','artefatos'),snap=>{setConfig(snap.data()||{});setReady(true);},()=>setMessage('Não foi possível consultar os artefatos.'));
-    const powers=onSnapshot(doc(db,'config','artefatos_habilidades'),snap=>setCustom(snap.data()||{}),()=>setMessage('Não foi possível consultar os poderes.'));
+    const off=onSnapshot(docIn('config','artefatos'),snap=>{setConfig(snap.data()||{});setReady(true);},()=>setMessage('Não foi possível consultar os artefatos.'));
+    const powers=onSnapshot(docIn('config','artefatos_habilidades'),snap=>setCustom(snap.data()||{}),()=>setMessage('Não foi possível consultar os poderes.'));
     return()=>{off();powers();};
   },[]);
   const current=sheets.find(row=>String(row.id)===String(sheet?.id))||sheet;

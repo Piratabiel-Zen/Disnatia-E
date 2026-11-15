@@ -4,13 +4,14 @@ import { collection,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { CLASSES } from "../../data/gameData";
+import { col, docIn } from '../../core/campaign';
 function ClassesSection({ masterMode }) {
   const [activeId, setActiveId] = useState(CLASSES[0].id);
   const [covers, setCovers] = useState({});
   const fileRef = useRef(null);
 
   useEffect(() => {
-  const unsub = onSnapshot(collection(db, 'class_covers'), snap => {
+  const unsub = onSnapshot(col('class_covers'), snap => {
     const data = {};
     snap.docs.forEach(d => { data[d.id] = d.data().img || ''; });
     setCovers(data);
@@ -31,7 +32,7 @@ function ClassesSection({ masterMode }) {
       setCovers(prev => ({ ...prev, [cls.id]: compressed }));
 
       try {
-        await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
+        await setDoc(docIn('class_covers', cls.id), { img: compressed });
       } catch (err) {
         alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
         console.error(err);

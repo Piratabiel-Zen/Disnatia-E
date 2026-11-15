@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { createLiveEventGate } from '../adventure/liveEventGate.mjs';
+import { col } from '../core/campaign';
 
 const COSMIC_TTL = 22000;
 
@@ -29,7 +30,7 @@ function useDurableChannel({ collectionName, kind, ttl }) {
 
   useEffect(() => {
     const gate = createLiveEventGate();
-    const feedQuery = query(collection(db, collectionName), orderBy('ts', 'desc'), limit(20));
+    const feedQuery = query(col(collectionName), orderBy('ts', 'desc'), limit(20));
     return onSnapshot(feedQuery, { includeMetadataChanges:true }, snap => {
       const entries = snap.docs.map(d => {
         const payload={ _feedId:d.id, ...(d.data()||{}) };

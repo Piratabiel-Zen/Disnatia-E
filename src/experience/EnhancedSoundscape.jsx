@@ -36,6 +36,7 @@ function connectNoise(ctx, master, buffer, type, frequency, q = 0.8) {
 }
 
 import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
+import { docIn } from '../core/campaign';
 export default function EnhancedSoundscape() {
   const [preferences]=usePlayerPreferences();
   const [soundscape, setSoundscape] = useState({ preset:'silencio' });
@@ -51,7 +52,7 @@ export default function EnhancedSoundscape() {
   useEffect(() => { valuesRef.current = soundscape; }, [soundscape]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'soundscape'), snap => {
+    const unsub = onSnapshot(docIn('config', 'soundscape'), snap => {
       setSoundscape(snap.exists() ? (snap.data() || { preset:'silencio' }) : { preset:'silencio' });
     }, () => {});
     return () => unsub();

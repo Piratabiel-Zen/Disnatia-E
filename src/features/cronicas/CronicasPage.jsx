@@ -5,6 +5,7 @@ import { collection,deleteDoc,doc,setDoc,getDocs,query,where,writeBatch } from "
 import { db } from "../../core/firebase";
 import { compressImage,compressImageSmall } from "../../core/media";
 import { btnStyle } from "../../core/ui";
+import { col, docIn } from '../../core/campaign';
 const newEntry=id=>({id,titulo:'',sessao:'',data:new Date().toLocaleDateString('pt-BR'),mestre:'Gabriel Marcondes',participantes:'',conteudo:'',imagens:[]});
 
 function ChronicleArchive({masterMode,archive}){
@@ -36,13 +37,13 @@ function ChronicleArchive({masterMode,archive}){
     ...(!isOva?(legacyImagesRef.current[String(entryId)] || []):[]),
     ...(hqImagesRef.current[mediaKey(entryId)] || []).map(hydrateOriginal),
   ];
-  const unsub1 = onSnapshot(collection(db,archive), snap => {
+  const unsub1 = onSnapshot(col(archive), snap => {
     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     data.sort((a,b) => b.id - a.id);
     setEntries(data.map(entry => ({ ...entry, sessao:entry.sessao||entry.episodio||'', imagens: [...(isOva?(entry.imagens||[]):[]),...composeImages(entry.id)] }))); 
     setLoaded(true);
   });
-  const unsub2 = onSnapshot(collection(db,'cronicas_imgs'), snap => {
+  const unsub2 = onSnapshot(col('cronicas_imgs'), snap => {
     const imgs = {};
     snap.docs.forEach(d => {
       imgs[d.id] = (d.data().imagens || []).map((src,idx) => ({
@@ -52,7 +53,7 @@ function ChronicleArchive({masterMode,archive}){
     legacyImagesRef.current = imgs;
     setEntries(prev => prev.map(entry => ({ ...entry, imagens: [...(isOva?(entry.imagens||[]).filter(img=>typeof img==='string'):[]),...composeImages(entry.id)] })));
   });
-  const unsub3 = onSnapshot(collection(db,'cronicas_media'), snap => {
+  const unsub3 = onSnapshot(col('cronicas_media'), snap => {
     const media = {};
     snap.docs.forEach(d => {
       const row = d.data() || {};
@@ -83,7 +84,7 @@ useEffect(()=>{
   saveTimeout.current[entry.id] = setTimeout(async () => {
     try {
       const { imagens, ...sem } = entry;
-      await setDoc(doc(db, archive, String(entry.id)), sem,{merge:true});
+      await setDoc(docIn(archive, String(entry.id)), sem,{merge:true});
     } catch(e) { console.error('Erro ao salvar crônica:', e); setError('Não foi possível salvar o texto. Confira a conexão e tente novamente.'); }
   }, 800);
 };
@@ -96,8 +97,8 @@ const saveEntryImages = async (entryId, imagens) => {
       .filter(img => typeof img === 'string' || img?.kind === 'legacy')
       .map(imageFullSrc)
       .filter(Boolean);
-    if(isOva) await setDoc(doc(db,'ovas',String(entryId)),{imagens:legacyOnly},{merge:true});
-    else await setDoc(doc(db, 'cronicas_imgs', String(entryId)), { imagens: legacyOnly });
+    if(isOva) await setDoc(docIn('ovas',String(entryId)),{imagens:legacyOnly},{merge:true});
+    else await setDoc(docIn('cronicas_imgs', String(entryId)), { imagens: legacyOnly });
   } catch(e) { console.error('Erro ao salvar imagens:', e); alert('Não foi possível atualizar as imagens antigas desta crônica.'); }
 };
 const makeChronicleThumb = async dataUrl => {
@@ -120,11 +121,11 @@ const deleteChronicleMedia = async img => {
   const chunkCount = Number(img.chunkCount || 0);
   for (let index=0; index<chunkCount; index++) {
     const chunkId = `${img.id}_${String(index).padStart(4,'0')}`;
-    await deleteDoc(doc(db,'cronicas_media_chunks',chunkId)).catch(()=>{});
+    await deleteDoc(docIn('cronicas_media_chunks',chunkId)).catch(()=>{});
   }
-  await deleteDoc(doc(db,'cronicas_media',String(img.id))).catch(()=>{});
+  await deleteDoc(docIn('cronicas_media',String(img.id))).catch(()=>{});
 };
-const add = () => { const e = newEntry(Date.now()); setDoc(doc(db,archive,String(e.id)),e); setOpen(e.id); };
+const add = () => { const e = newEntry(Date.now()); setDoc(docIn(archive,String(e.id)),e); setOpen(e.id); };
 const upd = (id, data) => {
   setEntries(prev => prev.map(e => e.id === id ? data : e));
   const { imagens, ...sem } = data;
@@ -132,8 +133,8 @@ const upd = (id, data) => {
 };
 const del = async id => {
   const current = entries.find(entry => String(entry.id) === String(id));
-  await deleteDoc(doc(db,archive,String(id)));
-  if(!isOva)await deleteDoc(doc(db,'cronicas_imgs',String(id))).catch(()=>{});
+  await deleteDoc(docIn(archive,String(id)));
+  if(!isOva)await deleteDoc(docIn('cronicas_imgs',String(id))).catch(()=>{});
   for (const img of (current?.imagens || [])) await deleteChronicleMedia(img);
   if(open===id) setOpen(null);
 };
@@ -141,7 +142,7 @@ const showImage=async image=>{
   setPreview(imageFullSrc(image));
   if(!image?.chunkCount)return;
   try{
-    const snapshot=await getDocs(query(collection(db,'cronicas_media_chunks'),where('mediaId','==',image.id)));
+    const snapshot=await getDocs(query(col('cronicas_media_chunks'),where('mediaId','==',image.id)));
     const chunks=snapshot.docs.map(d=>d.data()).sort((a,b)=>a.index-b.index);
     if(chunks.length!==image.chunkCount)throw new Error('Imagem incompleta');
     const full=chunks.map(row=>row.data).join('');
@@ -162,10 +163,10 @@ const addImage = async (entry,file) => {
     for(let offset=0;offset<chunks.length;offset+=6){
       setUploadStatus('Enviando imagem: '+Math.round(offset/chunks.length*100)+'%');
       const batch=writeBatch(db);
-      chunks.slice(offset,offset+6).forEach((data,i)=>{const index=offset+i;batch.set(doc(db,'cronicas_media_chunks',mediaId+'_'+String(index).padStart(4,'0')),{mediaId,index,data});});
+      chunks.slice(offset,offset+6).forEach((data,i)=>{const index=offset+i;batch.set(docIn('cronicas_media_chunks',mediaId+'_'+String(index).padStart(4,'0')),{mediaId,index,data});});
       await batch.commit();
     }
-    await setDoc(doc(db,'cronicas_media',mediaId),{entryId:mediaKey(entry.id),thumb,chunkCount:chunks.length,originalName:file.name,createdAt:Date.now()});
+    await setDoc(docIn('cronicas_media',mediaId),{entryId:mediaKey(entry.id),thumb,chunkCount:chunks.length,originalName:file.name,createdAt:Date.now()});
     setUploadStatus('Imagem salva.');
   }catch(e){console.error('Upload de imagem:',e);setUploadStatus('');setError('Não foi possível salvar a imagem. '+(e.code==='permission-denied'?'O banco recusou a permissão de escrita.':e.message||'Confira sua conexão.'));}
   finally{uploading.current=false;}

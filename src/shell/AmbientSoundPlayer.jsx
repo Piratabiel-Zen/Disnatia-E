@@ -18,6 +18,7 @@ const SOUND_CATEGORIES = [
 ];
 const ALL_CATEGORY = { id: 'todas', label: 'Todas', icon: '🎶', color: '#D6B4F5' };
 import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
+import { docIn } from '../core/campaign';
 export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const [open, setOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('calmaria');
@@ -42,21 +43,21 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   }, [current?.provider, current?.spotifyUri, current?.revision, current?.playing, userMuted]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+    const unsub = onSnapshot(docIn('config', 'combat'), snap => {
       if (snap.exists()) setCombatActive(snap.data().active || false);
     });
     return () => unsub();
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'ambient_playlists'), snap => {
+    const unsub = onSnapshot(docIn('config', 'ambient_playlists'), snap => {
       if (snap.exists()) setPlaylists(snap.data() || {});
     });
     return () => unsub();
   }, []);
 
   useEffect(() => {
-    const ambientRef = doc(db, 'config', 'ambient');
+    const ambientRef = docIn('config', 'ambient');
     const applyAmbient = (d) => {
       if (!d) return;
       const eventId = String(d.commandId || d.revision || d.ts || ((d.videoId || '') + ':' + (d.playing ? '1' : '0')));
@@ -123,10 +124,10 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     setCurrent(nextAmbient);
     setUserMuted(false);
     lastTs.current = nextAmbient.commandId;
-    setDoc(doc(db, 'config', 'ambient'), nextAmbient).catch(async error => {
+    setDoc(docIn('config', 'ambient'), nextAmbient).catch(async error => {
       console.error('Erro ao publicar música:', error);
       try {
-        const snap = await getDocFromServer(doc(db, 'config', 'ambient'));
+        const snap = await getDocFromServer(docIn('config', 'ambient'));
         if (snap.exists()) setCurrent(snap.data());
       } catch (_) {}
     });
@@ -145,7 +146,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     };
     setCurrent(nextAmbient);
     lastTs.current = nextAmbient.commandId;
-    setDoc(doc(db, 'config', 'ambient'), nextAmbient).catch(error => console.error('Erro ao parar música:', error));
+    setDoc(docIn('config', 'ambient'), nextAmbient).catch(error => console.error('Erro ao parar música:', error));
   };
 
   const addTrack = async () => {
@@ -153,7 +154,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     if (!media || !novoNome.trim()) return;
     const categoria = activeCategory === ALL_CATEGORY.id ? addCategory : activeCategory;
     const nova = { id: Date.now(), nome: novoNome.trim(), ...media };
-    const playlistRef = doc(db, 'config', 'ambient_playlists');
+    const playlistRef = docIn('config', 'ambient_playlists');
     try {
       const updated = await runTransaction(db, async transaction => {
         const snapshot = await transaction.get(playlistRef);
@@ -172,7 +173,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   };
 
   const deleteTrack = async (categoria, trackId) => {
-    const playlistRef = doc(db, 'config', 'ambient_playlists');
+    const playlistRef = docIn('config', 'ambient_playlists');
     try {
       const updated = await runTransaction(db, async transaction => {
         const snapshot = await transaction.get(playlistRef);
