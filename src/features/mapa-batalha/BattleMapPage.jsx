@@ -7,6 +7,8 @@ import { onSnapshot, onSnapshot as liveSnapshot } from '../../adventure/sharedSn
 import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,getDocFromServer,getDocs,runTransaction,query,serverTimestamp,setDoc,where } from "firebase/firestore";
 import { db } from "../../core/firebase";
+import './tokens-vivos.css';
+import { publishTokenMotion, subscribeTokenMotion, publishPing, subscribePing, liveChannelConnected, onLiveConnection } from "../../core/liveChannel";
 import { compressImage,compressImagePNG } from "../../core/media";
 import { pushToast } from "../../core/toast";
 import { CLASSES,ATTRS,SHEET_COLORS,STATUS_LIST,getSheetMaxHp } from "../../data/gameData";
@@ -17,6 +19,7 @@ import useMapFullscreen from '../../experience/useMapFullscreen';
 import { fitMapWithReference } from '../../adventure/mapFit.mjs';
 import { tokenIdsInMarquee } from '../../adventure/tokenSelection.mjs';
 import '../../experience/map-fullscreen.css';
+import { col, docIn } from '../../core/campaign';
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
 // causava ReferenceError ao abrir a aba e deixava a aplicação totalmente branca.
@@ -323,7 +326,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
 
     // Assinaturas diretas: ações efêmeras nunca reutilizam um snapshot guardado
     // por outra montagem da tela.
-    const uConfig = liveSnapshot(doc(db,'config','battlemap_ping'), snap => {
+    const uConfig = liveSnapshot(docIn('config','battlemap_ping'), snap => {
       if (!snap.exists()) return;
       const row = snap.data() || {};
       if (!configPrimed) {
@@ -335,7 +338,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       receivePing(row);
     }, error => console.error('Erro no canal direto do ping:', error));
 
-    const uFeed = liveSnapshot(collection(db,'battlemap_ping_live'), snap => {
+    const uFeed = liveSnapshot(col('battlemap_ping_live'), snap => {
       if (!feedPrimed) {
         feedPrimed = true;
         const initialRows = snap.docs.map(entry => entry.data() || {});
@@ -353,9 +356,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       });
     }, error => console.error('Erro no canal direto rápido do ping:', error));
 
+    // Canal vivo (Realtime Database): chega antes dos documentos do Firestore;
+    // o id do ping evita exibir o mesmo aviso duas vezes.
+    const uLive = subscribePing(row => receivePing(row || {}));
+
     return () => {
       uConfig();
       uFeed();
+      uLive();
       clearTimeout(pingTimerRef.current);
     };
   }, []);
@@ -368,6 +376,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // Isso evita regravar o array completo de tokens a cada movimento do mouse.
   const livePositionVersionRef = useRef({});
   const liveClientIdRef = useRef(`client_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  // Abre o canal vivo assim que o mapa monta, para que o primeiro arraste já saia por ele.
+  useEffect(() => onLiveConnection(() => {}), []);
   const liveSequenceRef = useRef(0);
   const livePositionWriteStateRef = useRef({});
   const remotePositionQueueRef = useRef(new Map());
@@ -410,11 +420,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   }, [editingId, activeId, masterMode]);
 
   useEffect(() => {
-    const u1 = onSnapshot(collection(db, 'battlemaps'), snap => {
+    const u1 = onSnapshot(col('battlemaps'), snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMaps(sortBattleMaps(data)); setLoaded(true);
     });
-    const u1b = liveSnapshot(collection(db, 'battlemap_tokens'), { includeMetadataChanges: true }, snap => {
+    const u1b = liveSnapshot(col('battlemap_tokens'), { includeMetadataChanges: true }, snap => {
       if (snap.metadata?.fromCache && canonicalRosterReadyRef.current) return;
       if (!snap.metadata?.fromCache) canonicalRosterReadyRef.current = true;
       const incoming = {};
@@ -448,7 +458,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     // Historical battlemap_live_tokens is not a roster authority. Movement stays
     // on battlemap_live_positions; archived boot arrays can contain removed copies.
 
-    const activeMapRef = doc(db, 'config', 'battlemap_active');
+    const activeMapRef = docIn('config', 'battlemap_active');
     const applyActiveMap = (data) => {
       // A ordem de snapshots do Firestore é a autoridade. Nunca rejeitar uma
       // troca de mapa por revision/updatedAt produzidos em outro computador.
@@ -457,7 +467,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const u2 = onSnapshot(activeMapRef, snap => {
       if (snap.exists()) applyActiveMap(snap.data());
     }, err => console.error('Erro ao sincronizar mapa ativo:', err));
-    const u3 = onSnapshot(access?.role==='visitor'?query(collection(db,'sheets'),where('visitorId','==',String(access.visitorId||'invalid'))):collection(db,'sheets'), snap => {
+    const u3 = onSnapshot(access?.role==='visitor'?query(col('sheets'),where('visitorId','==',String(access.visitorId||'invalid'))):col('sheets'), snap => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const vitals = {};
       all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });
@@ -466,21 +476,21 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         ? all.filter(s => String(s.visitorId || '') === String(access.visitorId || ''))
         : (!masterMode && playerSheetId ? all.filter(s => String(s.id) === String(playerSheetId)) : all));
     });
-    const u4 = onSnapshot(doc(db, 'config', 'customAbilities'), snap => {
+    const u4 = onSnapshot(docIn('config', 'customAbilities'), snap => {
       if (snap.exists()) setCustomAbilities(snap.data() || {});
     });
-    const uEnemies = onSnapshot(collection(db, 'enemies'), snap => {
+    const uEnemies = onSnapshot(col('enemies'), snap => {
       setEnemies(snap.docs.map(d => ({ id:d.id, ...d.data() })));
     });
-    const uFog = onSnapshot(collection(db, 'battlemap_fog'), snap => {
+    const uFog = onSnapshot(col('battlemap_fog'), snap => {
       const next = {};
       snap.docs.forEach(d => { next[String(d.id)] = Array.isArray(d.data()?.patches) ? d.data().patches : []; });
       setFogByMap(next);
     });
-    const uLibrary = onSnapshot(collection(db, 'battlemap_token_library'), snap => {
+    const uLibrary = onSnapshot(col('battlemap_token_library'), snap => {
       setTokenLibrary(snap.docs.map(d => ({ id:d.id, ...d.data() })));
     });
-    const uFx = onSnapshot(doc(db,'config','battlemap_effect'), snap => {
+    const uFx = onSnapshot(docIn('config','battlemap_effect'), snap => {
       if(!snap.exists()) return; const fx=snap.data();
       if(!fx?.id || Date.now()-(fx.ts||0)>5000) return;
       setFloatingEffects(prev=>[...prev.filter(x=>x.id!==fx.id),fx]);
@@ -521,7 +531,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const uploadId = String(currentMapRaw?.imgUploadId || '');
     const chunkCount = Number(currentMapRaw?.imgChunkCount || 0);
     if (!mapId || !uploadId || !chunkCount) return;
-    const chunksQuery = query(collection(db, 'battlemap_media_chunks'), where('mapId', '==', mapId));
+    const chunksQuery = query(col('battlemap_media_chunks'), where('mapId', '==', mapId));
     return onSnapshot(chunksQuery, snap => {
       const chunks = [];
       snap.docs.forEach(d => {
@@ -595,26 +605,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       return true;
     };
 
-    const positionsQuery = query(collection(db, 'battlemap_live_positions'), where('mapId', '==', String(currentMapId)));
-    // Movimento usa transporte direto, como o dado 3D compartilhado.
-    const unsub = liveSnapshot(positionsQuery, snap => {
-      const orderedPositionChanges = snap.docChanges()
-        .filter(change => change.type !== 'removed')
-        .filter(change => {
-          const row = change.doc.data() || {};
-          const channel = String(row.channel || '');
-          if (channel !== 'motion-v2' && channel !== 'position-final-v1' && channel !== 'control-lease-v1') return false;
-          if (/_p[3-5]$/.test(change.doc.id)) return false;
-          return true;
-        })
-        .sort((a, b) => {
-          const aFinal = String((a.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
-          const bFinal = String((b.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
-          return aFinal - bFinal;
-        });
-      orderedPositionChanges.forEach(change => {
-        if (change.type === 'removed') return;
-        const data = change.doc.data() || {};
+    const applyRemoteRow = data => {
         if (String(data.mapId) !== String(currentMapId) || data.tokenId === undefined) return;
 
         // O token local já acompanha o ponteiro imediatamente. Ignorar o próprio
@@ -661,12 +652,41 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         }
 
         if (changed) remotePositionQueueRef.current.set(tokenId, nextPatch);
+    };
+
+    const positionsQuery = query(col('battlemap_live_positions'), where('mapId', '==', String(currentMapId)));
+    // Movimento usa transporte direto, como o dado 3D compartilhado.
+    const unsub = liveSnapshot(positionsQuery, snap => {
+      const orderedPositionChanges = snap.docChanges()
+        .filter(change => change.type !== 'removed')
+        .filter(change => {
+          const row = change.doc.data() || {};
+          const channel = String(row.channel || '');
+          if (channel !== 'motion-v2' && channel !== 'position-final-v1' && channel !== 'control-lease-v1') return false;
+          if (/_p[3-5]$/.test(change.doc.id)) return false;
+          return true;
+        })
+        .sort((a, b) => {
+          const aFinal = String((a.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
+          const bFinal = String((b.doc.data() || {}).channel || '') === 'position-final-v1' ? 1 : 0;
+          return aFinal - bFinal;
+        });
+      orderedPositionChanges.forEach(change => {
+        if (change.type === 'removed') return;
+        applyRemoteRow(change.doc.data() || {});
       });
       if (remotePositionQueueRef.current.size) scheduleRemoteFlush();
     }, err => console.error('Erro no canal low-latency do mapa atual:', err));
 
+    // Canal vivo (Realtime Database): mesma validação, latência de dezenas de ms.
+    const unsubLive = subscribeTokenMotion(currentMapId, (tokenId, data) => {
+      applyRemoteRow({ ...data, tokenId, mapId: String(currentMapId), channel: 'motion-v2' });
+      if (remotePositionQueueRef.current.size) scheduleRemoteFlush();
+    });
+
     return () => {
       unsub();
+      unsubLive();
       if (remotePositionFrameRef.current) cancelAnimationFrame(remotePositionFrameRef.current);
       remotePositionFrameRef.current = 0;
       remotePositionQueueRef.current.clear();
@@ -680,8 +700,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const refreshActiveState = async () => {
       try {
         const [mapSnap, activeSnap] = await Promise.all([
-          getDocFromServer(doc(db, 'battlemaps', String(activeId))),
-          getDocFromServer(doc(db, 'config', 'battlemap_active')),
+          getDocFromServer(docIn('battlemaps', String(activeId))),
+          getDocFromServer(docIn('config', 'battlemap_active')),
         ]);
         if (activeSnap.exists()) {
           const d = activeSnap.data();
@@ -864,9 +884,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     clearTimeout(pingTimerRef.current);
     pingTimerRef.current = setTimeout(() => setBattlePing(null), 5200);
     const pingSlot = Math.floor(Math.random() * 8);
+    const liveFirst = liveChannelConnected();
+    if (liveFirst) publishPing(ping).catch(e => console.warn('Ping pelo canal vivo falhou; o Firestore ainda entrega.', e));
     Promise.allSettled([
-      setDoc(doc(db,'config','battlemap_ping'), ping),
-      setDoc(doc(db,'battlemap_ping_live','slot_' + pingSlot), { ...ping, publishedAt: Date.now() }, { merge: true }),
+      setDoc(docIn('config','battlemap_ping'), ping),
+      ...(liveFirst ? [] : [setDoc(docIn('battlemap_ping_live','slot_' + pingSlot), { ...ping, publishedAt: Date.now() }, { merge: true })]),
     ]).then(results => {
       if (results.every(result => result.status === 'rejected')) console.error('Erro ao enviar ping no mapa pelos canais realtime.');
     });
@@ -876,7 +898,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const { tokens, ...meta } = data;
     clearTimeout(saveTimeout.current[mapId]);
     saveTimeout.current[mapId] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'battlemaps', String(mapId)), meta); } catch (e) { console.error(e); }
+      try { await setDoc(docIn('battlemaps', String(mapId)), meta); } catch (e) { console.error(e); }
     }, 450);
   };
 
@@ -888,7 +910,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       const controlsPosition=['x','y','rotation'].some(field=>record.token[field]!==undefined)&&!!localLeaseRef.current;
       const positionOwner=String(liveClientIdRef.current);
       const baseline = (mapTokensRef.current[record.mapId] || []).find(token => String(token.id) === record.tokenId) || {};
-      const ref=doc(db, 'battlemap_tokens', key);
+      const ref=docIn('battlemap_tokens', key);
       // Adds, removals and non-position edits don't need a read/transaction.
       // Using a merge write avoids transaction contention when several players
       // add tokens or update their sheets at the same time. Movement still uses
@@ -899,7 +921,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       return runTransaction(db, async transaction => {
         const snapshot = await transaction.get(ref);
         if(controlsPosition){
-          const lease=await transaction.get(doc(db,'battlemap_live_positions',String(record.mapId)+'_'+String(record.tokenId)+'_lease'));
+          const lease=await transaction.get(docIn('battlemap_live_positions',String(record.mapId)+'_'+String(record.tokenId)+'_lease'));
           if(lease.exists()&&lease.data().clientId!==positionOwner){const error=new Error('Outro participante assumiu este token. A posição anterior não foi reaplicada.');error.code='token-control-lost';throw error;}
         }
         // First touch copies the legacy token once; later writes carry only the
@@ -946,7 +968,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       const seq = liveSequenceRef.current;
       const slot = seq % 3;
 
-      setDoc(doc(db, 'battlemap_live_positions', id + '_' + tid + '_p' + slot), {
+      const motion = {
         mapId: id,
         tokenId: tid,
         x: point.x,
@@ -957,7 +979,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         clientId: liveClientIdRef.current,
         actorName:masterMode?'Mestre':ownPingName||'Jogador',
         updatedAt: Date.now(),
-      }, { merge: true })
+      };
+      const transport = liveChannelConnected()
+        ? publishTokenMotion(id, tid, motion)
+        : setDoc(docIn('battlemap_live_positions', id + '_' + tid + '_p' + slot), motion, { merge: true });
+      transport
         .catch(e => console.error('Erro ao transmitir posição low-latency:', e))
         .finally(() => {
           state.inFlight = Math.max(0, state.inFlight - 1);
@@ -987,7 +1013,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       liveSequenceRef.current += 1;
       const seq = liveSequenceRef.current;
       try {
-        await setDoc(doc(db, 'battlemap_live_positions', id + '_' + tid + '_final'), {
+        await setDoc(docIn('battlemap_live_positions', id + '_' + tid + '_final'), {
           mapId: id,
           tokenId: tid,
           x,
@@ -1015,7 +1041,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       id + '_' + tid + '_p4',
       id + '_' + tid + '_p5',
     ];
-    await Promise.allSettled(obsoleteIds.map(docId => deleteDoc(doc(db, 'battlemap_live_positions', docId))));
+    await Promise.allSettled(obsoleteIds.map(docId => deleteDoc(docIn('battlemap_live_positions', docId))));
     return true;
   };
 
@@ -1026,7 +1052,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const tid = String(tokenId);
     const normalized = normalizeTokenRotation(rotation);
     authoritativeRotationRef.current[`${id}:${tid}`] = normalized;
-    setDoc(doc(db, 'battlemap_live_positions', `${id}_${tid}`), {
+    setDoc(docIn('battlemap_live_positions', `${id}_${tid}`), {
       mapId: id,
       tokenId: tid,
       rotation: normalized,
@@ -1064,7 +1090,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const next=[...ordered];const [movedMap]=next.splice(from,1);next.splice(to,0,movedMap);
     const normalized=next.map((map,index)=>({...map,order:index+1}));
     setMaps(normalized);
-    try{await Promise.all(normalized.map(map=>setDoc(doc(db,'battlemaps',String(map.id)),{order:map.order},{merge:true})));}
+    try{await Promise.all(normalized.map(map=>setDoc(docIn('battlemaps',String(map.id)),{order:map.order},{merge:true})));}
     catch(error){console.error('Erro ao reordenar mapas:',error);pushToast('Não foi possível salvar a nova ordem dos mapas.','⚠️','#E8A020');}
   };
 
@@ -1079,7 +1105,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     if (!uploadId || !chunkCount) return;
     for (let index = 0; index < Number(chunkCount || 0); index++) {
       const chunkId = `${uploadId}_${String(index).padStart(4, '0')}`;
-      await deleteDoc(doc(db, 'battlemap_media_chunks', chunkId)).catch(() => {});
+      await deleteDoc(docIn('battlemap_media_chunks', chunkId)).catch(() => {});
     }
   };
 
@@ -1096,8 +1122,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const addMap = () => {
     const m = { ...newBattleMap(Date.now()), order: maps.length + 1 };
     const { tokens, ...meta } = m;
-    setDoc(doc(db, 'battlemaps', String(m.id)), meta);
-    setDoc(doc(db, 'battlemap_tokens', String(m.id)), { tokens: tokens || [] });
+    setDoc(docIn('battlemaps', String(m.id)), meta);
+    setDoc(docIn('battlemap_tokens', String(m.id)), { tokens: tokens || [] });
     setEditingId(String(m.id));
   };
   const deleteMap = async (id) => {
@@ -1106,15 +1132,15 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       await deleteBattleMapChunks(String(id), String(doomed.imgUploadId), Number(doomed.imgChunkCount)).catch(() => {});
     }
     setOriginalMapImages(prev => { const next = { ...prev }; delete next[String(id)]; return next; });
-    await deleteDoc(doc(db, 'battlemaps', String(id)));
-    await deleteDoc(doc(db, 'battlemap_tokens', String(id))).catch(() => {});
-    const rows = await getDocs(query(collection(db, 'battlemap_tokens'), where('mapId', '==', String(id))));
+    await deleteDoc(docIn('battlemaps', String(id)));
+    await deleteDoc(docIn('battlemap_tokens', String(id))).catch(() => {});
+    const rows = await getDocs(query(col('battlemap_tokens'), where('mapId', '==', String(id))));
     await Promise.all(rows.docs.map(row => deleteDoc(row.ref)));
 
     if (activeId === String(id)) {
       const revision = Date.now() * 1000 + Math.floor(Math.random() * 1000);
       activeMapRevisionRef.current = revision;
-      await setDoc(doc(db, 'config', 'battlemap_active'), {
+      await setDoc(docIn('config', 'battlemap_active'), {
         activeId: '',
         revision,
         updatedAt: Date.now()
@@ -1127,14 +1153,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const activateMap = async (id) => {
     const revision = Date.now() * 1000 + Math.floor(Math.random() * 1000);
     const tokens = mapTokensRef.current[String(id)] || [];
-    const activeWrite = setDoc(doc(db, 'config', 'battlemap_active'), { activeId: String(id), revision, updatedAt: Date.now() });
-    const tokenWrite = setDoc(doc(db, 'config', 'battlemap_live_tokens'), { mapId: String(id), tokens, updatedAt: Date.now() });
+    const activeWrite = setDoc(docIn('config', 'battlemap_active'), { activeId: String(id), revision, updatedAt: Date.now() });
+    const tokenWrite = setDoc(docIn('config', 'battlemap_live_tokens'), { mapId: String(id), tokens, updatedAt: Date.now() });
     try { await Promise.all([activeWrite, tokenWrite]); } catch (error) { console.error('Erro ao ativar mapa:', error); return; }
     pushToast('Mapa liberado para os jogadores!', '🗡️', '#E8193C');
   };
   const deactivateMap = async () => {
     try {
-      await setDoc(doc(db, 'config', 'battlemap_active'), { activeId: '', revision: Date.now() * 1000 + Math.floor(Math.random() * 1000), updatedAt: Date.now() });
+      await setDoc(docIn('config', 'battlemap_active'), { activeId: '', revision: Date.now() * 1000 + Math.floor(Math.random() * 1000), updatedAt: Date.now() });
     } catch (error) { console.error('Erro ao ocultar mapa:', error); }
   };
 
@@ -1161,7 +1187,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         const preview = await makeBattleMapPreview(original);
         for (let index = 0; index < chunks.length; index++) {
           const chunkId = `${uploadId}_${String(index).padStart(4, '0')}`;
-          await setDoc(doc(db, 'battlemap_media_chunks', chunkId), {
+          await setDoc(docIn('battlemap_media_chunks', chunkId), {
             mapId, uploadId, index, data: chunks[index], updatedAt: Date.now(),
           });
         }
@@ -1176,7 +1202,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
           imgUpdatedAt: Date.now(),
         };
         setMaps(prev => prev.map(m => String(m.id) === mapId ? { ...m, ...patch } : m));
-        await setDoc(doc(db, 'battlemaps', mapId), patch, { merge: true });
+        await setDoc(docIn('battlemaps', mapId), patch, { merge: true });
         if (oldUploadId && oldUploadId !== uploadId && oldChunkCount) {
           await deleteBattleMapChunks(mapId, oldUploadId, oldChunkCount);
         }
@@ -1204,7 +1230,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const saveTokenToLibrary = async () => {
     if (!formNome.trim() || !formFoto) return;
     const id=String(Date.now());
-    await setDoc(doc(db,'battlemap_token_library',id),{nome:formNome.trim(),foto:formFoto,tipo:formTipo,size:70,sheetId:formSheetId||'',controllerSheetId:formControllerSheetId||formSheetId||'',enemyId:formEnemyId||'',createdAt:Date.now()});
+    await setDoc(docIn('battlemap_token_library',id),{nome:formNome.trim(),foto:formFoto,tipo:formTipo,size:70,sheetId:formSheetId||'',controllerSheetId:formControllerSheetId||formSheetId||'',enemyId:formEnemyId||'',createdAt:Date.now()});
     pushToast('Token salvo na biblioteca','📚','#A855F7');
   };
   const addLibraryToken = async (tpl) => {
@@ -1225,7 +1251,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     finally { locks.delete(lockKey); }
   };
 
-  const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(doc(db,'battlemap_token_library',String(id))); };
+  const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(docIn('battlemap_token_library',String(id))); };
 
 
   const addToken = () => {
@@ -1339,7 +1365,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   };
 
   const acquireControl=async(mapId,tokenId,append=false)=>{
-    const record=doc(db,'battlemap_live_positions',String(mapId)+'_'+String(tokenId)+'_lease');
+    const record=docIn('battlemap_live_positions',String(mapId)+'_'+String(tokenId)+'_lease');
     const key=String(mapId)+':'+String(tokenId);
     const clientId=String(liveClientIdRef.current);
     const version=clientId+'_'+Math.random().toString(36).slice(2);
@@ -1441,10 +1467,12 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     // TABLETOP REALTIME FAST PATH 2026-09-14
 // OWLBEAR-STYLE INTERACTION PIPELINE 2026-09-13
 const TOKEN_THROTTLE_MS = 100;
+const LIVE_TOKEN_THROTTLE_MS = 33;
 const dragIds=groupDragIdsRef.current.length?groupDragIdsRef.current:[String(draggingId)];
 const dragIdSet=new Set(dragIds.map(String));
 const groupStarts=groupDragStartRef.current;
-const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
+const liveFast=liveChannelConnected();
+const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THROTTLE_MS:TOKEN_THROTTLE_MS);
 
     const throttledTokenWrite = (tokensArr) => {
       const now = Date.now();
@@ -1550,13 +1578,13 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
   const saveSheet = sheet => {
     clearTimeout(saveTimeout.current['sheet_' + sheet.id]);
     saveTimeout.current['sheet_' + sheet.id] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'sheets', String(sheet.id)), sheet); } catch (e) { console.error(e); }
+      try { await setDoc(docIn('sheets', String(sheet.id)), sheet); } catch (e) { console.error(e); }
     }, 700);
   };
   const updSheet = (id, data) => { setSheets(prev => prev.map(s => s.id === id ? data : s)); saveSheet(data); };
   const saveCustomAb = async (sheetId, novas) => {
     if(!masterMode)throw new Error('Apenas o Mestre pode editar habilidades.');
-    await setDoc(doc(db, 'config', 'customAbilities'), {[String(sheetId)]:novas}, {merge:true});
+    await setDoc(docIn('config', 'customAbilities'), {[String(sheetId)]:novas}, {merge:true});
   };
 
   const toggleFloatingSheet = (sid) => {
@@ -1584,7 +1612,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
   const saveEnemyFromMap = enemy => {
     clearTimeout(saveTimeout.current['enemy_' + enemy.id]);
     saveTimeout.current['enemy_' + enemy.id] = setTimeout(async () => {
-      try { await setDoc(doc(db, 'enemies', String(enemy.id)), enemy); } catch (e) { console.error('Erro ao salvar inimigo pelo mapa:', e); }
+      try { await setDoc(docIn('enemies', String(enemy.id)), enemy); } catch (e) { console.error('Erro ao salvar inimigo pelo mapa:', e); }
     }, 520);
   };
   const updEnemyFromMap = (id, data) => {
@@ -1680,7 +1708,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
     setFogByMap(prev => ({ ...prev, [String(mapId)]: patches }));
     clearTimeout(fogSaveTimerRef.current);
     fogSaveTimerRef.current = setTimeout(() => {
-      setDoc(doc(db, 'battlemap_fog', String(mapId)), { patches, updatedAt: Date.now() }).catch(e => console.error('Erro ao salvar névoa:', e));
+      setDoc(docIn('battlemap_fog', String(mapId)), { patches, updatedAt: Date.now() }).catch(e => console.error('Erro ao salvar névoa:', e));
     }, 70);
   };
 
@@ -1708,7 +1736,7 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
   const quickAddSheet = () => {
     if (sheets.length >= 15) return;
     const s = newSheet(Date.now());
-    setDoc(doc(db, 'sheets', String(s.id)), s);
+    setDoc(docIn('sheets', String(s.id)), s);
     toggleFloatingSheet(String(s.id));
   };
 
@@ -1952,10 +1980,16 @@ const writeInterval=dragIds.length>1?280:TOKEN_THROTTLE_MS;
                     >
                      {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,borderRadius:'50%',border:`${1.5*tokenScale}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
                      {displayMaxHp>0 && <>{canSeeTokenHp && (<div style={{fontSize:9*labelScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*labelScale,padding:`${Math.max(1,labelScale)}px ${Math.max(3,6*labelScale)}px`,marginBottom:Math.max(0,1*labelScale),textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*labelScale,dispSize*labelScale),height:Math.max(4,5*labelScale),borderRadius:5*labelScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${Math.max(.5,.7*labelScale)}px solid rgba(255,255,255,.2)`,marginBottom:Math.max(0,1*labelScale)}}>{displayBonusHp>0?<div style={{display:'flex',height:'100%',width:'100%'}}><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(greenHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(greenHp,baseHpCapacity),transition:'width .25s'}}/><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(blueHp/Math.max(1,displayMaxHp))*100))}%`,background:'#38BDF8',boxShadow:'0 0 5px rgba(56,189,248,.7)',transition:'width .25s'}}/></div>:<div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/>}</div></>}
-                     <div style={{
+                     <div
+                      className="map-token-body"
+                      data-vitals={displayMaxHp > 0 ? (displayHp <= 0 ? 'caido' : displayHp / displayMaxHp <= 0.34 ? 'ferido' : 'ok') : 'ok'}
+                      data-still={draggingId === token.id || rotatingId === token.id ? 'false' : 'true'}
+                      style={{
                       width: dispSize, height: dispSize,
                       background: 'transparent', overflow: 'visible',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      // Cada peça respira no seu próprio tempo; em sincronia pareceria um relógio.
+                      '--breath-delay': `${(String(token.id || '').split('').reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % 24) / 10}s`,
                      }}>
                       {(controller||claimingToken===String(token.id))&&<span className="token-collaborator">{controller?controller+' movimentando':'Obtendo controle'}</span>}
                         {token.foto

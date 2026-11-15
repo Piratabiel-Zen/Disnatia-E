@@ -5,6 +5,7 @@ import { db } from '../core/firebase';
 import { createLiveSnapshotGate, isNewLiveDocument } from './liveDiceGate';
 import PhysicalDiceTray from './PhysicalDiceTray';
 import './shared-dice-replay.css';
+import { col, docIn } from '../core/campaign';
 
 const TAB_CLIENT_KEY = 'dinastia-dice-tab-id';
 let fallbackTabClientId = `dice_tab_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -74,7 +75,7 @@ export default function SharedDiceReplay({ access }) {
     // de aceitar eventos; reconexões formam uma nova linha de corte silenciosa.
     const feedGate = createLiveSnapshotGate();
     const configGate = createLiveSnapshotGate();
-    const feedQuery = query(collection(db, 'public_dice_events'), orderBy('publishedAt', 'desc'), limit(20));
+    const feedQuery = query(col('public_dice_events'), orderBy('publishedAt', 'desc'), limit(20));
 
     const unsubFeed = onSnapshot(feedQuery, { includeMetadataChanges: true }, snap => {
       if (!feedGate.shouldDeliver(snap.metadata)) {
@@ -87,7 +88,7 @@ export default function SharedDiceReplay({ access }) {
       });
     }, error => console.error('Falha no feed do replay compartilhado:', error));
 
-    const unsubConfig = onSnapshot(doc(db, 'config', 'public_dice_roll'), { includeMetadataChanges: true }, snap => {
+    const unsubConfig = onSnapshot(docIn('config', 'public_dice_roll'), { includeMetadataChanges: true }, snap => {
       if (!snap.exists()) return;
       const payload = snap.data() || {};
       if (!configGate.shouldDeliver(snap.metadata)) {

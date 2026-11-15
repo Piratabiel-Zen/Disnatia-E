@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { docIn } from '../core/campaign';
 
 export default function ConnectionHealth(){
   const [state,setState]=useState(()=>typeof navigator==='undefined'||navigator.onLine?'connecting':'offline');
@@ -10,7 +11,7 @@ export default function ConnectionHealth(){
     const onOffline=()=>setState('offline');
     window.addEventListener('online',onOnline);
     window.addEventListener('offline',onOffline);
-    const unsubscribe=onSnapshot(doc(db,'config','battlemap_active'),{includeMetadataChanges:true},snapshot=>{
+    const unsubscribe=onSnapshot(docIn('config','battlemap_active'),{includeMetadataChanges:true},snapshot=>{
       setState(!navigator.onLine?'offline':snapshot.metadata.fromCache?'connecting':'connected');
     },()=>setState('offline'));
     return()=>{unsubscribe();window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};

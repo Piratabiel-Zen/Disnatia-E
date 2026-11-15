@@ -49,3 +49,100 @@ organização de interface, não autorização de servidor.
   `main` só recebe o que já foi testado na mesa.
 - `docs/notas-runtime.md` guarda decisões históricas (câmeras WebRTC, visitantes,
   invocações, carregamento adiado da sessão) que continuam valendo.
+
+## Canal vivo (Realtime Database)
+
+O que é efêmero na mesa (posição do token durante o arraste, pings) trafega pelo
+**Firebase Realtime Database** do mesmo projeto, em `live/maps/{mapId}/tokens/{tokenId}`
+e `live/ping`, a até 30 atualizações por segundo. O Firestore continua guardando a
+posição final (`position-final-v1`) e todo o resto. O módulo `src/core/liveChannel.js`
+carrega o SDK só no mapa de batalha (chunk `vendor-live`) e, se o banco não responder
+em 4 s, o mapa volta sozinho ao caminho antigo pelo Firestore.
+
+Para ativar: Console do Firebase → Realtime Database → Criar banco de dados. Se a URL
+gerada não for `https://dinastia-e-a4b28-default-rtdb.firebaseio.com`, defina a
+variável `VITE_RTDB_URL` na Vercel com a URL mostrada no console. Regras do banco
+(aba Regras), no mesmo nível de confiança do Firestore atual, que também não tem regras:
+
+```json
+{
+  "rules": {
+    "live": { ".read": true, ".write": true },
+    "$outro": { ".read": false, ".write": false }
+  }
+}
+```
+
+## Campanhas
+
+O site hospeda várias mesas. A escolha acontece antes do acesso, em
+`src/features/campanhas/CampaignGate.jsx`, e a campanha ativa decide de onde cada
+listener lê, através de `src/core/campaign.js`.
+
+A **Dinastia E é a campanha principal e usa os caminhos originais** do Firestore
+(`sheets`, `config/session`, `battlemaps`...), então nada foi migrado. Campanhas
+novas recebem o prefixo `c__{id}__` no nome de cada coleção, o que as isola por
+completo: fichas, mapas, crônicas e combate não se misturam.
+
+Regra de uso no código: nunca chamar `collection(db, ...)` ou `doc(db, ...)`
+diretamente. Use `col('sheets')` e `docIn('config','session')`, que resolvem o
+caminho da campanha ativa. Para dados fora de qualquer campanha (a própria lista
+de mesas) existem `globalCol` e `globalDoc`.
+
+As chaves do `localStorage` seguem a mesma regra: a campanha principal mantém as
+chaves atuais e as outras ganham sufixo, então entrar numa mesa não autentica em
+outra. Cada campanha tem um tema (`CAMPAIGN_THEMES`) que define cor de acento e
+fundo; a principal continua com a atmosfera controlada pelo Mestre.
+
+## Globo do Mapa Múndi
+
+O mapa raiz do atlas é o planeta inteiro e abre como um globo 3D
+(`src/features/mapa-mundi/GlobeView.jsx`, three.js). Camadas internas do atlas
+(continentes, cidades, masmorras) continuam planas, e há um botão para alternar
+entre globo e mapa plano no mapa raiz.
+
+Os pins **não mudaram de formato**: continuam guardados como porcentagem da
+imagem (`x` e `y` de 0 a 100). Como a imagem é uma projeção equiretangular,
+essa porcentagem já é longitude e latitude; `globeMath.mjs` faz a conversão nos
+dois sentidos. Por isso o globo e o mapa plano mostram exatamente os mesmos
+locais, e nada precisou ser migrado.
+
+Detalhes que valem lembrar ao mexer:
+
+- os pins são elementos HTML sobre o canvas, reposicionados a cada quadro; o
+  canvas desenha só o planeta;
+- a seleção de um local é por **proximidade na tela**, não pelo clique no
+  elemento: o planeta pode girar entre apertar e soltar, e um alvo de 26px
+  escaparia do cursor;
+- a captura de ponteiro só começa quando o gesto vira arraste, senão o
+  `pointerup` mudaria de alvo e o clique no pin nunca aconteceria;
+- a deriva lenta do planeta pausa quando o ponteiro está sobre ele, e não existe
+  para quem pediu menos animação no sistema;
+- `vendor-three` é um pedaço separado de `vendor-dice-physics`: o globo não
+  carrega a física dos dados junto.
+
+`tests/browser/globe.cjs` abre o globo num navegador real e confere desenho,
+rotação, o lado oculto, o clique no local e a devolução do contexto de vídeo ao
+sair da página. Um canvas WebGL não pode ser lido de volta sem
+`preserveDrawingBuffer`, então a conferência de pixels usa a tela capturada e o
+decodificador em `tests/browser/png.cjs`.
+
+## Dados arremessáveis
+
+Os dados 3D usam `@3d-dice/dice-box-threejs` com resultado predeterminado: a
+notação `3d20@4,19,7` força as faces, e é isso que garante que todos na mesa
+vejam o mesmo número.
+
+O arremesso com o mouse não muda esse contrato. `src/experience/useThrowGesture.js`
+mede direção e velocidade do gesto, e `PhysicalDiceTray` troca o método
+`startClickThrow` da instância — o único ponto onde a biblioteca sorteia a
+direção do lançamento — por uma versão que usa o gesto. O resultado continua
+vindo da notação; só o voo muda.
+
+Sem gesto (clique simples, ou o replay do lance de outro jogador) o método
+original volta a valer, então nada quebra quando o gesto não existe.
+
+`tests/browser/dados.cjs` confere num navegador real que o clique simples
+continua rolando, que a direção acompanha o lance nos dois eixos, que um lance
+rápido tem mais força que um lento e que um movimento mínimo é tratado como
+toque, não como arremesso.

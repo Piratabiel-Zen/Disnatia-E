@@ -5,6 +5,9 @@ import { db } from "../core/firebase";
 import { publishDiceResult } from "../core/combatEvents";
 import { CLASSES } from "../data/gameData";
 import PhysicalDiceTray from "../experience/PhysicalDiceTray";
+import { useThrowGesture } from "../experience/useThrowGesture";
+import "../experience/arremesso.css";
+import { docIn } from '../core/campaign';
 export function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   const [display, setDisplay] = useState(finalValue);
   const [phase, setPhase] = useState('idle');
@@ -81,7 +84,7 @@ function DiceWidget({ access }) {
       });
       return undefined;
     }
-    const unsub = onSnapshot(doc(db, 'sheets', String(access.sheetId)), snap => {
+    const unsub = onSnapshot(docIn('sheets', String(access.sheetId)), snap => {
       const sheet = snap.exists() ? (snap.data() || {}) : {};
       const classId = sheet.classe || access?.classId || '';
       const cls = CLASSES.find(c => String(c.id) === String(classId));
@@ -96,7 +99,7 @@ function DiceWidget({ access }) {
   }, [access?.role, access?.sheetId, access?.name, access?.color, access?.classId, access?.className]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'combat'), snap => {
+    const unsub = onSnapshot(docIn('config', 'combat'), snap => {
       if (snap.exists()) setCombatActive(snap.data().active || false);
     });
     return () => unsub();
@@ -107,8 +110,11 @@ function DiceWidget({ access }) {
     return () => window.removeEventListener('dinastia:open-dice', openFromHud);
   }, []);
 
-  const roll = async () => {
+  // Como a pessoa arremessou: direção e força do último lance.
+  const [throwGesture, setThrowGesture] = useState(null);
+  const roll = async (gesture = null) => {
     if (physicalRolling) return;
+    setThrowGesture(gesture);
     setPhysicalRolling(true);
     const safeCount = Math.min(5, Math.max(1, Number(count) || 1));
     const values = Array.from({ length: safeCount }, () => Math.floor(Math.random() * dice) + 1);
@@ -144,6 +150,13 @@ function DiceWidget({ access }) {
     try { await publishDiceResult(res); } catch (e) { console.error('Erro ao publicar dado:', e); }
   };
 
+
+  // O arremesso usa a mesma rolagem do clique: só o voo muda.
+  const { holding, pull, handlers } = useThrowGesture(
+    gesture => roll(gesture),
+    { disabled: physicalRolling },
+  );
+
   return (
     <div className={`dice-widget ${open?'open':''}`} style={{position:'fixed', bottom: combatActive ? 96 : 24, right:16, zIndex:100, transition:'bottom 0.4s cubic-bezier(0.2,0.8,0.2,1)'}}>
       {!open && <button onClick={()=>setOpen(true)} style={{width:56, height:56, borderRadius:'50%', background:'rgba(168,85,247,0.15)', border:'1px solid rgba(168,85,247,0.4)', color:'#C8A8E8', fontSize:26, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 20px rgba(168,85,247,0.2)', backdropFilter:'none', transition:'all 0.3s'}}>🎲</button>}
@@ -166,9 +179,19 @@ function DiceWidget({ access }) {
             <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Bônus</label>
             <input type="number" value={bonus} onChange={e=>setBonus(Number(e.target.value))} style={{flex:1, textAlign:'center', padding:'4px', fontSize:14}} />
           </div>
-          <button onClick={roll} disabled={physicalRolling} style={{width:'100%', padding:'10px', borderRadius:8, border:'1px solid rgba(168,85,247,0.5)', background:'rgba(168,85,247,0.15)', color:'#fff', fontFamily:'Cinzel,serif', fontSize:14, fontWeight:600, cursor:'pointer', transition:'all 0.2s', display:'flex', justifyContent:'center', alignItems:'center', gap:8}}>
-            {physicalRolling ? '✦ Dados em movimento…' : `🎲 Rolar ${count > 1 ? `${count}D${dice}` : `D${dice}`}`}
-          </button>
+          <div
+            className={'dice-throw-pad'+(holding?' is-holding':'')+(physicalRolling?' is-rolling':'')}
+            {...handlers}
+            onClick={() => { if (!holding && !physicalRolling) roll(null); }}
+            role="button"
+            tabIndex={0}
+            aria-label={`Rolar ${count > 1 ? `${count}D${dice}` : `D${dice}`}. Segure e arremesse para lançar com força.`}
+            onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); roll(null); } }}
+          >
+            <span className="dice-throw-die" style={{ transform: `translate(${pull.x}px, ${pull.y}px)` }} aria-hidden="true">🎲</span>
+            <b>{physicalRolling ? '✦ Dados em movimento…' : `Rolar ${count > 1 ? `${count}D${dice}` : `D${dice}`}`}</b>
+            <small>{physicalRolling ? '' : 'Clique, ou segure e arremesse'}</small>
+          </div>
           {result && (
             <div style={{marginTop:16, paddingTop:16, borderTop:'1px dashed rgba(255,255,255,0.1)', textAlign:'center'}}>
               <PhysicalDiceTray
@@ -179,6 +202,7 @@ function DiceWidget({ access }) {
                 color={rollerProfile.color || (result.isCrit?'#4ADE80':result.isFail?'#E8193C':'#C8A8E8')}
                 total={result.total}
                 bonus={result.bonus}
+                throwGesture={throwGesture}
                 onSettled={()=>{setRevealed(true);setPhysicalRolling(false);}}
               />
 

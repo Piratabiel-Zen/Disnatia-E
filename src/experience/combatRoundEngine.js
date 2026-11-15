@@ -1,6 +1,7 @@
 import {characterMaxVigor} from '../adventure/characterResources.mjs';
 import { doc, runTransaction } from 'firebase/firestore';
 import { db } from '../core/firebase';
+import { docIn } from '../core/campaign';
 
 const asNumber = (value, fallback = 0) => {
   const n = Number(value);
@@ -38,7 +39,7 @@ export async function applyRoundAutomation({ initiative = [], round = 1, combatK
   const normalizedRound = Math.max(1, Math.floor(asNumber(round, 1)));
   const normalizedKey = safeDocId(combatKey || 'combat');
   const markerId = safeDocId(`${normalizedKey}_r${normalizedRound}`);
-  const markerRef = doc(db, 'combat_round_automation', markerId);
+  const markerRef = docIn('combat_round_automation', markerId);
 
   const participants = [];
   const seen = new Set();
@@ -48,7 +49,7 @@ export async function applyRoundAutomation({ initiative = [], round = 1, combatK
     const key = `${info.collection}:${info.id}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    participants.push({ ...info, combatant, ref:doc(db, info.collection, info.id) });
+    participants.push({ ...info, combatant, ref:docIn(info.collection, info.id) });
   }
 
   return runTransaction(db, async transaction => {
@@ -101,7 +102,7 @@ export async function applyRoundAutomation({ initiative = [], round = 1, combatK
 
       if (statusDamage) {
         const eventId = safeDocId(`${normalizedKey}_r${normalizedRound}_${row.type}_${row.id}`);
-        transaction.set(doc(db, 'combat_effect_events', eventId), {
+        transaction.set(docIn('combat_effect_events', eventId), {
           id:eventId,
           combatKey:normalizedKey,
           round:normalizedRound,

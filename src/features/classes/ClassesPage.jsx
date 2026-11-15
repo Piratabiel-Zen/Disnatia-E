@@ -4,13 +4,15 @@ import { collection,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
 import { CLASSES } from "../../data/gameData";
+import "./classes.css";
+import { col, docIn } from '../../core/campaign';
 function ClassesSection({ masterMode }) {
   const [activeId, setActiveId] = useState(CLASSES[0].id);
   const [covers, setCovers] = useState({});
   const fileRef = useRef(null);
 
   useEffect(() => {
-  const unsub = onSnapshot(collection(db, 'class_covers'), snap => {
+  const unsub = onSnapshot(col('class_covers'), snap => {
     const data = {};
     snap.docs.forEach(d => { data[d.id] = d.data().img || ''; });
     setCovers(data);
@@ -31,7 +33,7 @@ function ClassesSection({ masterMode }) {
       setCovers(prev => ({ ...prev, [cls.id]: compressed }));
 
       try {
-        await setDoc(doc(db, 'class_covers', cls.id), { img: compressed });
+        await setDoc(docIn('class_covers', cls.id), { img: compressed });
       } catch (err) {
         alert('Erro ao salvar a imagem desta classe. Tente uma imagem menor.');
         console.error(err);
@@ -48,100 +50,115 @@ function ClassesSection({ masterMode }) {
     ...(cls.specials || []).map(a => ({ ...a, tipo: 'Especial' })),
   ].filter(a => a?.name);
 
+  const normais=(cls.normal||[]).filter(a=>a?.name);
+  const especiais=(cls.specials||[]).filter(a=>a?.name);
+
   return (
-    <div style={{maxWidth:1040,margin:'0 auto',padding:'40px 24px 80px'}}>
-      <div style={{textAlign:'center',marginBottom:32}}>
-        <div style={{fontSize:11,letterSpacing:'0.4em',color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:13,textTransform:'uppercase'}}>As Cinco Linhagens</div>
-        <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:23,color:'#E8D8C0',fontWeight:700,margin:0}}>Classes</h2>
-        <div style={{fontSize:12,color:'#4A4050',marginTop:9,fontFamily:'Cinzel,serif'}}>Selecione uma classe para ver detalhes e habilidades</div>
-        <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(232,160,32,0.6),transparent)',margin:'16px auto 0'}}/>
-      </div>
+    <div className="classe-page">
+      <header className="classe-intro">
+        <span className="classe-intro-kicker">As linhagens de Cosmum</span>
+        <h2>Classes</h2>
+        <p>Escolha uma linhagem para conhecer sua origem e seus poderes</p>
+      </header>
 
-      <div className="classes-grid">
-        {/* LISTA DE CLASSES */}
-        <div className="classes-list">
-          {CLASSES.map(c => {
-            const active = c.id === activeId;
-            return (
-              <button
-                key={c.id}
-                onClick={() => setActiveId(c.id)}
-                className="classes-list-item"
-                style={{
-                  border: `1px solid ${active ? c.color + '55' : 'rgba(255,255,255,0.07)'}`,
-                  background: active ? `${c.color}14` : 'rgba(255,255,255,0.02)',
-                  boxShadow: active ? `0 0 16px ${c.glow}` : 'none',
-                }}
-              >
-                <span style={{fontSize:18,flexShrink:0}}>{c.icon}</span>
-                <span style={{fontFamily:'Cinzel,serif',fontSize:12.5,fontWeight:700,color:active?c.color:'#8A7A8A',lineHeight:1.3}}>{c.name}</span>
+      <div className="classe-layout">
+        <nav className="classe-list" aria-label="Linhagens">
+          {CLASSES.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setActiveId(c.id)}
+              className={`classe-chip${c.id === activeId ? ' is-active' : ''}`}
+              style={{ '--c': c.color }}
+              aria-current={c.id === activeId ? 'true' : undefined}
+            >
+              <span className="classe-chip-medal" aria-hidden="true">{c.icon}</span>
+              <span className="classe-chip-text">
+                <b>{c.name}</b>
+                <small>{String(c.role || '').split('·')[0].trim()}</small>
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="classe-detail" style={{ '--c': cls.color }}>
+          <section className="classe-hero">
+            {cover ? (
+              <div className="classe-hero-art"><img loading="lazy" decoding="async" src={cover} alt="" style={{ objectPosition: cls.objectPosition || 'center' }}/></div>
+            ) : (
+              <div className="classe-hero-empty">
+                <span aria-hidden="true">{cls.icon}</span>
+                <small>{masterMode ? 'Envie a ilustração desta linhagem' : 'Ilustração ainda não revelada'}</small>
+              </div>
+            )}
+            {masterMode && (
+              <button className="classe-hero-change" onClick={() => fileRef.current?.click()}>
+                {cover ? '🖼 Trocar arte' : '🖼 Enviar arte'}
               </button>
-            );
-          })}
-        </div>
-
-        {/* DETALHE DA CLASSE */}
-        <div className="class-detail-grid">
-          {/* ILUSTRAÇÃO */}
-          <div className="class-illustration" onClick={() => masterMode && fileRef.current?.click()} style={{border:`1px solid ${cls.color}33`,boxShadow:`0 10px 40px ${cls.glow}`}}>
-  {cover ? (
-    <div className="class-image-wrapper">
-      <img loading="lazy" decoding="async" src={cover} alt={cls.name} style={{ objectPosition: cls.objectPosition || 'center' }} />
-    </div>
-  ) : (
-    <div className="class-illustration-placeholder">
-      <span style={{fontSize:40,opacity:0.3}}>{cls.icon}</span>
-      <div style={{fontSize:11,color:'rgba(255,255,255,0.2)',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>
-        {masterMode ? 'Toque para enviar a ilustração' : 'Nenhuma ilustração enviada'}
-      </div>
-    </div>
-  )}
-  {masterMode && cover && (
-    <div style={{position:'absolute',top:10,right:10,padding:'4px 10px',borderRadius:6,background:'rgba(0,0,0,0.6)',border:`1px solid ${cls.color}44`,color:cls.color,fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'0.08em',zIndex:2}}>🖼 Trocar</div>
-  )}
-  {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{display:'none'}}/>}
-</div>
-
-          {/* INFO */}
-          <div>
-            <div style={{marginBottom:16}}>
-              <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:19,color:cls.color,fontWeight:700,letterSpacing:'0.02em',marginBottom:6,textShadow:`0 0 24px ${cls.glow}`}}>{cls.name}</div>
-              <div style={{fontSize:11,color:'#7B6D8A',fontFamily:'Cinzel,serif',letterSpacing:'0.06em'}}>{cls.role}</div>
-            </div>
-
-            <p style={{fontSize:13.5,color:'#9A8A7A',lineHeight:1.85,fontStyle:'italic',margin:'0 0 22px'}}>{cls.lore}</p>
-
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:10,letterSpacing:'0.35em',color:'rgba(255,255,255,0.25)',fontFamily:'Cinzel,serif',marginBottom:10,textTransform:'uppercase'}}>Habilidades</div>
-              <div style={{display:'flex',flexDirection:'column',gap:7}}>
-                {habilidades.map((hab, i) => (
-                  <div key={`ability_${i}_${hab.name}`} className="class-ability-hover" tabIndex={0} style={{'--ability-color':cls.color}}>
-                    <span className="class-ability-glyph">◆</span>
-                    <span className="class-ability-name">{hab.name}</span>
-                    <span className="class-ability-hint">detalhes</span>
-                    <div className="class-ability-tooltip" role="tooltip">
-                      <small>{hab.tipo}{hab.req ? ` · Nv ${hab.req}+` : ''}</small>
-                      <strong>{hab.name}</strong>
-                      <p>{hab.desc || 'Descrição ainda não registrada.'}</p>
-                      {(hab.cost || hab.cooldown || hab.dano) && <div className="class-ability-meta">
-                        {hab.cost ? <span>✦ {hab.cost} VC</span> : null}
-                        {hab.cooldown ? <span>⏱ {hab.cooldown}</span> : null}
-                        {hab.dano ? <span>⚔ {hab.dano}</span> : null}
-                      </div>}
-                    </div>
-                  </div>
-                ))}
+            )}
+            {masterMode && <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }}/>}
+            <div className="classe-hero-copy">
+              <span className="classe-hero-role">{cls.role}</span>
+              <h3>{cls.name}</h3>
+              <div className="classe-hero-reach">
+                <span>Alcance <b>{cls.alcance || '—'}</b></span>
+                <span>Habilidades <b>{normais.length + especiais.length + (cls.passive?.name && cls.passive.name !== '—' ? 1 : 0)}</b></span>
               </div>
             </div>
+          </section>
 
-            <div style={{border:`1px solid ${cls.color}28`,borderRadius:10,background:`${cls.color}09`,padding:'14px 16px'}}>
-              <div style={{fontSize:10,letterSpacing:'0.3em',color:cls.color,fontFamily:'Cinzel,serif',marginBottom:8,textTransform:'uppercase'}}>Características</div>
-              <div style={{fontSize:13,color:'#8A7A6A',lineHeight:1.75}}>{cls.passive?.desc}</div>
-            </div>
-          </div>
+          {cls.lore && <section className="classe-lore"><p>{cls.lore}</p></section>}
+
+          {cls.passive?.name && cls.passive.name !== '—' && (
+            <section className="classe-passive">
+              <span className="classe-passive-mark" aria-hidden="true">✦</span>
+              <div className="classe-passive-copy">
+                <small>Passiva da linhagem</small>
+                <b>{cls.passive.name}</b>
+                <p>{cls.passive.desc}</p>
+              </div>
+            </section>
+          )}
+
+          {normais.length > 0 && (
+            <section>
+              <h4 className="classe-section-title">Habilidades</h4>
+              <div className="classe-abilities">
+                {normais.map((hab, i) => <AbilityCard key={`n_${i}_${hab.name}`} ability={hab}/>)}
+              </div>
+            </section>
+          )}
+
+          {especiais.length > 0 && (
+            <section>
+              <h4 className="classe-section-title">Especiais</h4>
+              <div className="classe-abilities">
+                {especiais.map((hab, i) => <AbilityCard key={`e_${i}_${hab.name}`} ability={hab} special/>)}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function AbilityCard({ ability, special = false }) {
+  const meta = [
+    ability.cost ? `✦ ${ability.cost} VC` : null,
+    ability.cooldown ? `⏱ ${ability.cooldown}` : null,
+    ability.dano ? `⚔ ${ability.dano}` : null,
+  ].filter(Boolean);
+  return (
+    <article className="classe-ability">
+      <div className="classe-ability-head">
+        <b>{ability.name}</b>
+        {special && <span className="classe-ability-tag especial">Especial{ability.req ? ` · Nv ${ability.req}+` : ''}</span>}
+      </div>
+      <p>{ability.desc || 'Descrição ainda não registrada.'}</p>
+      {meta.length > 0 && (
+        <div className="classe-ability-meta">{meta.map(item => <span key={item}>{item}</span>)}</div>
+      )}
+    </article>
   );
 }
 

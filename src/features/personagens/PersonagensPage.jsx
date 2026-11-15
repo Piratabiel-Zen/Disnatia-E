@@ -5,6 +5,7 @@ import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,setDoc } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { compressImage } from "../../core/media";
+import { col, docIn } from '../../core/campaign';
 const newNPC = id => ({ id, nome: '', foto: '', genero: '', idade: '', descricao: '' });
 
 function NPCCard({ npc, onChange, onDelete, masterMode }) {
@@ -56,7 +57,7 @@ function PersonagensSection({ masterMode }) {
   const saveTimeout = useRef({});
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'npcs'), snap => {
+    const unsub = onSnapshot(col('npcs'), snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       data.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
       setNpcs(data); setLoaded(true);
@@ -67,12 +68,12 @@ function PersonagensSection({ masterMode }) {
   const save = npc => {
     clearTimeout(saveTimeout.current[npc.id]);
     saveTimeout.current[npc.id] = setTimeout(async()=>{
-      try { await setDoc(doc(db,'npcs',String(npc.id)),npc); } catch(e) { console.error(e); }
+      try { await setDoc(docIn('npcs',String(npc.id)),npc); } catch(e) { console.error(e); }
     },800);
   };
-  const add = () => { const n=newNPC(Date.now()); setDoc(doc(db,'npcs',String(n.id)),n); setExpandedId(String(n.id)); };
+  const add = () => { const n=newNPC(Date.now()); setDoc(docIn('npcs',String(n.id)),n); setExpandedId(String(n.id)); };
   const upd = (id,data) => { setNpcs(prev=>prev.map(n=>n.id===id?data:n)); save(data); };
-  const del = async id => { await deleteDoc(doc(db,'npcs',String(id))); if(String(id)===expandedId)setExpandedId(null); };
+  const del = async id => { await deleteDoc(docIn('npcs',String(id))); if(String(id)===expandedId)setExpandedId(null); };
   const expandedNpc=npcs.find(n=>String(n.id)===expandedId);
 
   return (

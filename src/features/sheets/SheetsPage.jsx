@@ -7,6 +7,7 @@ import { ARTEFATOS_DATA,CLASSES,SHEET_COLORS } from "../../data/gameData";
 import { SheetFull,newSheet } from "./SheetComponents";
 import { visibleSheets } from '../../adventure/visitorAccess.mjs';
 import CombatMode from "./CombatMode";
+import { col, docIn } from '../../core/campaign';
 class SheetRenderBoundary extends Component {
   constructor(props){super(props);this.state={error:null};}
   static getDerivedStateFromError(error){return {error};}
@@ -30,21 +31,21 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
 
   useEffect(()=>{
     const scopedVisitor=visitorId||(access?.role==='visitor'?access.visitorId:'');
-    const ref=scopedVisitor?query(collection(db,'sheets'),where('visitorId','==',String(scopedVisitor))):collection(db,'sheets');
+    const ref=scopedVisitor?query(col('sheets'),where('visitorId','==',String(scopedVisitor))):col('sheets');
     const u1=onSnapshot(ref,snap=>{const all=visibleSheets(snap.docs.map(d=>({id:d.id,...d.data()})),access,masterMode);const data=visitorId||access?.role==='visitor'?all:!masterMode&&playerSheetId?all.filter(s=>String(s.id)===String(playerSheetId)):all.filter(sheet=>!sheet.visitorId);setSheets(data);setLoaded(true);},()=>setLoaded(true));
-    const u2=onSnapshot(doc(db,'config','customAbilities'),snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});});
-    const u3=onSnapshot(collection(db,'enemies'),snap=>{setEnemies(snap.docs.map(d=>({id:d.id,...d.data()})));});
-    const u4=onSnapshot(doc(db,'config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlockedState(snap.data().unlocked||{});});
-    const u5=onSnapshot(doc(db,'config','artefatos_habilidades'),snap=>{if(snap.exists())setArtefatosHabsState(snap.data()||{});});
+    const u2=onSnapshot(docIn('config','customAbilities'),snap=>{if(snap.exists())setCustomAbilities(snap.data()||{});});
+    const u3=onSnapshot(col('enemies'),snap=>{setEnemies(snap.docs.map(d=>({id:d.id,...d.data()})));});
+    const u4=onSnapshot(docIn('config','artefatos'),snap=>{if(snap.exists())setArtefatosUnlockedState(snap.data().unlocked||{});});
+    const u5=onSnapshot(docIn('config','artefatos_habilidades'),snap=>{if(snap.exists())setArtefatosHabsState(snap.data()||{});});
     return()=>{u1();u2();u3();u4();u5();};
   },[masterMode,playerSheetId,access?.role,access?.visitorId,visitorId]);
 
   const revealedArtefatos = ARTEFATOS_DATA.filter(a => artefatosUnlockedState[a.id]);
 
-  const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(doc(db,'sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
-  const add=()=>{if(sheets.length>=15)return;const s=newSheet(Date.now());setDoc(doc(db,'sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
-  const upd=(id,data)=>{if(data===null){if(!masterMode)return;deleteDoc(doc(db,'sheets',String(id)));setActiveId(null);return;}const current=sheets.find(s=>String(s.id)===String(id));const safeData=!masterMode&&current?{...data,classe:current.classe,audience:current.audience||'player',visitorId:current.visitorId||''}:data;setSheets(prev=>prev.map(s=>s.id===id?safeData:s));saveSheet(safeData);};
-  const saveCustom=async(sheetId,abilities)=>{if(!masterMode)throw new Error('Apenas o Mestre pode editar habilidades.');await setDoc(doc(db,'config','customAbilities'),{[String(sheetId)]:abilities},{merge:true});};
+  const saveSheet=sheet=>{clearTimeout(saveTimeout.current[sheet.id]);saveTimeout.current[sheet.id]=setTimeout(async()=>{try{await setDoc(docIn('sheets',String(sheet.id)),sheet);}catch(e){console.error('Erro ao salvar ficha:',e);}},900);};
+  const add=()=>{if(sheets.length>=15)return;const s=newSheet(Date.now());setDoc(docIn('sheets',String(s.id)),s);setActiveId(String(s.id));setUnlockedIds(prev=>({...prev,[String(s.id)]:true}));};
+  const upd=(id,data)=>{if(data===null){if(!masterMode)return;deleteDoc(docIn('sheets',String(id)));setActiveId(null);return;}const current=sheets.find(s=>String(s.id)===String(id));const safeData=!masterMode&&current?{...data,classe:current.classe,audience:current.audience||'player',visitorId:current.visitorId||''}:data;setSheets(prev=>prev.map(s=>s.id===id?safeData:s));saveSheet(safeData);};
+  const saveCustom=async(sheetId,abilities)=>{if(!masterMode)throw new Error('Apenas o Mestre pode editar habilidades.');await setDoc(docIn('config','customAbilities'),{[String(sheetId)]:abilities},{merge:true});};
 
   const handleTabClick = (s) => {
     const sid = String(s.id);

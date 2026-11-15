@@ -30,7 +30,7 @@ function PageSkeleton(){
   );
 }
 
-export default function AuthenticatedSession({access,playerSheetId,tab,masterMode,quality,setQuality,atm,logout,navigate,prefetch,lockPageScroll,ActivePage,setMasterMode,TAB_LABELS}){
+export default function AuthenticatedSession({access,playerSheetId,tab,masterMode,quality,setQuality,atm,logout,navigate,prefetch,lockPageScroll,ActivePage,setMasterMode,TAB_LABELS,campaign,onLeaveCampaign}){
   const headerRef=useRef(null);
   useHeaderClearance(headerRef);
   return(
@@ -48,15 +48,15 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
         <AbilityFeedbackBridge/>
 
         {/* DESKTOP NAV MASTER ROLE 2026-09-11 */}
-        <ImmersiveNavigation tab={tab} onNavigate={navigate} onPrefetch={prefetch} accent={atm.accent} masterMode={masterMode}/>
+        <ImmersiveNavigation tab={tab} onNavigate={navigate} onPrefetch={prefetch} accent={atm.accent} masterMode={masterMode} campaign={campaign} onLeaveCampaign={onLeaveCampaign}/>
 
         <div className="immersive-stage">
           <header ref={headerRef} className="immersive-topbar">
             <div className="brand-line">
               <span className="brand-mark">✦</span>
               <div>
-                <h1>Dinastia E</h1>
-                <small>Cosmum · {TAB_LABELS[tab] || 'Livro do Mundo'}</small>
+                <h1>{campaign?.name || 'Dinastia E'}</h1>
+                <small>{campaign?.world ? `${campaign.world} · ` : ''}{TAB_LABELS[tab] || 'Livro do Mundo'}</small>
               </div>
             </div>
             <div className="top-actions">

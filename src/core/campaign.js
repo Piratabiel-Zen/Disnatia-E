@@ -1,0 +1,170 @@
+// Campanhas: várias mesas no mesmo site, cada uma com seus dados e sua cara.
+//
+// A campanha principal (Dinastia E) continua usando exatamente os caminhos que
+// o Firestore já tem hoje ('sheets', 'config/session', 'battlemaps'...), então
+// nada precisa ser migrado e a mesa em andamento não corre risco. Campanhas
+// novas recebem um prefixo no nome da coleção, o que as isola por completo.
+//
+// A coleção 'campaigns' é global: é a lista de mesas, lida antes de qualquer
+// outra coisa, e nunca entra no escopo de uma campanha.
+import { collection, doc } from 'firebase/firestore';
+import { db } from './firebase';
+
+export const PRIMARY_CAMPAIGN_ID = 'dinastia-e';
+const STORAGE_KEY = 'dinastia_campaign_v1';
+
+/** A campanha que já existe, descrita aqui para o site funcionar mesmo com o Firestore vazio. */
+export const PRIMARY_CAMPAIGN = {
+  id: PRIMARY_CAMPAIGN_ID,
+  name: 'Dinastia E',
+  genre: 'Cósmico e mágico',
+  tagline: 'O mundo é do mestre. A história é de vocês.',
+  world: 'Cosmum',
+  theme: 'cosmico',
+  sigil: '✦',
+  primary: true,
+};
+
+/** Temas visuais: a campanha escolhe o seu e a interface inteira acompanha. */
+export const CAMPAIGN_THEMES = {
+  cosmico: {
+    label: 'Cósmico e mágico',
+    sigil: '✦',
+    accent: '#A855F7',
+    accentSoft: '#D6A7FF',
+    bg: '#0B0718',
+    ink: '#C8B8A0',
+    display: "'Cinzel', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    background: 'cosmic',
+  },
+  sombrio: {
+    label: 'Investigativo e sombrio',
+    sigil: '◉',
+    accent: '#B4543A',
+    accentSoft: '#E0A080',
+    bg: '#120E0C',
+    ink: '#CBBBA8',
+    display: "'Cinzel', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    background: 'smoke',
+  },
+  medieval: {
+    label: 'Medieval e mágico',
+    sigil: '⚜',
+    accent: '#C79A3C',
+    accentSoft: '#EBC97A',
+    bg: '#13100A',
+    ink: '#D6C7A6',
+    display: "'Cinzel', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    background: 'parchment',
+  },
+  moderno: {
+    label: 'Pé no chão',
+    sigil: '◈',
+    accent: '#3F8FA8',
+    accentSoft: '#8FD0E0',
+    bg: '#0C1114',
+    ink: '#BFCBD1',
+    display: "'Cinzel', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    background: 'quiet',
+  },
+};
+
+export const campaignTheme = campaign => CAMPAIGN_THEMES[campaign?.theme] || CAMPAIGN_THEMES.cosmico;
+
+let activeId = PRIMARY_CAMPAIGN_ID;
+let activeRecord = PRIMARY_CAMPAIGN;
+const listeners = new Set();
+
+/** Prefixo de coleção da campanha ativa. A principal não tem prefixo: usa os caminhos atuais. */
+export function scopedPath(name) {
+  const path = String(name || '');
+  if (!path) throw new Error('scopedPath exige o nome da coleção');
+  return activeId === PRIMARY_CAMPAIGN_ID ? path : `c__${activeId}__${path}`;
+}
+
+/** Coleção da campanha ativa. Substitui collection(db, 'nome'). */
+export function col(name) {
+  return collection(db, scopedPath(name));
+}
+
+/** Documento dentro da campanha ativa. Substitui doc(db, 'nome', id, ...). */
+export function docIn(name, ...segments) {
+  return doc(db, scopedPath(name), ...segments);
+}
+
+/** Coleção global, fora de qualquer campanha (a própria lista de campanhas). */
+export const globalCol = name => collection(db, name);
+export const globalDoc = (name, ...segments) => doc(db, name, ...segments);
+
+export const activeCampaignId = () => activeId;
+export const isPrimaryCampaign = () => activeId === PRIMARY_CAMPAIGN_ID;
+
+/**
+ * Troca a campanha ativa. Como os listeners do Firestore já montados apontam
+ * para os caminhos antigos, quem chama isto deve remontar a árvore (o App usa
+ * a campanha como `key`) ou recarregar a página.
+ */
+export function setActiveCampaign(campaign) {
+  const record = typeof campaign === 'string' ? { id: campaign } : (campaign || {});
+  const next = String(record.id || PRIMARY_CAMPAIGN_ID);
+  activeId = next;
+  activeRecord = next === PRIMARY_CAMPAIGN_ID ? { ...PRIMARY_CAMPAIGN, ...record, primary: true } : record;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRecord)); } catch (_) {}
+  for (const listener of [...listeners]) listener(activeRecord);
+  return activeRecord;
+}
+
+/** A campanha ativa com nome, tema e mundo, para a interface. */
+export const activeCampaign = () => activeRecord;
+
+export function onCampaignChange(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** Campanha guardada da última visita, se houver. */
+export function loadStoredCampaign() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && parsed.id ? parsed : null;
+  } catch (_) { return null; }
+}
+
+export function clearStoredCampaign() {
+  activeId = PRIMARY_CAMPAIGN_ID;
+  activeRecord = PRIMARY_CAMPAIGN;
+  try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+}
+
+/**
+ * Restaura a campanha da última visita sem avisar ninguém (nada montou ainda).
+ * Devolve null quando é a primeira visita, e aí a tela de mesas aparece.
+ */
+export function restoreCampaignFromStorage() {
+  const stored = loadStoredCampaign();
+  if (!stored) return null;
+  activeId = String(stored.id);
+  activeRecord = activeId === PRIMARY_CAMPAIGN_ID ? { ...PRIMARY_CAMPAIGN, ...stored, primary: true } : stored;
+  return activeRecord;
+}
+
+/**
+ * Sufixo para chaves do localStorage. A campanha principal não usa sufixo,
+ * então quem já estava logado continua logado depois desta mudança.
+ */
+export const storageSuffix = () => (activeId === PRIMARY_CAMPAIGN_ID ? '' : `:${activeId}`);
+
+/** Slug para o id de uma campanha nova. */
+export function campaignSlug(name) {
+  const base = String(name || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  return base || `mesa-${Date.now().toString(36)}`;
+}

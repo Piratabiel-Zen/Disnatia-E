@@ -14,10 +14,10 @@ test('high-churn broadcasts write per-event records instead of hot shared docume
   for (const source of [provider, player, bridge]) {
     assert.doesNotMatch(source, /config['\"]\s*,\s*['\"](?:cosmic_event|combat_action)['\"]/);
   }
-  assert.match(provider, /collection\(db,'combat_action_events'\).*limit\(30\)/s);
+  assert.match(provider, /col\('combat_action_events'\).*limit\(30\)/s);
   assert.doesNotMatch(session, /SessionConnection|session-connection/);
-  assert.doesNotMatch(playerExperience, /collection\(db,'presence'\)|dinastia_presence_tab|Jogadores online/);
-  assert.match(playerExperience, /panel==='inventory'\?onSnapshot\(collection\(db,'campaign_items'\)/);
+  assert.doesNotMatch(playerExperience, /col\('presence'\)|dinastia_presence_tab|Jogadores online/);
+  assert.match(playerExperience, /panel==='inventory'\?onSnapshot\(col\('campaign_items'\)/);
   for (const kind of ['normal','especial','combinada']) assert.match(effects, new RegExp(`action-${kind}`));
 });
 
