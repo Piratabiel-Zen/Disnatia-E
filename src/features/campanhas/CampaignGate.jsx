@@ -12,6 +12,7 @@ import PasswordVisibilityInput from '../../experience/PasswordVisibilityInput';
 import { isUnlocked, requiredPasswordHash, tryUnlock } from '../../core/campaignPassword.mjs';
 import './campanhas.css';
 import './portais.css';
+import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
 
 const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 
@@ -97,7 +98,7 @@ export default function CampaignGate({ onChoose }) {
   const [manage, setManage] = useState(false);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
-  const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio' });
+  const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -137,11 +138,13 @@ export default function CampaignGate({ onChoose }) {
         world: draft.world.trim(),
         tagline: draft.tagline.trim(),
         theme: draft.theme,
+        // O sistema decide ficha, dados, condições e vocabulário da mesa.
+        sistema: draft.sistema,
         sigil: CAMPAIGN_THEMES[draft.theme].sigil,
         active: true,
         createdAt: Date.now(),
       });
-      setDraft({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio' });
+      setDraft({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO });
     } catch {
       setError('Não foi possível criar a mesa. Confira sua conexão.');
     } finally { setBusy(false); }
@@ -188,6 +191,13 @@ export default function CampaignGate({ onChoose }) {
                 <select value={draft.theme} onChange={e => setDraft({ ...draft, theme: e.target.value })}>
                   {Object.entries(CAMPAIGN_THEMES).map(([key, theme]) => (
                     <option key={key} value={key}>{theme.sigil} {theme.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>Sistema
+                <select value={draft.sistema} onChange={e => setDraft({ ...draft, sistema: e.target.value })}>
+                  {listaDeSistemas().map(sistema => (
+                    <option key={sistema.id} value={sistema.id}>{sistema.nome} · {sistema.dados.notacao}</option>
                   ))}
                 </select>
               </label>
