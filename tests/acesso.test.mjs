@@ -63,11 +63,18 @@ test('os segredos da ficha são do dono e do Mestre', () => {
   assert.equal(podeVerSegredosDaFicha(ficha, mestre), true);
 });
 
-test('o jogador edita a própria ficha; a sem dono é de quem pegar', () => {
+test('o jogador edita só a ficha que lhe foi entregue', () => {
   assert.equal(podeEditarFicha({ dono: 'a1' }, ana), true);
   assert.equal(podeEditarFicha({ dono: 'a1' }, beto), false);
   assert.equal(podeEditarFicha({ dono: 'a1' }, mestre), true);
-  assert.equal(podeEditarFicha({}, beto), true, 'ficha nova sem dono');
+});
+
+test('ficha sem dono é rascunho do Mestre, não é de quem pegar', () => {
+  // O Mestre cria a ficha e depois escolhe quem joga com ela. Até nomear
+  // alguém, nenhum jogador escreve nela — nem o primeiro que abrir a aba.
+  assert.equal(podeEditarFicha({}, beto), false, 'ficha sem dono fechada para o jogador');
+  assert.equal(podeEditarFicha({ dono: '' }, ana), false);
+  assert.equal(podeEditarFicha({}, mestre), true, 'o Mestre monta o rascunho');
 });
 
 test('o que é do Mestre não é do jogador', () => {

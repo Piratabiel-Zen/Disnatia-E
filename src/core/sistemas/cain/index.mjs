@@ -32,11 +32,29 @@ export const PERICIA_ESPECIAL = Object.freeze({
 
 export const MAX_PERICIAS_EM_TRES = 2;
 
-/** As doze blasfêmias: o poder psíquico que o exorcista manifesta. */
-export const BLASFEMIAS = Object.freeze([
-  'Tensão', 'Ardência', 'Tempo', 'Vetor', 'Espaço', 'Sussurro',
-  'Cópia', 'Vínculo', 'Assombração', 'Possessão', 'Simpatia', 'Palácio',
+/**
+ * As doze blasfêmias: o poder psíquico que o exorcista manifesta.
+ *
+ * Na ordem em que o livro as apresenta. O resumo é descrição própria do tema
+ * de cada uma, para a mesa escolher sem abrir o PDF; os poderes de cada
+ * blasfêmia continuam no livro, que é de quem o comprou.
+ */
+export const BLASFEMIAS_DETALHADAS = Object.freeze([
+  { nome: 'Tensão', resumo: 'Campos de densidade psíquica: cortar como lâmina, endurecer uma superfície, amolecer a matéria morta.' },
+  { nome: 'Ardor', resumo: 'Calor e luz que atravessam o que estiver no caminho — parede, porta, obstáculo.' },
+  { nome: 'Fluxo', resumo: 'Correntes e o tempo delas: empurrar, acelerar, segurar o que se move.' },
+  { nome: 'Vetor', resumo: 'Força dirigida à distância: arremessar, atirar, mover o que não se alcança.' },
+  { nome: 'Portão', resumo: 'Rasgar e redobrar o espaço: passagens, duplicatas, um lugar reorganizado por dentro.' },
+  { nome: 'Sufoco', resumo: 'Tirar apoio e atrito: o chão escorrega, o ar falta, o alvo não firma o pé.' },
+  { nome: 'Sussurro', resumo: 'Uma sombra que acompanha, sente e responde — com pouquíssimas palavras.' },
+  { nome: 'Edit', resumo: 'Alterar os detalhes: a aparência, a cópia, a pequena correção na realidade.' },
+  { nome: 'Vínculo', resumo: 'Ligar pessoas e coisas; dividir entre vários o que acontece a um.' },
+  { nome: 'Palácio', resumo: 'Abrir um espaço próprio e habitá-lo. Dentro dele mora um tulpa.' },
+  { nome: 'Assombração', resumo: 'Ver e tratar com o que ficou: almas, rastros, presenças de quem passou.' },
+  { nome: 'Simpatia', resumo: 'Correspondência: tocar um objeto e ler o que ele guarda.' },
 ]);
+
+export const BLASFEMIAS = Object.freeze(BLASFEMIAS_DETALHADAS.map(b => b.nome));
 
 /** As categorias de Pecado descritas no livro. */
 export const CATEGORIAS_DE_PECADO = Object.freeze([
@@ -108,6 +126,12 @@ const SISTEMA = Object.freeze({
   dados: Object.freeze({
     notacao: 'd6',
     resumo: 'Reserva de d6. Todo 4+ é sucesso; um sucesso basta.',
+    // O CAIN não usa outro dado. Oferecer d20 na mesa de dados seria
+    // convidar a mesa a rolar uma coisa que o sistema não sabe ler.
+    faces: Object.freeze([6]),
+    // Reserva de até 3 de perícia + 3 de vantagem, e a Agonia Divina pode
+    // passar disso — 8 cobre a mesa inteira sem virar brinquedo.
+    maximoDeDados: 8,
     rolar: rolarAcao,
   }),
 
@@ -118,7 +142,10 @@ const SISTEMA = Object.freeze({
   blocosDaFicha: BLOCOS_DA_FICHA,
 
   // Abas que este sistema traz além das estruturais (fichas, mapas, crônicas).
-  abas: Object.freeze(['investigacao', 'pecados', 'documentos', 'livro']),
+  abas: Object.freeze([
+    'investigacao', 'pecados', 'documentos', 'livro',
+    'manual', 'agendas', 'tiposdepecado',
+  ]),
 
   // A navegação da mesa. Vem do sistema porque "Bestiário" e "Livro da
   // Mandíbula" são da Dinastia E; aqui a caçada tem outro mapa e outro índice.
@@ -137,6 +164,9 @@ const SISTEMA = Object.freeze({
       { id: 'pecados', label: 'Pecados', icon: '✝' },
     ] },
     { id: 'knowledge', label: 'Arquivo', icon: '◇', items: [
+      { id: 'manual', label: 'Manual de Campo', icon: '§' },
+      { id: 'agendas', label: 'Agendas e Blasfêmias', icon: '◈' },
+      { id: 'tiposdepecado', label: 'Tipos de Inimigo', icon: '☠' },
       { id: 'livro', label: 'Livro', icon: '✦' },
       { id: 'cronicas', label: 'Capítulos', icon: '🗒️' },
     ] },

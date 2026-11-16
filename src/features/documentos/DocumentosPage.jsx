@@ -25,7 +25,7 @@ import './documentos.css';
 export default function DocumentosPage() {
   const { membro, carregando } = useMembro();
   const [documentos, setDocumentos] = useState([]);
-  const [membros, setMembros] = useState([]);
+  const [fichas, setFichas] = useState([]);
   const [busca, setBusca] = useState('');
   const [aberto, setAberto] = useState(null);
 
@@ -33,12 +33,16 @@ export default function DocumentosPage() {
     setDocumentos(snap.docs.map(d => ({ ...d.data(), id: d.id })));
   }), []);
 
-  useEffect(() => {
-    if (!membro || !ehMestre(membro)) return undefined;
-    return onSnapshot(col('__membros_espelho'), snap => {
-      setMembros(snap.docs.map(d => ({ ...d.data(), uid: d.id })));
-    });
-  }, [membro]);
+  // Quem recebe um documento sai das FICHAS, não de uma lista de contas.
+  //
+  // A mesa não pensa em uid nem em e-mail: ela pensa em personagem. "Isto
+  // chega ao Álvaro" é a frase que o Mestre tem na cabeça, e o Álvaro é uma
+  // ficha. A conta por trás é só o endereço de entrega — por isso a liberação
+  // continua sendo gravada pelo uid do dono da ficha, que é o que as regras
+  // do servidor sabem conferir.
+  useEffect(() => onSnapshot(col('fichas'), snap => {
+    setFichas(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+  }, () => {}), []);
 
   const salvar = useCallback(async doc => {
     const { id, ...dados } = doc;
@@ -62,7 +66,13 @@ export default function DocumentosPage() {
     );
   }
 
-  const nomePorUid = Object.fromEntries(membros.map(m => [m.uid, m.nome || 'alguém']));
+  // Fichas já entregues a alguém: só essas podem receber documento, porque
+  // uma ficha sem dono não tem para onde entregar.
+  const comDono = fichas.filter(f => String(f.dono || '').trim());
+  const semDono = fichas.length - comDono.length;
+  const nomePorUid = Object.fromEntries(
+    comDono.map(f => [String(f.dono), f.nome || 'exorcista sem nome']),
+  );
   const atual = lista.find(d => d.id === aberto) || null;
 
   return (
@@ -144,17 +154,33 @@ export default function DocumentosPage() {
                     type="button" data-ligado={atual.liberadoParaTodos ? 'sim' : 'nao'}
                     onClick={() => salvar(atual.liberadoParaTodos ? guardar(atual) : liberarParaTodos(atual))}
                   >A mesa inteira</button>
-                  {membros.filter(m => m.papel !== 'mestre').map(m => (
+                  {comDono.map(f => (
                     <button
-                      key={m.uid} type="button"
-                      data-ligado={atual.liberadoPara?.includes(m.uid) ? 'sim' : 'nao'}
-                      onClick={() => salvar(alternarPessoa(atual, m.uid))}
-                    >{m.nome || 'jogador'}</button>
+                      key={f.id} type="button"
+                      data-ligado={atual.liberadoPara?.includes(String(f.dono)) ? 'sim' : 'nao'}
+                      title={`Entregar só a ${f.nome || 'esta ficha'}`}
+                      onClick={() => salvar(alternarPessoa(atual, String(f.dono)))}
+                    >{f.nome || 'Exorcista sem nome'}</button>
                   ))}
                 </div>
                 <p className="arquivo-nota-mestre">
-                  Guardado é o padrão. O que está guardado não chega ao navegador de ninguém.
+                  Guardado é o padrão. O que está guardado não chega ao navegador de ninguém —
+                  quem recusa é o servidor, não a tela.
                 </p>
+                {comDono.length === 0 && (
+                  <p className="arquivo-nota-mestre">
+                    {fichas.length === 0
+                      ? 'Nenhuma ficha aberta ainda. Abra as fichas na aba Fichas e entregue cada uma a um jogador: é essa entrega que faz o nome aparecer aqui.'
+                      : 'As fichas existem, mas nenhuma foi entregue a um jogador ainda. Escolha o dono de cada uma na aba Fichas.'}
+                  </p>
+                )}
+                {comDono.length > 0 && semDono > 0 && (
+                  <p className="arquivo-nota-mestre">
+                    {semDono === 1
+                      ? 'Uma ficha ainda está sem dono e por isso não aparece na lista.'
+                      : `${semDono} fichas ainda estão sem dono e por isso não aparecem na lista.`}
+                  </p>
+                )}
               </div>
             )}
 

@@ -10,7 +10,8 @@ import "../experience/arremesso.css";
 import "../experience/mesa-de-dados.css";
 // O dado flutuante usa three.js; só baixa quando a mesa de dados é aberta.
 const FloatingDie = lazy(() => import("../experience/FloatingDie"));
-import { docIn } from '../core/campaign';
+import { activeCampaign, docIn } from '../core/campaign';
+import { dadosDoSistema } from '../core/sistemas/index.mjs';
 export function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   const [display, setDisplay] = useState(finalValue);
   const [phase, setPhase] = useState('idle');
@@ -62,8 +63,15 @@ export function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) 
 }
 
 function DiceWidget({ access }) {
+  // A mesa de dados segue o sistema da campanha. Numa mesa de CAIN sobra o
+  // d6 e some o resto, porque é o único dado que o sistema sabe ler.
+  const regrasDeDados = dadosDoSistema(activeCampaign());
+  const facesPossiveis = regrasDeDados.faces;
+  const quantidadesPossiveis = Array.from({ length: regrasDeDados.maximo }, (_, i) => i + 1);
+  const faceInicial = facesPossiveis.includes(20) ? 20 : facesPossiveis[facesPossiveis.length - 1];
+
   const [open, setOpen] = useState(false);
-  const [dice, setDice] = useState(20);
+  const [dice, setDice] = useState(faceInicial);
   const [count, setCount] = useState(1);
   const [bonus, setBonus] = useState(0);
   const [result, setResult] = useState(null);
@@ -119,7 +127,7 @@ function DiceWidget({ access }) {
     if (physicalRolling) return;
     setThrowGesture(gesture);
     setPhysicalRolling(true);
-    const safeCount = Math.min(5, Math.max(1, Number(count) || 1));
+    const safeCount = Math.min(regrasDeDados.maximo, Math.max(1, Number(count) || 1));
     const values = Array.from({ length: safeCount }, () => Math.floor(Math.random() * dice) + 1);
     const base = values.reduce((sum, value) => sum + value, 0);
     const total = base + Number(bonus);
@@ -186,16 +194,21 @@ function DiceWidget({ access }) {
       {open && (
         <div style={{background:'rgba(10,12,28,0.95)', border:'1px solid rgba(168,85,247,0.4)', borderRadius:16, padding:16, width:'min(360px, calc(100vw - 32px))', boxShadow:'0 10px 40px rgba(0,0,0,0.8)', backdropFilter:'none'}}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-            <div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#C8A8E8', letterSpacing:'0.1em'}}>Rolagem Cósmica</div>
+            <div style={{fontFamily:'Cinzel,serif', fontSize:13, color:'#C8A8E8', letterSpacing:'0.1em'}}>{facesPossiveis.length === 1 ? `Reserva de d${facesPossiveis[0]}` : 'Rolagem Cósmica'}</div>
             <button onClick={()=>{setOpen(false);setPhysicalRolling(false);}} style={{background:'transparent', border:'none', color:'#5A5070', cursor:'pointer', fontSize:14}}>✕</button>
           </div>
-          <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:6, marginBottom:12}}>
-            {[4,6,8,10,12,20].map(d => <button key={d} onClick={()=>{setDice(d);setResult(null);}} style={{padding:'6px 0', borderRadius:6, border:`1px solid ${dice===d?'rgba(168,85,247,0.6)':'rgba(255,255,255,0.1)'}`, background:dice===d?'rgba(168,85,247,0.2)':'rgba(255,255,255,0.03)', color:dice===d?'#fff':'#9A8A7A', fontFamily:'Cinzel,serif', fontSize:12, cursor:'pointer', transition:'all 0.2s'}}>D{d}</button>)}
+          <div style={{display:'grid', gridTemplateColumns:`repeat(${Math.min(3, facesPossiveis.length)}, 1fr)`, gap:6, marginBottom:12}}>
+            {facesPossiveis.map(d => <button key={d} onClick={()=>{setDice(d);setResult(null);}} style={{padding:'6px 0', borderRadius:6, border:`1px solid ${dice===d?'rgba(168,85,247,0.6)':'rgba(255,255,255,0.1)'}`, background:dice===d?'rgba(168,85,247,0.2)':'rgba(255,255,255,0.03)', color:dice===d?'#fff':'#9A8A7A', fontFamily:'Cinzel,serif', fontSize:12, cursor:'pointer', transition:'all 0.2s'}}>D{d}</button>)}
           </div>
+          {facesPossiveis.length === 1 && regrasDeDados.resumo && (
+            <p style={{margin:'-4px 0 12px', fontSize:10.5, lineHeight:1.5, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>
+              {regrasDeDados.resumo}
+            </p>
+          )}
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:10}}>
             <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Quantidade</label>
             <div style={{display:'flex', gap:5, marginLeft:'auto'}}>
-              {[1,2,3,4,5].map(n => <button key={n} onClick={()=>{if(!physicalRolling){setCount(n);setResult(null);}}} style={{width:31,height:28,borderRadius:7,border:`1px solid ${count===n?'rgba(168,85,247,.65)':'rgba(255,255,255,.1)'}`,background:count===n?'rgba(168,85,247,.2)':'rgba(255,255,255,.03)',color:count===n?'#fff':'#8A7A92',fontFamily:'Cinzel,serif',cursor:'pointer'}}>{n}</button>)}
+              {quantidadesPossiveis.map(n => <button key={n} onClick={()=>{if(!physicalRolling){setCount(n);setResult(null);}}} style={{width:31,height:28,borderRadius:7,border:`1px solid ${count===n?'rgba(168,85,247,.65)':'rgba(255,255,255,.1)'}`,background:count===n?'rgba(168,85,247,.2)':'rgba(255,255,255,.03)',color:count===n?'#fff':'#8A7A92',fontFamily:'Cinzel,serif',cursor:'pointer'}}>{n}</button>)}
             </div>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16}}>

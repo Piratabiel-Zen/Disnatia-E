@@ -12,12 +12,14 @@ import {
   periciasNoMaximo, podeSubirPericia, resolverGancho,
 } from '../src/features/cain/fichaCain.mjs';
 
-test('ficha nova nasce zerada, com os pulsos cheios', () => {
+test('ficha nova nasce zerada, com os três pulsos de início de caçada', () => {
   const f = fichaNova('x1');
   assert.equal(f.sistema, 'cain');
   assert.equal(f.estresse, 0);
   assert.equal(f.ferimentos, 0);
-  assert.equal(f.pulsos, 4, 'os pulsos psíquicos começam cheios');
+  // São três, não quatro: toda caçada começa com três pulsos psíquicos. A
+  // quarta caixa existe porque habilidades podem passar disso.
+  assert.equal(f.pulsos, 3, 'a caçada começa com três pulsos psíquicos');
   assert.equal(f.psique, 1);
   assert.equal(Object.values(f.pericias).every(v => v === 0), true);
   assert.equal(f.ganchos.length, 3);

@@ -3,14 +3,15 @@ import { BLASFEMIAS, PERICIAS, PERICIA_ESPECIAL } from '../../core/sistemas/cain
 import { MAX_PIEDADE, podeAgoniaDivina, resumoDaRolagem, rolarAcao } from '../../core/sistemas/cain/regras.mjs';
 import { podeEditarFicha, podeVerSegredosDaFicha } from '../../core/acesso.mjs';
 import {
-  CAIXAS_DE_GANCHO, MAX_ESTRESSE, MAX_FERIMENTOS, MAX_PECADO, MAX_PERICIA, MAX_PULSOS,
-  ajustarPericia, condicoesDaFicha, cortarGancho, estadoDoExorcista,
-  ganharFerimento, gastarPulso, marcarEstresse, marcarPecado, periciasNoMaximo,
-  podeSubirPericia, resolverGancho,
+  CAIXAS_DE_GANCHO, MAX_FERIMENTOS, MAX_PECADO, MAX_PERICIA, MAX_PULSOS,
+  ajustarPericia, condicoesDaFicha, cortarGancho, estadoDoExorcista, estresseMaximo,
+  ganharFerimento, marcarEstresse, marcarPecado, periciasNoMaximo,
+  podeSubirPericia, psiqueDaCategoria, resolverGancho,
 } from './fichaCain.mjs';
 import './ficha-cain.css';
 
 const CATEGORIAS = ['I', 'II', 'III', 'IV', 'V'];
+const numeroDaCategoria = romano => Math.max(1, CATEGORIAS.indexOf(String(romano)) + 1);
 
 /* Um painel com a aba entalhada na borda. É o gesto que diz "registro". */
 function Painel({ aba, children, classe = '', ...resto }) {
@@ -62,7 +63,11 @@ function Rolador({ ficha, aoRolar }) {
   const [queimarPiedade, setQueimarPiedade] = useState(false);
   const [resultado, setResultado] = useState(null);
 
-  const pericia = Number(ficha.pericias?.[periciaId]) || 0;
+  // PSIQUE não mora no mapa de perícias: é a metade da categoria. Ela entra
+  // na lista porque toda blasfêmia rola por ela — deixá-la de fora obrigaria
+  // o jogador a contar na mão a cada uso de poder.
+  const psique = psiqueDaCategoria(numeroDaCategoria(ficha.categoria));
+  const pericia = periciaId === 'psique' ? psique : (Number(ficha.pericias?.[periciaId]) || 0);
   const piedade = Number(ficha.piedade) || 0;
   const agonia = podeAgoniaDivina({ piedade, usouNaSessao: ficha.agoniaUsadaNaSessao });
   const reservaZero = pericia + vantagens === 0;
@@ -91,6 +96,7 @@ function Rolador({ ficha, aoRolar }) {
                 {p.nome} · {Number(ficha.pericias?.[p.id]) || 0}D
               </option>
             ))}
+            <option value="psique">{PERICIA_ESPECIAL.nome} · {psique}D</option>
           </select>
         </Campo>
         <Campo rotulo="Vantagens (até 3D)">
@@ -293,10 +299,11 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar }) {
             <br />
             <small>{PERICIA_ESPECIAL.resumo}</small>
           </div>
-          <input
-            type="number" min="0" max="6" value={ficha.psique ?? 1} disabled={somenteLeitura}
-            onChange={e => mudar('psique')(Math.max(0, Math.min(6, Number(e.target.value) || 0)))}
-          />
+          {/* Não é campo: é conta. Metade da categoria, para cima. Deixar
+              digitável só convidaria a mesa a divergir do livro sem perceber. */}
+          <strong className="cain-psique-valor" title="Metade da categoria, arredondada para cima">
+            {psiqueDaCategoria(numeroDaCategoria(ficha.categoria))}
+          </strong>
         </div>
 
         {noTopo >= 2 && (
@@ -310,9 +317,9 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar }) {
       <Painel aba="Avaliação de saúde" classe={estado.chave === 'beira-da-morte' ? 'perigo' : ''}>
         <div className="cain-trilhas">
           <Trilha
-            nome="Estresse" valor={Number(ficha.estresse) || 0} max={MAX_ESTRESSE}
+            nome="Talismã de execução" valor={Number(ficha.estresse) || 0} max={estresseMaximo(ficha)}
             cor="#C79A3C" somenteLeitura={somenteLeitura}
-            nota="No limite, vira ferimento e zera."
+            nota={`Enche: ganha ferimento, zera e o resto transborda. Cada ferimento tira uma caixa (hoje: ${estresseMaximo(ficha)}).`}
             aoMudar={v => {
               const atual = Number(ficha.estresse) || 0;
               aplicar(v > atual ? marcarEstresse(ficha, v - atual) : { ...ficha, estresse: v });

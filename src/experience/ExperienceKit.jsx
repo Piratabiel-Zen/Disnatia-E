@@ -21,7 +21,7 @@ import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs'
 import { col, docIn } from '../core/campaign';
 import { campaignHasTab, filterNavGroups } from '../core/campaignModules.mjs';
 import { navegacaoDoSistema, termo } from '../core/sistemas/index.mjs';
-import BookMark3D from './BookMark3D';
+import MarcaDaMesa from './MarcaDaMesa';
 
 const ExperienceContext = createContext(null);
 const JOURNAL_LIMIT = 40;
@@ -672,7 +672,7 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
   const mobileGroups=desktopGroups.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
   return <>
     <aside className="grim-nav">
-      <button className="grim-brand has-tomo" onClick={()=>go('session')} title={campaign?.name||'Dinastia E'}><BookMark3D sigil={campaign?.sigil||'\u2726'} title={campaign?.name||'Dinastia E'}/><b>{campaign?.name||'Dinastia E'}</b></button>
+      <button className="grim-brand has-tomo" onClick={()=>go('session')} title={campaign?.name||'Dinastia E'}><MarcaDaMesa campaign={campaign}/><b>{campaign?.name||'Dinastia E'}</b></button>
       <div className="grim-groups">
         {desktopGroups.map(group=><div className="grim-group" key={group.id}>
           <div className="grim-group-title"><span>{group.icon}</span><b>{group.label}</b></div>

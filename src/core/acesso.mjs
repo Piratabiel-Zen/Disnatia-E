@@ -47,14 +47,19 @@ export function podeVerSegredosDaFicha(ficha, membro) {
 /**
  * O jogador pode editar esta ficha?
  *
- * O Mestre edita qualquer uma; o jogador, a dele. Uma ficha sem dono é de
- * quem a pegar — é assim que um jogador assume um personagem novo.
+ * O Mestre edita qualquer uma; o jogador, só a que foi entregue a ele.
+ *
+ * Uma ficha sem dono NÃO é de quem pegar primeiro. Ela é um rascunho do
+ * Mestre: ele monta o exorcista e só depois escolhe quem vai jogar com
+ * aquele personagem. Enquanto ninguém foi nomeado, a ficha está fechada para
+ * a mesa inteira — senão o primeiro jogador que abrisse a aba começaria a
+ * escrever por cima do personagem que o Mestre preparou para outro.
  */
 export function podeEditarFicha(ficha, membro) {
   if (!membro) return false;
   if (ehMestre(membro)) return true;
   const dono = String(ficha?.dono || '');
-  return dono === '' || dono === String(membro.uid);
+  return dono !== '' && dono === String(membro.uid);
 }
 
 /** O que só o Mestre faz, declarado num lugar só para não divergir pelas telas. */

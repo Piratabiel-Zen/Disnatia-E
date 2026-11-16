@@ -43,6 +43,21 @@ export function termo(campanha, chave, padrao = '') {
   return termos[chave] || padrao || String(chave);
 }
 
+/**
+ * Que dados esta mesa rola.
+ *
+ * A mesa de dados do site nasceu com d4 a d20 porque a Dinastia E usa d20.
+ * O CAIN não usa nenhum deles além do d6 — e oferecer um d20 numa mesa de
+ * CAIN não é só inútil: convida a rolar uma coisa que o sistema não sabe
+ * interpretar, e depois a mesa discute o que aquele 17 significava.
+ */
+export function dadosDoSistema(campanha) {
+  const dados = sistemaDe(campanha)?.dados || {};
+  const faces = Array.isArray(dados.faces) && dados.faces.length ? dados.faces : [4, 6, 8, 10, 12, 20];
+  const maximo = Number(dados.maximoDeDados) > 0 ? Math.trunc(dados.maximoDeDados) : 5;
+  return { faces, maximo, notacao: dados.notacao || `d${faces[faces.length - 1]}`, resumo: dados.resumo || '' };
+}
+
 /** Esta campanha tem esta aba, considerando o sistema dela? */
 export function sistemaTemAba(campanha, abaId) {
   const abas = sistemaDe(campanha)?.abas || [];

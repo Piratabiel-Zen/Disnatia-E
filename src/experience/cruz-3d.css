@@ -1,0 +1,136 @@
+/* A CRUZ QUE GIRA
+   -----------------------------------------------------------------------
+   Duas traves sólidas em CSS 3D, cruzadas, girando sobre o próprio eixo.
+
+   As medidas vivem em variáveis pelo mesmo motivo do tomo: a proporção
+   entre comprimento, largura e espessura é o que faz parecer madeira
+   trabalhada em vez de dois retângulos sobrepostos. A trave vertical é
+   bem mais alta que larga; a horizontal cruza acima do meio, que é onde a
+   cruz cristã tem o braço — no meio exato ela vira um sinal de mais.
+
+   O giro é lento e constante. O que se olha não é a velocidade: é o
+   momento em que a trave horizontal passa de perfil e some, deixando só a
+   haste, e o nimbo aparece inteiro por trás. */
+
+.cruz3d{
+  --larg:var(--tomo-larg,30px);   /* largura útil da marca */
+  --alt:var(--tomo-alt,42px);     /* altura da haste */
+  --esp:var(--tomo-lomb,8px);     /* espessura da madeira */
+  --haste:calc(var(--alt) * .19); /* largura da trave vertical */
+  --braco:calc(var(--larg) * .84);/* comprimento da trave horizontal */
+  --cruzamento:34%;               /* onde o braço cruza a haste */
+  --madeira:#3C251C;
+  --madeira-clara:#6B4530;
+  --ouro:#C9A24A;
+  --ouro-claro:#F3DCA0;
+
+  position:relative;display:inline-grid;place-items:center;
+  width:calc(var(--larg) + 26px);height:calc(var(--alt) + 14px);
+  flex-shrink:0;
+}
+
+/* O halo: aqui ele é mais frio e mais fechado que o do tomo. A Dinastia E
+   brilha roxo cósmico; uma mesa de exorcismo brilha como vela de igreja
+   vista de longe — âmbar baixo, com uma borda doente. */
+.cruz3d-aura{
+  position:absolute;inset:-16%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(201,162,74,.38),rgba(142,31,43,.16) 44%,transparent 70%);
+  filter:blur(7px);animation:cruzAura 5.6s ease-in-out infinite;
+}
+@keyframes cruzAura{0%,100%{opacity:.46;transform:scale(.93)}50%{opacity:1;transform:scale(1.09)}}
+
+.cruz3d-palco{
+  position:relative;width:var(--larg);height:var(--alt);
+  perspective:320px;perspective-origin:50% 44%;
+  animation:cruzFlutua 4.8s ease-in-out infinite;
+}
+@keyframes cruzFlutua{0%,100%{transform:translateY(-2px)}50%{transform:translateY(2px)}}
+
+.cruz3d-corpo{
+  position:absolute;inset:0;transform-style:preserve-3d;
+  animation:cruzGira 14s linear infinite;
+}
+@keyframes cruzGira{
+  from{transform:rotateX(-10deg) rotateY(0deg)}
+  to{transform:rotateX(-10deg) rotateY(360deg)}
+}
+
+/* O nimbo: um anel fino atrás da cruz, no plano dela. Ele não gira junto
+   com destaque próprio — gira com o corpo, e é justamente por isso que
+   vira uma elipse cada vez mais fina até sumir de perfil. */
+.cruz3d-nimbo{
+  position:absolute;top:var(--cruzamento);left:50%;
+  width:calc(var(--larg) * .78);height:calc(var(--larg) * .78);
+  margin:calc(var(--larg) * -.39) 0 0 calc(var(--larg) * -.39);
+  border-radius:50%;border:1.5px solid rgba(201,162,74,.55);
+  box-shadow:0 0 7px rgba(201,162,74,.34);
+  transform:translateZ(calc(var(--esp) * -.9));
+}
+
+/* Cada trave é um bloco: as faces nascem no centro dela e se afastam. */
+.cruz3d-trave{position:absolute;transform-style:preserve-3d}
+.cruz3d-trave.vertical{
+  top:0;left:50%;width:var(--haste);height:var(--alt);
+  margin-left:calc(var(--haste) / -2);
+}
+/* O braço cruza a 34% da altura: acima do meio, como numa cruz latina. */
+.cruz3d-trave.horizontal{
+  top:var(--cruzamento);left:50%;width:var(--braco);height:var(--haste);
+  margin:calc(var(--haste) / -2) 0 0 calc(var(--braco) / -2);
+}
+
+.cruz3d-face{
+  position:absolute;inset:0;font-style:normal;border-radius:1px;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+
+/* Frente e verso: a madeira iluminada de cima, com fio dourado na borda. */
+.cruz3d-face.frente,.cruz3d-face.tras{
+  background:
+    linear-gradient(176deg,rgba(243,220,160,.2),transparent 42%),
+    linear-gradient(98deg,var(--madeira-clara) 0,var(--madeira) 58%,#160C0A 100%);
+  border:1px solid rgba(201,162,74,.42);
+  box-shadow:inset 0 0 8px rgba(0,0,0,.65);
+}
+.cruz3d-face.frente{transform:translateZ(calc(var(--esp) / 2));display:grid;place-items:center}
+.cruz3d-face.tras{transform:rotateY(180deg) translateZ(calc(var(--esp) / 2))}
+
+/* Os lados: o corte da madeira, mais escuro, com veio. É o que dá
+   espessura quando a cruz passa de perfil. */
+.cruz3d-face.lado{
+  background:
+    linear-gradient(90deg,#140A08,#3A241C 60%,#1C100D 100%),
+    repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px);
+  border:1px solid rgba(201,162,74,.26);
+}
+.cruz3d-trave.vertical .cruz3d-face.lado{
+  width:var(--esp);left:50%;margin-left:calc(var(--esp) / -2);
+}
+.cruz3d-trave.vertical .cruz3d-face.esquerda{transform:rotateY(-90deg) translateZ(calc(var(--haste) / 2))}
+.cruz3d-trave.vertical .cruz3d-face.direita{transform:rotateY(90deg) translateZ(calc(var(--haste) / 2))}
+
+.cruz3d-trave.horizontal .cruz3d-face.lado{
+  width:var(--esp);left:50%;margin-left:calc(var(--esp) / -2);
+}
+.cruz3d-trave.horizontal .cruz3d-face.esquerda{transform:rotateY(-90deg) translateZ(calc(var(--braco) / 2))}
+.cruz3d-trave.horizontal .cruz3d-face.direita{transform:rotateY(90deg) translateZ(calc(var(--braco) / 2))}
+
+/* O sigilo da mesa, quando houver, fica gravado na haste. */
+.cruz3d-face.frente b{
+  font-weight:400;font-size:calc(var(--haste) * .72);line-height:1;
+  color:var(--ouro-claro);
+  text-shadow:0 0 5px var(--ouro),0 0 12px rgba(201,162,74,.6);
+}
+
+/* No hover acelera e cresce, como o tomo: a marca responde a quem a procura. */
+.grim-brand:hover .cruz3d-corpo,.grim-brand:focus-visible .cruz3d-corpo{animation-duration:5s}
+.grim-brand:hover .cruz3d-palco,.grim-brand:focus-visible .cruz3d-palco{transform:scale(1.12)}
+.grim-brand:hover .cruz3d-aura{opacity:1;filter:blur(9px)}
+
+/* Onde o movimento cede, a cruz fica numa pose de três quartos: dá para
+   ver a face e a espessura ao mesmo tempo, que é a leitura que o giro
+   entregava. */
+html[data-motion="reduced"] .cruz3d-corpo{animation:none;transform:rotateX(-10deg) rotateY(-28deg)}
+html[data-motion="reduced"] .cruz3d-palco,html[data-motion="reduced"] .cruz3d-aura{animation:none}
+html[data-quality="light"] .cruz3d-aura{animation:none;opacity:.6}
+html[data-away="true"] .cruz3d-corpo{animation-play-state:paused}

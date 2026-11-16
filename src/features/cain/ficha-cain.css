@@ -141,6 +141,13 @@
 .cain-psique b{font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--bronze-claro);font-weight:500}
 .cain-psique small{font-size:9px;color:var(--tinta-fraca);letter-spacing:.04em}
 .cain-psique input{width:52px;text-align:center}
+/* PSIQUE é derivada da categoria, então aparece como número cravado e não
+   como campo: um campo convidaria a digitar outra coisa. */
+.cain-psique-valor{
+  min-width:52px;text-align:center;font-family:var(--mono);font-size:22px;font-weight:500;
+  color:var(--bronze-claro);line-height:1;padding:6px 0;
+  border:1px solid var(--linha-forte);border-radius:3px;background:rgba(169,128,69,.07);
+}
 
 /* ---- Trilhas: estresse, ferimentos, pulsos, pecado, piedade ---- */
 .cain-trilhas{display:grid;gap:15px}

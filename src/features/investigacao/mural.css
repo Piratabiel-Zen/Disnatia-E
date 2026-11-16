@@ -32,7 +32,11 @@
   position:relative;
   display:grid;
   grid-template-rows:auto minmax(0,1fr);
-  height:100%;min-height:520px;
+  /* Um terço mais alto do que os 520px originais: o mural cresceu porque os
+     barbantes precisam de espaço vertical para sair reto de um alfinete e
+     chegar ao outro — num quadro baixo demais eles viram quase horizontais e
+     a teia deixa de se ler. */
+  height:100%;min-height:693px;
   background:
     radial-gradient(120% 90% at 50% 0%,rgba(169,128,69,.07),transparent 62%),
     repeating-linear-gradient(94deg,rgba(0,0,0,.14) 0 2px,transparent 2px 5px),

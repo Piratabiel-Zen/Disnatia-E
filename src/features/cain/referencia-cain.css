@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AS ABAS DE REFERÊNCIA DO CAIN
+
+   Manual, Agendas e Blasfêmias, Tipos de Pecado. São três telas de leitura,
+   e leitura tem uma exigência que as outras telas do site não têm: a linha
+   precisa ter comprimento de leitura, não de container. Daí o 64ch.
+
+   Mesma repartição da ficha — monoespaçada, bronze sobre papel escuro — mas
+   com serifada no corpo do texto. O formulário se preenche; isto se lê, e
+   ler monoespaçado por três páginas cansa.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.ref{
+  --papel:#0A0908;
+  --painel:#100E0D;
+  --linha:#2E2721;
+  --linha-forte:#4A3E31;
+  --bronze:#A98045;
+  --bronze-claro:#D4AC6E;
+  --carmesim:#8E1F2B;
+  --tinta:#CEC4B4;
+  --tinta-fraca:#7E7466;
+  --mono:'IBM Plex Mono','SF Mono',ui-monospace,'Courier New',monospace;
+  --serif:'Crimson Text',Georgia,serif;
+  --titulo:'Cinzel',Georgia,serif;
+
+  /* Estreito de propósito. Estas três abas são para ler, e um painel de
+     1180px com uma coluna de texto de 64ch dentro deixa metade da tela
+     vazia à direita — parece erro de layout, não decisão. */
+  max-width:940px;margin:0 auto;padding:20px 14px 90px;
+  color:var(--tinta);font-family:var(--serif);font-size:15px;line-height:1.68;
+  display:grid;gap:20px;align-content:start;
+}
+
+.ref-cabeca{padding-bottom:14px;border-bottom:1px solid var(--linha)}
+.ref-cabeca h2{
+  margin:0;font-family:var(--titulo);font-size:19px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--bronze-claro);
+}
+.ref-cabeca p{
+  margin:7px 0 0;max-width:64ch;font-size:13.5px;color:var(--tinta-fraca);
+}
+.ref-cabeca .ref-fonte{
+  margin-top:10px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  color:var(--tinta-fraca);
+}
+
+.ref-busca{
+  width:100%;max-width:340px;margin-top:12px;padding:8px 10px;
+  border:1px solid var(--linha-forte);border-radius:2px;background:#0C0A09;
+  color:var(--tinta);font-family:var(--mono);font-size:12px;
+}
+
+/* ---- Seções dobráveis do manual ---- */
+.ref-secoes{display:grid;gap:10px}
+.ref-secao{border:1px solid var(--linha);border-radius:3px;background:var(--painel);overflow:hidden}
+.ref-secao>summary{
+  padding:13px 16px;cursor:pointer;list-style:none;
+  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  font-family:var(--mono);transition:background .18s;
+}
+.ref-secao>summary::-webkit-details-marker{display:none}
+.ref-secao>summary:hover{background:rgba(169,128,69,.07)}
+.ref-secao>summary b{
+  font-weight:500;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--bronze-claro);
+}
+.ref-secao>summary em{font-style:normal;font-size:11.5px;color:var(--tinta-fraca);flex:1;min-width:140px}
+.ref-secao[open]>summary{border-bottom:1px solid var(--linha);background:rgba(169,128,69,.06)}
+
+.ref-corpo{padding:16px 18px 20px;display:grid;gap:14px}
+.ref-corpo p{margin:0;max-width:64ch}
+.ref-corpo ul{margin:0;padding-left:20px;max-width:64ch;display:grid;gap:7px}
+.ref-corpo li{margin:0}
+
+.ref-nota{
+  margin:0;max-width:64ch;padding:10px 14px;
+  border-left:2px solid var(--bronze);background:rgba(169,128,69,.07);
+  font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--bronze-claro);
+}
+
+.ref-tabela{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.ref-tabela th,.ref-tabela td{
+  text-align:left;padding:7px 11px;border-bottom:1px solid var(--linha);vertical-align:top;
+}
+.ref-tabela th{
+  font-weight:500;font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--tinta-fraca);border-bottom-color:var(--linha-forte);
+}
+.ref-tabela td:first-child{color:var(--bronze-claro);white-space:nowrap}
+.ref-rolagem{overflow-x:auto}
+
+/* ---- Cartões: blasfêmias e tipos de Pecado ---- */
+.ref-grade{
+  list-style:none;margin:0;padding:0;display:grid;gap:11px;
+  grid-template-columns:repeat(auto-fill,minmax(262px,1fr));
+}
+.ref-cartao{
+  padding:14px 16px;border:1px solid var(--linha);border-left:3px solid var(--cor,var(--bronze));
+  border-radius:3px;background:var(--painel);display:grid;gap:6px;align-content:start;
+}
+.ref-cartao h3{
+  margin:0;font-family:var(--titulo);font-size:14px;font-weight:600;
+  letter-spacing:.1em;color:var(--cor,var(--bronze-claro));
+}
+.ref-cartao p{margin:0;font-size:13.5px;color:var(--tinta)}
+.ref-cartao .ref-numeral{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--tinta-fraca);
+}
+
+/* O Pecado tem três leituras: de onde nasce, como age, o que a mesa sente.
+   Rotuladas, porque sem rótulo viram três parágrafos indistintos. */
+.ref-pecado dl{margin:0;display:grid;gap:9px}
+.ref-pecado dt{
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--tinta-fraca);margin-bottom:2px;
+}
+.ref-pecado dd{margin:0;font-size:13.5px}
+
+@media(max-width:640px){
+  .ref{padding:14px 11px 80px;font-size:14.5px}
+  .ref-grade{grid-template-columns:1fr}
+  .ref-corpo{padding:14px 13px 17px}
+}

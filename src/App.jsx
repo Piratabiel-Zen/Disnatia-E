@@ -40,6 +40,8 @@ const TAB_LABELS = {
   session:'Sessão Atual', classes:'Classes', fichas:'Fichas',
   personagens:'Personagens', inimigos:'Inimigos', bestiario:'Bestiário', regras:'Regras',
   visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
+  manual:'Manual de Campo', agendas:'Agendas e Blasfêmias', tiposdepecado:'Tipos de Inimigo',
+  investigacao:'Mural', documentos:'Documentos', pecados:'Pecados',
 };
 
 
@@ -47,7 +49,8 @@ const TAB_LABELS = {
 const pageLoaders = {
   visitantes:  () => import('./experience/VisitorsPage'),
   classes:      () => import("./features/classes/ClassesPage"),
-  fichas:       () => import("./features/sheets/SheetsPage"),
+  // A aba Fichas bifurca por sistema: ver features/fichas/FichasPage.
+  fichas:       () => import("./features/fichas/FichasPage"),
   personagens:  () => import("./features/personagens/PersonagensPage"),
   inimigos:     () => import("./features/inimigos/InimigosPage"),
   bestiario:    () => import("./features/bestiario/BestiarioPage"),
@@ -60,6 +63,9 @@ const pageLoaders = {
   investigacao: () => import("./features/investigacao/InvestigacaoPage"),
   documentos:   () => import("./features/documentos/DocumentosPage"),
   pecados:      () => import("./features/pecados/PecadosPage"),
+  manual:       () => import("./features/cain/ManualCainPage"),
+  agendas:      () => import("./features/cain/BlasfemiasPage"),
+  tiposdepecado:() => import("./features/cain/TiposDePecadoPage"),
   legal:        () => import("./features/legal/LegalPage"),
 };
 

@@ -13,9 +13,12 @@ export const MAX_PERICIA = 3;
 export const MAX_ESTRESSE = 6;
 export const MAX_FERIMENTOS = 3;
 export const MAX_PULSOS = 4;
+export const PULSOS_INICIAIS = 3;
 export const MAX_PECADO = 6;
 export const GANCHOS = 3;
-export const CAIXAS_DE_GANCHO = 4;
+/* O gancho é um talismã curtinho: três traços e ele enche. */
+export const CAIXAS_DE_GANCHO = 3;
+export const MAX_CATEGORIA = 5;
 export const MAX_XP = 9;
 export const MAX_AVANCOS = 3;
 
@@ -29,7 +32,7 @@ export function fichaNova(id) {
     sistema: 'cain',
     dono: '',
     // Registro
-    nome: '', xid: '', cid: '', categoria: 'I',
+    nome: '', xid: '', cid: '', categoria: 'I', cat: 1,
     agenda: '', agendaHabilidade: '',
     blasfemia: '', blasfemiaNotas: '',
     foto: '',
@@ -37,7 +40,7 @@ export function fichaNova(id) {
     pericias: Object.fromEntries(PERICIAS.map(p => [p.id, 0])),
     psique: 1,
     // Corpo e psique
-    estresse: 0, ferimentos: 0, pulsos: MAX_PULSOS, pecado: 0, piedade: 0,
+    estresse: 0, ferimentos: 0, pulsos: PULSOS_INICIAIS, pecado: 0, piedade: 0,
     ganchos: Array.from({ length: GANCHOS }, () => ({ nome: '', cortes: 0 })),
     aflicoes: '',
     condicoes: [],
@@ -94,17 +97,57 @@ export function ajustarPericia(ficha, periciaId, delta) {
 /* ───────────────────────── corpo e psique ───────────────────────── */
 
 /**
+ * O teto do talismã de execução desta ficha.
+ *
+ * Começa em 6 e perde uma caixa por ferimento carregado. É por isso que o
+ * segundo ferimento chega bem mais rápido que o primeiro: o exorcista ferido
+ * não aguenta o mesmo tanto de estresse que aguentava inteiro.
+ */
+export const estresseMaximo = ficha =>
+  Math.max(1, MAX_ESTRESSE - (Number(ficha?.ferimentos) || 0));
+
+/**
  * Marcar estresse.
  *
- * No limite, vira ferimento e o estresse zera — é assim no livro, e é a parte
- * que mais se esquece de implementar: sem isso o estresse cresce para sempre e
- * o ferimento nunca chega.
+ * No limite o talismã enche: vira ferimento, o estresse zera e o que sobrou
+ * transborda para o talismã novo — que já é menor, porque o ferimento comeu
+ * uma caixa. Sem o transbordo, um golpe pesado custaria exatamente o mesmo
+ * que um arranhão, e é essa diferença que faz a cena de conflito ter peso.
+ *
+ * À beira da morte o transbordo para: pelo livro, quem está nos três
+ * ferimentos e marca qualquer estresse morre na hora — quem decide isso é a
+ * mesa, narrando, e não uma conta rodando sozinha aqui dentro.
  */
 export function marcarEstresse(ficha, quantidade = 1) {
-  const bruto = (Number(ficha.estresse) || 0) + Math.trunc(quantidade);
-  if (bruto < MAX_ESTRESSE) return { ...ficha, estresse: Math.max(0, bruto) };
-  return ganharFerimento({ ...ficha, estresse: 0 });
+  let atual = { ...ficha };
+  let restante = Math.trunc(quantidade);
+
+  if (restante <= 0) {
+    return { ...atual, estresse: Math.max(0, (Number(atual.estresse) || 0) + restante) };
+  }
+
+  // Cada volta do laço enche no máximo um talismã, e encher um talismã sempre
+  // soma um ferimento — que tem teto. O laço termina.
+  for (let volta = 0; volta <= MAX_FERIMENTOS; volta += 1) {
+    const teto = estresseMaximo(atual);
+    const bruto = (Number(atual.estresse) || 0) + restante;
+    if (bruto < teto) return { ...atual, estresse: bruto };
+
+    restante = bruto - teto;
+    atual = ganharFerimento({ ...atual, estresse: 0 });
+    if ((Number(atual.ferimentos) || 0) >= MAX_FERIMENTOS) return { ...atual, estresse: 0 };
+    if (restante <= 0) return atual;
+  }
+  return { ...atual, estresse: 0 };
 }
+
+/**
+ * A perícia PSIQUE não é escolhida: é metade da categoria, arredondada para
+ * cima. Fica calculada para a ficha não deixar a mesa discutindo uma conta
+ * que o livro já fez.
+ */
+export const psiqueDaCategoria = cat =>
+  Math.max(1, Math.ceil(limitar(cat, 1, MAX_CATEGORIA) / 2));
 
 /** Ganhar ferimento limpa o estresse e pode levar à beira da morte. */
 export function ganharFerimento(ficha) {
@@ -184,7 +227,7 @@ export function estadoDoExorcista(ficha) {
   if (lista.has('beira-da-morte')) return { chave: 'beira-da-morte', rotulo: 'À beira da morte', cor: '#8E1F2B' };
   if (lista.has('vertendo')) return { chave: 'vertendo', rotulo: 'Vertendo pecado', cor: '#5B2C6F' };
   if ((Number(ficha?.ferimentos) || 0) > 0) return { chave: 'ferido', rotulo: 'Ferido', cor: '#B4543A' };
-  if ((Number(ficha?.estresse) || 0) >= MAX_ESTRESSE - 1) return { chave: 'no-limite', rotulo: 'No limite', cor: '#C79A3C' };
+  if ((Number(ficha?.estresse) || 0) >= estresseMaximo(ficha) - 1) return { chave: 'no-limite', rotulo: 'No limite', cor: '#C79A3C' };
   return { chave: 'inteiro', rotulo: 'Em campo', cor: '#6F8F6A' };
 }
 

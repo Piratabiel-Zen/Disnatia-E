@@ -21,7 +21,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup,
   signInWithRedirect, signOut as firebaseSignOut, getAuth, updateProfile,
 } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from './firebase';
 import { normalizarPapel } from './acesso.mjs';
 
@@ -188,6 +188,28 @@ export async function lerMembro(campanhaId, uid = auth.currentUser?.uid) {
   } catch (erro) {
     // Negado é a resposta correta para quem não é da mesa: não é membro.
     if (erro?.code === 'permission-denied') return null;
+    throw erro;
+  }
+}
+
+/**
+ * Quem está nesta mesa.
+ *
+ * Só o Mestre consegue ler a lista inteira — pelas regras, cada jogador lê
+ * apenas a própria entrada. Para quem não é Mestre isto devolve uma lista
+ * vazia em vez de estourar, porque a tela que chama isto (entregar uma ficha,
+ * liberar um documento) é uma tela de Mestre e só precisa saber se tem gente.
+ */
+export async function listarMembros(campanhaId) {
+  if (!campanhaId) return [];
+  try {
+    const snap = await getDocs(collection(db, 'campaigns', String(campanhaId), 'membros'));
+    return snap.docs.map(d => {
+      const dados = d.data() || {};
+      return { ...dados, uid: d.id, papel: normalizarPapel(dados.papel) };
+    });
+  } catch (erro) {
+    if (erro?.code === 'permission-denied') return [];
     throw erro;
   }
 }

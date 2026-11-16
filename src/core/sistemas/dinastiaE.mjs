@@ -56,6 +56,8 @@ const SISTEMA = Object.freeze({
   dados: Object.freeze({
     notacao: 'd20',
     resumo: '1D20 mais o atributo. Teste de Reflexo é 1D20 puro.',
+    faces: Object.freeze([4, 6, 8, 10, 12, 20]),
+    maximoDeDados: 5,
   }),
 
   atributos: ATRIBUTOS,

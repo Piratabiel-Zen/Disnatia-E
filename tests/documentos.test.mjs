@@ -10,6 +10,9 @@ import {
   notaDe, ordenarParaJogador, ordenarParaMestre, tipoDoDocumento,
 } from '../src/features/documentos/documentos.mjs';
 import { documentosVisiveis, podeVerDocumento } from '../src/core/acesso.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join as joinPath } from 'node:path';
 
 const mestre = { uid: 'm1', papel: 'mestre' };
 const ana = { uid: 'a1', papel: 'jogador' };
@@ -107,4 +110,31 @@ test('a busca ignora acento e caixa', () => {
   assert.equal(buscarDocumentos(docs, 'ARSENALE').length, 1);
   assert.equal(buscarDocumentos(docs, 'nada').length, 0);
   assert.equal(buscarDocumentos(docs, '').length, 1, 'busca vazia devolve tudo');
+});
+
+/* ─────────────────── quem recebe sai das fichas ─────────────────── */
+
+test('a lista de quem recebe é montada a partir das fichas, não de uma lista de contas', () => {
+  // A versão anterior lia uma coleção de espelho de membros que nunca era
+  // escrita por ninguém — então a lista aparecia sempre vazia e o Mestre não
+  // conseguia liberar nada para uma pessoa só. A fonte certa é a ficha: é
+  // nela que o Mestre escreve o nome do personagem e escolhe o dono.
+  const pagina = readFileSync(
+    joinPath(dirname(fileURLToPath(import.meta.url)), '..', 'src/features/documentos/DocumentosPage.jsx'),
+    'utf8',
+  );
+  assert.ok(!pagina.includes('__membros_espelho'),
+    'a coleção de espelho não era escrita por ninguém: a lista ficava vazia');
+  assert.ok(pagina.includes("col('fichas')"), 'a lista vem das fichas da mesa');
+});
+
+test('liberar por ficha continua gravando o dono, que é o que o servidor confere', () => {
+  // A tela mostra o nome do personagem; o que vai para o banco é o uid do
+  // dono. Tem que ser assim: firestore.rules compara com request.auth.uid, e
+  // não tem como saber que "Álvaro" é a conta de alguém.
+  const ficha = { id: 'f1', nome: 'Álvaro', dono: 'a1' };
+  const d = alternarPessoa(documentoNovo({ id: 'd9' }), ficha.dono);
+  assert.deepEqual(d.liberadoPara, ['a1']);
+  assert.equal(podeVerDocumento(d, ana), true);
+  assert.equal(podeVerDocumento(d, beto), false);
 });
