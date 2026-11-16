@@ -4,7 +4,8 @@
    mostrar ao jogador o que ainda não era para ele ver. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join as joinPath } from 'node:path';
 import {
   PAPEIS, documentosVisiveis, ehMestre, normalizarPapel, podeEditarFicha,
   podeNaMesa, podeVerDocumento, podeVerSegredosDaFicha, resumoDaLiberacao,
@@ -117,11 +118,44 @@ test('as regras do Firestore guardam a senha num lugar que ninguém lê', () => 
 
 test('as regras não trancam a Dinastia E no meio da campanha', () => {
   const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-  // Dívida conhecida e declarada: os caminhos antigos continuam abertos até a
-  // migração. Se este teste falhar, alguém trancou a mesa em andamento.
-  for (const colecao of ['sheets', 'config', 'battlemaps', 'chronicles']) {
-    assert.match(regras, new RegExp(`match /${colecao}/\\{doc=\\*\\*\\}\\s*\\{ allow read, write: if true`),
-      `a coleção "${colecao}" da mesa em andamento ficaria inacessível`);
-  }
+
+  // A primeira versão listava as coleções à mão e esquecia 26 das 32 que o
+  // site usa — o mapa de batalha, a névoa, o bestiário, os dados públicos.
+  // A regra agora é invertida: aberto é tudo o que não é de uma campanha
+  // nova. Lista escrita à mão é um erro esperando a próxima coleção.
+  assert.match(
+    regras,
+    /allow read, write: if !colecao\.matches\('c__\.\*'\)[\s\S]{0,120}colecao != 'campaigns'[\s\S]{0,60}colecao != 'users'/,
+    'voltou a liberar a mesa antiga por lista, em vez de por exclusão',
+  );
   assert.match(regras, /dívida conhecida/i, 'a dívida deixou de estar declarada no arquivo');
+});
+
+test('toda coleção que o site usa hoje continua alcançável', () => {
+  // O teste que faltava quando eu escrevi a lista à mão: conferir as regras
+  // contra o que o código realmente abre.
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  const fonte = [];
+  const varrer = dir => {
+    for (const nome of readdirSync(dir)) {
+      const caminho = joinPath(dir, nome);
+      if (statSync(caminho).isDirectory()) varrer(caminho);
+      else if (/\.(js|jsx|mjs)$/.test(nome)) fonte.push(readFileSync(caminho, 'utf8'));
+    }
+  };
+  varrer(new URL('../src/', import.meta.url).pathname);
+
+  const colecoes = new Set();
+  for (const texto of fonte) {
+    for (const m of texto.matchAll(/\b(?:col|docIn)\(\s*'([a-zA-Z_]+)'/g)) colecoes.add(m[1]);
+  }
+  assert.ok(colecoes.size > 20, `só ${colecoes.size} coleções encontradas — a varredura quebrou`);
+
+  // Nenhuma delas pode cair na exclusão da regra aberta.
+  for (const colecao of colecoes) {
+    assert.ok(!colecao.startsWith('c__'), `"${colecao}" colide com o prefixo de campanha`);
+    assert.ok(colecao !== 'campaigns' && colecao !== 'users',
+      `"${colecao}" é escopada por campanha e ficaria inacessível na mesa antiga`);
+  }
+  assert.ok(regras.includes("colecao.matches('c__.*')"));
 });

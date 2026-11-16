@@ -147,17 +147,26 @@ service cloud.firestore {
     // o site tinha só uma campanha. Trancá-los agora derrubaria a mesa no meio
     // da campanha, e a regra é não arriscar dado nenhum.
     //
-    // Então eles continuam abertos, exatamente como hoje — ou seja, a Dinastia
-    // E NÃO está protegida por estas regras. Isso é dívida conhecida, não
-    // descuido: migrar é mover as coleções para c__dinastia-e__* e apagar este
-    // bloco, de preferência entre uma sessão e outra.
-    match /sheets/{doc=**}       { allow read, write: if true; }
-    match /config/{doc=**}       { allow read, write: if true; }
-    match /battlemaps/{doc=**}   { allow read, write: if true; }
-    match /enemies/{doc=**}      { allow read, write: if true; }
-    match /chronicles/{doc=**}   { allow read, write: if true; }
-    match /class_covers/{doc=**} { allow read, write: if true; }
-    match /artifacts/{doc=**}    { allow read, write: if true; }
-    match /classes/{doc=**}      { allow read, write: if true; }
+    // A primeira versão disto listava as coleções à mão — sheets, config,
+    // battlemaps e mais cinco. Estava errada: o site usa 32, e as 26 que
+    // faltavam (mapa de batalha, névoa, bestiário, dados públicos, páginas do
+    // livro, mídias das crônicas) ficaram inacessíveis no instante em que as
+    // regras subiram. Lista escrita à mão é um erro esperando a próxima
+    // coleção nova.
+    //
+    // Então a regra foi invertida: é aberto tudo o que NÃO pertence a uma
+    // campanha nova e NÃO é a lista de mesas nem a de contas. Assim qualquer
+    // coleção da Dinastia E, inclusive as que ainda não existem, continua
+    // funcionando sem ninguém precisar lembrar de vir aqui.
+    //
+    // Isso significa que a Dinastia E NÃO está protegida por estas regras.
+    // É dívida conhecida, não descuido: migrar é mover as coleções para
+    // c__dinastia-e__* e apagar este bloco, de preferência entre uma sessão
+    // e outra.
+    match /{colecao}/{documento=**} {
+      allow read, write: if !colecao.matches('c__.*')
+        && colecao != 'campaigns'
+        && colecao != 'users';
+    }
   }
 }
