@@ -1,0 +1,202 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   O MURAL DE INVESTIGAÇÃO
+
+   Um mural de delegacia numa Veneza vitoriana. A decisão que define tudo:
+   os cartões são PAPEL CLARO sobre um quadro escuro. O resto do site é
+   escuro sobre escuro, então isto destoa de propósito — é o único lugar
+   do site que não é uma tela, é um objeto físico, e papel claro é como
+   um mural de verdade se lê. Também é o que dá contraste ao barbante.
+
+   O gesto memorável é o barbante: ele tem FOLGA. Uma linha reta entre dois
+   pontos é um diagrama; um fio que cede no meio é um barbante pendurado
+   entre dois alfinetes. Custa uma curva quadrática e muda tudo.
+
+   Fora isso, contenção: um papel só, um alfinete só. O tipo do cartão
+   aparece na aba de cima, não em seis papéis diferentes.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mural{
+  --quadro:#17120F;
+  --couro:#1E1714;
+  --barbante:#8E1F2B;
+  --barbante-claro:#B8414F;
+  --latao:#A98045;
+  --papel:#E6DCC8;
+  --papel-sombra:#C9BCA2;
+  --tinta:#2A241C;
+  --tinta-fraca:#6B6050;
+  --mono:'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+  --serif:'Crimson Text',Georgia,serif;
+  --titulo:'Cinzel',Georgia,serif;
+
+  position:relative;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  height:100%;min-height:520px;
+  background:
+    radial-gradient(120% 90% at 50% 0%,rgba(169,128,69,.07),transparent 62%),
+    repeating-linear-gradient(94deg,rgba(0,0,0,.14) 0 2px,transparent 2px 5px),
+    linear-gradient(170deg,var(--couro),var(--quadro) 70%);
+  border:1px solid #2E2521;
+  overflow:hidden;
+}
+
+/* ---- Barra de cima ---- */
+.mural-barra{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+  padding:12px 16px;
+  border-bottom:1px solid #2E2521;
+  background:rgba(10,8,6,.5);
+  position:relative;z-index:3;
+}
+.mural-barra h2{
+  margin:0;font:600 13px/1 var(--titulo);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--latao);
+}
+.mural-busca{
+  flex:1;min-width:150px;max-width:280px;
+  background:rgba(0,0,0,.34);border:1px solid #332A24;
+  color:var(--papel);font-family:var(--mono);font-size:12px;padding:7px 10px;
+}
+.mural-busca:focus{outline:none;border-color:var(--latao)}
+.mural-filtros{display:flex;gap:6px;flex-wrap:wrap}
+.mural-filtro{
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  padding:5px 10px;border:1px solid #332A24;background:transparent;
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-fraca);transition:border-color .18s ease,color .18s ease;
+}
+.mural-filtro[data-ligado="sim"]{border-color:var(--cor);color:var(--cor)}
+.mural-filtro b{font-weight:400;opacity:.65}
+.mural-novo{
+  margin-left:auto;padding:7px 14px;cursor:pointer;
+  background:color-mix(in srgb,var(--barbante) 26%,transparent);
+  border:1px solid var(--barbante);color:#F0E2DA;
+  font-family:var(--titulo);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+}
+.mural-novo:hover{background:color-mix(in srgb,var(--barbante) 44%,transparent)}
+
+/* ---- O quadro ---- */
+.mural-quadro{position:relative;overflow:hidden;touch-action:none}
+
+/* O barbante fica ATRÁS dos cartões: o fio passa por baixo do papel, como
+   num mural de verdade onde o alfinete prende os dois. */
+.mural-fios{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.mural-fio{
+  stroke:var(--barbante);stroke-width:1.6;fill:none;
+  stroke-linecap:round;opacity:.78;
+}
+.mural-fio.realce{stroke:var(--barbante-claro);stroke-width:2.6;opacity:1}
+.mural-fio-alvo{stroke:var(--latao);stroke-width:1.4;stroke-dasharray:5 5;opacity:.9;fill:none}
+
+/* ---- O cartão ---- */
+.mural-cartao{
+  position:absolute;z-index:2;
+  width:188px;transform:translate(-50%,-50%);
+  background:linear-gradient(176deg,var(--papel),var(--papel-sombra));
+  color:var(--tinta);
+  border:1px solid rgba(0,0,0,.28);
+  box-shadow:0 7px 18px rgba(0,0,0,.52),0 1px 0 rgba(255,255,255,.3) inset;
+  cursor:grab;user-select:none;
+  transition:box-shadow .2s ease;
+}
+.mural-cartao:active{cursor:grabbing}
+.mural-cartao.arrastando{
+  z-index:5;box-shadow:0 20px 42px rgba(0,0,0,.66);
+}
+.mural-cartao.apagado{opacity:.2;filter:saturate(.3)}
+.mural-cartao.ligando{outline:2px solid var(--latao);outline-offset:3px}
+
+/* O alfinete de latão. É o que prende o papel e o que inicia a ligação. */
+.mural-alfinete{
+  position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  width:16px;height:16px;padding:0;border-radius:50%;cursor:pointer;
+  border:1px solid #6B4F24;
+  background:radial-gradient(circle at 34% 30%,#E8CB92,var(--latao) 56%,#6B4F24);
+  box-shadow:0 2px 5px rgba(0,0,0,.6);
+  z-index:3;
+}
+.mural-alfinete:hover{filter:brightness(1.18)}
+.mural-alfinete:focus-visible{outline:2px solid var(--latao);outline-offset:3px}
+.mural-cartao.ligando .mural-alfinete{
+  background:radial-gradient(circle at 34% 30%,#F0A8B0,var(--barbante) 56%,#4A1016);
+}
+
+.mural-aba{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 11px 6px;
+  border-bottom:1px solid rgba(0,0,0,.17);
+  background:color-mix(in srgb,var(--cor) 24%,transparent);
+  font-family:var(--mono);font-size:9px;letter-spacing:.17em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--cor) 72%,#2A241C);
+}
+.mural-aba i{font-style:normal;font-size:11px;color:var(--cor)}
+
+.mural-corpo{padding:10px 12px 12px;display:grid;gap:7px}
+.mural-cartao h3{
+  margin:0;font:600 14px/1.3 var(--titulo);letter-spacing:.01em;color:#1E1912;
+  word-break:break-word;
+}
+.mural-cartao p{
+  margin:0;font:400 13px/1.52 var(--serif);color:#44392C;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+}
+.mural-cartao textarea,.mural-cartao input{
+  width:100%;box-sizing:border-box;background:rgba(255,255,255,.4);
+  border:1px solid rgba(0,0,0,.18);color:var(--tinta);
+  font-family:var(--serif);font-size:13px;padding:5px 7px;
+}
+.mural-cartao input{font-family:var(--titulo);font-size:14px;font-weight:600}
+.mural-cartao textarea{resize:vertical;min-height:58px;line-height:1.5}
+
+/* O estado da pista: uma tarja no pé, que é onde o olho cai ao terminar de ler. */
+.mural-estado{
+  display:flex;align-items:center;gap:6px;
+  margin:2px -12px -12px;padding:6px 12px;
+  background:color-mix(in srgb,var(--cor-estado) 20%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--cor-estado) 34%,transparent);
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--cor-estado) 62%,#2A241C);
+  cursor:pointer;
+}
+.mural-estado i{width:6px;height:6px;border-radius:50%;background:var(--cor-estado);font-style:normal}
+
+.mural-acoes{display:flex;gap:5px;margin-top:3px}
+.mural-acao{
+  background:none;border:1px solid rgba(0,0,0,.2);color:var(--tinta-fraca);
+  font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 7px;cursor:pointer;
+}
+.mural-acao:hover{border-color:var(--barbante);color:var(--barbante)}
+
+/* ---- Quadro vazio ---- */
+.mural-vazio{
+  position:absolute;inset:0;display:grid;place-content:center;gap:10px;text-align:center;
+  color:var(--tinta-fraca);padding:28px;
+}
+.mural-vazio strong{font:600 16px/1.3 var(--titulo);letter-spacing:.06em;color:var(--latao)}
+.mural-vazio span{font:400 14px/1.6 var(--serif);max-width:38ch}
+
+html[data-motion="reduced"] .mural-cartao{transition:none}
+
+/* ---- Pregar no mural ----
+   Antes eram seis botões "+ ◆" enfileirados: compactos e ilegíveis. Um botão
+   que diz o que faz, e a escolha do tipo só aparece quando alguém decide
+   pregar algo. */
+.mural-pregar{position:relative;margin-left:auto}
+.mural-escolha{
+  position:absolute;top:calc(100% + 7px);right:0;z-index:12;
+  display:grid;min-width:184px;
+  background:#15110E;border:1px solid #3A2F27;
+  box-shadow:0 14px 34px rgba(0,0,0,.6);
+}
+.mural-escolha button{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 13px;background:none;border:0;cursor:pointer;text-align:left;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9A8E7E;transition:background .15s ease,color .15s ease;
+}
+.mural-escolha button:last-child{border-bottom:0}
+.mural-escolha button:hover{background:color-mix(in srgb,var(--cor) 16%,transparent);color:var(--cor)}
+.mural-escolha i{font-style:normal;font-size:13px;color:var(--cor)}
