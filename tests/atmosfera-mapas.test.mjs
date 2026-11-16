@@ -111,7 +111,7 @@ test('a atmosfera cede quando pedem menos movimento ou modo Leve', () => {
 });
 
 test('os mapas prontos guardam o caminho da arte, não a imagem inteira', () => {
-  assert.equal(MAPAS_PRONTOS.length, 4);
+  assert.ok(MAPAS_PRONTOS.length >= 7, 'algum mapa pronto sumiu do acervo');
   for (const mapa of MAPAS_PRONTOS) {
     assert.match(mapa.img, /^\/media\/mapas\/.+\.webp$/, 'a arte é servida pelo site');
     assert.ok(atmosferaDe(mapa.atmosfera), `${mapa.nome} sem atmosfera válida`);
@@ -122,17 +122,24 @@ test('os mapas prontos guardam o caminho da arte, não a imagem inteira', () => 
     // motivo de a arte morar em arquivo e não dentro do mapa.
     assert.ok(bytes < 1_000_000, `${mapa.img} está pesado demais (${bytes} bytes)`);
   }
-  assert.deepEqual(MAPAS_PRONTOS.map(m => m.nome), [
+  // Os mapas antigos continuam no acervo: um mapa novo acrescenta, não
+  // substitui — uma cena pode voltar a qualquer momento.
+  for (const nome of [
     'Pirâmide de Salomão',
     'Instituto Arcádia — Entrada',
     'Pirâmide de Salomão — Interior',
     'Instituto Arcádia',
-  ]);
+    'Pirâmide de Salomão — O Lago',
+    'Instituto Arcádia — Sala de Combate',
+    'Posto de Gasolina',
+  ]) {
+    assert.ok(MAPAS_PRONTOS.some(m => m.nome === nome), `o mapa "${nome}" sumiu do acervo`);
+  }
   assert.equal(new Set(MAPAS_PRONTOS.map(m => m.id)).size, MAPAS_PRONTOS.length, 'ids repetidos sobrescreveriam o mapa anterior');
 });
 
 test('os mapas da Dinastia E só aparecem na Dinastia E', () => {
-  assert.equal(mapasProntosDe({ id: 'dinastia-e', primary: true }).length, 4);
+  assert.equal(mapasProntosDe({ id: 'dinastia-e', primary: true }).length, MAPAS_PRONTOS.length);
   assert.equal(mapasProntosDe({ id: 'arquivo-de-veneza' }).length, 0);
 });
 
@@ -160,4 +167,73 @@ test('os grãos de areia caem sempre nos mesmos lugares', () => {
     assert.ok(grao.duracao > 0);
   }
   assert.deepEqual(graosDeAreia(0), []);
+});
+
+/* OS TRÊS MAPAS DE JOGO
+   Posto de gasolina, sala de combate do Arcádia e o lago sob a Pirâmide.
+   Cada um tem uma intenção declarada pelo Mestre, e a intenção está nos
+   dados: o que separa "descoberta" de "ameaça" é o padrão das luzes e o peso
+   do véu escuro, não a arte. Estes testes seguram essa intenção. */
+test('os três mapas novos existem, com arte em arquivo e atmosfera própria', () => {
+  const ler = p => readFileSync(p);
+  for (const id of ['posto-estrada', 'arcadia-arena', 'salomao-lago']) {
+    const mapa = MAPAS_PRONTOS.find(m => m.id === id);
+    assert.ok(mapa, `o mapa "${id}" sumiu`);
+    assert.match(mapa.img, /^\/media\/mapas\/.+\.webp$/, `${id} deixou de guardar só o caminho da arte`);
+    assert.doesNotThrow(() => ler(new URL(`../public${mapa.img}`, import.meta.url)), `arquivo ausente: ${mapa.img}`);
+    assert.ok(atmosferaDe(mapa.atmosfera), `${id} aponta para uma atmosfera que não existe`);
+  }
+});
+
+test('o posto é seguro: a cobertura das bombas não pisca', () => {
+  const posto = atmosferaDe('posto');
+  const cobertura = posto.luzes.filter(l => l.padrao === 'estavel');
+  assert.ok(cobertura.length >= 4, 'a cobertura das bombas deixou de ser firme');
+  // Quem pisca é a loja, e ela fica à esquerda da cena.
+  const piscando = posto.luzes.filter(l => l.padrao === 'falha');
+  assert.ok(piscando.length > 0, 'a loja de conveniência parou de piscar');
+  assert.ok(piscando.every(l => l.x < 45), 'alguma luz que pisca saiu da loja');
+  // A estrela amarela caindo deixa a cena âmbar, não azul.
+  assert.match(posto.luar.cor, /^#FF[A-F0-9]{4}$/i);
+  // E nada de presença nem respiração: é um lugar comum.
+  assert.equal(posto.presenca, undefined);
+  assert.equal(posto.respiracao, undefined);
+});
+
+test('a arena ameaça — mas o tabuleiro continua legível', () => {
+  const arena = atmosferaDe('arena');
+  assert.ok(arena.presenca, 'a arena perdeu o que atravessa o fundo');
+  assert.ok(arena.respiracao.forca > atmosferaDe('arcadia').respiracao.forca,
+    'a arena deveria fechar em volta mais que o resto do Instituto');
+  const alarme = arena.luzes.filter(l => /^#FF[0-5]/i.test(l.cor));
+  assert.ok(alarme.length >= 8, 'o alarme vermelho sumiu');
+  // Um mapa de combate onde o token não aparece não serve de tabuleiro.
+  assert.ok(arena.brilho >= 0.72, `escuro demais para jogar em cima: brilho ${arena.brilho}`);
+  assert.ok(arena.noite.forca <= 0.5, `véu pesado demais: ${arena.noite.forca}`);
+});
+
+test('o lago encanta em vez de ameaçar', () => {
+  const lago = atmosferaDe('lago');
+  // Nada de luz quebrada: lâmpada que falha é terror, e aqui é descoberta.
+  assert.equal(lago.luzes.filter(l => l.padrao === 'falha' || l.padrao === 'glitch').length, 0,
+    'entrou luz falhando num lugar que deveria ser acolhedor');
+  assert.equal(lago.presenca, undefined, 'o lago não tem nada espreitando');
+  assert.equal(lago.respiracao, undefined);
+  // A água é a fonte de luz da caverna, não o contrário.
+  assert.ok(lago.brilho > 1, 'a caverna deveria ganhar luz, não perder');
+  assert.ok(lago.noite.forca < 0.4, 'véu escuro demais para um lugar que brilha');
+  const frias = lago.luzes.filter(l => l.padrao === 'frio');
+  assert.ok(frias.length >= 10, 'os cristais e a água pararam de pulsar');
+  // As duas camadas recoloridas: a água se movendo e os esporos no ar.
+  assert.ok(lago.ouro.cor, 'o brilho da água voltou a ser dourado');
+  assert.ok(lago.poeira.cor, 'os esporos voltaram a ser poeira de tumba');
+});
+
+test('as camadas recoloridas não mudam os mapas antigos', () => {
+  // A tumba não passa cor: continua recebendo o dourado padrão do CSS.
+  assert.equal(atmosferaDe('tumba').ouro.cor, undefined);
+  assert.equal(atmosferaDe('tumba').poeira.cor, undefined);
+  const css = readFileSync(new URL('../src/features/mapa-batalha/atmosfera.css', import.meta.url), 'utf8');
+  assert.match(css, /\.mapa-atm-ouro\{[^}]*--cor:255,224,150/);
+  assert.match(css, /\.mapa-atm-poeira\{[^}]*--cor:255,226,180/);
 });

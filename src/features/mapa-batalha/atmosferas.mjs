@@ -133,6 +133,152 @@ export const ATMOSFERAS = {
     respiracao: { duracao: 9, forca: 0.3 },
     brilho: 0.68,
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // O lago sob a Pirâmide de Salomão.
+  //
+  // Aqui o jogador não deve sentir medo: deve sentir que acabou de encontrar
+  // algo que ninguém viu. Por isso o véu escuro é fraco — só o suficiente para
+  // o azul ter contra o que brilhar — e nenhuma luz "falha". Tudo é 'frio':
+  // pulso longo, calmo, sem sobressalto. É a diferença entre uma caverna
+  // assombrada e uma descoberta.
+  lago: {
+    id: 'lago',
+    nome: 'Pirâmide de Salomão · o lago',
+    descricao: 'A água brilha e se move devagar, os cristais pulsam e esporos de luz pairam no ar. Místico, não ameaçador.',
+    noite: { cor: '#06182E', forca: 0.3 },
+    // O lago inteiro como uma fonte só, enorme e lenta: é ele que ilumina a
+    // caverna, e não o contrário.
+    luar: { x: 50, y: 46, cor: '#7FE9FF', forca: 0.32, respiro: 14 },
+    luzes: [
+      // A água: três focos de intensidade dentro do lago, com compassos
+      // diferentes, para o brilho nunca parecer uma lâmpada só.
+      { x: 50, y: 44, raio: 30, forca: 0.42, padrao: 'frio', cor: '#5FD8FF' },
+      { x: 34, y: 36, raio: 20, forca: 0.4, padrao: 'frio', cor: '#6FE4FF' },
+      { x: 64, y: 54, raio: 22, forca: 0.42, padrao: 'frio', cor: '#4FC8FF' },
+      // Os espinhos de cristal que saem da água.
+      { x: 36.0, y: 12.5, raio: 7, forca: 0.6, padrao: 'frio', cor: '#8FF2FF' },
+      { x: 64.5, y: 15.0, raio: 7, forca: 0.6, padrao: 'frio', cor: '#8FF2FF' },
+      { x: 62.5, y: 24.5, raio: 5.5, forca: 0.5, padrao: 'frio', cor: '#7FE9FF' },
+      { x: 33.5, y: 56.0, raio: 5, forca: 0.44, padrao: 'frio', cor: '#7FE9FF' },
+      // Os veios de cristal nas paredes e no chão de pedra.
+      { x: 7.5, y: 10.0, raio: 7, forca: 0.5, padrao: 'frio', cor: '#6FC2FF' },
+      { x: 24.5, y: 7.5, raio: 6, forca: 0.46, padrao: 'frio', cor: '#6FC2FF' },
+      { x: 21.0, y: 64.0, raio: 6, forca: 0.44, padrao: 'frio', cor: '#5FB8FF' },
+      { x: 79.5, y: 51.0, raio: 7, forca: 0.52, padrao: 'frio', cor: '#6FD4FF' },
+      { x: 92.0, y: 80.0, raio: 7.5, forca: 0.5, padrao: 'frio', cor: '#6FD4FF' },
+      { x: 2.5, y: 46.0, raio: 6, forca: 0.4, padrao: 'frio', cor: '#5FB8FF' },
+      // Os dois braseiros da plataforma de baixo: as únicas chamas da cena,
+      // e por isso as únicas que tremem.
+      { x: 43.2, y: 82.0, raio: 6, forca: 0.72, padrao: 'tocha', cor: '#9FF4FF' },
+      { x: 58.0, y: 82.0, raio: 6, forca: 0.72, padrao: 'tocha', cor: '#9FF4FF' },
+      // Os selos no chão e o portal do alto, que puxam o olho para as saídas.
+      { x: 51.0, y: 92.0, raio: 9, forca: 0.46, padrao: 'pulso', cor: '#FFD98A' },
+      { x: 6.5, y: 76.0, raio: 8, forca: 0.4, padrao: 'pulso', cor: '#FFD98A' },
+      { x: 86.5, y: 17.0, raio: 7, forca: 0.4, padrao: 'pulso', cor: '#FFD98A' },
+      { x: 92.5, y: 10.5, raio: 9, forca: 0.52, padrao: 'frio', cor: '#8FE4FF' },
+    ],
+    // A mesma camada que faz o ouro reluzir na tumba, em ciano: aqui ela é a
+    // água se movendo sob a superfície.
+    ouro: { duracao: 17, opacidade: 0.22, cor: '111,230,255', brilho: '210,250,255' },
+    // Esporos de luz pairando — não é poeira de tumba, é a caverna viva.
+    poeira: { quantidade: 34, duracao: 26, opacidade: 0.5, cor: '150,238,255', halo: '90,200,255' },
+    brilho: 1.06,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // A sala de combate do Instituto Arcádia.
+  //
+  // O oposto do lago. Aqui o jogador deve hesitar antes de decidir. As luzes
+  // não iluminam a sala: elas avisam. Vermelho em compasso de alarme, tubos
+  // brancos que falham, os cantos avançando, e algo atravessando o fundo de
+  // vez em quando — sem forma, porque o que assusta é o que não se nomeia.
+  arena: {
+    id: 'arena',
+    nome: 'Instituto Arcádia · sala de combate',
+    descricao: 'Escuro e hostil: alarme vermelho pulsando, tubos falhando, os cantos avançando e algo cruzando o fundo.',
+    noite: { cor: '#07040B', forca: 0.46 },
+    luzes: [
+      // Parede do fundo: tubos frios alternados com faixas de alarme.
+      { x: 13.5, y: 3.5, raio: 8, forca: 0.5, padrao: 'falha', cor: '#BFE2FF' },
+      { x: 24.5, y: 3.0, raio: 6, forca: 0.6, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 44.8, y: 3.5, raio: 8, forca: 0.5, padrao: 'falha', cor: '#BFE2FF' },
+      { x: 55.6, y: 3.0, raio: 6, forca: 0.6, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 72.5, y: 3.5, raio: 8, forca: 0.5, padrao: 'falha', cor: '#BFE2FF' },
+      { x: 85.0, y: 3.0, raio: 6, forca: 0.6, padrao: 'pulso', cor: '#FF2A42' },
+      // Os dois corpos pendurados no alto: um halo fraco e trêmulo neles é o
+      // que faz o olhar voltar para lá sem querer.
+      { x: 22.0, y: 7.5, raio: 6, forca: 0.34, padrao: 'glitch', cor: '#FF4A5E' },
+      { x: 78.0, y: 7.5, raio: 6, forca: 0.34, padrao: 'glitch', cor: '#FF4A5E' },
+      // Corredores laterais: as celas, em alarme.
+      { x: 3.0, y: 30.0, raio: 7, forca: 0.52, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 3.0, y: 52.0, raio: 7, forca: 0.46, padrao: 'falha', cor: '#FF3A50' },
+      { x: 3.0, y: 75.0, raio: 7, forca: 0.52, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 97.0, y: 30.0, raio: 7, forca: 0.52, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 97.0, y: 52.0, raio: 7, forca: 0.46, padrao: 'falha', cor: '#FF3A50' },
+      { x: 97.0, y: 75.0, raio: 7, forca: 0.52, padrao: 'pulso', cor: '#FF2A42' },
+      // Janelas frias das pontas: o único branco que não é alarme.
+      { x: 7.5, y: 13.0, raio: 6, forca: 0.3, padrao: 'frio', cor: '#9FC8FF' },
+      { x: 92.5, y: 13.0, raio: 6, forca: 0.3, padrao: 'frio', cor: '#9FC8FF' },
+      { x: 7.5, y: 60.0, raio: 6, forca: 0.3, padrao: 'frio', cor: '#9FC8FF' },
+      { x: 92.5, y: 60.0, raio: 6, forca: 0.3, padrao: 'frio', cor: '#9FC8FF' },
+      // Porta da frente e o selo alado no centro do piso: a arena em si.
+      { x: 37.5, y: 96.5, raio: 6, forca: 0.44, padrao: 'falha', cor: '#BFE2FF' },
+      { x: 62.5, y: 96.5, raio: 6, forca: 0.44, padrao: 'falha', cor: '#BFE2FF' },
+      { x: 25.0, y: 96.5, raio: 5.5, forca: 0.5, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 75.0, y: 96.5, raio: 5.5, forca: 0.5, padrao: 'pulso', cor: '#FF2A42' },
+      { x: 50.0, y: 47.0, raio: 14, forca: 0.3, padrao: 'pulso', cor: '#FF5566' },
+    ],
+    // Mais forte que no resto do Instituto: aqui a sala fecha em volta.
+    respiracao: { duracao: 7.5, forca: 0.42 },
+    presenca: { duracao: 26, opacidade: 0.62 },
+    brilho: 0.78,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // O posto de gasolina na estrada.
+  //
+  // Lugar comum, e é essa a graça: nada ameaça. A cobertura das bombas acende
+  // firme e não oscila nunca — é o ponto seguro da cena. Quem pisca é a loja
+  // de conveniência, e só ela. O céu puxa para o âmbar por causa da estrela
+  // amarela caindo; como a vista é de cima, a estrela não aparece, mas a cor
+  // que ela joga no lugar, sim.
+  posto: {
+    id: 'posto',
+    nome: 'Posto de gasolina · estrada à noite',
+    descricao: 'A cobertura das bombas acesa sem oscilar, as luzes da loja piscando e o céu puxado para o âmbar.',
+    noite: { cor: '#17101F', forca: 0.34 },
+    // A estrela caindo: um banho âmbar sobre a cena inteira, bem devagar.
+    luar: { x: 62, y: 4, cor: '#FFC86A', forca: 0.3, respiro: 21 },
+    luzes: [
+      // Cobertura das bombas: estáveis de propósito. São o que o jogador
+      // enxerga como abrigo, e abrigo não pisca.
+      { x: 50.5, y: 11.5, raio: 7, forca: 0.26, padrao: 'estavel', cor: '#FFE7B4' },
+      { x: 76.0, y: 11.5, raio: 7, forca: 0.26, padrao: 'estavel', cor: '#FFE7B4' },
+      { x: 50.5, y: 25.0, raio: 7, forca: 0.26, padrao: 'estavel', cor: '#FFE7B4' },
+      { x: 76.0, y: 25.0, raio: 7, forca: 0.26, padrao: 'estavel', cor: '#FFE7B4' },
+      // O chão sob as duas ilhas de bomba, onde a luz se acumula.
+      { x: 57.5, y: 45.0, raio: 16, forca: 0.62, padrao: 'estavel', cor: '#FFD98A' },
+      { x: 73.5, y: 45.0, raio: 16, forca: 0.62, padrao: 'estavel', cor: '#FFD98A' },
+      // Loja de conveniência: é aqui que a luz falha.
+      { x: 19.5, y: 24.0, raio: 8, forca: 0.6, padrao: 'falha', cor: '#FFE2A8' },
+      { x: 30.5, y: 24.0, raio: 8, forca: 0.56, padrao: 'falha', cor: '#FFE2A8' },
+      { x: 25.0, y: 31.5, raio: 10, forca: 0.5, padrao: 'lampada', cor: '#FFDD9E' },
+      { x: 37.5, y: 33.0, raio: 5, forca: 0.5, padrao: 'glitch', cor: '#FF6A52' },
+      // Postes da pista e a placa da estrada: quase firmes, com uma queda de
+      // vez em quando. É o que dá o resto do movimento sem agitar a cena.
+      { x: 5.5, y: 13.0, raio: 9, forca: 0.6, padrao: 'lampada', cor: '#FFD98A' },
+      { x: 5.0, y: 62.0, raio: 9, forca: 0.58, padrao: 'lampada', cor: '#FFD98A' },
+      { x: 93.0, y: 10.0, raio: 9, forca: 0.6, padrao: 'lampada', cor: '#FFD98A' },
+      { x: 95.5, y: 57.0, raio: 8, forca: 0.54, padrao: 'lampada', cor: '#FFD98A' },
+      { x: 97.0, y: 25.0, raio: 6, forca: 0.46, padrao: 'lampada', cor: '#FFBF6A' },
+    ],
+    // Mosquitos de beira de estrada em volta das lâmpadas.
+    poeira: { quantidade: 20, duracao: 19, opacidade: 0.26, cor: '255,226,180', halo: '255,200,120' },
+    // A vegetação das bordas se move: é a única coisa viva aqui.
+    vento: { forca: 1.5, duracao: 9.5, borda: 11 },
+    brilho: 0.92,
+  },
 };
 
 export const listaDeAtmosferas = () => Object.values(ATMOSFERAS);

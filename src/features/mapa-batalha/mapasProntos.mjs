@@ -39,6 +39,27 @@ export const MAPAS_PRONTOS = [
     atmosfera: 'arcadia',
     descricao: 'O salão central, o alojamento e o laboratório — depois da catástrofe.',
   },
+  {
+    id: 'salomao-lago',
+    nome: 'Pirâmide de Salomão — O Lago',
+    img: '/media/mapas/salomao-lago.webp',
+    atmosfera: 'lago',
+    descricao: 'A caverna sob a pirâmide: o lago que brilha, os cristais e a carcaça do dragão.',
+  },
+  {
+    id: 'arcadia-arena',
+    nome: 'Instituto Arcádia — Sala de Combate',
+    img: '/media/mapas/arcadia-arena.webp',
+    atmosfera: 'arena',
+    descricao: 'A arena do Instituto, em alarme — e o que ela já viu acontecer ali.',
+  },
+  {
+    id: 'posto-estrada',
+    nome: 'Posto de Gasolina',
+    img: '/media/mapas/posto-estrada.webp',
+    atmosfera: 'posto',
+    descricao: 'O posto na beira da estrada, de noite, sob a luz das bombas.',
+  },
 ];
 
 export function mapasProntosDe(campaign) {

@@ -228,12 +228,14 @@
 /* POEIRA SUSPENSA
    Em ambiente fechado a poeira não atravessa o cômodo: ela paira e desenha
    devagar na luz da tocha. Por isso o movimento é curto e volta ao lugar. */
-.mapa-atm-poeira{inset:0;opacity:var(--op)}
+/* A cor vem do preset: poeira de tumba é dourada, esporo de caverna mágica é
+   ciano. O dourado continua sendo o padrão, então os mapas antigos não mudam. */
+.mapa-atm-poeira{inset:0;opacity:var(--op);--cor:255,226,180;--halo:255,206,130}
 .mapa-atm-poeira i{
   position:absolute;
   width:calc(2px * var(--escala));height:calc(2px * var(--escala));
-  border-radius:50%;background:rgba(255,226,180,.85);
-  box-shadow:0 0 4px rgba(255,206,130,.6);
+  border-radius:50%;background:rgba(var(--cor),.85);
+  box-shadow:0 0 4px rgba(var(--halo),.6);
   animation:atmMota var(--dur) ease-in-out var(--atraso) infinite alternate;
 }
 @keyframes atmMota{
@@ -244,9 +246,13 @@
 
 /* O OURO RESPONDE AO FOGO
    Um brilho lento percorrendo a câmara, que é o que ouro faz sob luz viva. */
+/* Um brilho lento atravessando a cena. Na tumba é o ouro respondendo ao
+   fogo; no lago de Salomão é a própria água se movendo. Mesma camada, cor
+   trocada — dourado por padrão. */
 .mapa-atm-ouro{
   inset:-20%;mix-blend-mode:soft-light;opacity:var(--op);
-  background:linear-gradient(106deg,transparent 32%,rgba(255,224,150,.9) 48%,rgba(255,246,214,.7) 52%,transparent 68%);
+  --cor:255,224,150;--brilho-cor:255,246,214;
+  background:linear-gradient(106deg,transparent 32%,rgba(var(--cor),.9) 48%,rgba(var(--brilho-cor),.7) 52%,transparent 68%);
   background-size:260% 100%;
   animation:atmOuro var(--dur) ease-in-out infinite;
 }

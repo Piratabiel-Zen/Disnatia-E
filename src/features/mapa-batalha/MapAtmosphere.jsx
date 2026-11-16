@@ -99,7 +99,10 @@ export default function MapAtmosphere({ atmosfera, img }) {
       )}
       {/* Poeira suspensa: em lugar fechado ela paira, não atravessa. */}
       {preset.poeira && (
-        <div className="mapa-atm-poeira" style={{ '--op': preset.poeira.opacidade }}>
+        <div
+          className="mapa-atm-poeira"
+          style={{ '--op': preset.poeira.opacidade, ...(preset.poeira.cor ? { '--cor': preset.poeira.cor, '--halo': preset.poeira.halo || preset.poeira.cor } : {}) }}
+        >
           {graosDeAreia(preset.poeira.quantidade).map((mota, index) => (
             <i
               key={`mota-${index}`}
@@ -115,7 +118,13 @@ export default function MapAtmosphere({ atmosfera, img }) {
       )}
       {/* O ouro responde ao fogo: um brilho lento percorrendo a câmara. */}
       {preset.ouro && (
-        <div className="mapa-atm-ouro" style={{ '--dur': `${preset.ouro.duracao}s`, '--op': preset.ouro.opacidade }} />
+        <div
+          className="mapa-atm-ouro"
+          style={{
+            '--dur': `${preset.ouro.duracao}s`, '--op': preset.ouro.opacidade,
+            ...(preset.ouro.cor ? { '--cor': preset.ouro.cor, '--brilho-cor': preset.ouro.brilho || preset.ouro.cor } : {}),
+          }}
+        />
       )}
       {/* O vento usa a própria arte: uma cópia das bordas, onde só há
           folhagem, balançando de leve. Mascarada e com movimento de poucos
