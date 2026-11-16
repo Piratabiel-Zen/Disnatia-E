@@ -9,8 +9,14 @@
 // outra coisa, e nunca entra no escopo de uma campanha.
 import { collection, doc } from 'firebase/firestore';
 import { db } from './firebase';
+// O id da mesa ativa mora em escopo.mjs, sem Firebase junto: os caches de
+// localStorage precisam dele e não podem arrastar o Firestore para dentro.
+import {
+  PRIMARY_CAMPAIGN_ID, caminhoEscopado, definirEscopo, ehCampanhaPrincipal,
+  escopoAtivo, storageSuffix,
+} from './escopo.mjs';
 
-export const PRIMARY_CAMPAIGN_ID = 'dinastia-e';
+export { PRIMARY_CAMPAIGN_ID, storageSuffix };
 const STORAGE_KEY = 'dinastia_campaign_v1';
 
 /** A campanha que já existe, descrita aqui para o site funcionar mesmo com o Firestore vazio. */
@@ -75,16 +81,11 @@ export const CAMPAIGN_THEMES = {
 
 export const campaignTheme = campaign => CAMPAIGN_THEMES[campaign?.theme] || CAMPAIGN_THEMES.cosmico;
 
-let activeId = PRIMARY_CAMPAIGN_ID;
 let activeRecord = PRIMARY_CAMPAIGN;
 const listeners = new Set();
 
 /** Prefixo de coleção da campanha ativa. A principal não tem prefixo: usa os caminhos atuais. */
-export function scopedPath(name) {
-  const path = String(name || '');
-  if (!path) throw new Error('scopedPath exige o nome da coleção');
-  return activeId === PRIMARY_CAMPAIGN_ID ? path : `c__${activeId}__${path}`;
-}
+export const scopedPath = caminhoEscopado;
 
 /** Coleção da campanha ativa. Substitui collection(db, 'nome'). */
 export function col(name) {
@@ -100,8 +101,8 @@ export function docIn(name, ...segments) {
 export const globalCol = name => collection(db, name);
 export const globalDoc = (name, ...segments) => doc(db, name, ...segments);
 
-export const activeCampaignId = () => activeId;
-export const isPrimaryCampaign = () => activeId === PRIMARY_CAMPAIGN_ID;
+export const activeCampaignId = escopoAtivo;
+export const isPrimaryCampaign = ehCampanhaPrincipal;
 
 /**
  * Troca a campanha ativa. Como os listeners do Firestore já montados apontam
@@ -110,8 +111,7 @@ export const isPrimaryCampaign = () => activeId === PRIMARY_CAMPAIGN_ID;
  */
 export function setActiveCampaign(campaign) {
   const record = typeof campaign === 'string' ? { id: campaign } : (campaign || {});
-  const next = String(record.id || PRIMARY_CAMPAIGN_ID);
-  activeId = next;
+  const next = definirEscopo(record.id);
   activeRecord = next === PRIMARY_CAMPAIGN_ID ? { ...PRIMARY_CAMPAIGN, ...record, primary: true } : record;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRecord)); } catch (_) {}
   for (const listener of [...listeners]) listener(activeRecord);
@@ -137,7 +137,7 @@ export function loadStoredCampaign() {
 }
 
 export function clearStoredCampaign() {
-  activeId = PRIMARY_CAMPAIGN_ID;
+  definirEscopo(PRIMARY_CAMPAIGN_ID);
   activeRecord = PRIMARY_CAMPAIGN;
   try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
 }
@@ -149,16 +149,11 @@ export function clearStoredCampaign() {
 export function restoreCampaignFromStorage() {
   const stored = loadStoredCampaign();
   if (!stored) return null;
-  activeId = String(stored.id);
-  activeRecord = activeId === PRIMARY_CAMPAIGN_ID ? { ...PRIMARY_CAMPAIGN, ...stored, primary: true } : stored;
+  const id = definirEscopo(stored.id);
+  activeRecord = id === PRIMARY_CAMPAIGN_ID ? { ...PRIMARY_CAMPAIGN, ...stored, primary: true } : stored;
   return activeRecord;
 }
 
-/**
- * Sufixo para chaves do localStorage. A campanha principal não usa sufixo,
- * então quem já estava logado continua logado depois desta mudança.
- */
-export const storageSuffix = () => (activeId === PRIMARY_CAMPAIGN_ID ? '' : `:${activeId}`);
 
 /** Slug para o id de uma campanha nova. */
 export function campaignSlug(name) {

@@ -118,6 +118,27 @@ export async function entrarNaMesa({ campanhaId, senha, papel = 'jogador', nome 
   return lerMembro(campanhaId, usuario.uid);
 }
 
+/**
+ * Assume a mesa como Admin.
+ *
+ * Usado por quem acabou de criar a campanha, e por quem está resgatando uma
+ * mesa órfã — feita antes de existir o campo de dono, e que por isso não tem
+ * Admin nenhum e não poderia nem ser apagada.
+ *
+ * Não manda senha: as regras deixam passar pelo campo `criadoPor` ou pela
+ * ausência dele. Uma senha ainda nem existe neste momento.
+ */
+export async function assumirMesa(campanhaId, nome = '') {
+  const usuario = auth.currentUser;
+  if (!usuario) throw new Error('Entre na sua conta antes.');
+  await setDoc(membroRef(campanhaId, usuario.uid), {
+    uid: usuario.uid,
+    nome: String(nome || usuario.displayName || '').trim(),
+    papel: 'mestre',
+    entrouEm: serverTimestamp(),
+  });
+}
+
 /** O registro de membro desta pessoa nesta mesa, ou null se não for membro. */
 export async function lerMembro(campanhaId, uid = auth.currentUser?.uid) {
   if (!uid) return null;

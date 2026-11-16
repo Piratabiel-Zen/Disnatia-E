@@ -73,12 +73,31 @@ service cloud.firestore {
     // Mesas
     // ───────────────────────────────────────────────────────────────────
 
+    // Quem criou a mesa. Vazio nas mesas feitas antes deste campo existir.
+    function donoDaMesa(cid) {
+      return get(/databases/$(database)/documents/campaigns/$(cid)).data.get('criadoPor', '');
+    }
+    function mesaSemDono(cid) {
+      return donoDaMesa(cid) == '';
+    }
+
     match /campaigns/{cid} {
       // A lista de mesas é visível para quem está logado: é preciso ver a
       // mesa para pedir para entrar nela. Nenhum dado de jogo mora aqui.
       allow read: if logado();
-      allow create: if logado();
-      allow update, delete: if mestre(cid);
+
+      // Criar exige dizer quem criou, e ninguém cria em nome de outro. É esse
+      // campo que depois permite ao criador virar Admin da própria mesa sem
+      // precisar de uma senha que ainda não existe.
+      allow create: if logado() && request.resource.data.criadoPor == request.auth.uid;
+
+      allow update: if mestre(cid);
+
+      // Apagar é do Admin. A exceção são as mesas criadas antes de existir o
+      // campo de dono: ninguém é Admin delas, então ninguém conseguiria
+      // removê-las nunca. Elas ficam apagáveis por quem está logado até
+      // sumirem; mesa nova já nasce com dono e não cai nesse caso.
+      allow delete: if mestre(cid) || (logado() && mesaSemDono(cid));
 
       // A senha. Nenhum caminho de leitura, para ninguém, nunca. As regras
       // acima ainda a consultam por get(), que roda no servidor.
@@ -88,13 +107,24 @@ service cloud.firestore {
       }
 
       match /membros/{uid} {
-        // Entrar é um ato de quem entra, e só vale com a senha certa. O
-        // cliente manda o hash; o servidor compara com o que está no lugar
-        // invisível. Sem isso, qualquer um se declararia membro.
+        // Três portas para virar membro, nesta ordem de confiança:
+        //
+        //  1. Quem criou a mesa entra como Admin dela. Sem isto, o criador
+        //     ficava trancado para fora da própria campanha: as regras exigem
+        //     ser membro para escrever qualquer coisa, e virar membro exigia
+        //     uma senha que só o Admin pode definir. Era um nó fechado.
+        //  2. Quem tem a senha da mesa entra como jogador. O cliente manda o
+        //     hash; o servidor compara com o que está no lugar invisível.
+        //  3. Mesa sem dono (feita antes do campo existir) pode ser assumida,
+        //     senão ela fica órfã para sempre.
         allow create: if logado()
           && request.auth.uid == uid
-          && request.resource.data.senhaHash == senhaDaMesa(cid)
-          && request.resource.data.papel in ['jogador', 'mestre'];
+          && request.resource.data.papel in ['jogador', 'mestre']
+          && (
+            request.auth.uid == donoDaMesa(cid)
+            || mesaSemDono(cid)
+            || request.resource.data.senhaHash == senhaDaMesa(cid)
+          );
 
         // Cada um vê a própria entrada; o Mestre vê a mesa toda.
         allow read: if logado() && (request.auth.uid == uid || mestre(cid));

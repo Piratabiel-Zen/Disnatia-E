@@ -14,6 +14,7 @@ import './campanhas.css';
 import './portais.css';
 import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
 import PortaDeEntrada from '../acesso/PortaDeEntrada';
+import { aoMudarConta, assumirMesa, auth, mensagemDeErro } from '../../core/auth';
 
 const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 
@@ -100,6 +101,8 @@ export default function CampaignGate({ onChoose }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO });
+  const [conta, setConta] = useState(() => auth.currentUser);
+  useEffect(() => aoMudarConta(setConta), []);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -126,6 +129,9 @@ export default function CampaignGate({ onChoose }) {
   const createCampaign = async () => {
     const name = draft.name.trim();
     if (!name || busy) return;
+    // Sem conta não dá para criar: a mesa precisa de um Admin, e Admin é uma
+    // pessoa identificada. Sem isso ela nasceria sem dono e trancada.
+    if (!conta) { setError('Entre na sua conta para criar uma mesa.'); return; }
     setBusy(true); setError('');
     const id = campaignSlug(name);
     try {
@@ -143,8 +149,14 @@ export default function CampaignGate({ onChoose }) {
         sistema: draft.sistema,
         sigil: CAMPAIGN_THEMES[draft.theme].sigil,
         active: true,
+        // Quem criou é o Admin. Sem este campo, as regras não teriam como
+        // deixar o criador entrar na própria mesa: elas exigem ser membro, e
+        // virar membro exigiria uma senha que só o Admin pode definir.
+        criadoPor: conta.uid,
         createdAt: Date.now(),
       });
+      // E vira Admin dela no mesmo gesto, senão a mesa nasce trancada.
+      await assumirMesa(id, conta.displayName || conta.email || '');
       setDraft({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO });
     } catch {
       setError('Não foi possível criar a mesa. Confira sua conexão.');
@@ -155,7 +167,11 @@ export default function CampaignGate({ onChoose }) {
     if (campaign.primary) return;
     // Só sai da lista: os dados da mesa continuam guardados e voltam se ela for recriada.
     try { await deleteDoc(globalDoc('campaigns', campaign.id)); }
-    catch { setError('Não foi possível remover a mesa.'); }
+    catch (erro) {
+      setError(erro?.code === 'permission-denied'
+        ? 'Só o Admin da mesa pode removê-la. Entre na conta que a criou.'
+        : mensagemDeErro(erro));
+    }
   };
 
   return (
@@ -217,7 +233,12 @@ export default function CampaignGate({ onChoose }) {
                 <input value={draft.tagline} onChange={e => setDraft({ ...draft, tagline: e.target.value })} placeholder="Uma linha que resume a mesa" />
               </label>
             </div>
-            <button className="campaign-create" disabled={!draft.name.trim() || busy} onClick={createCampaign}>
+            <button
+              className="campaign-create"
+              disabled={!draft.name.trim() || busy || !conta}
+              title={conta ? undefined : 'Entre na sua conta primeiro'}
+              onClick={createCampaign}
+            >
               {busy ? 'Criando...' : 'Criar mesa'}
             </button>
           </section>

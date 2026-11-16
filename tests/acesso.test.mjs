@@ -159,3 +159,32 @@ test('toda coleção que o site usa hoje continua alcançável', () => {
   }
   assert.ok(regras.includes("colecao.matches('c__.*')"));
 });
+
+/* O NÓ QUE EU DEI E DESFIZ
+   As regras exigem ser membro da mesa para escrever qualquer coisa. Virar
+   membro exigia a senha da mesa. A senha só o Admin pode definir. E para ser
+   Admin era preciso ser membro. Resultado: quem criava uma campanha ficava
+   trancado para fora dela — não criava ficha, não mexia no mural, e nem
+   conseguia apagar a mesa. */
+test('quem cria a mesa entra nela como Admin, sem senha nenhuma', () => {
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(regras, /request\.resource\.data\.criadoPor == request\.auth\.uid/,
+    'criar mesa deixou de registrar quem criou');
+  assert.match(regras, /request\.auth\.uid == donoDaMesa\(cid\)/,
+    'o criador voltou a precisar de uma senha que ainda não existe');
+});
+
+test('mesa órfã pode ser assumida e apagada, senão fica para sempre', () => {
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  // As mesas feitas antes do campo de dono existir não têm Admin nenhum.
+  assert.match(regras, /mesaSemDono\(cid\)/);
+  assert.match(regras, /allow delete: if mestre\(cid\) \|\| \(logado\(\) && mesaSemDono\(cid\)\)/);
+});
+
+test('ninguém se promove a Admin de mesa alheia', () => {
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  // Entrar continua exigindo uma das três portas, e nenhuma delas é "pedir".
+  assert.match(regras, /request\.resource\.data\.senhaHash == senhaDaMesa\(cid\)/);
+  // Mudar o papel de um membro continua sendo só do Admin.
+  assert.match(regras, /allow update, delete: if mestre\(cid\)/);
+});

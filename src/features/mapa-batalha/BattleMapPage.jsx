@@ -25,6 +25,13 @@ import MapAtmosphere from './MapAtmosphere';
 import { listaDeAtmosferas } from './atmosferas.mjs';
 import { mapasProntosDe } from './mapasProntos.mjs';
 import { activeCampaign } from '../../core/campaign';
+import { storageSuffix } from '../../core/escopo.mjs';
+
+// Os caches do mapa também são por mesa. Sem isso, uma campanha nova abria com
+// os mapas e as fichas da Dinastia E guardados no navegador — dados de outra
+// mesa aparecendo numa mesa que nunca os teve.
+const CACHE_MAPAS = () => 'dinastia_cache_battlemaps' + storageSuffix();
+const CACHE_FICHAS = () => 'dinastia_cache_sheets' + storageSuffix();
 // ─── 🗡️ MAPA DE BATALHA — tipos e estruturas básicas ───────────────────────
 // Estas constantes precisam existir antes de BattleMapSection. A ausência delas
 // causava ReferenceError ao abrir a aba e deixava a aplicação totalmente branca.
@@ -511,14 +518,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
 
 
   useEffect(()=>{
-    if(maps.length) try{localStorage.setItem('dinastia_cache_battlemaps',JSON.stringify(maps));}catch(_){}
+    if(maps.length) try{localStorage.setItem(CACHE_MAPAS(),JSON.stringify(maps));}catch(_){}
   },[maps]);
   useEffect(()=>{
-    if(sheets.length) try{localStorage.setItem('dinastia_cache_sheets',JSON.stringify(sheets));}catch(_){}
+    if(sheets.length) try{localStorage.setItem(CACHE_FICHAS(),JSON.stringify(sheets));}catch(_){}
   },[sheets]);
   useEffect(()=>{
     if(loaded || maps.length) return;
-    try{const cached=JSON.parse(localStorage.getItem('dinastia_cache_battlemaps')||'[]');if(cached.length){setMaps(cached);setLoaded(true);}}catch(_){}
+    try{const cached=JSON.parse(localStorage.getItem(CACHE_MAPAS())||'[]');if(cached.length){setMaps(cached);setLoaded(true);}}catch(_){}
   },[loaded,maps.length]);
 
   useEffect(() => {
