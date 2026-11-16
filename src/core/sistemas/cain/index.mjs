@@ -125,7 +125,7 @@ const SISTEMA = Object.freeze({
   navegacao: Object.freeze([
     { id: 'session', label: 'Caçada', icon: '✦', items: [
       { id: 'session', label: 'Sessão Atual', icon: '✦' },
-      { id: 'mapamundi', label: 'Mapa de Veneza', icon: '🗺️' },
+      { id: 'mapamundi', label: 'Mapa', icon: '🗺️' },
       { id: 'mapabatalha', label: 'Mapa de Combate', icon: '🗡️' },
     ] },
     { id: 'character', label: 'Exorcista', icon: '◆', items: [

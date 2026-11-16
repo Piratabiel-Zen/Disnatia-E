@@ -7,12 +7,13 @@ import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
 import PasswordVisibilityInput from './PasswordVisibilityInput';
 import { col } from '../core/campaign';
+import { requiredMasterHash } from '../core/campaignPassword.mjs';
 
 // As chaves são por campanha: entrar numa mesa não autentica em outra.
 // A campanha principal não recebe sufixo, então quem já estava logado continua.
 const accessKey = () => `dinastia_access_v1${storageSuffix()}`;
 const playerSheetKey = () => `dinastia_player_sheet${storageSuffix()}`;
-const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
+// A senha de Mestre é da MESA, não do site. Ver core/campaignPassword.mjs.
 
 async function sha256(value) {
   const bytes = new TextEncoder().encode(String(value || '').trim().toLowerCase());
@@ -124,7 +125,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
   const enterMaster = async () => {
     const digest = await sha256(pin);
-    if (digest !== MASTER_PIN_SHA256) {
+    if (digest !== requiredMasterHash(campaign)) {
       setError('Senha do Mestre incorreta.');
       return;
     }

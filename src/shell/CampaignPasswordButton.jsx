@@ -8,7 +8,17 @@ import PasswordVisibilityInput from '../experience/PasswordVisibilityInput';
 import { pushToast } from '../core/toast';
 import './senha-da-mesa.css';
 
-export default function CampaignPasswordButton({ campaign }) {
+/**
+ * Troca uma das duas senhas da mesa.
+ *
+ *   • A de ENTRADA é o que os jogadores digitam no portal.
+ *   • A de MESTRE é o que dá o comando da mesa.
+ *
+ * São coisas diferentes e por isso são dois botões, não um seletor: um Mestre
+ * com pressa trocaria a errada.
+ */
+export default function CampaignPasswordButton({ campaign, tipo = 'entrada' }) {
+  const deMestre = tipo === 'mestre';
   const [open, setOpen] = useState(false);
   const [word, setWord] = useState('');
   const [again, setAgain] = useState('');
@@ -35,24 +45,38 @@ export default function CampaignPasswordButton({ campaign }) {
     try {
       const passwordHash = await hashPassword(clean);
       // merge: só a senha muda; nome, tema e o resto do registro da mesa ficam como estão.
-      await setDoc(globalDoc('campaigns', campaign.id), { passwordHash, passwordUpdatedAt: Date.now() }, { merge: true });
-      // Este aparelho já conhece a senha nova e não é mandado de volta à porta.
-      rememberUnlock(campaign.id, passwordHash);
-      pushToast('Senha da mesa atualizada. Quem entrar agora precisa da nova.', '🔑', '#A855F7');
+      if (deMestre) {
+        await setDoc(globalDoc('campaigns', campaign.id), { masterPinHash: passwordHash, masterPinUpdatedAt: Date.now() }, { merge: true });
+        pushToast('Senha de Mestre atualizada para esta mesa.', '⚔', '#C9A96E');
+      } else {
+        // merge: só a senha muda; nome, tema e o resto do registro ficam.
+        await setDoc(globalDoc('campaigns', campaign.id), { passwordHash, passwordUpdatedAt: Date.now() }, { merge: true });
+        // Este aparelho já conhece a senha nova e não volta para a porta.
+        rememberUnlock(campaign.id, passwordHash);
+        pushToast('Senha da mesa atualizada. Quem entrar agora precisa da nova.', '🔑', '#A855F7');
+      }
       close();
-    } catch (_) {
-      setError('Não foi possível salvar a senha. Confira a conexão e tente de novo.');
+    } catch (erro) {
+      // A recusa mais provável não é conexão: é não ser Admin desta mesa.
+      setError(erro?.code === 'permission-denied'
+        ? 'Só o Mestre desta mesa pode trocar a senha. Entre na conta que criou a mesa.'
+        : 'Não foi possível salvar a senha. Confira a conexão e tente de novo.');
     } finally { setBusy(false); }
   };
 
   return (
     <>
-      <button type="button" className="mesa-senha-button" onClick={() => setOpen(true)} title="Trocar a senha de entrada desta mesa">🔑 Senha da mesa</button>
+      <button
+        type="button" className="mesa-senha-button" onClick={() => setOpen(true)}
+        title={deMestre ? 'Trocar a senha de Mestre desta mesa' : 'Trocar a senha de entrada desta mesa'}
+      >{deMestre ? '⚔ Senha de Mestre' : '🔑 Senha da mesa'}</button>
       {open && (
         <div className="mesa-senha-backdrop" onClick={close}>
           <form className="mesa-senha-dialog" role="dialog" aria-modal="true" aria-label="Senha da mesa" onClick={event => event.stopPropagation()} onSubmit={save}>
-            <h3>Senha de entrada de {campaign.name || 'esta mesa'}</h3>
-            <p>É a palavra que os jogadores dizem no portal para entrar. Ao trocar, quem já estava dentro precisa digitar a nova na próxima visita.</p>
+            <h3>{deMestre ? 'Senha de Mestre' : 'Senha de entrada'} de {campaign.name || 'esta mesa'}</h3>
+            <p>{deMestre
+              ? 'É o que dá o comando desta mesa, e vale só aqui: quem a souber não vira Mestre de nenhuma outra campanha.'
+              : 'É a palavra que os jogadores dizem no portal para entrar. Ao trocar, quem já estava dentro precisa digitar a nova na próxima visita.'}</p>
             <label>Nova senha
               <PasswordVisibilityInput value={word} autoFocus onChange={event => { setWord(event.target.value); setError(''); }} placeholder="Nova palavra de passagem" />
             </label>

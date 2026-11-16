@@ -67,8 +67,8 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
               {tab!=='mesaImersiva'&&<AmbientSoundPlayer masterMode={masterMode}/>}
               <VisitorCharacterPicker access={access}/>
               <PlayerIdentityChip access={access} onLogout={logout}/>
-              {access.role === 'master' && masterMode && <CampaignPasswordButton campaign={campaign}/>}
-              {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode}/>} 
+              {access.role === "master" && masterMode && <><CampaignPasswordButton campaign={campaign}/><CampaignPasswordButton campaign={campaign} tipo="mestre"/></>}
+              {access.role === 'master' && <MasterToggle masterMode={masterMode} setMasterMode={setMasterMode} campaign={campaign}/>} 
             </div>
           </header>
 

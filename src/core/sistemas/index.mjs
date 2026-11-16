@@ -59,5 +59,15 @@ export function sistemaTemAba(campanha, abaId) {
  */
 export function navegacaoDoSistema(campanha, padrao) {
   const sistema = sistemaDe(campanha);
-  return sistema?.navegacao ? sistema.navegacao.map(g => ({ ...g, items: [...g.items] })) : padrao;
+  if (!sistema?.navegacao) return padrao;
+  // O sistema não sabe ONDE a campanha se passa. CAIN serve a Veneza, a Hong
+  // Kong e ao que o Mestre inventar — então o mapa leva o nome do mundo da
+  // mesa, não um nome fixo no sistema.
+  const mundo = String(campanha?.world || '').trim();
+  return sistema.navegacao.map(grupo => ({
+    ...grupo,
+    items: grupo.items.map(item => (
+      item.id === 'mapamundi' && mundo ? { ...item, label: `Mapa de ${mundo}` } : { ...item }
+    )),
+  }));
 }

@@ -17,9 +17,9 @@
 // consegue ler. Ver firestore.rules.
 
 import {
-  GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged,
-  signInWithEmailAndPassword, signInWithPopup, signOut as firebaseSignOut,
-  getAuth, updateProfile,
+  GoogleAuthProvider, createUserWithEmailAndPassword, getRedirectResult,
+  onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup,
+  signInWithRedirect, signOut as firebaseSignOut, getAuth, updateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from './firebase';
@@ -56,15 +56,53 @@ export const entrar = (email, senha) =>
  * registro em `users` é gravado igual ao do e-mail, para o resto do site não
  * precisar saber por onde a pessoa entrou.
  */
-export async function entrarComGoogle() {
-  const credencial = await signInWithPopup(auth, new GoogleAuthProvider());
-  const usuario = credencial.user;
+async function registrarUsuario(usuario) {
   await setDoc(doc(db, 'users', usuario.uid), {
     nome: usuario.displayName || '',
     email: (usuario.email || '').toLowerCase(),
     criadoEm: serverTimestamp(),
   }, { merge: true });
   return usuario;
+}
+
+export async function entrarComGoogle() {
+  const provedor = new GoogleAuthProvider();
+  // Pedir a conta toda vez evita o caso chato de ficar preso numa conta
+  // Google antiga que a pessoa nem lembra que estava logada.
+  provedor.setCustomParameters({ prompt: 'select_account' });
+  try {
+    const credencial = await signInWithPopup(auth, provedor);
+    return registrarUsuario(credencial.user);
+  } catch (erro) {
+    // O popup falha por motivos que não são culpa da conta: bloqueador,
+    // navegador que barra janela de terceiros, celular. Nesses casos o
+    // redirecionamento funciona, e é o mesmo login.
+    const caiParaRedirecionamento = [
+      'auth/popup-blocked',
+      'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment',
+      'auth/web-storage-unsupported',
+    ].includes(erro?.code);
+    if (caiParaRedirecionamento) {
+      await signInWithRedirect(auth, provedor);
+      return null;
+    }
+    throw erro;
+  }
+}
+
+/**
+ * Conclui um login que saiu por redirecionamento.
+ *
+ * Chamado uma vez quando o site abre: se a pessoa voltou do Google, é aqui que
+ * o registro dela é gravado.
+ */
+export async function concluirLoginPorRedirecionamento() {
+  try {
+    const resultado = await getRedirectResult(auth);
+    if (resultado?.user) return registrarUsuario(resultado.user);
+  } catch (_) { /* não havia redirecionamento pendente */ }
+  return null;
 }
 
 export const sair = () => firebaseSignOut(auth);
@@ -167,6 +205,17 @@ export function mensagemDeErro(erro) {
     case 'auth/network-request-failed': return 'Sem conexão com o servidor.';
     case 'auth/popup-closed-by-user': return 'A janela do Google foi fechada antes de concluir.';
     case 'auth/popup-blocked': return 'O navegador bloqueou a janela do Google. Libere e tente de novo.';
+    // Este é o erro que aparece quando o site está num domínio que o Firebase
+    // não conhece — o caso mais comum, e o único que o jogador não resolve
+    // sozinho. A mensagem diz exatamente onde arrumar.
+    case 'auth/unauthorized-domain':
+      return 'Este endereço do site ainda não foi liberado no Firebase. '
+        + 'No Console → Authentication → Settings → Authorized domains, adicione o domínio desta página.';
+    case 'auth/operation-not-allowed':
+      return 'O login com Google não está ativado no Firebase para este projeto.';
+    case 'auth/internal-error':
+      return 'O Google recusou o login. Em geral é o domínio do site não estar liberado no Firebase '
+        + '(Authentication → Settings → Authorized domains).';
     case 'auth/account-exists-with-different-credential':
       return 'Já existe uma conta com esse e-mail, criada por outro caminho de login.';
     case 'senha-incorreta': return 'Senha da mesa incorreta.';

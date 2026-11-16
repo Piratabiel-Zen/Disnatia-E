@@ -42,12 +42,34 @@ test('mesa nova sem senha fica aberta; o aparelho do Mestre lembra a senha que e
   assert.equal(isUnlocked({ id: 'arquivo-de-veneza', passwordHash: hash }, storage), true);
 });
 
-test('o banco guarda só o resumo da senha e a troca não apaga o registro da mesa', () => {
+test('o banco guarda só o resumo das duas senhas, e cada mesa tem as suas', () => {
   const button = read('../src/shell/CampaignPasswordButton.jsx');
-  assert.match(button, /setDoc\(globalDoc\('campaigns', campaign\.id\), \{ passwordHash, passwordUpdatedAt: Date\.now\(\) \}, \{ merge: true \}\)/);
+  // A senha de entrada e a de Mestre, cada uma no seu campo.
+  assert.match(button, /\{ passwordHash, passwordUpdatedAt: Date\.now\(\) \}, \{ merge: true \}/);
+  assert.match(button, /\{ masterPinHash: passwordHash, masterPinUpdatedAt: Date\.now\(\) \}, \{ merge: true \}/);
+  // O texto da senha nunca vai para o banco.
   assert.doesNotMatch(button, /password:\s*(clean|word)/);
-  // Só o Mestre, com o modo mestre ligado, vê o botão.
-  assert.match(read('../src/AuthenticatedSession.jsx'), /access\.role === 'master' && masterMode && <CampaignPasswordButton/);
+
+  // Dois botões, não um seletor: um Mestre com pressa trocaria a errada.
+  const sessao = read('../src/AuthenticatedSession.jsx');
+  assert.match(sessao, /masterMode && <><CampaignPasswordButton/);
+  assert.match(sessao, /tipo="mestre"/);
+});
+
+test('a senha de Mestre deixou de ser uma só para o site inteiro', () => {
+  // Estava fixa no código em quatro arquivos: quem a soubesse virava Mestre
+  // de QUALQUER mesa, inclusive de uma que acabou de conhecer.
+  for (const arquivo of ['../src/experience/PlayerAccess.jsx', '../src/shell/MasterToggle.jsx']) {
+    const fonte = read(arquivo);
+    assert.doesNotMatch(fonte, /b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1/,
+      `${arquivo} voltou a ter a senha de Mestre fixa no código`);
+    assert.match(fonte, /requiredMasterHash/, `${arquivo} não consulta a senha da mesa`);
+  }
+  // A mesa nova nasce com as duas senhas, senão nasceria aberta e sem Mestre.
+  const gate = read('../src/features/campanhas/CampaignGate.jsx');
+  assert.match(gate, /passwordHash: await hashPassword\(senhaMesa\)/);
+  assert.match(gate, /masterPinHash: await hashPassword\(senhaMestre\)/);
+  assert.match(gate, /as duas senhas precisam ser diferentes/i);
 });
 
 test('o globo é a Terra de verdade, com o universo ao fundo', () => {

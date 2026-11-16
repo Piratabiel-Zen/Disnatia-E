@@ -110,3 +110,30 @@ test('o vocabulário do CAIN aparece nos rótulos da navegação', () => {
   assert.equal(termo(veneza, 'sessao'), 'caçada');
   assert.equal(termo(veneza, 'personagem'), 'exorcista');
 });
+
+test('o mapa leva o nome do mundo da mesa, não um nome fixo no sistema', async () => {
+  const { navegacaoDoSistema } = await import('../src/core/sistemas/index.mjs');
+  const rotuloDoMapa = campanha =>
+    navegacaoDoSistema(campanha, []).flatMap(g => g.items).find(i => i.id === 'mapamundi')?.label;
+
+  // CAIN serve a Veneza, a Hong Kong e ao que o Mestre inventar.
+  assert.equal(rotuloDoMapa({ sistema: 'cain', world: 'Veneza' }), 'Mapa de Veneza');
+  assert.equal(rotuloDoMapa({ sistema: 'cain', world: 'Hong Kong' }), 'Mapa de Hong Kong');
+  // Sem mundo declarado, o rótulo é neutro em vez de mentir sobre o cenário.
+  assert.equal(rotuloDoMapa({ sistema: 'cain' }), 'Mapa');
+  assert.equal(rotuloDoMapa({ sistema: 'cain', world: '   ' }), 'Mapa');
+});
+
+test('cada mesa tem a sua senha de Mestre', async () => {
+  const { PRIMARY_MASTER_PIN_HASH, requiredMasterHash } = await import('../src/core/campaignPassword.mjs');
+  // A Dinastia E fica com a de sempre: é anterior a isto e o Mestre dela não
+  // vai ser deslogado por uma mudança de arquitetura.
+  assert.equal(requiredMasterHash({ id: 'dinastia-e' }), PRIMARY_MASTER_PIN_HASH);
+  assert.equal(requiredMasterHash({ primary: true }), PRIMARY_MASTER_PIN_HASH);
+  // Mesa nova usa a dela.
+  assert.equal(requiredMasterHash({ id: 'estrela-de-absinto', masterPinHash: 'abc123' }), 'abc123');
+  // E mesa sem senha de Mestre não tem Mestre por senha — melhor isso do que
+  // herdar a senha de outra campanha.
+  assert.equal(requiredMasterHash({ id: 'outra' }), '');
+  assert.equal(requiredMasterHash(null), '');
+});

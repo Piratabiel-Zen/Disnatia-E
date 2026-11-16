@@ -16,7 +16,9 @@ import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
 import PortaDeEntrada from '../acesso/PortaDeEntrada';
 import { aoMudarConta, assumirMesa, auth, mensagemDeErro } from '../../core/auth';
 
-const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
+// Gerenciar a lista de mesas continua pedindo a senha da campanha principal:
+// é a chave de quem administra o site, não a de nenhuma mesa específica.
+import { PRIMARY_MASTER_PIN_HASH, hashPassword, normalizePassword } from '../../core/campaignPassword.mjs';
 
 async function sha256(value) {
   const bytes = new TextEncoder().encode(String(value || '').trim().toLowerCase());
@@ -100,7 +102,7 @@ export default function CampaignGate({ onChoose }) {
   const [manage, setManage] = useState(false);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
-  const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO });
+  const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO, senhaMesa: '', senhaMestre: '' });
   const [conta, setConta] = useState(() => auth.currentUser);
   useEffect(() => aoMudarConta(setConta), []);
   const [busy, setBusy] = useState(false);
@@ -122,7 +124,7 @@ export default function CampaignGate({ onChoose }) {
   }, [rows]);
 
   const unlockManage = async () => {
-    if (await sha256(pin) !== MASTER_PIN_SHA256) { setError('Senha do Mestre incorreta.'); return; }
+    if (await sha256(pin) !== PRIMARY_MASTER_PIN_HASH) { setError('Senha do Mestre incorreta.'); return; }
     setManage(true); setPin(''); setError('');
   };
 
@@ -132,6 +134,14 @@ export default function CampaignGate({ onChoose }) {
     // Sem conta não dá para criar: a mesa precisa de um Admin, e Admin é uma
     // pessoa identificada. Sem isso ela nasceria sem dono e trancada.
     if (!conta) { setError('Entre na sua conta para criar uma mesa.'); return; }
+    // As duas senhas são pedidas aqui porque depois não há como pedir: a mesa
+    // nasceria aberta a qualquer um que tenha o link, e sem ninguém capaz de
+    // virar Mestre por senha.
+    const senhaMesa = normalizePassword(draft.senhaMesa);
+    const senhaMestre = normalizePassword(draft.senhaMestre);
+    if (senhaMesa.length < 3) { setError('A senha de entrada precisa de pelo menos 3 letras ou números.'); return; }
+    if (senhaMestre.length < 3) { setError('A senha de Mestre precisa de pelo menos 3 letras ou números.'); return; }
+    if (senhaMesa === senhaMestre) { setError('As duas senhas precisam ser diferentes: uma abre a mesa, a outra dá o comando dela.'); return; }
     setBusy(true); setError('');
     const id = campaignSlug(name);
     try {
@@ -153,11 +163,15 @@ export default function CampaignGate({ onChoose }) {
         // deixar o criador entrar na própria mesa: elas exigem ser membro, e
         // virar membro exigiria uma senha que só o Admin pode definir.
         criadoPor: conta.uid,
+        // A senha de entrada e a de Mestre, cada mesa com as suas. Só os
+        // resumos; o texto nunca vai para o banco.
+        passwordHash: await hashPassword(senhaMesa),
+        masterPinHash: await hashPassword(senhaMestre),
         createdAt: Date.now(),
       });
       // E vira Admin dela no mesmo gesto, senão a mesa nasce trancada.
       await assumirMesa(id, conta.displayName || conta.email || '');
-      setDraft({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO });
+      setDraft({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO, senhaMesa: '', senhaMestre: '' });
     } catch {
       setError('Não foi possível criar a mesa. Confira sua conexão.');
     } finally { setBusy(false); }
@@ -228,6 +242,20 @@ export default function CampaignGate({ onChoose }) {
               </label>
               <label>Mundo
                 <input value={draft.world} onChange={e => setDraft({ ...draft, world: e.target.value })} placeholder="Onde se passa" />
+              </label>
+              <label>Senha de entrada
+                <input
+                  value={draft.senhaMesa} type="text" autoComplete="off"
+                  onChange={e => setDraft({ ...draft, senhaMesa: e.target.value })}
+                  placeholder="O que os jogadores digitam"
+                />
+              </label>
+              <label>Senha de Mestre
+                <input
+                  value={draft.senhaMestre} type="text" autoComplete="off"
+                  onChange={e => setDraft({ ...draft, senhaMestre: e.target.value })}
+                  placeholder="Só você"
+                />
               </label>
               <label className="campaign-new-wide">Chamada
                 <input value={draft.tagline} onChange={e => setDraft({ ...draft, tagline: e.target.value })} placeholder="Uma linha que resume a mesa" />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  aoMudarConta, auth, criarConta, entrar, entrarComGoogle, mensagemDeErro, sair,
+  aoMudarConta, auth, concluirLoginPorRedirecionamento, criarConta, entrar,
+  entrarComGoogle, mensagemDeErro, sair,
 } from '../../core/auth';
 import './porta.css';
 
@@ -24,6 +25,9 @@ export default function PortaDeEntrada({ aoEntrar }) {
   const [form, setForm] = useState({ nome: '', email: '', senha: '' });
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState(false);
+
+  // Quem voltou do Google por redirecionamento termina de entrar aqui.
+  useEffect(() => { concluirLoginPorRedirecionamento(); }, []);
 
   useEffect(() => aoMudarConta(conta => {
     setUsuario(conta);

@@ -9,6 +9,18 @@
 // sem ser convidado, mas não substitui regras de segurança no banco.
 
 export const PRIMARY_DEFAULT_PASSWORD_HASH = 'bf2f289661aa88b6945d270025d73a5bf6735148a8e95bfa3ff2397e817485b3';
+
+// A SENHA DE MESTRE, QUE ERA UMA SÓ PARA O SITE INTEIRO
+//
+// Estava fixa no código, repetida em quatro arquivos: quem soubesse dela
+// virava Mestre de QUALQUER mesa, inclusive de uma que acabou de conhecer.
+// Numa campanha de amigos isso passava; com mesas de pessoas diferentes no
+// mesmo site, não passa.
+//
+// Agora cada mesa tem a sua, definida na criação e trocável de dentro da
+// sessão. A Dinastia E fica com a de sempre — ela é anterior a isto e o
+// Mestre dela não vai ser deslogado por uma mudança de arquitetura.
+export const PRIMARY_MASTER_PIN_HASH = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 const UNLOCK_PREFIX = 'dinastia_campaign_unlock_v1:';
 
 export const normalizePassword = value => String(value || '').trim().toLowerCase();
@@ -24,6 +36,26 @@ export function requiredPasswordHash(campaign) {
   if (!campaign) return '';
   if (typeof campaign.passwordHash === 'string') return campaign.passwordHash;
   return campaign.primary || campaign.id === 'dinastia-e' ? PRIMARY_DEFAULT_PASSWORD_HASH : '';
+}
+
+/**
+ * Resumo da senha de Mestre desta mesa.
+ *
+ * Mesa sem senha de Mestre definida não tem Mestre por senha — e isso é
+ * deliberado: é melhor uma mesa onde ninguém vira Mestre digitando do que uma
+ * onde qualquer um vira, por herdar a senha de outra campanha.
+ */
+export function requiredMasterHash(campaign) {
+  if (!campaign) return '';
+  if (typeof campaign.masterPinHash === 'string' && campaign.masterPinHash) return campaign.masterPinHash;
+  return campaign.primary || campaign.id === 'dinastia-e' ? PRIMARY_MASTER_PIN_HASH : '';
+}
+
+/** A senha de Mestre digitada abre esta mesa? */
+export async function conferirSenhaDeMestre(campaign, digitada) {
+  const exigido = requiredMasterHash(campaign);
+  if (!exigido) return false;
+  return (await hashPassword(digitada)) === exigido;
 }
 
 const safeStorage = storage => storage || (typeof localStorage === 'undefined' ? null : localStorage);
