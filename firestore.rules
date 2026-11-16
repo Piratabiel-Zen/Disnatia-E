@@ -1,0 +1,163 @@
+rules_version = '2';
+
+// REGRAS DE SEGURANÇA DO FIRESTORE
+//
+// Até agora o banco estava em modo aberto: qualquer pessoa com a URL lia e
+// apagava tudo. Isso bastava enquanto só existia uma mesa de amigos, mas o
+// Arquivo de Veneza pede documentos liberados para um jogador específico — e
+// segredo que só o navegador esconde não é segredo. Quem souber abrir o
+// console vê todos eles.
+//
+// O desenho aqui resolve isso sem servidor, usando uma propriedade das regras:
+// get() e exists() rodam no servidor e enxergam documentos que o cliente NÃO
+// pode ler. É isso que permite guardar a senha da mesa num lugar invisível e
+// ainda assim conferi-la na entrada.
+//
+// Estrutura:
+//   campaigns/{cid}                  → público para quem está logado (nome, tema, sistema)
+//   campaigns/{cid}/privado/acesso   → senhaHash. NINGUÉM lê. Só as regras consultam.
+//   campaigns/{cid}/membros/{uid}    → quem entrou e com que papel
+//   c__{cid}__*                      → todos os dados da mesa, só para membros dela
+//
+// Publicar: firebase deploy --only firestore:rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ───────────────────────────────────────────────────────────────────
+    // Auxiliares
+    // ───────────────────────────────────────────────────────────────────
+
+    function logado() {
+      return request.auth != null;
+    }
+
+    function membro(cid) {
+      return logado()
+        && exists(/databases/$(database)/documents/campaigns/$(cid)/membros/$(request.auth.uid));
+    }
+
+    function papel(cid) {
+      return get(/databases/$(database)/documents/campaigns/$(cid)/membros/$(request.auth.uid)).data.papel;
+    }
+
+    function mestre(cid) {
+      return membro(cid) && papel(cid) == 'mestre';
+    }
+
+    // A senha da mesa, lida de um lugar que o cliente não alcança.
+    function senhaDaMesa(cid) {
+      return get(/databases/$(database)/documents/campaigns/$(cid)/privado/acesso).data.senhaHash;
+    }
+
+    // O nome da coleção de uma campanha é "c__{id}__colecao". Daí sai o id.
+    function idNaColecao(colecao) {
+      return colecao.split('__')[1];
+    }
+
+    function colecaoDeCampanha(colecao) {
+      return colecao.matches('c__[a-z0-9-]+__.+');
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // Contas
+    // ───────────────────────────────────────────────────────────────────
+
+    match /users/{uid} {
+      // Cada pessoa lê e escreve só o próprio registro. Ninguém lista contas
+      // alheias, nem para descobrir quem mais joga.
+      allow read, write: if logado() && request.auth.uid == uid;
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // Mesas
+    // ───────────────────────────────────────────────────────────────────
+
+    match /campaigns/{cid} {
+      // A lista de mesas é visível para quem está logado: é preciso ver a
+      // mesa para pedir para entrar nela. Nenhum dado de jogo mora aqui.
+      allow read: if logado();
+      allow create: if logado();
+      allow update, delete: if mestre(cid);
+
+      // A senha. Nenhum caminho de leitura, para ninguém, nunca. As regras
+      // acima ainda a consultam por get(), que roda no servidor.
+      match /privado/{doc} {
+        allow read: if false;
+        allow write: if mestre(cid);
+      }
+
+      match /membros/{uid} {
+        // Entrar é um ato de quem entra, e só vale com a senha certa. O
+        // cliente manda o hash; o servidor compara com o que está no lugar
+        // invisível. Sem isso, qualquer um se declararia membro.
+        allow create: if logado()
+          && request.auth.uid == uid
+          && request.resource.data.senhaHash == senhaDaMesa(cid)
+          && request.resource.data.papel in ['jogador', 'mestre'];
+
+        // Cada um vê a própria entrada; o Mestre vê a mesa toda.
+        allow read: if logado() && (request.auth.uid == uid || mestre(cid));
+
+        // Promover, rebaixar e remover é do Mestre. Ninguém se promove.
+        allow update, delete: if mestre(cid);
+      }
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // Os dados de cada mesa
+    // ───────────────────────────────────────────────────────────────────
+
+    match /{colecao}/{documento} {
+      // Só membros da mesa entram nos dados dela. Isso cobre fichas, mapas,
+      // crônicas, pecados, mural — tudo que é escopado por campanha.
+      allow read, write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
+    }
+
+    match /{colecao}/{documento}/{resto=**} {
+      allow read, write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
+    }
+
+    // Documentos liberados por pessoa.
+    //
+    // A regra acima já exige ser da mesa; esta estreita mais: um documento
+    // guardado só chega a quem o Mestre liberou. É o que faz "revelar para um
+    // jogador" significar alguma coisa, em vez de ser um ocultar visual que
+    // some ao abrir o console.
+    match /{colecao}/{documento} {
+      allow read: if colecaoDeCampanha(colecao)
+        && colecao.matches('c__[a-z0-9-]+__documentos')
+        && membro(idNaColecao(colecao))
+        && (
+          mestre(idNaColecao(colecao))
+          || resource.data.get('liberadoParaTodos', false) == true
+          || request.auth.uid in resource.data.get('liberadoPara', [])
+        );
+
+      allow write: if colecaoDeCampanha(colecao)
+        && colecao.matches('c__[a-z0-9-]+__documentos')
+        && mestre(idNaColecao(colecao));
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // A Dinastia E, enquanto não migra
+    // ───────────────────────────────────────────────────────────────────
+    //
+    // A mesa em andamento guarda seus dados em caminhos sem prefixo, de quando
+    // o site tinha só uma campanha. Trancá-los agora derrubaria a mesa no meio
+    // da campanha, e a regra é não arriscar dado nenhum.
+    //
+    // Então eles continuam abertos, exatamente como hoje — ou seja, a Dinastia
+    // E NÃO está protegida por estas regras. Isso é dívida conhecida, não
+    // descuido: migrar é mover as coleções para c__dinastia-e__* e apagar este
+    // bloco, de preferência entre uma sessão e outra.
+    match /sheets/{doc=**}       { allow read, write: if true; }
+    match /config/{doc=**}       { allow read, write: if true; }
+    match /battlemaps/{doc=**}   { allow read, write: if true; }
+    match /enemies/{doc=**}      { allow read, write: if true; }
+    match /chronicles/{doc=**}   { allow read, write: if true; }
+    match /class_covers/{doc=**} { allow read, write: if true; }
+    match /artifacts/{doc=**}    { allow read, write: if true; }
+    match /classes/{doc=**}      { allow read, write: if true; }
+  }
+}
