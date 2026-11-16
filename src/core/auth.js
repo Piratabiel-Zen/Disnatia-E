@@ -17,8 +17,9 @@
 // consegue ler. Ver firestore.rules.
 
 import {
-  createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword,
-  signOut as firebaseSignOut, getAuth, updateProfile,
+  GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged,
+  signInWithEmailAndPassword, signInWithPopup, signOut as firebaseSignOut,
+  getAuth, updateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from './firebase';
@@ -47,6 +48,24 @@ export async function criarConta({ email, senha, nome }) {
 
 export const entrar = (email, senha) =>
   signInWithEmailAndPassword(auth, String(email).trim(), senha).then(c => c.user);
+
+/**
+ * Entrar com a conta Google.
+ *
+ * Para a mesa é o caminho mais curto: ninguém inventa nem esquece senha. O
+ * registro em `users` é gravado igual ao do e-mail, para o resto do site não
+ * precisar saber por onde a pessoa entrou.
+ */
+export async function entrarComGoogle() {
+  const credencial = await signInWithPopup(auth, new GoogleAuthProvider());
+  const usuario = credencial.user;
+  await setDoc(doc(db, 'users', usuario.uid), {
+    nome: usuario.displayName || '',
+    email: (usuario.email || '').toLowerCase(),
+    criadoEm: serverTimestamp(),
+  }, { merge: true });
+  return usuario;
+}
 
 export const sair = () => firebaseSignOut(auth);
 
@@ -125,6 +144,10 @@ export function mensagemDeErro(erro) {
     case 'auth/user-not-found': return 'E-mail ou senha incorretos.';
     case 'auth/too-many-requests': return 'Muitas tentativas. Espere um momento e tente de novo.';
     case 'auth/network-request-failed': return 'Sem conexão com o servidor.';
+    case 'auth/popup-closed-by-user': return 'A janela do Google foi fechada antes de concluir.';
+    case 'auth/popup-blocked': return 'O navegador bloqueou a janela do Google. Libere e tente de novo.';
+    case 'auth/account-exists-with-different-credential':
+      return 'Já existe uma conta com esse e-mail, criada por outro caminho de login.';
     case 'senha-incorreta': return 'Senha da mesa incorreta.';
     case 'permission-denied': return 'Você não tem acesso a isso nesta mesa.';
     default: return erro?.message || 'Não foi possível concluir. Tente de novo.';

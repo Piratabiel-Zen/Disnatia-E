@@ -1,0 +1,81 @@
+/* A PORTA DE ENTRADA
+   Mora dentro da tela de mesas, então herda a cara dela: o mesmo papel
+   escuro, a mesma dourada discreta. Nada de identidade própria aqui — é um
+   formulário de duas linhas, não um produto. */
+
+.porta{
+  display:grid;gap:12px;
+  padding:18px;
+  border:1px solid rgba(201,169,110,.2);
+  background:rgba(10,8,16,.42);
+  border-radius:12px;
+  max-width:360px;
+}
+.porta-topo{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.porta-rotulo{
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.26em;text-transform:uppercase;
+  color:rgba(201,169,110,.72);
+}
+.porta-abas{display:flex;gap:2px}
+.porta-abas button{
+  background:none;border:0;cursor:pointer;padding:4px 9px;
+  font:600 10px/1 'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.34);border-bottom:1px solid transparent;
+}
+.porta-abas button[data-ativa="true"]{color:#E8D9B8;border-bottom-color:#C9A96E}
+
+.porta-explica{
+  margin:0;font:400 12px/1.6 'Crimson Text',Georgia,serif;
+  color:rgba(255,255,255,.44);
+}
+
+.porta-campo{display:grid;gap:4px}
+.porta-campo>span{
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.34);
+}
+.porta-campo input{
+  background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.1);
+  color:#E8DFCE;padding:8px 10px;border-radius:6px;
+  font-family:'Crimson Text',Georgia,serif;font-size:14px;
+}
+.porta-campo input:focus{outline:none;border-color:#C9A96E}
+
+.porta-erro{
+  margin:0;padding:8px 10px;border-radius:6px;
+  background:rgba(142,31,43,.18);border:1px solid rgba(142,31,43,.5);
+  color:#E8A8AE;font:400 12px/1.5 'Crimson Text',Georgia,serif;
+}
+
+.porta-principal,.porta-google,.porta-sair{
+  padding:10px 14px;border-radius:7px;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  transition:background .18s ease,border-color .18s ease,transform .18s cubic-bezier(.2,.9,.3,1);
+}
+.porta-principal{
+  background:rgba(201,169,110,.17);border:1px solid rgba(201,169,110,.56);color:#F0E4CC;
+}
+.porta-principal:hover:not(:disabled){background:rgba(201,169,110,.3);transform:translateY(-1px)}
+.porta-principal:disabled{opacity:.5;cursor:not-allowed}
+
+.porta-ou{display:flex;align-items:center;gap:10px}
+.porta-ou i{flex:1;height:1px;background:rgba(255,255,255,.1)}
+.porta-ou span{
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.26);
+}
+
+.porta-google{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);color:#D9D2C4;
+}
+.porta-google:hover:not(:disabled){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}
+
+.porta-dentro{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.porta-dentro strong{
+  display:block;margin-top:3px;
+  font:600 14px/1.2 'Cinzel',serif;color:#E8D9B8;
+}
+.porta-sair{background:none;border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.5)}
+.porta-sair:hover{border-color:rgba(142,31,43,.7);color:#E8A8AE}
+
+html[data-motion="reduced"] .porta-principal:hover:not(:disabled){transform:none}

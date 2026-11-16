@@ -119,6 +119,31 @@ const SISTEMA = Object.freeze({
 
   // Abas que este sistema traz além das estruturais (fichas, mapas, crônicas).
   abas: Object.freeze(['investigacao', 'pecados', 'documentos', 'livro']),
+
+  // A navegação da mesa. Vem do sistema porque "Bestiário" e "Livro da
+  // Mandíbula" são da Dinastia E; aqui a caçada tem outro mapa e outro índice.
+  navegacao: Object.freeze([
+    { id: 'session', label: 'Caçada', icon: '✦', items: [
+      { id: 'session', label: 'Sessão Atual', icon: '✦' },
+      { id: 'mapamundi', label: 'Mapa de Veneza', icon: '🗺️' },
+      { id: 'mapabatalha', label: 'Mapa de Combate', icon: '🗡️' },
+    ] },
+    { id: 'character', label: 'Exorcista', icon: '◆', items: [
+      { id: 'fichas', label: 'Fichas', icon: '📋' },
+    ] },
+    { id: 'investigacao', label: 'Investigação', icon: '◉', items: [
+      { id: 'investigacao', label: 'Mural', icon: '🧵' },
+      { id: 'documentos', label: 'Documentos', icon: '▤' },
+      { id: 'pecados', label: 'Pecados', icon: '✝' },
+    ] },
+    { id: 'knowledge', label: 'Arquivo', icon: '◇', items: [
+      { id: 'livro', label: 'Livro', icon: '✦' },
+      { id: 'cronicas', label: 'Capítulos', icon: '🗒️' },
+    ] },
+    { id: 'master', label: 'Painel do Admin', icon: '⚔', masterOnly: true, items: [
+      { id: 'inimigos', label: 'Pecados e NPCs', icon: '💀' },
+    ] },
+  ]),
 });
 
 export default SISTEMA;

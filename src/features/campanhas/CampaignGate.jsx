@@ -13,6 +13,7 @@ import { isUnlocked, requiredPasswordHash, tryUnlock } from '../../core/campaign
 import './campanhas.css';
 import './portais.css';
 import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
+import PortaDeEntrada from '../acesso/PortaDeEntrada';
 
 const MASTER_PIN_SHA256 = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
 
@@ -165,6 +166,14 @@ export default function CampaignGate({ onChoose }) {
           <h1>Escolha a mesa</h1>
           <p>Cada portal leva a um mundo, com seus personagens, mapas e crônicas.</p>
         </header>
+
+        {/* A conta fica aqui, não barrando a porta: a Dinastia E é anterior a
+            isto e não vai parar no meio da campanha para alguém se cadastrar.
+            Mesas novas é que precisam dela, porque sem identidade não existe
+            "liberar este documento só para a Ana". */}
+        <div className="campaign-conta">
+          <PortaDeEntrada />
+        </div>
 
         <div className={`portal-row${campaigns.length === 1 ? ' is-single' : ''}`}>
           {campaigns.map(campaign => (

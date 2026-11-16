@@ -82,3 +82,31 @@ test('o sistema expõe como rolar, para a tela não reimplementar a regra', () =
   const r = sistemaDe({ sistema: 'cain' }).dados.rolar({ pericia: 3, sorteio: () => 0.99 });
   assert.equal(r.sucessos, 3);
 });
+
+test('a navegação vem do sistema: CAIN tem Mural, Dinastia E tem Bestiário', async () => {
+  const { navegacaoDoSistema } = await import('../src/core/sistemas/index.mjs');
+  const padrao = [{ id: 'world', label: 'Mundo', items: [{ id: 'bestiario', label: 'Bestiário' }] }];
+
+  // Quem não declara navegação fica com a padrão, intacta.
+  assert.deepEqual(navegacaoDoSistema({}, padrao), padrao);
+
+  const veneza = navegacaoDoSistema({ sistema: 'cain' }, padrao);
+  const abas = veneza.flatMap(g => g.items.map(i => i.id));
+  for (const esperada of ['investigacao', 'documentos', 'pecados', 'fichas', 'livro', 'cronicas']) {
+    assert.ok(abas.includes(esperada), `a aba "${esperada}" sumiu da navegação do CAIN`);
+  }
+  assert.ok(!abas.includes('bestiario'), 'Bestiário é da Dinastia E');
+  assert.ok(!abas.includes('classes'), 'CAIN não tem linhagens');
+  assert.ok(veneza.some(g => g.masterOnly), 'o painel do Admin precisa ser só do Admin');
+
+  // E a cópia é profunda: a tela reordena itens sem corromper o sistema.
+  veneza[0].items.push({ id: 'intruso' });
+  assert.ok(!navegacaoDoSistema({ sistema: 'cain' }, padrao)[0].items.some(i => i.id === 'intruso'));
+});
+
+test('o vocabulário do CAIN aparece nos rótulos da navegação', () => {
+  const veneza = { sistema: 'cain' };
+  // "Caçada" e "Exorcista" são do sistema, não do site.
+  assert.equal(termo(veneza, 'sessao'), 'caçada');
+  assert.equal(termo(veneza, 'personagem'), 'exorcista');
+});

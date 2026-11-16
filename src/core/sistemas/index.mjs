@@ -48,3 +48,16 @@ export function sistemaTemAba(campanha, abaId) {
   const abas = sistemaDe(campanha)?.abas || [];
   return abas.includes(String(abaId));
 }
+
+/**
+ * A navegação desta mesa.
+ *
+ * O sistema manda quando declara a sua; quem não declara fica com a padrão.
+ * É assim que a Dinastia E segue com "Livro da Mandíbula" e "Bestiário"
+ * enquanto o CAIN tem "Mural", "Pecados" e "Capítulos" — sem nenhuma tela
+ * precisar de um if para cada sistema novo.
+ */
+export function navegacaoDoSistema(campanha, padrao) {
+  const sistema = sistemaDe(campanha);
+  return sistema?.navegacao ? sistema.navegacao.map(g => ({ ...g, items: [...g.items] })) : padrao;
+}

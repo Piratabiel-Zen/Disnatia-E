@@ -141,3 +141,11 @@
 }
 html[data-motion="reduced"] .campaign-card,html[data-motion="reduced"] .campaign-enter{transition:none}
 html[data-motion="reduced"] .campaign-card:hover{transform:none}
+
+/* A conta, dentro da tela de mesas. Fica ao lado, não na frente: quem só quer
+   entrar na mesa de sempre não deve esbarrar num cadastro. */
+.campaign-conta{display:flex;justify-content:center;margin:4px 0 22px}
+
+/* A conta, dentro da tela de mesas. Fica ao lado, nao na frente: quem so
+   quer entrar na mesa de sempre nao deve esbarrar num cadastro. */
+.campaign-conta{display:flex;justify-content:center;margin:4px 0 22px}

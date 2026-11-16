@@ -20,6 +20,7 @@ import { abilityType } from '../adventure/abilityPresentation.mjs';
 import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
 import { col, docIn } from '../core/campaign';
 import { campaignHasTab, filterNavGroups } from '../core/campaignModules.mjs';
+import { navegacaoDoSistema, termo } from '../core/sistemas/index.mjs';
 import BookMark3D from './BookMark3D';
 
 const ExperienceContext = createContext(null);
@@ -649,7 +650,10 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
   const { combat, selectedSheet, access }=useExperience();
   // O Livro da Mandíbula e as Regras são conteúdo da Dinastia E: em outra
   // mesa, essas abas simplesmente não existem.
-  const desktopGroups = filterNavGroups(NAV_GROUPS.filter(group=>!group.masterOnly||masterMode).map(group=>({
+  // A navegação vem do sistema da mesa: o CAIN tem Mural e Pecados onde a
+  // Dinastia E tem Bestiário e Livro da Mandíbula.
+  const gruposDoSistema = navegacaoDoSistema(campaign, NAV_GROUPS);
+  const desktopGroups = filterNavGroups(gruposDoSistema.filter(group=>!group.masterOnly||masterMode).map(group=>({
     ...group,
     items:group.items.map(item=>access?.role==='visitor'&&item.id==='fichas'?{...item,label:'Meus personagens'}:item),
   })),campaign).filter(group=>group.items.length);
@@ -658,9 +662,12 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
   const mobileMain=[
     {id:'session',label:'Início',icon:'⌂'},
     {id:'fichas',label:access?.role==='visitor'?'Personagens':'Ficha',icon:'📋'},
-    {id:'cronicas',label:'Crônicas',icon:'🗒️'},
-    // A quarta vaga é do Livro onde ele existe; nas outras mesas, das Classes.
-    campaignHasTab(campaign,'livro')?{id:'livro',label:'Livro',icon:'✦'}:{id:'classes',label:'Classes',icon:'⚔️'},
+    {id:'cronicas',label:termo(campaign,'capitulos','Crônicas'),icon:'🗒️'},
+    // A quarta vaga é a aba mais usada da mesa: o Mural numa investigação, o
+    // Livro onde ele existe, e as Classes no resto.
+    gruposDoSistema.some(g=>g.items.some(i=>i.id==='investigacao'))
+      ? {id:'investigacao',label:'Mural',icon:'🧵'}
+      : campaignHasTab(campaign,'livro')?{id:'livro',label:'Livro',icon:'✦'}:{id:'classes',label:'Classes',icon:'⚔️'},
   ];
   const mobileGroups=desktopGroups.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
   return <>
