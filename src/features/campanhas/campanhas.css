@@ -149,3 +149,12 @@ html[data-motion="reduced"] .campaign-card:hover{transform:none}
 /* A conta, dentro da tela de mesas. Fica ao lado, nao na frente: quem so
    quer entrar na mesa de sempre nao deve esbarrar num cadastro. */
 .campaign-conta{display:flex;justify-content:center;margin:4px 0 22px}
+
+/* Rodape legal da porta do site. */
+.campaign-legal{display:flex;justify-content:center;align-items:center;gap:9px;margin-top:26px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+.campaign-legal a{font:400 12px/1 "Crimson Text",Georgia,serif;color:rgba(255,255,255,.34);text-decoration:none}
+.campaign-legal a:hover{color:#C9A96E;text-decoration:underline}
+.campaign-legal i{color:rgba(255,255,255,.18);font-style:normal}
+.campaign-legal-janela{position:fixed;inset:0;z-index:60;background:#0B0718;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.campaign-legal-fechar{justify-self:end;margin:14px 18px 0;padding:7px 15px;border-radius:6px;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.6);font-family:"Cinzel",serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.campaign-legal-fechar:hover{border-color:#C9A96E;color:#E8D9B8}

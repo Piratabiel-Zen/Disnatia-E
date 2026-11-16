@@ -138,14 +138,26 @@ service cloud.firestore {
     // Os dados de cada mesa
     // ───────────────────────────────────────────────────────────────────
 
+    // Teto de tamanho por documento.
+    //
+    // O Firestore já recusa acima de 1 MiB, mas aí o estrago é outro: alguém
+    // com a conta aberta poderia encher a cota diária da mesa com documentos
+    // enormes até o banco parar de responder para todo mundo. 400 KiB é folga
+    // de sobra para uma ficha com retrato e aperta a porta do abuso.
+    function tamanhoRazoavel() {
+      return request.resource == null || request.resource.size() < 400 * 1024;
+    }
+
     match /{colecao}/{documento} {
       // Só membros da mesa entram nos dados dela. Isso cobre fichas, mapas,
       // crônicas, pecados, mural — tudo que é escopado por campanha.
-      allow read, write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
+      allow read: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
+      allow write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
     }
 
     match /{colecao}/{documento}/{resto=**} {
-      allow read, write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
+      allow read: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
+      allow write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
     }
 
     // Documentos liberados por pessoa.

@@ -60,6 +60,7 @@ const pageLoaders = {
   investigacao: () => import("./features/investigacao/InvestigacaoPage"),
   documentos:   () => import("./features/documentos/DocumentosPage"),
   pecados:      () => import("./features/pecados/PecadosPage"),
+  legal:        () => import("./features/legal/LegalPage"),
 };
 
 const LazyPages = Object.fromEntries(

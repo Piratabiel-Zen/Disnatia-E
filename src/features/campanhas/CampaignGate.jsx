@@ -14,6 +14,7 @@ import './campanhas.css';
 import './portais.css';
 import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
 import PortaDeEntrada from '../acesso/PortaDeEntrada';
+import LegalPage from '../legal/LegalPage';
 import { aoMudarConta, assumirMesa, auth, mensagemDeErro } from '../../core/auth';
 
 // Gerenciar a lista de mesas continua pedindo a senha da campanha principal:
@@ -104,6 +105,7 @@ export default function CampaignGate({ onChoose }) {
   const [error, setError] = useState('');
   const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO, senhaMesa: '', senhaMestre: '' });
   const [conta, setConta] = useState(() => auth.currentUser);
+  const [legal, setLegal] = useState(null);
   useEffect(() => aoMudarConta(setConta), []);
   const [busy, setBusy] = useState(false);
 
@@ -286,7 +288,21 @@ export default function CampaignGate({ onChoose }) {
         )}
 
         {error ? <div className="campaign-error" role="alert">{error}</div> : null}
+        {/* Documentos legais: precisam ser alcançáveis sem login, porque quem
+            ainda não criou conta é justamente quem precisa lê-los antes. */}
+        <footer className="campaign-legal">
+          <a href="#privacidade" onClick={e => { e.preventDefault(); setLegal('privacidade'); }}>Privacidade</a>
+          <i aria-hidden="true">·</i>
+          <a href="#termos" onClick={e => { e.preventDefault(); setLegal('termos'); }}>Termos de uso</a>
+        </footer>
       </section>
+
+      {legal && (
+        <div className="campaign-legal-janela" role="dialog" aria-modal="true" aria-label="Documentos legais">
+          <button type="button" className="campaign-legal-fechar" onClick={() => setLegal(null)}>Fechar</button>
+          <LegalPage inicial={legal} />
+        </div>
+      )}
     </div>
   );
 }
