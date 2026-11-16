@@ -114,8 +114,8 @@ export default function App(){
     raiz.style.setProperty('--accent-soft', theme.accentSoft);
     if (theme.bronze) raiz.style.setProperty('--bronze', theme.bronze);
     raiz.style.setProperty('--ink-mesa', theme.ink);
-    raiz.dataset.temaMesa = campaign.theme || '';
-  }, [campaign?.id, campaign?.primary, campaign?.theme, theme]);
+    raiz.dataset.temaMesa = temaDaMesa(campaign);
+  }, [campaign?.id, campaign?.primary, campaign?.theme, campaign?.name, theme]);
   const baseAtm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
   // Fora da campanha principal, o tema da mesa manda na cor de fundo e no acento.
   const atm = campaign && campaign.primary === false
@@ -205,3 +205,4 @@ export default function App(){
 
 import './experience/mobile-player-polish.css';
 import './experience/mobile-menos-e-mais.css';
+import { temaDaMesa } from './core/atmosferaDaMesa.mjs';

@@ -226,7 +226,7 @@ export default function CampaignGate({ onChoose }) {
             <h3>Abrir uma nova mesa</h3>
             <div className="campaign-new-grid">
               <label>Nome
-                <input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Ex.: Arquivo de Veneza" />
+                <input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Ex.: Estrela de Absinto" />
               </label>
               <label>Tipo
                 <select value={draft.theme} onChange={e => setDraft({ ...draft, theme: e.target.value })}>

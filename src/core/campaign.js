@@ -15,6 +15,7 @@ import {
   PRIMARY_CAMPAIGN_ID, caminhoEscopado, definirEscopo, ehCampanhaPrincipal,
   escopoAtivo, storageSuffix,
 } from './escopo.mjs';
+import { temaDaMesa } from './atmosferaDaMesa.mjs';
 
 export { PRIMARY_CAMPAIGN_ID, storageSuffix };
 const STORAGE_KEY = 'dinastia_campaign_v1';
@@ -66,11 +67,14 @@ export const CAMPAIGN_THEMES = {
     body: "'Crimson Text', Georgia, serif",
     background: 'parchment',
   },
-  // Veneza vitoriana sombria: organização ocultista com investigação. O
-  // carmesim é o acento e o bronze é a estrutura — e o fundo puxa para o azul
-  // da água parada, não para o preto puro, senão a cidade some.
+  // Vitoriano sombrio: organização ocultista com investigação. O carmesim é o
+  // acento e o bronze é a estrutura — e o fundo puxa para o azul da água
+  // parada, não para o preto puro, senão o cenário some.
+  //
+  // O nome descreve o VISUAL, não um lugar: qualquer mesa pode escolhê-lo, e
+  // a cidade onde a campanha se passa é assunto do campo Mundo.
   veneziano: {
-    label: 'Veneza sombria',
+    label: 'Vitoriano sombrio',
     sigil: '⚜',
     accent: '#8E1F2B',
     accentSoft: '#C4414F',
@@ -94,7 +98,9 @@ export const CAMPAIGN_THEMES = {
   },
 };
 
-export const campaignTheme = campaign => CAMPAIGN_THEMES[campaign?.theme] || CAMPAIGN_THEMES.cosmico;
+// O tema vem de atmosferaDaMesa: uma mesa com clima próprio (pelo nome) usa o
+// dela; as outras usam o que foi escolhido na criação.
+export const campaignTheme = campaign => CAMPAIGN_THEMES[temaDaMesa(campaign)] || CAMPAIGN_THEMES.cosmico;
 
 let activeRecord = PRIMARY_CAMPAIGN;
 const listeners = new Set();
