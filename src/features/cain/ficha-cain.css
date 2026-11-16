@@ -1,0 +1,256 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A FICHA DE EXORCISTA
+
+   A referência que o Mestre mandou não é uma tela de RPG: é um formulário
+   de uma repartição que arquiva pessoas. Isso decide tudo aqui.
+
+   O rótulo entalhado na borda de cada painel é o gesto que carrega a ideia
+   — é uma aba de pasta, e diz "isto é um registro" antes de qualquer
+   palavra ser lida. Os campos são monoespaçados porque uma repartição não
+   escreve com tipografia bonita; a serifada só aparece onde há narrativa,
+   que é onde a pessoa sobrevive ao formulário.
+
+   Carmesim é reservado: ele só aparece no que machuca (estresse, ferimento,
+   pecado, à beira da morte). O bronze faz o resto. Quando tudo é vermelho,
+   vermelho deixa de avisar.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cain{
+  --papel:#0A0908;
+  --painel:#100E0D;
+  --linha:#2E2721;
+  --linha-forte:#4A3E31;
+  --bronze:#A98045;
+  --bronze-claro:#D4AC6E;
+  --carmesim:#8E1F2B;
+  --carmesim-claro:#C4414F;
+  --tinta:#CEC4B4;
+  --tinta-fraca:#7E7466;
+  --mono:'IBM Plex Mono','SF Mono',ui-monospace,'Courier New',monospace;
+  --serif:'Crimson Text',Georgia,serif;
+  --titulo:'Cinzel',Georgia,serif;
+
+  display:grid;gap:18px;
+  color:var(--tinta);
+  font-family:var(--mono);
+  font-size:13px;
+}
+@media(min-width:1100px){
+  .cain{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start}
+  .cain-largo{grid-column:1/-1}
+}
+
+/* ---- O painel e sua aba ---------------------------------------------
+   A aba é um span posicionado sobre a borda, com o fundo do papel atrás
+   dela para abrir o entalhe. É isso e só isso: sem imagem, sem truque. */
+.cain-painel{
+  position:relative;
+  border:1px solid var(--linha);
+  background:var(--painel);
+  padding:22px 18px 18px;
+}
+.cain-painel>legend,.cain-aba{
+  position:absolute;top:-7px;left:14px;
+  padding:0 8px;background:var(--papel);
+  font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--bronze);white-space:nowrap;
+}
+.cain-painel.perigo{border-color:color-mix(in srgb,var(--carmesim) 48%,var(--linha))}
+.cain-painel.perigo>.cain-aba{color:var(--carmesim-claro)}
+
+/* ---- Campos ---- */
+.cain-campo{display:grid;gap:4px;min-width:0}
+.cain-campo>span{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--tinta-fraca)}
+.cain-campo input,.cain-campo textarea,.cain-campo select{
+  width:100%;box-sizing:border-box;
+  background:transparent;color:var(--tinta);
+  border:0;border-bottom:1px solid var(--linha);
+  padding:5px 2px;font-family:var(--mono);font-size:13px;
+  transition:border-color .18s ease;
+}
+.cain-campo textarea{border:1px solid var(--linha);padding:9px;resize:vertical;min-height:72px;line-height:1.6}
+.cain-campo input:focus,.cain-campo textarea:focus,.cain-campo select:focus{
+  outline:none;border-color:var(--bronze);
+}
+.cain-campo input:disabled,.cain-campo textarea:disabled{color:var(--tinta-fraca);cursor:not-allowed}
+.cain-campo.narrativa textarea{font-family:var(--serif);font-size:15px;line-height:1.7}
+
+.cain-linha{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr))}
+
+/* ---- Registro: o cartão de identidade ---- */
+.cain-registro{display:grid;gap:16px;grid-template-columns:auto minmax(0,1fr)}
+.cain-retrato{
+  width:104px;height:124px;flex-shrink:0;
+  border:1px solid var(--linha-forte);background:#070605;
+  display:grid;place-items:center;overflow:hidden;position:relative;
+}
+.cain-retrato img{width:100%;height:100%;object-fit:cover;display:block}
+.cain-retrato span{font-size:9px;letter-spacing:.2em;color:var(--tinta-fraca);text-align:center;padding:0 8px}
+
+/* A categoria em triângulos, como no registro oficial. */
+.cain-categoria{display:flex;gap:7px;align-items:flex-end;margin-top:4px}
+.cain-categoria button{
+  position:relative;width:34px;height:30px;padding:0;
+  background:none;border:0;cursor:pointer;color:var(--tinta-fraca);
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+  display:grid;place-items:center;
+}
+.cain-categoria button::before{
+  content:'';position:absolute;inset:0;
+  border:1px solid var(--linha-forte);
+  clip-path:polygon(50% 4%,100% 100%,0 100%);
+  background:transparent;transition:background .2s ease,border-color .2s ease;
+}
+.cain-categoria button>i{position:relative;font-style:normal;padding-top:7px}
+.cain-categoria button[aria-pressed="true"]{color:#0A0908;font-weight:700}
+.cain-categoria button[aria-pressed="true"]::before{background:var(--bronze);border-color:var(--bronze)}
+.cain-categoria button:focus-visible{outline:1px solid var(--bronze);outline-offset:2px}
+
+/* ---- Perícias: nome, régua, três círculos ---- */
+.cain-pericias{display:grid;gap:2px}
+.cain-pericia{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;
+  padding:6px 0;border-bottom:1px dotted var(--linha);
+}
+.cain-pericia:last-of-type{border-bottom:0}
+.cain-pericia>b{
+  font-weight:500;font-size:11px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.cain-pericia.no-topo>b{color:var(--bronze-claro)}
+.cain-pontos{display:flex;gap:6px}
+.cain-ponto{
+  width:15px;height:15px;padding:0;border-radius:50%;cursor:pointer;
+  border:1px solid var(--linha-forte);background:transparent;
+  transition:background .18s ease,border-color .18s ease,transform .18s ease;
+}
+.cain-ponto[data-cheio="sim"]{background:var(--bronze);border-color:var(--bronze)}
+.cain-ponto:hover:not(:disabled){transform:scale(1.14);border-color:var(--bronze)}
+.cain-ponto:disabled{cursor:not-allowed;opacity:.45}
+.cain-ponto:focus-visible{outline:1px solid var(--bronze);outline-offset:2px}
+.cain-nota-pericia{
+  margin-top:10px;font-size:10px;letter-spacing:.04em;color:var(--tinta-fraca);
+  border-left:2px solid var(--linha-forte);padding-left:9px;line-height:1.6;
+}
+
+/* ---- Psique: fora da lista, porque sobe sozinha ---- */
+.cain-psique{
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--linha);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.cain-psique b{font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--bronze-claro);font-weight:500}
+.cain-psique small{font-size:9px;color:var(--tinta-fraca);letter-spacing:.04em}
+.cain-psique input{width:52px;text-align:center}
+
+/* ---- Trilhas: estresse, ferimentos, pulsos, pecado, piedade ---- */
+.cain-trilhas{display:grid;gap:15px}
+.cain-trilha{display:grid;gap:7px}
+.cain-trilha-topo{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.cain-trilha-topo b{font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:500}
+.cain-trilha-topo em{font-style:normal;font-size:10px;color:var(--tinta-fraca)}
+.cain-caixas{display:flex;gap:5px;flex-wrap:wrap}
+.cain-caixa{
+  width:21px;height:21px;padding:0;cursor:pointer;
+  border:1px solid var(--linha-forte);background:transparent;
+  transition:background .16s ease,border-color .16s ease;
+}
+.cain-caixa[data-cheio="sim"]{background:var(--cor,var(--bronze));border-color:var(--cor,var(--bronze))}
+.cain-caixa:hover:not(:disabled){border-color:var(--cor,var(--bronze))}
+.cain-caixa:focus-visible{outline:1px solid var(--cor,var(--bronze));outline-offset:2px}
+/* A última caixa de ferimento é a morte, e precisa ser reconhecível antes de
+   ser lida. Losango por rotação, não por clip-path: o clip corta a borda e
+   sobram fragmentos de traço no lugar da caixa. */
+.cain-caixa.morte{
+  width:17px;height:17px;margin:2px;
+  transform:rotate(45deg);
+  border-color:var(--carmesim);
+}
+.cain-caixa.morte[data-cheio="sim"]{background:var(--carmesim);border-color:var(--carmesim)}
+.cain-caixa.morte:hover:not(:disabled){border-color:var(--carmesim-claro)}
+.cain-trilha-nota{font-size:10px;color:var(--tinta-fraca);line-height:1.55}
+
+/* ---- Ganchos: nome e quatro cortes ---- */
+.cain-gancho{display:grid;gap:7px;padding:11px 0;border-bottom:1px dotted var(--linha)}
+.cain-gancho:last-child{border-bottom:0}
+.cain-gancho-topo{display:flex;align-items:center;gap:10px}
+.cain-gancho-topo input{
+  flex:1;background:transparent;border:0;border-bottom:1px solid var(--linha);
+  color:var(--tinta);font-family:var(--mono);font-size:12px;padding:4px 2px;
+}
+.cain-gancho-topo input:focus{outline:none;border-color:var(--bronze)}
+.cain-gancho.cheio .cain-gancho-topo input{color:var(--carmesim-claro)}
+.cain-resolver{
+  background:none;border:1px solid var(--carmesim);color:var(--carmesim-claro);
+  font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  padding:4px 9px;cursor:pointer;white-space:nowrap;
+}
+.cain-resolver:hover{background:color-mix(in srgb,var(--carmesim) 22%,transparent)}
+
+/* ---- O estado, em uma linha ---- */
+.cain-estado{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 12px;border:1px solid var(--cor);
+  background:color-mix(in srgb,var(--cor) 13%,transparent);
+  font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:var(--cor);
+}
+.cain-estado i{width:6px;height:6px;border-radius:50%;background:var(--cor);font-style:normal}
+
+.cain-condicoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.cain-condicao{
+  padding:3px 9px;border:1px solid var(--cor);color:var(--cor);
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* ---- Segredos: o painel que não é de todo mundo ---- */
+.cain-painel.segredo{
+  border-style:dashed;
+  border-color:color-mix(in srgb,var(--bronze) 44%,transparent);
+}
+.cain-segredo-aviso{
+  font-size:10px;color:var(--tinta-fraca);line-height:1.6;margin:0 0 11px;
+  display:flex;gap:7px;align-items:flex-start;
+}
+.cain-segredo-aviso::before{content:'◈';color:var(--bronze);flex-shrink:0}
+
+/* ---- O rolador ---- */
+.cain-rolagem{display:grid;gap:13px}
+.cain-rolagem-controles{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
+.cain-interruptores{display:flex;gap:9px;flex-wrap:wrap}
+.cain-interruptor{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  padding:6px 11px;border:1px solid var(--linha-forte);
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-fraca);
+  transition:border-color .18s ease,color .18s ease;
+}
+.cain-interruptor[data-ligado="sim"]{border-color:var(--bronze);color:var(--bronze-claro)}
+.cain-interruptor input{position:absolute;opacity:0;pointer-events:none}
+.cain-rolar{
+  padding:11px 20px;cursor:pointer;justify-self:start;
+  background:color-mix(in srgb,var(--carmesim) 24%,transparent);
+  border:1px solid var(--carmesim);color:#F2E4DA;
+  font-family:var(--titulo);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  transition:background .18s ease,transform .18s cubic-bezier(.2,.9,.3,1);
+}
+.cain-rolar:hover:not(:disabled){background:color-mix(in srgb,var(--carmesim) 42%,transparent);transform:translateY(-1px)}
+.cain-rolar:disabled{opacity:.45;cursor:not-allowed}
+
+.cain-dados{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cain-dado{
+  width:36px;height:36px;display:grid;place-items:center;
+  border:1px solid var(--linha-forte);background:#0A0908;
+  font-family:var(--mono);font-size:16px;color:var(--tinta-fraca);
+}
+.cain-dado[data-sucesso="sim"]{border-color:var(--bronze);color:var(--bronze-claro);background:color-mix(in srgb,var(--bronze) 15%,#0A0908)}
+.cain-dado[data-descartado="sim"]{opacity:.3;text-decoration:line-through}
+.cain-dado.risco{border-color:var(--carmesim);color:var(--carmesim-claro)}
+.cain-dados-sep{color:var(--tinta-fraca);font-size:10px;letter-spacing:.17em;text-transform:uppercase;padding:0 4px}
+
+.cain-veredito{
+  font-family:var(--titulo);font-size:15px;letter-spacing:.07em;
+  color:var(--tinta);
+}
+.cain-veredito.falhou{color:var(--carmesim-claro)}
+.cain-detalhe{font-size:11px;color:var(--tinta-fraca);line-height:1.65;margin:0}
+
+html[data-motion="reduced"] .cain-ponto:hover:not(:disabled),
+html[data-motion="reduced"] .cain-rolar:hover:not(:disabled){transform:none}
