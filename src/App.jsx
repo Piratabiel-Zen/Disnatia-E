@@ -56,6 +56,10 @@ const pageLoaders = {
   cronicas:     () => import("./features/cronicas/CronicasPage"),
   mapamundi:    () => import("./features/mapa-mundi/MapaMundiPage"),
   mapabatalha:  () => import("./features/mapa-batalha/BattleMapPage"),
+  // Abas do sistema CAIN.
+  investigacao: () => import("./features/investigacao/InvestigacaoPage"),
+  documentos:   () => import("./features/documentos/DocumentosPage"),
+  pecados:      () => import("./features/pecados/PecadosPage"),
 };
 
 const LazyPages = Object.fromEntries(
@@ -94,6 +98,23 @@ export default function App(){
   },[campaign?.id]);
 
   const theme = campaignTheme(campaign);
+  // O tema da mesa vira variável de CSS, para alcançar o site inteiro e não
+  // só o fundo: a ficha, o mural e a sessão leem --accent e --accent-soft.
+  // Só fora da campanha principal — a Dinastia E tem a cor dela no CSS e não
+  // vai mudar de cara por causa disto.
+  useEffect(() => {
+    const raiz = document.documentElement;
+    if (!campaign || campaign.primary !== false) {
+      for (const nome of ['--accent', '--accent-soft', '--bronze', '--ink-mesa']) raiz.style.removeProperty(nome);
+      raiz.removeAttribute('data-tema-mesa');
+      return;
+    }
+    raiz.style.setProperty('--accent', theme.accent);
+    raiz.style.setProperty('--accent-soft', theme.accentSoft);
+    if (theme.bronze) raiz.style.setProperty('--bronze', theme.bronze);
+    raiz.style.setProperty('--ink-mesa', theme.ink);
+    raiz.dataset.temaMesa = campaign.theme || '';
+  }, [campaign?.id, campaign?.primary, campaign?.theme, theme]);
   const baseAtm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
   // Fora da campanha principal, o tema da mesa manda na cor de fundo e no acento.
   const atm = campaign && campaign.primary === false

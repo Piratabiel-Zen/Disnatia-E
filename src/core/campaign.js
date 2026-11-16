@@ -66,6 +66,21 @@ export const CAMPAIGN_THEMES = {
     body: "'Crimson Text', Georgia, serif",
     background: 'parchment',
   },
+  // Veneza vitoriana sombria: organização ocultista com investigação. O
+  // carmesim é o acento e o bronze é a estrutura — e o fundo puxa para o azul
+  // da água parada, não para o preto puro, senão a cidade some.
+  veneziano: {
+    label: 'Veneza sombria',
+    sigil: '⚜',
+    accent: '#8E1F2B',
+    accentSoft: '#C4414F',
+    bronze: '#A98045',
+    bg: '#0D1016',
+    ink: '#CEC4B4',
+    display: "'Cinzel', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    background: 'smoke',
+  },
   moderno: {
     label: 'Pé no chão',
     sigil: '◈',

@@ -1,0 +1,159 @@
+/* OS PECADOS
+   O registro de uma coisa que a mesa ainda não entende inteira. A barra fina
+   no pé de cada item da lista é quanto da caçada já foi descoberto — só o
+   Mestre a vê, porque para o jogador saber que falta descobrir já é saber
+   demais. */
+.pecados{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0}
+.pecados-barra{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;border-bottom:1px solid rgba(142,31,43,.26);
+}
+.pecados-barra h2{
+  margin:0;font:600 13px/1 'Cinzel',serif;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent-soft,#C4414F);
+}
+.pecados-novo{
+  margin-left:auto;padding:8px 15px;border-radius:6px;cursor:pointer;
+  background:rgba(142,31,43,.2);border:1px solid rgba(142,31,43,.6);color:#F0DDD8;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+}
+.pecados-novo:hover{background:rgba(142,31,43,.36)}
+
+.pecados-corpo{display:grid;gap:20px;overflow:auto;padding:18px;align-content:start}
+@media(min-width:960px){.pecados-corpo{grid-template-columns:minmax(230px,300px) minmax(0,1fr);align-items:start}}
+
+.pecados-lista{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.pecados-vazio{padding:18px;font:italic 14px/1.6 'Crimson Text',Georgia,serif;color:rgba(255,255,255,.34)}
+.pecados-item{
+  position:relative;width:100%;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;
+  padding:12px 13px 14px;border-radius:7px;overflow:hidden;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);
+  border-left:2px solid var(--cor);
+}
+.pecados-item:hover{background:rgba(255,255,255,.05)}
+.pecados-item.aberto{background:color-mix(in srgb,var(--cor) 13%,transparent);border-color:var(--cor)}
+.pecados-item.executado{opacity:.55}
+.pecados-item.executado b{text-decoration:line-through}
+.pecados-item>i{
+  display:grid;place-items:center;flex-shrink:0;width:30px;height:30px;border-radius:5px;
+  border:1px solid color-mix(in srgb,var(--cor) 52%,transparent);
+  background:color-mix(in srgb,var(--cor) 18%,transparent);
+  font:700 12px/1 'Cinzel',serif;color:#F0E4DA;font-style:normal;
+}
+.pecados-item span{display:grid;gap:2px;min-width:0}
+.pecados-item b{font:500 14px/1.3 'Cinzel',serif;color:#DED3C0;overflow:hidden;text-overflow:ellipsis}
+.pecados-item em{font:400 10px/1.3 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.08em;color:rgba(255,255,255,.34)}
+/* Quanto da caçada foi descoberto. Só o Mestre vê. */
+.pecados-item>u{
+  position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.05);
+}
+.pecados-item>u::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--cor)}
+
+.pecados-ficha{
+  display:grid;gap:16px;align-content:start;
+  padding:22px;border-radius:10px;
+  background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);
+}
+.pecados-ficha-topo{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  padding-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--cor) 34%,transparent);
+}
+.pecados-ficha-topo h3,.pecados-ficha-topo input{
+  margin:0;flex:1;min-width:160px;background:transparent;border:0;
+  font:600 21px/1.2 'Cinzel',serif;color:#EADFC8;
+}
+.pecados-ficha-topo input:focus{outline:none}
+.pecados-ficha-topo select{
+  background:rgba(0,0,0,.3);border:1px solid var(--cor);color:#E8DACB;
+  padding:6px 9px;border-radius:5px;font-family:'Cinzel',serif;font-size:11px;
+}
+.pecados-categoria{
+  padding:5px 11px;border-radius:14px;
+  border:1px solid var(--cor);background:color-mix(in srgb,var(--cor) 16%,transparent);
+  font:600 10px/1 'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase;color:#E8DACB;
+}
+
+.pecados-rotulo{
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.32);
+}
+.pecados-campo{display:grid;gap:5px}
+.pecados-campo p{margin:0;font:400 15px/1.68 'Crimson Text',Georgia,serif;color:#D2C8B6;max-width:64ch;white-space:pre-wrap}
+.pecados-campo textarea,.pecados-campo input{
+  width:100%;box-sizing:border-box;
+  background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.09);border-radius:6px;
+  color:#D6CCBA;padding:10px;
+  font-family:'Crimson Text',Georgia,serif;font-size:15px;line-height:1.65;
+}
+.pecados-campo textarea{min-height:74px;resize:vertical}
+.pecados-campo textarea:focus,.pecados-campo input:focus{outline:none;border-color:var(--accent,#8E1F2B)}
+
+.pecados-bloco{
+  display:grid;gap:11px;padding:14px;border-radius:8px;
+  background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.06);
+}
+.pecados-bloco-topo{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pecados-revelar{
+  padding:5px 11px;border-radius:14px;cursor:pointer;
+  background:transparent;border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.4);
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+}
+.pecados-revelar[data-ligado="sim"]{background:rgba(94,127,94,.2);border-color:#5E7F5E;color:#BDD4BD}
+
+.pecados-talisma{display:grid;gap:9px}
+.pecados-cortes{display:flex;gap:6px;flex-wrap:wrap}
+.pecados-cortes button{
+  width:24px;height:30px;padding:0;cursor:pointer;
+  border:1px solid rgba(196,65,79,.5);background:transparent;border-radius:3px;
+}
+.pecados-cortes button[data-cheio="sim"]{background:#8E1F2B;border-color:#C4414F}
+.pecados-nota{margin:0;font:400 12px/1.6 'Crimson Text',Georgia,serif;color:rgba(255,255,255,.38)}
+.pecados-talisma-tamanho{
+  display:flex;align-items:center;gap:9px;
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);
+}
+.pecados-talisma-tamanho input{
+  width:56px;text-align:center;background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.12);border-radius:5px;color:#D6CCBA;padding:5px;
+}
+
+.pecados-dominios{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.pecados-dominios li{
+  padding:8px 12px;border-radius:6px;border-left:2px solid var(--cor,#8E1F2B);
+  background:rgba(255,255,255,.03);
+  font:400 14px/1.5 'Crimson Text',Georgia,serif;color:#D2C8B6;
+}
+.pecados-dominios li.vazio{border-left-color:transparent;font-style:italic;color:rgba(255,255,255,.3)}
+
+.pecados-novo-dominio{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pecados-tira{
+  padding:5px 10px;border-radius:14px;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.52);
+  font-family:'Crimson Text',Georgia,serif;font-size:13px;
+}
+.pecados-tira:hover{border-color:rgba(142,31,43,.6);color:#E8A8AE}
+.pecados-adicionar{display:flex;gap:5px}
+.pecados-adicionar input{
+  background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.12);border-radius:5px;
+  color:#D6CCBA;padding:6px 10px;font-family:'Crimson Text',Georgia,serif;font-size:13px;min-width:170px;
+}
+.pecados-adicionar input:focus{outline:none;border-color:var(--accent,#8E1F2B)}
+.pecados-adicionar button{
+  width:30px;cursor:pointer;background:rgba(169,128,69,.14);
+  border:1px solid rgba(169,128,69,.44);color:#C9A96E;border-radius:5px;font-size:15px;
+}
+.pecados-adicionar button:disabled{opacity:.35;cursor:not-allowed}
+
+.pecados-acoes{display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.pecados-executar{
+  padding:9px 17px;border-radius:7px;cursor:pointer;
+  background:rgba(142,31,43,.3);border:1px solid #8E1F2B;color:#F5E6E2;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+}
+.pecados-executar:hover{background:rgba(142,31,43,.5)}
+.pecados-remover{
+  background:none;border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.36);
+  padding:7px 13px;border-radius:6px;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+}
+.pecados-remover:hover{border-color:rgba(142,31,43,.6);color:#E8A8AE}

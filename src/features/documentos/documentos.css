@@ -1,0 +1,118 @@
+/* O ARQUIVO
+   Duas colunas: a gaveta e a folha aberta. A gaveta é lista, não grade —
+   documentos se leem de cima para baixo, e uma grade de cartõezinhos
+   esconderia o título, que é a única coisa que importa na hora de achar. */
+.arquivo{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0}
+.arquivo-barra{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+  padding:14px 18px;border-bottom:1px solid rgba(169,128,69,.2);
+}
+.arquivo-barra h2{
+  margin:0;font:600 13px/1 'Cinzel',serif;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent-soft,#A98045);
+}
+.arquivo-busca{
+  flex:1;min-width:150px;max-width:300px;
+  background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.1);
+  color:#D9D0C0;padding:7px 11px;border-radius:5px;
+  font-family:'Crimson Text',Georgia,serif;font-size:14px;
+}
+.arquivo-busca:focus{outline:none;border-color:var(--accent,#A98045)}
+.arquivo-novos{display:flex;gap:5px;margin-left:auto}
+.arquivo-novos button{
+  width:32px;height:32px;cursor:pointer;
+  background:rgba(169,128,69,.1);border:1px solid rgba(169,128,69,.4);
+  color:#C9A96E;font-size:14px;border-radius:5px;
+}
+.arquivo-novos button:hover{background:rgba(169,128,69,.24)}
+
+.arquivo-corpo{display:grid;gap:20px;overflow:auto;padding:18px;align-content:start}
+@media(min-width:960px){.arquivo-corpo{grid-template-columns:minmax(240px,320px) minmax(0,1fr);align-items:start}}
+
+.arquivo-lista{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.arquivo-vazio{
+  padding:18px;font:italic 14px/1.6 'Crimson Text',Georgia,serif;
+  color:rgba(255,255,255,.34);
+}
+.arquivo-item{
+  width:100%;display:flex;align-items:flex-start;gap:11px;text-align:left;cursor:pointer;
+  padding:11px 13px;border-radius:7px;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);
+  border-left:2px solid var(--cor);
+  transition:background .16s ease,border-color .16s ease;
+}
+.arquivo-item:hover{background:rgba(255,255,255,.05)}
+.arquivo-item.aberto{background:rgba(169,128,69,.11);border-color:rgba(169,128,69,.46)}
+.arquivo-item.guardado{opacity:.72}
+.arquivo-item i{font-style:normal;color:var(--cor);font-size:14px;line-height:1.4}
+.arquivo-item span{display:grid;gap:2px;min-width:0}
+.arquivo-item b{
+  font:600 14px/1.3 'Cinzel',serif;color:#DED3C0;font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.arquivo-item em{
+  font:400 10px/1.3 'IBM Plex Mono',monospace;font-style:normal;
+  letter-spacing:.08em;color:rgba(255,255,255,.34);
+}
+
+.arquivo-folha{
+  display:grid;gap:14px;align-content:start;
+  padding:22px;border-radius:10px;
+  background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);
+}
+.arquivo-titulo{
+  margin:0;width:100%;box-sizing:border-box;background:transparent;
+  border:0;border-bottom:1px solid rgba(255,255,255,.1);padding:0 0 8px;
+  font:600 20px/1.25 'Cinzel',serif;color:#EADFC8;
+}
+.arquivo-titulo:focus{outline:none;border-bottom-color:var(--accent,#A98045)}
+.arquivo-imagem{width:100%;border-radius:7px;display:block;border:1px solid rgba(255,255,255,.1)}
+.arquivo-corpo-texto{
+  width:100%;box-sizing:border-box;min-height:160px;resize:vertical;
+  background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.09);border-radius:7px;
+  color:#D6CCBA;padding:13px;
+  font-family:'Crimson Text',Georgia,serif;font-size:15.5px;line-height:1.72;
+}
+.arquivo-corpo-texto:focus{outline:none;border-color:var(--accent,#A98045)}
+.arquivo-corpo-texto.leitura{white-space:pre-wrap;margin:0;max-width:66ch}
+
+.arquivo-rotulo{
+  font:600 9px/1 'Cinzel',serif;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.32);
+}
+.arquivo-liberacao{display:grid;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.arquivo-pessoas{display:flex;flex-wrap:wrap;gap:6px}
+.arquivo-pessoas button{
+  padding:6px 12px;border-radius:16px;cursor:pointer;
+  background:transparent;border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.44);
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:.1em;
+}
+.arquivo-pessoas button[data-ligado="sim"]{
+  background:rgba(169,128,69,.2);border-color:#A98045;color:#EADFC8;
+}
+.arquivo-nota-mestre{
+  margin:0;font:400 11px/1.55 'Crimson Text',Georgia,serif;color:rgba(255,255,255,.3);
+}
+
+.arquivo-compartilhar{
+  justify-self:start;padding:9px 16px;border-radius:7px;cursor:pointer;
+  background:rgba(142,31,43,.2);border:1px solid rgba(142,31,43,.6);color:#F0DDD8;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+}
+.arquivo-compartilhar:hover{background:rgba(142,31,43,.36)}
+
+.arquivo-anotacao{display:grid;gap:6px}
+.arquivo-anotacao textarea{
+  width:100%;box-sizing:border-box;min-height:70px;resize:vertical;
+  background:rgba(0,0,0,.2);border:1px dashed rgba(255,255,255,.14);border-radius:7px;
+  color:#CFC5B2;padding:10px;
+  font-family:'Crimson Text',Georgia,serif;font-size:14px;line-height:1.6;
+}
+.arquivo-anotacao textarea:focus{outline:none;border-color:var(--accent,#A98045)}
+
+.arquivo-remover{
+  justify-self:start;background:none;border:1px solid rgba(255,255,255,.14);
+  color:rgba(255,255,255,.38);padding:6px 12px;border-radius:6px;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+}
+.arquivo-remover:hover{border-color:rgba(142,31,43,.6);color:#E8A8AE}
