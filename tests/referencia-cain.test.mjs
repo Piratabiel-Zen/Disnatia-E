@@ -171,7 +171,7 @@ test('as doze blasfêmias do livro, sem repetição', () => {
   for (const invento of ['Tempo', 'Espaço', 'Cópia', 'Possessão']) {
     assert.ok(!BLASFEMIAS.includes(invento), `${invento} não é uma blasfêmia do livro`);
   }
-  for (const real of ['Tensão', 'Ardor', 'Fluxo', 'Vetor', 'Portão', 'Sufoco',
+  for (const real of ['Tensão', 'Ardência', 'Fluxo', 'Vetor', 'Portão', 'Sufoco',
                       'Sussurro', 'Edit', 'Vínculo', 'Palácio', 'Assombração', 'Simpatia']) {
     assert.ok(BLASFEMIAS.includes(real), `falta a blasfêmia ${real}`);
   }

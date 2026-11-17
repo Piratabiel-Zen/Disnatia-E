@@ -344,6 +344,12 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar, fichaLibera
                 <select value={ficha.blasfemia || ''} disabled={somenteLeitura}
                   onChange={e => mudar('blasfemia')(e.target.value)}>
                   <option value="">—</option>
+                  {/* Fichas antigas podem guardar um nome que saiu da lista — "Ardor",
+                      antes de virar "Ardência". Mantemos o valor salvo como opção para
+                      que o select não apareça vazio e apague a escolha do jogador. */}
+                  {ficha.blasfemia && !BLASFEMIAS.includes(ficha.blasfemia) && (
+                    <option value={ficha.blasfemia}>{ficha.blasfemia}</option>
+                  )}
                   {BLASFEMIAS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </Campo>

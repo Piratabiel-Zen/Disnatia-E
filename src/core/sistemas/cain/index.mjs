@@ -41,17 +41,17 @@ export const MAX_PERICIAS_EM_TRES = 2;
  */
 export const BLASFEMIAS_DETALHADAS = Object.freeze([
   { nome: 'Tensão', resumo: 'Campos de densidade psíquica: cortar como lâmina, endurecer uma superfície, amolecer a matéria morta.' },
-  { nome: 'Ardor', resumo: 'Calor e luz que atravessam o que estiver no caminho — parede, porta, obstáculo.' },
-  { nome: 'Fluxo', resumo: 'Correntes e o tempo delas: empurrar, acelerar, segurar o que se move.' },
+  { nome: 'Ardência', resumo: 'Calor e luz que atravessam o que estiver no caminho — parede, porta, obstáculo.' },
+  { nome: 'Fluxo', resumo: 'Correntes e o tempo delas: congelar, acelerar, reverter o que já aconteceu.' },
   { nome: 'Vetor', resumo: 'Força dirigida à distância: arremessar, atirar, mover o que não se alcança.' },
   { nome: 'Portão', resumo: 'Rasgar e redobrar o espaço: passagens, duplicatas, um lugar reorganizado por dentro.' },
-  { nome: 'Sufoco', resumo: 'Tirar apoio e atrito: o chão escorrega, o ar falta, o alvo não firma o pé.' },
+  { nome: 'Sufoco', resumo: 'Tirar o que as coisas têm de próprio: função, som, luz, peso, atrito.' },
   { nome: 'Sussurro', resumo: 'Uma sombra que acompanha, sente e responde — com pouquíssimas palavras.' },
   { nome: 'Edit', resumo: 'Alterar os detalhes: a aparência, a cópia, a pequena correção na realidade.' },
-  { nome: 'Vínculo', resumo: 'Ligar pessoas e coisas; dividir entre vários o que acontece a um.' },
+  { nome: 'Vínculo', resumo: 'Um Pecado menor preso a você, obediente — e a arte herética de vincular.' },
   { nome: 'Palácio', resumo: 'Abrir um espaço próprio e habitá-lo. Dentro dele mora um tulpa.' },
   { nome: 'Assombração', resumo: 'Ver e tratar com o que ficou: almas, rastros, presenças de quem passou.' },
-  { nome: 'Simpatia', resumo: 'Correspondência: tocar um objeto e ler o que ele guarda.' },
+  { nome: 'Simpatia', resumo: 'Correspondência: tocar um objeto e ler, ampliar ou convencer o que ele guarda.' },
 ]);
 
 export const BLASFEMIAS = Object.freeze(BLASFEMIAS_DETALHADAS.map(b => b.nome));

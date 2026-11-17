@@ -8,6 +8,7 @@ import { useEffect,useRef,useState } from "react";
 import { collection,deleteDoc,doc,getDocFromServer,getDocs,runTransaction,query,serverTimestamp,setDoc,where } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import './tokens-vivos.css';
+import './talisma.css';
 import { publishTokenMotion, subscribeTokenMotion, publishPing, subscribePing, liveChannelConnected, onLiveConnection } from "../../core/liveChannel";
 import { compressImage,compressImagePNG } from "../../core/media";
 import { pushToast } from "../../core/toast";

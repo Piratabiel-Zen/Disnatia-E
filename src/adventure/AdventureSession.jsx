@@ -1,8 +1,14 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import SessionHome from './SessionHome';
 import { useExperience } from '../experience/ExperienceKit';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
+import { onSnapshot } from './sharedSnapshot';
+import { activeCampaign, col } from '../core/campaign';
+import { colecaoDeFichas, sistemaDe } from '../core/sistemas/index.mjs';
+import { caixasDoTalisma, resumoDoTalisma, talismaDoExorcista }
+  from '../features/mapa-batalha/talismaDeToken.mjs';
 import Council from './Council';
+import '../features/mapa-batalha/talisma.css';
 
 export function openAdventurePanel(panel) {
   window.dispatchEvent(new CustomEvent('dinastia:adventure-panel', { detail: { panel } }));
@@ -23,7 +29,48 @@ const Portrait = memo(function Portrait({ sheet, own, active, onOpen }) {
 
 
 
+/* O RETRATO DO EXORCISTA
+   A companhia de uma mesa de CAIN não tem classe nem pontos de vida. O que
+   se precisa saber de relance, no meio de uma caçada, é a categoria e quanto
+   o talismã de execução daquele corpo ainda aguenta. */
+const RetratoExorcista = memo(function RetratoExorcista({ ficha, own, onOpen }) {
+  const talisma = talismaDoExorcista(ficha);
+  return <button
+    className={`ad-companion ${own ? 'own' : ''}`} onClick={onOpen} disabled={!onOpen}
+    title={`${ficha.nome || 'Exorcista'} · talismã ${resumoDoTalisma(talisma)}`}
+  >
+    <span className="ad-portrait">
+      <span className="ad-portrait-fallback" aria-hidden="true">{String(ficha.nome || '?').slice(0, 1)}</span>
+      {ficha.foto ? <img src={ficha.foto} alt="" width="76" height="86" loading="eager" decoding="async" draggable="false" /> : null}
+      <span className="ad-portrait-rune" aria-hidden="true">{ficha.categoria || 'I'}</span>
+    </span>
+    <span className="ad-companion-name">{ficha.nome || 'Exorcista'}</span>
+    <span className="ad-companion-class">
+      {own ? 'Seu exorcista' : (ficha.blasfemia || `Categoria ${ficha.categoria || 'I'}`)}
+    </span>
+    <span className="token-talisma" data-critico={talisma.critico ? 'sim' : 'nao'} style={{ '--escala': 1, '--largura': '100%' }}>
+      {caixasDoTalisma(talisma).map((estado, i) => <i key={i} data-estado={estado} />)}
+    </span>
+  </button>;
+});
+
 export function AdventureView({ session, combat, combatState, sheets, playerId, masterMode, activeMap, onNavigate, onPanel, updateSession }) {
+  // A COMPANHIA VEM DA COLEÇÃO DO SISTEMA DA MESA.
+  //
+  // O provedor de experiência lê sempre 'sheets', que é da Dinastia E. Numa
+  // mesa de CAIN isso trazia à tela qualquer ficha de teste que tivesse
+  // sobrado ali — o "Aventureiro, Assassinos do Fogo Azul" que aparecia no
+  // meio de uma mesa de exorcismo sem ninguém entender de onde vinha.
+  const mesa = activeCampaign();
+  const ehCain = sistemaDe(mesa).id === 'cain';
+  const [fichasDoSistema, setFichasDoSistema] = useState([]);
+  useEffect(() => {
+    if (!ehCain) return undefined;
+    return onSnapshot(col(colecaoDeFichas(mesa)), snap => {
+      setFichasDoSistema(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    }, () => {});
+  }, [ehCain, mesa?.id]);
+  const elenco = ehCain ? fichasDoSistema : sheets;
   const current = combatState?.initiative?.[combatState.turnIdx || 0];
   const currentId = current ? String(current.id).replace(/^p_/, '') : '';
   return <div className="adventure-page">
@@ -31,7 +78,7 @@ export function AdventureView({ session, combat, combatState, sheets, playerId, 
       session={{ ...session, update: updateSession }}
       combat={combat}
       combatState={combatState}
-      sheets={sheets}
+      sheets={elenco}
       playerId={playerId}
       masterMode={masterMode}
       current={current ? { ...current, id: currentId } : null}
@@ -39,12 +86,18 @@ export function AdventureView({ session, combat, combatState, sheets, playerId, 
       onPanel={onPanel}
       onNavigate={onNavigate}
     >
-      {sheet => <Portrait
-        sheet={sheet}
-        own={String(sheet.id) === playerId}
-        active={current?.type === 'player' && currentId === String(sheet.id)}
-        onOpen={masterMode || String(sheet.id) === playerId ? () => onPanel('sheet', sheet.id) : null}
-      />}
+      {sheet => (ehCain
+        ? <RetratoExorcista
+            ficha={sheet}
+            own={String(sheet.id) === playerId}
+            onOpen={masterMode || String(sheet.id) === playerId ? () => onNavigate('fichas') : null}
+          />
+        : <Portrait
+            sheet={sheet}
+            own={String(sheet.id) === playerId}
+            active={current?.type === 'player' && currentId === String(sheet.id)}
+            onOpen={masterMode || String(sheet.id) === playerId ? () => onPanel('sheet', sheet.id) : null}
+          />)}
     </SessionHome>
   </div>;
 }

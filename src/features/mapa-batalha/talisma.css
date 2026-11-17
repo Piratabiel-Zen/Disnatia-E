@@ -1,0 +1,59 @@
+/* ═══════════ O TALISMÃ DE EXECUÇÃO SOBRE O TOKEN ═══════════
+   No CAIN não há ponto de vida. O que mede um corpo é o talismã: uma fileira
+   de caixas que se enche de cortes. Por isso a barra é SEGMENTADA e não
+   contínua — a mesa conta caixa, não lê porcentagem.
+
+   Três estados, e o terceiro é o motivo de tudo isto existir:
+     vazia    ainda aguenta
+     cortada  já levou
+     perdida  o ferimento apagou, e não volta
+
+   A caixa perdida fica cinza e afundada no fim da fileira. É o que mostra,
+   de relance, a diferença entre um exorcista machucado e um exorcista que
+   está se gastando. */
+.token-talisma{
+  display:flex;gap:calc(1px * var(--escala,1));
+  width:var(--largura,46px);
+  height:calc(5px * var(--escala,1));
+  min-height:4px;
+  margin-bottom:calc(1px * var(--escala,1));
+  padding:calc(.7px * var(--escala,1));
+  border-radius:calc(2px * var(--escala,1));
+  background:rgba(0,0,0,.72);
+  border:max(.5px,calc(.7px * var(--escala,1))) solid rgba(255,255,255,.2);
+}
+.token-talisma i{
+  flex:1;min-width:0;display:block;border-radius:1px;
+  transition:background .25s ease;
+}
+.token-talisma i[data-estado="vazia"]{background:rgba(206,196,180,.26)}
+/* Cortada é âmbar e não vermelho: vermelho é o estado crítico, e gastar a
+   cor mais forte no corte normal tira o aviso de onde ele importa. */
+.token-talisma i[data-estado="cortada"]{
+  background:#C79A3C;box-shadow:0 0 calc(3px * var(--escala,1)) rgba(199,154,60,.6);
+}
+.token-talisma i[data-estado="perdida"]{
+  background:rgba(120,116,110,.42);
+  box-shadow:inset 0 0 0 max(.5px,calc(.6px * var(--escala,1))) rgba(0,0,0,.5);
+}
+/* Crítico: o exorcista à beira da morte, ou o Pecado pronto para execução.
+   Os dois são a deixa de uma cena mudar, e os dois precisam saltar. */
+.token-talisma[data-critico="sim"]{
+  border-color:rgba(200,16,46,.75);
+  box-shadow:0 0 calc(5px * var(--escala,1)) rgba(200,16,46,.55);
+}
+.token-talisma[data-critico="sim"] i[data-estado="cortada"]{
+  background:#C8102E;box-shadow:0 0 calc(3px * var(--escala,1)) rgba(200,16,46,.7);
+}
+
+.token-talisma-numero{
+  font:600 calc(8.5px * var(--escala,1))/1 'IBM Plex Mono','SF Mono',monospace;
+  color:#D4AC6E;letter-spacing:.04em;white-space:nowrap;
+  background:rgba(3,4,10,.76);
+  border-radius:calc(4px * var(--escala,1));
+  padding:calc(1px * var(--escala,1)) calc(5px * var(--escala,1));
+  margin-bottom:calc(1px * var(--escala,1));
+  text-shadow:0 1px 3px #000;
+}
+
+html[data-motion="reduced"] .token-talisma i{transition:none}

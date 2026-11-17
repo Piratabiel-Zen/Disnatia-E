@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { setDoc } from 'firebase/firestore';
 import { activeCampaign, campaignTheme, docIn } from '../core/campaign';
+import { colecaoDeFichas } from '../core/sistemas/index.mjs';
 import { GROUP_KEYS, groupOf, readGroups, splitParty } from './grupos.mjs';
 import { meuCapitulo } from './meuCapitulo.mjs';
 import './sessao.css';
@@ -142,7 +143,9 @@ export default function SessionHome({
   };
   const moveSheet = async (sheetId, grupo) => {
     if (!masterMode) return;
-    try { await setDoc(docIn('sheets', String(sheetId)), { grupo }, { merge: true }); } catch (_) {}
+    // Grava na coleção de fichas DESTA mesa: numa mesa de CAIN, mover de
+    // grupo escrevia num documento de 'sheets' que nem existe mais ali.
+    try { await setDoc(docIn(colecaoDeFichas(activeCampaign()), String(sheetId)), { grupo }, { merge: true }); } catch (_) {}
   };
 
   return (

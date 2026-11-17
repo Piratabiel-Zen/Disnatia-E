@@ -175,7 +175,10 @@ export default function PecadosPage() {
             {CAMPOS_REVELAVEIS.map(campo => {
               if (!campoVisivel(campo.id)) return null;
               return (
-                <section key={campo.id} className="pecados-bloco">
+                <section
+                  key={campo.id} className="pecados-bloco"
+                  data-revelado={bruto.revelado?.[campo.id] ? 'sim' : 'nao'}
+                >
                   <div className="pecados-bloco-topo">
                     <span className="pecados-rotulo">{campo.nome}</span>
                     {mestre && (

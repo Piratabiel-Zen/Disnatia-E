@@ -1,0 +1,146 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AS DOZE BLASFÊMIAS
+
+   Duas telas no mesmo lugar. Fechada é um catálogo: doze cartões iguais,
+   percorridos de olho, para escolher. Aberta é um verbete: as doze viram
+   uma fileira de tiras e a escolhida ocupa a área inteira.
+
+   Herda as variáveis de .ref — ou seja, a paleta da MESA. Nada de cor
+   cravada aqui, senão a Estrela de Absinto volta a ter painel dourado.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ---------- O sigilo ---------- */
+/* Desenho nosso, em currentColor: a marca pega a cor de quem a contém. */
+.blasf-sigilo{display:block;flex:0 0 auto;color:inherit}
+
+/* ---------- Fechada: a grade de doze ---------- */
+.blasf-grade{
+  list-style:none;margin:0;padding:0;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(258px,1fr));
+}
+.blasf-cartao{
+  width:100%;height:100%;min-height:106px;
+  display:grid;grid-template-columns:34px 1fr;gap:4px 12px;align-content:start;
+  padding:13px 14px;border:1px solid var(--linha);border-left:3px solid var(--bronze);
+  border-radius:3px;background:var(--painel);
+  color:var(--tinta);font-family:var(--serif);text-align:left;cursor:pointer;
+  transition:border-color .16s ease,background .16s ease;
+}
+.blasf-cartao:hover,.blasf-cartao:focus-visible{
+  border-color:var(--linha-forte);border-left-color:var(--bronze-claro);
+  background:color-mix(in srgb,var(--painel) 84%,var(--bronze) 16%);
+}
+.blasf-cartao .blasf-sigilo{grid-row:1 / span 2;color:var(--bronze)}
+.blasf-cartao:hover .blasf-sigilo{color:var(--bronze-claro)}
+.blasf-cartao-texto{display:grid;gap:5px}
+.blasf-cartao-texto strong{
+  font-family:var(--titulo);font-size:14px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bronze-claro);
+}
+.blasf-cartao-texto span{font-size:13.5px;line-height:1.55}
+.blasf-cartao-conta{
+  grid-column:2;font-family:var(--mono);font-size:9px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tinta-fraca);
+}
+
+/* ---------- Aberta: tiras + painel ---------- */
+.blasf-abertura{display:grid;gap:14px}
+
+.blasf-tiras{
+  list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;
+}
+.blasf-tira{
+  padding:6px 11px;border:1px solid var(--linha);border-radius:2px;
+  background:transparent;color:var(--tinta-fraca);cursor:pointer;
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  transition:color .14s ease,border-color .14s ease,background .14s ease;
+}
+.blasf-tira:hover{color:var(--tinta);border-color:var(--linha-forte)}
+.blasf-tira[data-ativa="sim"]{
+  color:var(--papel);background:var(--bronze);border-color:var(--bronze);
+}
+
+.blasf-painel{
+  padding:20px 22px 24px;border:1px solid var(--linha-forte);border-radius:4px;
+  background:var(--painel);display:grid;gap:16px;
+}
+
+.blasf-painel-cabeca{
+  display:grid;grid-template-columns:92px 1fr auto;gap:18px;align-items:start;
+  padding-bottom:15px;border-bottom:1px solid var(--linha);
+}
+.blasf-marca{color:var(--bronze);opacity:.9}
+.blasf-painel-titulo{display:grid;gap:7px}
+.blasf-painel-titulo h3{
+  margin:0;font-family:var(--titulo);font-size:23px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--bronze-claro);
+}
+.blasf-lema{margin:0;font-size:15px;line-height:1.5;color:var(--tinta)}
+.blasf-manifesto{margin:0;font-size:13.5px;color:var(--tinta-fraca)}
+.blasf-fechar{
+  padding:6px 12px;border:1px solid var(--linha-forte);border-radius:2px;
+  background:transparent;color:var(--tinta-fraca);cursor:pointer;
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+}
+.blasf-fechar:hover{color:var(--tinta);border-color:var(--bronze)}
+
+/* O "Fato" do livro é voz da instituição, não regra. Fica em caixa à parte
+   para que ninguém o confunda com mecânica na hora da mesa. */
+.blasf-fato{
+  margin:0;padding:10px 13px;border-left:2px solid var(--carmesim);
+  background:color-mix(in srgb,var(--papel) 70%,var(--carmesim) 8%);
+  font-size:13px;line-height:1.55;color:var(--tinta-fraca);
+}
+.blasf-fato span{
+  display:block;margin-bottom:3px;font-family:var(--mono);font-size:9px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--carmesim);
+}
+
+.blasf-passiva{
+  padding:13px 15px;border:1px solid var(--linha);border-radius:3px;
+  background:color-mix(in srgb,var(--papel) 82%,var(--bronze) 6%);
+}
+.blasf-passiva h4,.blasf-rotulo{
+  margin:0 0 6px;display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;
+  font-family:var(--titulo);font-size:14px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bronze-claro);
+}
+.blasf-passiva h4 em,.blasf-rotulo em{
+  font-family:var(--mono);font-size:9px;font-style:normal;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--tinta-fraca);
+}
+.blasf-passiva p{margin:0;max-width:64ch;font-size:14px}
+.blasf-rotulo{margin:4px 0 0}
+
+.blasf-poderes{
+  list-style:none;margin:0;padding:0;display:grid;gap:11px;
+}
+.blasf-poderes li{
+  padding:12px 14px;border:1px solid var(--linha);border-left:2px solid var(--linha-forte);
+  border-radius:3px;background:var(--papel);
+}
+.blasf-poderes h5{
+  margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  font-family:var(--titulo);font-size:13px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--tinta);
+}
+.blasf-poderes h5 i{
+  font-family:var(--mono);font-size:8.5px;font-style:normal;letter-spacing:.14em;
+  text-transform:uppercase;padding:2px 6px;border:1px dashed var(--linha-forte);
+  border-radius:2px;color:var(--tinta-fraca);cursor:help;
+}
+.blasf-tracos{
+  margin:4px 0 7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bronze);
+}
+.blasf-poderes p:last-child{margin:0;max-width:64ch;font-size:14px}
+
+@media (max-width:720px){
+  .blasf-grade{grid-template-columns:1fr}
+  .blasf-painel{padding:16px 15px 19px}
+  /* No celular a marca grande come a dobra inteira antes do primeiro poder.
+     Ela sai, o título sobe, e o sigilo continua nas tiras e nos cartões. */
+  .blasf-painel-cabeca{grid-template-columns:1fr auto;gap:12px}
+  .blasf-marca{display:none}
+  .blasf-painel-titulo h3{font-size:19px}
+}

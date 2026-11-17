@@ -1,5 +1,9 @@
-import { BLASFEMIAS_DETALHADAS, PERICIAS, PERICIA_ESPECIAL } from '../../core/sistemas/cain/index.mjs';
+import { useState } from 'react';
+import { PERICIAS, PERICIA_ESPECIAL } from '../../core/sistemas/cain/index.mjs';
+import { BLASFEMIAS_COMPLETAS, habilidadesDaBlasfemia } from './blasfemias.mjs';
+import SigiloBlasfemia from './SigiloBlasfemia.jsx';
 import './referencia-cain.css';
+import './blasfemias.css';
 
 /**
  * AGENDAS E BLASFÊMIAS
@@ -26,8 +30,8 @@ export default function BlasfemiasPage() {
           As duas escolhas são independentes e mudam por motivos diferentes.
         </p>
         <p className="ref-fonte">
-          Os poderes de cada blasfêmia e as habilidades de cada agenda estão no livro,
-          no PDF do livro. Aqui ficam o tema de cada uma e as regras comuns.
+          Os poderes das doze blasfêmias estão abertos mais abaixo, em resumo. As
+          habilidades de cada agenda continuam no PDF do livro.
         </p>
       </header>
 
@@ -102,17 +106,125 @@ export default function BlasfemiasPage() {
 
       <header className="ref-cabeca">
         <h2>As doze blasfêmias</h2>
-        <p>O tema de cada uma, para escolher. Os poderes estão no livro.</p>
+        <p>Clique em uma para abrir a passiva e os cinco poderes dela.</p>
       </header>
 
-      <ul className="ref-grade">
-        {BLASFEMIAS_DETALHADAS.map((b, i) => (
-          <li key={b.nome} className="ref-cartao" style={{ '--cor': i % 2 ? '#8A7BB0' : '#A98045' }}>
-            <h3>{b.nome}</h3>
-            <p>{b.resumo}</p>
+      <DozeBlasfemias />
+    </div>
+  );
+}
+
+/**
+ * AS DOZE, EM TIRAS E UM PAINEL
+ *
+ * Fechada, a seção é uma grade de doze cartões com o tema de cada blasfêmia —
+ * é assim que se escolhe. Aberta, ela vira outra coisa: as doze recolhem para
+ * uma fileira de tiras finas e a escolhida toma a área inteira com a passiva e
+ * os cinco poderes. As tiras continuam clicáveis, então trocar de blasfêmia é
+ * um clique, sem fechar e reabrir.
+ *
+ * A mesma tira que abre também fecha, e Esc fecha de qualquer lugar: quem
+ * abriu por curiosidade volta para a grade sem procurar um X.
+ */
+function DozeBlasfemias() {
+  const [abertaId, setAbertaId] = useState('');
+  const aberta = BLASFEMIAS_COMPLETAS.find(b => b.id === abertaId) || null;
+
+  function alternar(id) {
+    setAbertaId(atual => (atual === id ? '' : id));
+  }
+
+  if (!aberta) {
+    return (
+      <ul className="blasf-grade">
+        {BLASFEMIAS_COMPLETAS.map(b => (
+          <li key={b.id}>
+            <button
+              type="button"
+              className="blasf-cartao"
+              onClick={() => alternar(b.id)}
+              aria-expanded="false"
+            >
+              <SigiloBlasfemia sigilo={b.sigilo} tamanho={34} />
+              <span className="blasf-cartao-texto">
+                <strong>{b.nome}</strong>
+                <span>{b.resumo}</span>
+              </span>
+              <span className="blasf-cartao-conta">
+                {habilidadesDaBlasfemia(b)} habilidades
+              </span>
+            </button>
           </li>
         ))}
       </ul>
+    );
+  }
+
+  return (
+    <div className="blasf-abertura" onKeyDown={e => { if (e.key === 'Escape') setAbertaId(''); }}>
+      <ul className="blasf-tiras">
+        {BLASFEMIAS_COMPLETAS.map(b => (
+          <li key={b.id}>
+            <button
+              type="button"
+              className="blasf-tira"
+              data-ativa={b.id === aberta.id ? 'sim' : 'nao'}
+              onClick={() => alternar(b.id)}
+              aria-expanded={b.id === aberta.id}
+            >
+              {b.nome}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <article className="blasf-painel" aria-label={`Blasfêmia ${aberta.nome}`}>
+        <header className="blasf-painel-cabeca">
+          <div className="blasf-marca">
+            <SigiloBlasfemia sigilo={aberta.sigilo} tamanho={92} />
+          </div>
+          <div className="blasf-painel-titulo">
+            <h3>{aberta.nome}</h3>
+            <p className="blasf-lema">{aberta.lema}</p>
+            {aberta.manifestacao && <p className="blasf-manifesto">{aberta.manifestacao}</p>}
+          </div>
+          <button type="button" className="blasf-fechar" onClick={() => setAbertaId('')}>
+            Fechar
+          </button>
+        </header>
+
+        {aberta.nota && (
+          <p className="blasf-fato">
+            <span>Fato</span>
+            {aberta.nota}
+          </p>
+        )}
+
+        <section className="blasf-passiva">
+          <h4>
+            {aberta.passiva.nome}
+            <em>passiva · não se compra</em>
+          </h4>
+          <p>{aberta.passiva.resumo}</p>
+        </section>
+
+        <h4 className="blasf-rotulo">
+          Os cinco poderes
+          <em>dois na criação, os outros por avanço</em>
+        </h4>
+        <ol className="blasf-poderes">
+          {aberta.poderes.map(p => (
+            <li key={p.nome}>
+              <h5>
+                {p.nome}
+                {p.nomeIncerto && <i title="O título deste poder saiu ilegível na exportação do PDF — o nome aqui descreve a função.">nome a confirmar</i>}
+              </h5>
+              <p className="blasf-tracos">{p.tracos}</p>
+              <p>{p.resumo}</p>
+            </li>
+          ))}
+        </ol>
+      </article>
     </div>
   );
 }
