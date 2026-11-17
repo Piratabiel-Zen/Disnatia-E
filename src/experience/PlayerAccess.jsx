@@ -8,6 +8,9 @@ import { CLASSES, getSheetMaxHp } from '../data/gameData';
 import PasswordVisibilityInput from './PasswordVisibilityInput';
 import { col } from '../core/campaign';
 import { requiredMasterHash } from '../core/campaignPassword.mjs';
+import { colecaoDeFichas, sistemaDe } from '../core/sistemas/index.mjs';
+import { estadoDoExorcista } from '../features/cain/fichaCain.mjs';
+import { auth, entrarNaMesa } from '../core/auth';
 
 // As chaves são por campanha: entrar numa mesa não autentica em outra.
 // A campanha principal não recebe sufixo, então quem já estava logado continua.
@@ -64,15 +67,22 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
     return onSnapshot(col('visitors'),snap=>{setVisitors(snap.docs.map(item=>({id:item.id,...item.data()})).filter(row=>row.active!==false));setVisitorsLoaded(true);},()=>{setVisitorsLoaded(true);setError('Não foi possível consultar os visitantes. Confira sua conexão.');});
   },[mode]);
 
+  // A porta lista as fichas da coleção que o SISTEMA desta mesa usa. Numa
+  // mesa de CAIN as fichas de exorcista moram em outro lugar, e listar
+  // 'sheets' ali mostrava uma porta vazia enquanto as fichas existiam.
+  const colecaoDasFichas = colecaoDeFichas(campaign);
+  const sistema = sistemaDe(campaign);
+  const ehCain = sistema.id === 'cain';
+
   useEffect(() => {
-    const unsub = onSnapshot(col('sheets'), snap => {
+    const unsub = onSnapshot(col(colecaoDasFichas), snap => {
       const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(sheet=>!isVisitorSheet(sheet));
       setSheets(rows);
       setLoaded(true);
       setSelectedId(prev => prev || String(rows[0]?.id || ''));
     }, () => setLoaded(true));
     return () => unsub();
-  }, []);
+  }, [colecaoDasFichas]);
 
   const selected = useMemo(
     () => sheets.find(s => String(s.id) === String(selectedId)) || null,
@@ -129,6 +139,18 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
       setError('Senha do Mestre incorreta.');
       return;
     }
+    // Acertar a senha não basta: o papel precisa valer no servidor, senão a
+    // pessoa vê os botões de Mestre e cada um deles é negado na hora de usar.
+    if (campaign && campaign.primary === false) {
+      try {
+        await entrarNaMesa({ campanhaId: campaign.id, senhaHash: digest, papel: 'mestre' });
+      } catch (erro) {
+        setError(!auth.currentUser
+          ? 'Entre na sua conta antes: o comando da mesa é dado à pessoa, não ao aparelho.'
+          : (erro?.message || 'O servidor não aceitou a promoção a Mestre.'));
+        return;
+      }
+    }
     setMasterMode?.(true);
     const payload = { role: 'master', name: 'Mestre', ts: Date.now() };
     saveStoredAccess(payload);
@@ -136,17 +158,21 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
     onAccess?.(payload);
   };
 
-  const cls = CLASSES.find(c => c.id === selected?.classe);
-  const maxHp = selected ? getSheetMaxHp(selected) : 0;
+  const cls = ehCain ? null : CLASSES.find(c => c.id === selected?.classe);
+  const maxHp = (!ehCain && selected) ? getSheetMaxHp(selected) : 0;
 
   return (
     <div className="access-gate">
       <div className="access-stars" />
       <section className="access-panel">
-        <div className="access-sigil">✦</div>
+        <div className="access-sigil">{campaign?.sigil || '✦'}</div>
         <div className="access-kicker">{(campaign?.name || 'DINASTIA E').toUpperCase()} · ACESSO À CAMPANHA</div>
-        <h1>Quem atravessa o Véu?</h1>
-        <p>Escolha seu personagem. A partir daqui, sua experiência fica vinculada à sua própria ficha.</p>
+        <h1>{ehCain ? 'Quem se apresenta ao expediente?' : 'Quem atravessa o Véu?'}</h1>
+        <p>
+          {ehCain
+            ? 'Escolha a ficha que o Admin registrou no seu nome e abra com a senha que ele passou a você. A partir daqui, a mesa é vista pelos olhos desse exorcista.'
+            : 'Escolha seu personagem. A partir daqui, sua experiência fica vinculada à sua própria ficha.'}
+        </p>
 
         <div className="access-mode-tabs">
           <button className={mode === 'player' ? 'active' : ''} onClick={() => { setMode('player'); setPin(''); setError(''); }}>Jogador</button>
@@ -158,12 +184,16 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
           <>
             <div className="access-character-strip">
               {sheets.map(s => {
-                const c = CLASSES.find(x => x.id === s.classe);
+                const c = ehCain ? null : CLASSES.find(x => x.id === s.classe);
+                const cor = ehCain ? estadoDoExorcista(s).cor : (c?.color || '#A855F7');
+                const legenda = ehCain
+                  ? `CAT ${s.categoria || 'I'}${s.blasfemia ? ` · ${s.blasfemia}` : ''}`
+                  : (c?.name || 'Classe personalizada');
                 return (
-                  <button key={s.id} className={String(selectedId) === String(s.id) ? 'active' : ''} onClick={() => { setSelectedId(String(s.id)); setPin(''); setError(''); }} style={{ '--char-color': c?.color || '#A855F7' }}>
+                  <button key={s.id} className={String(selectedId) === String(s.id) ? 'active' : ''} onClick={() => { setSelectedId(String(s.id)); setPin(''); setError(''); }} style={{ '--char-color': cor }}>
                     <span>{s.foto ? <img src={s.foto} alt="" /> : (s.nome?.[0] || '?')}</span>
-                    <b>{s.nome || 'Personagem'}</b>
-                    <small>{c?.name || 'Classe personalizada'}</small>
+                    <b>{s.nome || (ehCain ? 'Exorcista' : 'Personagem')}</b>
+                    <small>{legenda}</small>
                   </button>
                 );
               })}
@@ -173,9 +203,20 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
               <div className="access-selected" style={{ '--char-color': cls?.color || '#A855F7' }}>
                 <div className="access-selected-portrait">{selected.foto ? <img src={selected.foto} alt="" /> : (selected.nome?.[0] || '?')}</div>
                 <div>
-                  <strong>{selected.nome || 'Personagem'}</strong>
-                  <span>{cls?.name || 'Classe personalizada'} · Nível {selected.nivel || 1}</span>
-                  <small>❤ {selected.hp || 0}/{maxHp} · ✦ {selected.vigos || 0} VC</small>
+                  <strong>{selected.nome || (ehCain ? 'Exorcista' : 'Personagem')}</strong>
+                  {ehCain ? (
+                    <>
+                      <span>Categoria {selected.categoria || 'I'}{selected.agenda ? ` · ${selected.agenda}` : ''}</span>
+                      <small>
+                        {selected.blasfemia || 'Sem blasfêmia declarada'} · {estadoDoExorcista(selected).rotulo}
+                      </small>
+                    </>
+                  ) : (
+                    <>
+                      <span>{cls?.name || 'Classe personalizada'} · Nível {selected.nivel || 1}</span>
+                      <small>❤ {selected.hp || 0}/{maxHp} · ✦ {selected.vigos || 0} VC</small>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -186,7 +227,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
               <div className="access-open-note">Esta ficha não possui senha definida e pode ser acessada diretamente.</div>
             )}
 
-            <button className="access-enter" disabled={!selected} onClick={enterPlayer}>Entrar como {selected?.nome || 'Jogador'} <span>→</span></button>
+            <button className="access-enter" disabled={!selected} onClick={enterPlayer}>Entrar como {selected?.nome || (ehCain ? 'exorcista' : 'Jogador')} <span>→</span></button>
           </>
         ) : mode === 'visitor' ? (
           <div className="access-visitor-login"><h2>Entrada de visitantes</h2><p>Entre pelo seu nome. Seus personagens são definidos pelo Mestre.</p><label className="access-field">Nome do visitante<select aria-label="Nome do visitante" value={visitorId} onChange={event=>{setVisitorId(event.target.value);setPin('');setError('');}}><option value="">Selecione seu nome</option>{visitors.map(visitor=><option key={visitor.id} value={visitor.id}>{visitor.name}</option>)}</select></label><label className="access-field">Senha do visitante<PasswordVisibilityInput value={pin} onChange={event=>{setPin(event.target.value);setError('');}} onKeyDown={event=>event.key==='Enter'&&enterVisitor()} autoComplete="current-password"/></label><button className="access-enter" disabled={busy||!visitorId||!pin} onClick={enterVisitor}>{busy?'Verificando...':'Entrar como visitante'}</button>{!visitorsLoaded&&<p>Consultando visitantes...</p>}{visitorsLoaded&&!visitors.length&&<p>O Mestre ainda não cadastrou visitantes.</p>}</div>
@@ -202,6 +243,13 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
         {error && <div className="access-error">{error}</div>}
         {!loaded && <div className="access-loading">Consultando as fichas...</div>}
+        {loaded && mode === 'player' && sheets.length === 0 && (
+          <div className="access-open-note">
+            {ehCain
+              ? 'O Admin ainda não registrou nenhuma ficha nesta mesa. Ele abre as fichas na aba Fichas e passa a senha de cada uma ao jogador dela.'
+              : 'Nenhuma ficha cadastrada nesta mesa ainda.'}
+          </div>
+        )}
         {onLeaveCampaign && (
           <button className="access-campaign-back" onClick={onLeaveCampaign}>
             <span aria-hidden="true">←</span> Trocar de mesa

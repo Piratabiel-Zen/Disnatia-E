@@ -102,6 +102,7 @@
 .registro-entrega label span{
   font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--tinta-fraca);
 }
+.registro-entrega input,
 .registro-entrega select{
   width:100%;padding:8px 9px;border-radius:2px;
   border:1px solid var(--linha-forte);background:#0C0A09;color:var(--tinta);

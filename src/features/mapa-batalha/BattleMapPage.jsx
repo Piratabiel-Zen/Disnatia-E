@@ -1103,6 +1103,29 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     }, { merge: true }).catch(e => console.error('Erro ao transmitir espelhamento:', e));
   };
 
+  /**
+   * Girar o token num passo fixo, no clique.
+   *
+   * O punho de rotação só respondia a ARRASTAR, e de propósito: clicar nele
+   * não mexia no ângulo. Para quem usa, isso é um botão quebrado — aperta e
+   * não acontece nada. Agora o clique vira um passo de 45°, oito cliques dão
+   * a volta completa, e o arrasto continua existindo para mirar fino.
+   *
+   * Sem pedir controle da mesa antes, igual ao espelhar: um passo é uma
+   * escrita só, e esperar a concessão de um comando que leva um instante era
+   * metade do motivo de o botão parecer morto.
+   */
+  const girarToken = (token, passo) => {
+    if (!currentMap || !token || !canControlMapToken(token)) return;
+    const mapId = String(currentMap.id);
+    const tid = String(token.id);
+    const atual = Number(token.rotation) || 0;
+    const alvo = normalizeTokenRotation(atual + passo);
+    authoritativeRotationRef.current[`${mapId}:${tid}`] = alvo;
+    updateToken(token.id, { rotation: alvo });
+    writeLiveRotation(mapId, tid, alvo);
+  };
+
   const toggleTokenFlip = token => {
     if (!currentMap || !token) return;
     const tokenId = String(token.id);
@@ -2125,45 +2148,70 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                       <div style={{ fontSize: 10 * labelScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: Math.max(3, 5 * labelScale), padding: `${Math.max(1, labelScale)}px ${Math.max(3, 7 * labelScale)}px`, whiteSpace: 'nowrap', maxWidth: Math.max(56, 90 * labelScale), overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {token.nome}{token.locked && ' 🔒'}
                       </div>
+                      {/* OS CONTROLES DO TOKEN
+                          Eram dois círculos soltos flutuando acima da peça,
+                          posicionados por um deslocamento fixo em pixels —
+                          um ao lado do outro sem nada que os ligasse, e
+                          colidindo com o nome de quem estivesse perto.
+
+                          Agora é uma barra só: girar para a esquerda, mirar
+                          (arrastar), girar para a direita, espelhar. Fica
+                          acima da peça porque abaixo já moram o nome e os
+                          ícones de estado, e ler o nome importa mais. */}
                       {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && !multiSelectMode && (
                         <div
-                          className="battlemap-facing-dial battlemap-facing-dial-subtle"
-                          title="Arraste para girar o token"
-                          onPointerDown={e=>startTokenRotation(e,token)}
-                          onPointerMove={moveTokenRotation}
-                          onPointerUp={endTokenRotation}
-                          onPointerCancel={endTokenRotation}
+                          className="battlemap-token-controles"
                           style={{
-                            position:'absolute',left:'50%',top:-Math.max(2,Math.min(7,dispSize*.05)),transform:'translate(-50%,-100%)',
-                            width:Math.max(24,Math.min(32,dispSize*.30)),height:Math.max(24,Math.min(32,dispSize*.30)),borderRadius:'50%',
-                            display:'grid',placeItems:'center',touchAction:'none',cursor:rotatingId===token.id?'grabbing':'grab',
-                            background:'rgba(39,43,57,.88)',border:'1px solid rgba(255,255,255,.16)',
-                            boxShadow:'0 3px 9px rgba(0,0,0,.52),0 0 8px rgba(255,255,255,.035)',backdropFilter:'blur(5px)',
-                            zIndex:31,pointerEvents:'auto',opacity:rotatingId===token.id?1:.84,transition:'opacity .15s ease,transform .15s ease'
-                          }}
-                        >
-                          <span style={{fontSize:Math.max(13,Math.min(17,dispSize*.16)),lineHeight:1,color:'rgba(255,255,255,.9)',pointerEvents:'none',transform:'translateY(-.5px)'}}>↻</span>
-                        </div>
-                      )}
-                      {(isSelected || draggingId === token.id || rotatingId === token.id) && canDrag && !multiSelectMode && (
-                        <button
-                          type="button"
-                          className="battlemap-flip-dial"
-                          title="Espelhar o token (vira o personagem para o outro lado)"
-                          aria-label="Espelhar token"
-                          aria-pressed={Boolean(token.flipped)}
-                          data-spinning={flippingId === String(token.id) ? 'true' : 'false'}
-                          onPointerDown={e=>e.stopPropagation()}
-                          onClick={e=>{e.stopPropagation();toggleTokenFlip(token);}}
-                          style={{
-                            position:'absolute',left:'50%',top:-Math.max(2,Math.min(7,dispSize*.05)),
-                            transform:`translate(calc(-50% + ${Math.max(26,Math.min(35,dispSize*.33))}px),-100%)`,
-                            width:Math.max(24,Math.min(32,dispSize*.30)),height:Math.max(24,Math.min(32,dispSize*.30)),
+                            position:'absolute',left:'50%',
+                            top:-Math.max(4,Math.min(9,dispSize*.07)),
+                            transform:'translate(-50%,-100%)',
+                            '--tamanho':`${Math.max(23,Math.min(30,dispSize*.28))}px`,
                             zIndex:31,
                           }}
                         >
-                          <span aria-hidden="true" style={{fontSize:Math.max(12,Math.min(16,dispSize*.15))}}>⇋</span>
-                        </button>
+                          <button
+                            type="button" title="Girar 45° à esquerda" aria-label="Girar à esquerda"
+                            onPointerDown={e=>e.stopPropagation()}
+                            onClick={e=>{e.stopPropagation();girarToken(token,-45);}}
+                          >↺</button>
+
+                          <div
+                            className="battlemap-facing-dial"
+                            title="Arraste para mirar o token; clique nas setas para girar de 45 em 45"
+                            data-girando={rotatingId===token.id?'sim':'nao'}
+                            onPointerDown={e=>startTokenRotation(e,token)}
+                            onPointerMove={moveTokenRotation}
+                            onPointerUp={endTokenRotation}
+                            onPointerCancel={endTokenRotation}
+                          >
+                            {/* A agulha aponta para onde o token está virado.
+                                Sem ela, um token de foto sem "frente" clara
+                                não dava retorno nenhum de que girou. */}
+                            <i style={{transform:`rotate(${Number(token.rotation||0)}deg)`}} aria-hidden="true" />
+                          </div>
+
+                          <button
+                            type="button" title="Girar 45° à direita" aria-label="Girar à direita"
+                            onPointerDown={e=>e.stopPropagation()}
+                            onClick={e=>{e.stopPropagation();girarToken(token,45);}}
+                          >↻</button>
+
+                          <button
+                            type="button" className="battlemap-flip-dial"
+                            title="Espelhar o token (vira o personagem para o outro lado)"
+                            aria-label="Espelhar token"
+                            aria-pressed={Boolean(token.flipped)}
+                            data-spinning={flippingId === String(token.id) ? 'true' : 'false'}
+                            onPointerDown={e=>e.stopPropagation()}
+                            onClick={e=>{e.stopPropagation();toggleTokenFlip(token);}}
+                          >
+                            <span aria-hidden="true">⇋</span>
+                          </button>
+
+                          {rotatingId===token.id && (
+                            <b className="battlemap-token-angulo">{Math.round(Number(token.rotation)||0)}°</b>
+                          )}
+                        </div>
                       )}
                       {token.status && Object.entries(token.status).some(([,v])=>v) && <div style={{display:'flex',gap:2*tokenScale,flexWrap:'wrap',justifyContent:'center',maxWidth:100*tokenScale}}>{STATUS_LIST.filter(st=>token.status?.[st.id]).map(st=><span key={st.id} title={st.label} style={{fontSize:10*tokenScale,filter:'drop-shadow(0 0 3px #000)'}}>{st.icon}</span>)}</div>}
                       {floatingEffects.filter(f=>String(f.mapId)===String(currentMap.id)&&String(f.tokenId)===String(token.id)).map(f=><div key={f.id} style={{position:'absolute',left:'50%',top:-8*tokenScale,color:f.color||'#fff',fontFamily:'Cinzel Decorative,serif',fontWeight:900,fontSize:16*tokenScale,textShadow:'0 2px 6px #000,0 0 10px currentColor',whiteSpace:'nowrap',pointerEvents:'none',animation:'floatingCombatText 2.7s ease-out forwards',zIndex:50}}>{f.text}</div>)}

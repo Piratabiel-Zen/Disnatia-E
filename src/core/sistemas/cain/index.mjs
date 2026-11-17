@@ -144,6 +144,11 @@ const SISTEMA = Object.freeze({
   blocosDaFicha: BLOCOS_DA_FICHA,
 
   // Abas que este sistema traz além das estruturais (fichas, mapas, crônicas).
+  // As fichas de exorcista moram em coleção própria: a ficha do CAIN não
+  // se parece em nada com a da Dinastia E e misturar as duas na mesma
+  // coleção daria fichas meio preenchidas dos dois lados.
+  colecaoDeFichas: 'fichas',
+
   abas: Object.freeze([
     'investigacao', 'pecados', 'documentos', 'livro',
     'manual', 'agendas', 'tiposdepecado',

@@ -25,7 +25,7 @@ const TETO_DE_FICHAS = 12;
  * caçada saber que o colega está a um ferimento da morte muda a jogada. O que
  * não se lê são os segredos, que ficam entre o dono e o Admin.
  */
-export default function FichasCainPage() {
+export default function FichasCainPage({ playerSheetId = '' }) {
   const { membro, carregando, campanha } = useMembro();
   const [fichas, setFichas] = useState([]);
   const [membros, setMembros] = useState([]);
@@ -80,6 +80,19 @@ export default function FichasCainPage() {
     gravar({ ...ficha, dono: String(uid || '') });
   }, [gravar]);
 
+  // A SENHA DA FICHA
+  //
+  // É o que a mesa já conhece da Dinastia E: o Admin registra a ficha no
+  // nome de alguém, define uma senha e passa a senha para essa pessoa. Quem
+  // abre a ficha na porta de entrada passa a jogar por ela.
+  //
+  // Ela convive com o dono por conta: são duas chaves para a mesma porta. A
+  // conta serve quando o jogador tem login; a senha serve quando ele entra de
+  // outro aparelho ou quando a mesa ainda não se cadastrou toda.
+  const definirSenha = useCallback((ficha, senha) => {
+    gravar({ ...ficha, senha: String(senha || '') });
+  }, [gravar]);
+
   const remover = useCallback(async ficha => {
     await deleteDoc(docIn('fichas', String(ficha.id)));
     setAbertaId(atual => (atual === String(ficha.id) ? null : atual));
@@ -93,6 +106,9 @@ export default function FichasCainPage() {
   }, [fichas, membro?.uid]);
 
   const aberta = lista.find(f => String(f.id) === abertaId) || null;
+  // A ficha aberta na porta de entrada é desta pessoa, mesmo que o Admin
+  // ainda não tenha amarrado a conta dela.
+  const minhaPelaPorta = ficha => String(ficha?.id || '') === String(playerSheetId || '');
   const nomePorUid = useMemo(
     () => Object.fromEntries(membros.map(m => [m.uid, m.nome || m.uid.slice(0, 6)])),
     [membros],
@@ -159,7 +175,7 @@ export default function FichasCainPage() {
                     <b>{f.nome || 'Exorcista sem nome'}</b>
                     <em>{estado.rotulo}</em>
                   </span>
-                  {minha && <span className="registro-selo">sua</span>}
+                  {(minha || minhaPelaPorta(f)) && <span className="registro-selo">sua</span>}
                   {semDono && mestre && <span className="registro-selo pendente">sem dono</span>}
                 </button>
               </li>
@@ -192,13 +208,24 @@ export default function FichasCainPage() {
                   assim que entrarem, os nomes aparecem aqui.
                 </p>
               )}
+              <label>
+                <span>Senha desta ficha</span>
+                <input
+                  type="text" value={aberta.senha || ''} placeholder="sem senha: abre direto"
+                  onChange={e => definirSenha(aberta, e.target.value)}
+                />
+              </label>
+              <p className="registro-aviso">
+                Passe esta senha ao jogador. É com ela que ele abre a ficha na porta
+                da mesa. Sem senha, qualquer um que entrar na mesa abre esta ficha.
+              </p>
               <button type="button" className="registro-remover" onClick={() => remover(aberta)}>
                 Arquivar esta ficha
               </button>
             </div>
           )}
 
-          {!mestre && !podeEditarFicha(aberta, membro) && (
+          {!mestre && !podeEditarFicha(aberta, membro) && !minhaPelaPorta(aberta) && (
             <p className="registro-aviso">
               Esta ficha é de {nomePorUid[aberta.dono] || 'outro exorcista'}. Você está lendo, não editando.
             </p>
@@ -208,6 +235,7 @@ export default function FichasCainPage() {
             key={String(aberta.id)}
             ficha={aberta}
             membro={membro}
+            fichaLiberada={playerSheetId}
             aoMudar={gravar}
           />
         </>

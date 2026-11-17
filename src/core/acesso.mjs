@@ -38,10 +38,12 @@ export function podeVerDocumento(documento, membro) {
 }
 
 /** Os segredos da ficha: o dono vê os seus, o Mestre vê os de todos. */
-export function podeVerSegredosDaFicha(ficha, membro) {
+export function podeVerSegredosDaFicha(ficha, membro, fichaLiberada = '') {
   if (!membro) return false;
   if (ehMestre(membro)) return true;
-  return String(ficha?.dono || '') === String(membro.uid);
+  if (fichaLiberada && String(ficha?.id || '') === String(fichaLiberada)) return true;
+  const dono = String(ficha?.dono || '');
+  return dono !== '' && dono === String(membro.uid);
 }
 
 /**
@@ -55,9 +57,13 @@ export function podeVerSegredosDaFicha(ficha, membro) {
  * a mesa inteira — senão o primeiro jogador que abrisse a aba começaria a
  * escrever por cima do personagem que o Mestre preparou para outro.
  */
-export function podeEditarFicha(ficha, membro) {
+export function podeEditarFicha(ficha, membro, fichaLiberada = '') {
   if (!membro) return false;
   if (ehMestre(membro)) return true;
+  // Duas chaves para a mesma porta. A conta serve a quem o Admin amarrou à
+  // ficha; a senha da ficha serve a quem abriu por ela na entrada da mesa —
+  // de outro aparelho, ou antes de a mesa inteira se cadastrar.
+  if (fichaLiberada && String(ficha?.id || '') === String(fichaLiberada)) return true;
   const dono = String(ficha?.dono || '');
   return dono !== '' && dono === String(membro.uid);
 }

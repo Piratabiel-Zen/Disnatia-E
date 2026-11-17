@@ -58,6 +58,18 @@ export function dadosDoSistema(campanha) {
   return { faces, maximo, notacao: dados.notacao || `d${faces[faces.length - 1]}`, resumo: dados.resumo || '' };
 }
 
+/**
+ * Em que coleção moram as fichas desta mesa.
+ *
+ * As fichas da Dinastia E e as do CAIN não têm nada em comum — classe e
+ * atributos de um lado, perícias de 0 a 3 e talismã do outro —, então moram
+ * em coleções separadas. Quem precisa saber disso é a porta de entrada: é
+ * ela que lista as fichas para a pessoa escolher a sua, e listar da coleção
+ * errada é mostrar uma porta que não abre.
+ */
+export const colecaoDeFichas = campanha =>
+  sistemaDe(campanha)?.colecaoDeFichas || 'sheets';
+
 /** Esta campanha tem esta aba, considerando o sistema dela? */
 export function sistemaTemAba(campanha, abaId) {
   const abas = sistemaDe(campanha)?.abas || [];

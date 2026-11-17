@@ -84,3 +84,79 @@ html[data-motion="reduced"] .map-token-body{animation:none!important}
   to{transform:rotateY(180deg) scale(1);}
 }
 html[data-motion="reduced"] .battlemap-flip-dial[data-spinning="true"] span{animation:none;}
+
+/* ═════════════════ A BARRA DE CONTROLES DO TOKEN ═════════════════
+   Eram dois círculos soltos acima da peça, posicionados por um deslocamento
+   fixo em pixels: nada os ligava, e numa mesa cheia eles pousavam em cima do
+   nome do token vizinho. Agora é uma barra só, centrada na peça.
+
+   A ordem é a da ação: girar à esquerda, mirar, girar à direita, espelhar.
+   O punho de mira fica no meio porque é o único que se arrasta — ter um
+   alvo de arrasto na ponta da fileira convida a sair dele sem querer. */
+.battlemap-token-controles{
+  display:flex;align-items:center;gap:3px;
+  padding:3px;border-radius:999px;
+  background:rgba(18,20,27,.9);
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 4px 14px rgba(0,0,0,.55);
+  /* Sem backdrop-filter aqui de propósito. O fundo já é 90% opaco, então o
+     desfoque não acrescentava nada visível — e, dentro de um pai com
+     transform, o Chromium recorta o desfoque pela caixa e não pelo raio,
+     deixando um retângulo claro em volta da pílula. */
+  pointer-events:auto;
+}
+.battlemap-token-controles>button,
+.battlemap-token-controles>.battlemap-facing-dial{
+  width:var(--tamanho,26px);height:var(--tamanho,26px);
+  flex-shrink:0;display:grid;place-items:center;padding:0;
+  border-radius:50%;border:1px solid transparent;background:transparent;
+  color:rgba(255,255,255,.82);line-height:1;cursor:pointer;
+  font-size:calc(var(--tamanho,26px) * .52);
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.battlemap-token-controles>button:hover,
+.battlemap-token-controles>button:focus-visible{
+  background:rgba(168,85,247,.2);border-color:rgba(168,85,247,.45);
+  color:#E9D5FF;outline:none;
+}
+.battlemap-token-controles .battlemap-flip-dial{
+  box-shadow:none;backdrop-filter:none;opacity:1;
+  background:transparent;border-color:transparent;
+}
+
+/* O punho de mira. A agulha é o que faltava: um token de foto não tem
+   "frente" visível, então girar não dava retorno nenhum na tela. */
+.battlemap-token-controles .battlemap-facing-dial{
+  position:relative;touch-action:none;cursor:grab;
+  background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);
+}
+.battlemap-token-controles .battlemap-facing-dial[data-girando="sim"]{
+  cursor:grabbing;background:rgba(168,85,247,.26);border-color:rgba(168,85,247,.6);
+}
+.battlemap-token-controles .battlemap-facing-dial i{
+  display:block;width:100%;height:100%;border-radius:50%;
+  transform-origin:50% 50%;
+}
+/* A agulha é um triângulo pequeno encostado na borda de cima do punho: ele
+   gira junto com o token e mostra para onde a peça está virada. */
+.battlemap-token-controles .battlemap-facing-dial i::before{
+  content:'';position:absolute;left:50%;top:9%;
+  width:0;height:0;margin-left:-3px;
+  border-left:3px solid transparent;border-right:3px solid transparent;
+  border-bottom:6px solid rgba(255,255,255,.9);
+}
+.battlemap-token-controles .battlemap-facing-dial i::after{
+  content:'';position:absolute;left:50%;top:50%;
+  width:3px;height:3px;margin:-1.5px 0 0 -1.5px;border-radius:50%;
+  background:rgba(255,255,255,.5);
+}
+
+/* O ângulo só aparece enquanto se mira: fora disso é número piscando na
+   tela sem ninguém ter perguntado. */
+.battlemap-token-angulo{
+  position:absolute;left:50%;top:-6px;transform:translate(-50%,-100%);
+  padding:2px 7px;border-radius:999px;white-space:nowrap;
+  background:rgba(18,20,27,.95);border:1px solid rgba(168,85,247,.5);
+  color:#E9D5FF;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  font-weight:400;letter-spacing:.06em;
+}

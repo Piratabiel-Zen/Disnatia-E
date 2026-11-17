@@ -236,3 +236,31 @@ test('a senha de Mestre promove no servidor, não só na tela', () => {
   assert.match(gate, /definirSegredosDaMesa/,
     'a mesa nova voltou a nascer sem as senhas no lugar que as regras leem');
 });
+
+/* ───────────── duas chaves para a mesma ficha ───────────── */
+
+test('a senha da ficha abre a ficha, mesmo sem conta amarrada', () => {
+  // É o fluxo da Dinastia E que a mesa já conhece: o Admin registra a ficha
+  // no nome de alguém, define uma senha e passa a senha para essa pessoa.
+  // Quem abriu por ela na porta joga por ela — mesmo de outro aparelho, ou
+  // antes de a mesa inteira se cadastrar.
+  const ficha = { id: 'f7', dono: '' };
+  assert.equal(podeEditarFicha(ficha, beto), false, 'sem a senha, continua fechada');
+  assert.equal(podeEditarFicha(ficha, beto, 'f7'), true, 'abriu com a senha da ficha');
+  assert.equal(podeVerSegredosDaFicha(ficha, beto, 'f7'), true);
+});
+
+test('abrir uma ficha não abre as outras', () => {
+  // O erro que isto pega: tratar "está logado como jogador" como se fosse
+  // "é dono de tudo", e o jogador passar a editar a ficha do colega.
+  const outra = { id: 'f8', dono: 'a1' };
+  assert.equal(podeEditarFicha(outra, beto, 'f7'), false);
+  assert.equal(podeVerSegredosDaFicha(outra, beto, 'f7'), false);
+  assert.equal(podeEditarFicha(outra, ana, 'f7'), true, 'a dona continua dona');
+});
+
+test('ficha liberada vazia não libera ficha sem id', () => {
+  // Um id vazio batendo com outro id vazio abriria tudo de uma vez.
+  assert.equal(podeEditarFicha({ dono: '' }, beto, ''), false);
+  assert.equal(podeVerSegredosDaFicha({ dono: '' }, beto, ''), false);
+});

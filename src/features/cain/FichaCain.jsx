@@ -249,9 +249,11 @@ function Rolador({ ficha, aoRolar }) {
  * edita a dele, o Admin edita todas, e os segredos só aparecem para o dono e
  * para o Admin. A tela não decide isso sozinha — e o servidor confere de novo.
  */
-export default function FichaCain({ ficha, membro, aoMudar, aoRolar }) {
-  const editavel = podeEditarFicha(ficha, membro);
-  const veSegredos = podeVerSegredosDaFicha(ficha, membro);
+export default function FichaCain({ ficha, membro, aoMudar, aoRolar, fichaLiberada = '' }) {
+  // fichaLiberada: a ficha que esta pessoa abriu com a senha, na porta da
+  // mesa. Vale como dono mesmo quando a conta dela ainda não foi amarrada.
+  const editavel = podeEditarFicha(ficha, membro, fichaLiberada);
+  const veSegredos = podeVerSegredosDaFicha(ficha, membro, fichaLiberada);
   const somenteLeitura = !editavel;
 
   const estado = useMemo(() => estadoDoExorcista(ficha), [ficha]);

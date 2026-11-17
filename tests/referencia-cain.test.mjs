@@ -18,7 +18,10 @@ import { dirname, join as joinPath } from 'node:path';
 import { MANUAL_CAIN, buscarNoManual } from '../src/features/cain/manualCain.mjs';
 import { TIPOS_DE_PECADO, COMO_UM_PECADO_E_FEITO } from '../src/features/cain/tiposDePecado.mjs';
 import { BLASFEMIAS, BLASFEMIAS_DETALHADAS } from '../src/core/sistemas/cain/index.mjs';
-import { dadosDoSistema, navegacaoDoSistema, sistemaTemAba } from '../src/core/sistemas/index.mjs';
+import {
+  colecaoDeFichas as colecaoDeFichasImportada,
+  dadosDoSistema, navegacaoDoSistema, sistemaTemAba,
+} from '../src/core/sistemas/index.mjs';
 
 const raiz = joinPath(dirname(fileURLToPath(import.meta.url)), '..');
 const ler = caminho => readFileSync(joinPath(raiz, caminho), 'utf8');
@@ -213,4 +216,61 @@ test('a cruz gira e flutua como o tomo, e cede onde o movimento cede', () => {
   assert.ok(css.includes('html[data-motion="reduced"]'));
   assert.ok(!css.includes('prefers-reduced-motion'),
     'use html[data-motion="reduced"], não a media query');
+});
+
+/* ──────────────── a porta de entrada da mesa de CAIN ──────────────── */
+
+test('a porta lista as fichas da coleção que o sistema usa', () => {
+  const colecaoDeFichas = colecaoDeFichasImportada;
+  assert.equal(colecaoDeFichas(mesaCain), 'fichas');
+  assert.equal(colecaoDeFichas(mesaDinastia), 'sheets');
+  assert.equal(colecaoDeFichas({}), 'sheets', 'sistema desconhecido cai no padrão');
+
+  const porta = ler('src/experience/PlayerAccess.jsx');
+  // O erro que isto pega: a porta voltar a ler 'sheets' fixo e mostrar uma
+  // lista vazia numa mesa de CAIN cujas fichas existem, só que noutro lugar.
+  assert.ok(!porta.includes("col('sheets')"),
+    'a porta voltou a ler a coleção da Dinastia E em qualquer mesa');
+  assert.ok(porta.includes('colecaoDeFichas'));
+});
+
+test('entrar como Mestre pela porta também promove no servidor', () => {
+  const porta = ler('src/experience/PlayerAccess.jsx');
+  assert.match(porta, /entrarNaMesa\(\{[^}]*papel: 'mestre'/,
+    'a senha de Mestre na porta voltou a ser só um interruptor de tela');
+});
+
+test('o Admin consegue definir a senha de cada ficha', () => {
+  const registro = ler('src/features/cain/FichasCainPage.jsx');
+  assert.match(registro, /Senha desta ficha/);
+  assert.match(registro, /definirSenha/);
+  // E a ficha aberta pela senha vale como da pessoa, mesmo sem conta amarrada.
+  assert.match(registro, /fichaLiberada=\{playerSheetId\}/);
+});
+
+/* ──────────────── os controles do token no mapa ──────────────── */
+
+test('o punho de rotação responde ao clique, não só ao arrasto', () => {
+  const mapa = ler('src/features/mapa-batalha/BattleMapPage.jsx');
+  // O sintoma: apertar o botão e não acontecer nada. A rotação só existia
+  // por arrasto, e o próprio código dizia que o clique não mexia no ângulo.
+  assert.match(mapa, /const girarToken = \(token, passo\)/,
+    'o giro por passo sumiu: o botão volta a parecer quebrado');
+  assert.match(mapa, /girarToken\(token,-45\)/);
+  assert.match(mapa, /girarToken\(token,45\)/);
+  // Oito passos de 45° fecham a volta.
+  assert.equal(360 % 45, 0);
+});
+
+test('os controles do token são uma barra só, não círculos soltos', () => {
+  const mapa = ler('src/features/mapa-batalha/BattleMapPage.jsx');
+  const css = ler('src/features/mapa-batalha/tokens-vivos.css');
+  assert.match(mapa, /className="battlemap-token-controles"/);
+  assert.match(css, /\.battlemap-token-controles\{/);
+  // O deslocamento fixo em pixels que separava os dois círculos some.
+  assert.ok(!/translate\(calc\(-50% \+ \$\{Math\.max\(26/.test(mapa),
+    'o botão de espelhar voltou a flutuar por conta própria');
+  // E o punho ganha agulha: sem ela, girar um token de foto não dava
+  // retorno nenhum na tela.
+  assert.match(css, /\.battlemap-facing-dial i::before/);
 });
