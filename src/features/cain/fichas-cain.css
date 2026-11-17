@@ -9,12 +9,17 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .registro{
-  --papel:#0A0908;
-  --linha:#2E2721;
+  /* A ficha segue a paleta da MESA, e não uma cor fixa.
+     Estas eram cores cravadas em latão, então uma mesa de clima vermelho ou
+     azul continuava com formulário dourado — a atmosfera mudava em volta e
+     parava na porta da ficha. Os valores à direita do var() são o que a
+     Dinastia E e qualquer mesa sem tema declarado continuam usando. */
+  --papel:var(--fundo-mesa,#0A0908);
+  --linha:var(--linha-mesa,#2E2721);
   --linha-forte:#4A3E31;
-  --bronze:#A98045;
-  --bronze-claro:#D4AC6E;
-  --tinta:#CEC4B4;
+  --bronze:var(--contraste-mesa,#A98045);
+  --bronze-claro:var(--contraste-claro-mesa,#D4AC6E);
+  --tinta:var(--ink-mesa,#CEC4B4);
   --tinta-fraca:#7E7466;
   --mono:'IBM Plex Mono','SF Mono',ui-monospace,'Courier New',monospace;
   --titulo:'Cinzel',Georgia,serif;

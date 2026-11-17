@@ -26,6 +26,7 @@ export const CAMPAIGN_THEMES = {
     accent: '#A855F7',
     accentSoft: '#D6A7FF',
     contraste: '#6BE0FF',
+    contrasteSoft: '#B7F0FF',
     bg: '#0B0718',
     superficie: '#140C26',
     linha: '#2A1D44',
@@ -43,6 +44,7 @@ export const CAMPAIGN_THEMES = {
     accent: '#C8102E',
     accentSoft: '#FF4D5E',
     contraste: '#F2F0EE',
+    contrasteSoft: '#FFFFFF',
     bg: '#0A0708',
     superficie: '#150C0E',
     linha: '#3A1A1F',
@@ -60,6 +62,7 @@ export const CAMPAIGN_THEMES = {
     accent: '#C79A3C',
     accentSoft: '#EBC97A',
     contraste: '#4E8FD4',
+    contrasteSoft: '#9DC4ED',
     bg: '#0E1118',
     superficie: '#141A26',
     linha: '#2A3448',
@@ -74,20 +77,28 @@ export const CAMPAIGN_THEMES = {
   //
   // O nome descreve o VISUAL, não um lugar: qualquer mesa pode escolhê-lo, e
   // a cidade onde a campanha se passa é assunto do campo Mundo.
-  // Cinza e preto, como pedido — mas cinza puro vira névoa e some. O latão
-  // entra como a cor que contrasta: é quente, destaca em cima do carvão e
-  // combina com gás, relógio e instrumento de metal.
+  // Vitoriano sombrio: a mesa de investigação à noite.
+  //
+  // A primeira versão era carvão com latão, e saiu DOURADA — leu como salão
+  // antigo, não como caso aberto. Investigação tem outra paleta: sangue sob
+  // lampião, azul-marinho de noite fria e preto. O vermelho é escuro mas
+  // vibrante, senão o conjunto afunda e vira só mais uma tela cinza.
+  //
+  // O azul faz dois trabalhos: é o fundo (que puxa para a noite em vez do
+  // preto morto) e é a cor que quebra a paleta, viva o bastante para marcar
+  // o que importa sem disputar com o vermelho.
   veneziano: {
     label: 'Vitoriano sombrio',
     sigil: '⚜',
-    accent: '#D9A441',
-    accentSoft: '#F0CE86',
-    bronze: '#A98045',
-    contraste: '#E8E2D6',
-    bg: '#0C0D0F',
-    superficie: '#15171A',
-    linha: '#32353A',
-    ink: '#CFCCC5',
+    accent: '#B51E34',
+    accentSoft: '#E04356',
+    bronze: '#8CA0C4',
+    contraste: '#3E6FC4',
+    contrasteSoft: '#8FB2E8',
+    bg: '#070910',
+    superficie: '#0F1320',
+    linha: '#232C42',
+    ink: '#D4D7E0',
     display: "'Cinzel', Georgia, serif",
     body: "'Crimson Text', Georgia, serif",
     background: 'smoke',
@@ -100,6 +111,7 @@ export const CAMPAIGN_THEMES = {
     accent: '#7FA8A0',
     accentSoft: '#BCDAD4',
     contraste: '#E8C9A0',
+    contrasteSoft: '#F5E4CC',
     bg: '#14181A',
     superficie: '#1D2325',
     linha: '#313A3C',

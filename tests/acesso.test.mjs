@@ -294,3 +294,41 @@ test('o diálogo da senha sai para fora da barra do topo', () => {
   assert.match(botao, /createPortal\(/);
   assert.match(botao, /document\.body,/);
 });
+
+/* ───────── quem cria, quem manda, e quem só joga ───────── */
+
+test('o botão de remover só aparece na mesa que a conta criou', () => {
+  // Entrar no modo de gerência não é passe para apagar a mesa dos outros.
+  // Antes bastava estar gerenciando: o botão aparecia em todas.
+  const gate = readFileSync(
+    new URL('../src/features/campanhas/CampaignGate.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /const souQuemCriou = Boolean\(contaUid\) && String\(campaign\.criadoPor \|\| ''\) === String\(contaUid\)/);
+  assert.match(gate, /const podeRemover = canManage && !campaign\.primary && \(souQuemCriou \|\| mesaOrfa\)/);
+  assert.ok(!/\{canManage && !campaign\.primary \?/.test(gate),
+    'o botão voltou a aparecer em qualquer mesa durante a gerência');
+  // E a mesa sai da lista no clique, sem esperar a volta do servidor.
+  assert.match(gate, /setRows\(atuais => atuais\.filter/);
+});
+
+test('ser Mestre vale por senha, não por ter criado a mesa', () => {
+  // O pedido: quem tiver a senha de Mestre daquela mesa entra com todo o
+  // acesso, seja quem for que a criou. Nas regras, tudo que é do Mestre
+  // passa por mestre(cid) — que olha o papel no registro de membro, e não
+  // quem criou. O criador vira Mestre por outro caminho; chegando lá, os
+  // dois são a mesma coisa.
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(regras, /function mestre\(cid\) \{\s*return membro\(cid\) && papel\(cid\) == 'mestre';/,
+    'ser Mestre deixou de ser uma questão de papel');
+  // Atualizar a mesa, trocar as senhas e mexer nos membros: tudo por papel.
+  assert.match(regras, /allow update: if mestre\(cid\)/);
+  assert.match(regras, /allow write: if mestre\(cid\) \|\| \(logado\(\) && request\.auth\.uid == donoDaMesa\(cid\)\)/);
+  assert.match(regras, /allow update, delete: if mestre\(cid\)/);
+});
+
+test('o jogador alcança o que é da mesa e o que o Mestre liberou', () => {
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  // Mapa, fichas, manual, crônicas: basta ser da mesa.
+  assert.match(regras, /allow read: if colecaoDeCampanha\(colecao\) && membro\(idNaColecao\(colecao\)\)/);
+  // Documento guardado, não. Esse só chega a quem foi nomeado.
+  assert.match(regras, /request\.auth\.uid in resource\.data\.get\('liberadoPara', \[\]\)/);
+});

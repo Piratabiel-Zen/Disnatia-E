@@ -30,7 +30,18 @@ async function sha256(value) {
 // Cada mesa é um portal: um astrolábio que gira devagar em volta do sigilo.
 // Escolher a mesa abre o portal; se ela tem senha, é ali mesmo que se diz a
 // palavra de passagem.
-function CampaignPortal({ campaign, onEnter, onRemove, canManage }) {
+function CampaignPortal({ campaign, onEnter, onRemove, canManage, contaUid, removendo }) {
+  // REMOVER SÓ APARECE NA MESA QUE ESTA CONTA CRIOU.
+  //
+  // Entrar no modo de gerência não é um passe para apagar a mesa dos outros.
+  // Quem abriu a campanha é quem responde por ela, e é o único a ver o botão.
+  //
+  // A exceção são as mesas feitas antes de existir o campo de dono: ninguém
+  // é dono delas, e sem isto ficariam na lista para sempre sem que nenhuma
+  // conta pudesse removê-las.
+  const souQuemCriou = Boolean(contaUid) && String(campaign.criadoPor || '') === String(contaUid);
+  const mesaOrfa = !campaign.criadoPor;
+  const podeRemover = canManage && !campaign.primary && (souQuemCriou || mesaOrfa);
   const theme = campaignTheme(campaign);
   const locked = Boolean(requiredPasswordHash(campaign)) && !isUnlocked(campaign);
   const [asking, setAsking] = useState(false);
@@ -111,8 +122,14 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage }) {
       ) : (
         <div className="portal-actions">
           <button type="button" className="portal-enter" onClick={enter}>{locked ? 'Entrar com senha' : 'Entrar na mesa'}</button>
-          {canManage && !campaign.primary ? (
-            <button type="button" className="portal-back" onClick={() => onRemove(campaign)} title="Remover esta mesa da lista">Remover</button>
+          {podeRemover ? (
+            <button
+              type="button" className="portal-back" disabled={removendo}
+              onClick={() => onRemove(campaign)}
+              title={mesaOrfa
+                ? 'Mesa antiga, sem dono registrado: qualquer conta pode retirá-la da lista'
+                : 'Remover esta mesa, que foi criada por você'}
+            >{removendo ? 'Removendo...' : 'Remover'}</button>
           ) : null}
         </div>
       )}
@@ -124,6 +141,7 @@ export default function CampaignGate({ onChoose }) {
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [manage, setManage] = useState(false);
+  const [removendoId, setRemovendoId] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [draft, setDraft] = useState({ name: '', genre: '', world: '', tagline: '', theme: 'sombrio', sistema: SISTEMA_PADRAO, senhaMesa: '', senhaMestre: '' });
@@ -211,13 +229,28 @@ export default function CampaignGate({ onChoose }) {
   };
 
   const removeCampaign = async campaign => {
-    if (campaign.primary) return;
-    // Só sai da lista: os dados da mesa continuam guardados e voltam se ela for recriada.
-    try { await deleteDoc(globalDoc('campaigns', campaign.id)); }
-    catch (erro) {
+    if (campaign.primary || removendoId) return;
+    setRemovendoId(String(campaign.id));
+    setError('');
+    // A mesa sai da lista ANTES da resposta do servidor.
+    //
+    // O apagar chega até o Firestore e volta pelo onSnapshot, e essa volta
+    // leva um instante — tempo suficiente para a pessoa achar que o clique
+    // não pegou e clicar de novo. Tirando na hora, a tela responde ao gesto;
+    // se o servidor recusar, a mesa volta para a lista com o motivo.
+    setRows(atuais => atuais.filter(row => String(row.id) !== String(campaign.id)));
+    try {
+      // Só sai da lista: os dados da mesa continuam guardados e voltam se ela for recriada.
+      await deleteDoc(globalDoc('campaigns', campaign.id));
+    } catch (erro) {
+      setRows(atuais => (atuais.some(row => String(row.id) === String(campaign.id))
+        ? atuais
+        : [...atuais, campaign]));
       setError(erro?.code === 'permission-denied'
-        ? 'Só o Admin da mesa pode removê-la. Entre na conta que a criou.'
+        ? 'Só quem criou esta mesa pode removê-la. Entre na conta que a criou.'
         : mensagemDeErro(erro));
+    } finally {
+      setRemovendoId('');
     }
   };
 
@@ -246,6 +279,8 @@ export default function CampaignGate({ onChoose }) {
               onEnter={onChoose}
               onRemove={removeCampaign}
               canManage={manage}
+              contaUid={conta?.uid || ''}
+              removendo={removendoId === String(campaign.id)}
             />
           ))}
         </div>

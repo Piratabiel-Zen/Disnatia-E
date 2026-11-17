@@ -57,15 +57,29 @@ test('o contraste de cada tema contrasta de verdade com o acento dele', () => {
   }
 });
 
-test('o investigativo é vermelho e o vitoriano não é', () => {
-  const vermelho = cor => {
-    const [r, g, b] = [1, 3, 5].map(i => parseInt(cor.slice(i, i + 2), 16));
-    return r > 150 && r > g * 2 && r > b * 2;
-  };
-  assert.ok(vermelho(CAMPAIGN_THEMES.sombrio.accent),
-    'o tema investigativo precisa ser vermelho de verdade');
-  assert.ok(!vermelho(CAMPAIGN_THEMES.veneziano.accent),
-    'o vitoriano é cinza e preto com uma cor quente, não outro tema vermelho');
+test('os dois temas de investigação são vermelhos, e nenhum é dourado', () => {
+  // A primeira versão do vitoriano era carvão com latão, e na tela leu como
+  // salão antigo em vez de caso aberto. Investigação pede sangue, noite e
+  // preto — então os dois temas escuros são vermelhos, e o que os separa é a
+  // segunda cor: branco frio num, azul-marinho no outro.
+  const canais = cor => [1, 3, 5].map(i => parseInt(cor.slice(i, i + 2), 16));
+  const vermelho = cor => { const [r, g, b] = canais(cor); return r > 150 && r > g * 2 && r > b * 2; };
+  const dourado = cor => { const [r, g, b] = canais(cor); return r > 150 && g > 110 && b < 110; };
+
+  for (const chave of ['sombrio', 'veneziano']) {
+    assert.ok(vermelho(CAMPAIGN_THEMES[chave].accent),
+      `${chave} precisa de acento vermelho`);
+    assert.ok(!dourado(CAMPAIGN_THEMES[chave].accent),
+      `${chave} voltou a ser dourado`);
+  }
+
+  // E o azul-marinho do vitoriano: é ele que impede os dois de virarem a
+  // mesma tela vermelha.
+  const [r, g, b] = canais(CAMPAIGN_THEMES.veneziano.contraste);
+  assert.ok(b > 140 && b > r * 1.5, 'o vitoriano perdeu o azul-marinho');
+  const [, , bFundo] = canais(CAMPAIGN_THEMES.veneziano.bg);
+  const [rFundo] = canais(CAMPAIGN_THEMES.veneziano.bg);
+  assert.ok(bFundo > rFundo, 'o fundo do vitoriano puxa para a noite, não para o preto morto');
 });
 
 test('cada tema tem a luz de ambiente dele na folha de estilo', () => {

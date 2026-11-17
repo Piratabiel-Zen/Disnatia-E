@@ -18,6 +18,7 @@ import { dirname, join as joinPath } from 'node:path';
 import { MANUAL_CAIN, buscarNoManual } from '../src/features/cain/manualCain.mjs';
 import { TIPOS_DE_PECADO, COMO_UM_PECADO_E_FEITO } from '../src/features/cain/tiposDePecado.mjs';
 import { BLASFEMIAS, BLASFEMIAS_DETALHADAS } from '../src/core/sistemas/cain/index.mjs';
+import { campaignHasTab } from '../src/core/campaignModules.mjs';
 import {
   colecaoDeFichas as colecaoDeFichasImportada,
   dadosDoSistema, navegacaoDoSistema, sistemaTemAba,
@@ -273,4 +274,27 @@ test('os controles do token são uma barra só, não círculos soltos', () => {
   // E o punho ganha agulha: sem ela, girar um token de foto não dava
   // retorno nenhum na tela.
   assert.match(css, /\.battlemap-facing-dial i::before/);
+});
+
+test('o Livro aparece numa mesa cujo sistema declara a aba', () => {
+  // O filtro de módulos barrava 'livro' em toda mesa que não fosse a
+  // Dinastia E, porque ali 'livro' é o Livro da Mandíbula. Só que o CAIN
+  // declara a aba por conta própria — é onde mora o PDF do sistema — e a
+  // mesa ficava sem acesso a ele.
+  assert.equal(campaignHasTab(mesaCain, 'livro'), true);
+  // E a mesa sem sistema declarado continua sem: senão sistemaDe() cai no
+  // padrão (a própria Dinastia E) e todas ganhariam o Livro de brinde.
+  assert.equal(campaignHasTab({ id: 'mesa-qualquer' }, 'livro'), false);
+});
+
+test('tudo que o CAIN oferece é visível ao jogador', () => {
+  // O pedido: o jogador vê o que o Mestre liberar e mais o que é público —
+  // mapa, a própria ficha, as regras. Numa mesa de CAIN não sobrou nenhum
+  // grupo só de Admin, então a navegação é a mesma para os dois.
+  const grupos = navegacaoDoSistema(mesaCain, []);
+  assert.ok(!grupos.some(g => g.masterOnly), 'voltou um grupo escondido do jogador');
+  const ids = grupos.flatMap(g => g.items.map(i => i.id));
+  for (const publica of ['mapamundi', 'fichas', 'manual', 'agendas', 'tiposdepecado', 'livro']) {
+    assert.ok(ids.includes(publica), `a aba pública "${publica}" sumiu da navegação`);
+  }
 });

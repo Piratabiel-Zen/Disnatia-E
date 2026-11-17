@@ -125,7 +125,8 @@ export default function App(){
   useEffect(() => {
     const raiz = document.documentElement;
     const nomes = ['--accent', '--accent-soft', '--bronze', '--ink-mesa',
-                   '--contraste-mesa', '--superficie-mesa', '--linha-mesa', '--fundo-mesa'];
+                   '--contraste-mesa', '--contraste-claro-mesa',
+                   '--superficie-mesa', '--linha-mesa', '--fundo-mesa'];
     if (!campaign || campaign.primary !== false) {
       for (const nome of nomes) raiz.style.removeProperty(nome);
       raiz.removeAttribute('data-tema-mesa');
@@ -139,6 +140,7 @@ export default function App(){
     // trocar de mesa só trocava a cor dos botões e as cinco atmosferas
     // continuavam sendo a mesma tela escura.
     if (theme.contraste) raiz.style.setProperty('--contraste-mesa', theme.contraste);
+    if (theme.contrasteSoft) raiz.style.setProperty('--contraste-claro-mesa', theme.contrasteSoft);
     if (theme.superficie) raiz.style.setProperty('--superficie-mesa', theme.superficie);
     if (theme.linha) raiz.style.setProperty('--linha-mesa', theme.linha);
     raiz.style.setProperty('--fundo-mesa', theme.bg);

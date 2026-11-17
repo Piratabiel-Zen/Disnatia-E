@@ -9,6 +9,8 @@
 // os padrões abaixo já dizem isso. Qualquer mesa pode ligar um módulo depois,
 // gravando `modules` no seu registro em `campaigns`.
 
+import { sistemaTemAba } from './sistemas/index.mjs';
+
 export const PRIMARY_CAMPAIGN_ID = 'dinastia-e';
 
 /** Abas que carregam conteúdo escrito para uma mesa específica. */
@@ -27,6 +29,18 @@ export function campaignHasTab(campaign, tabId) {
   if (!LORE_TABS.includes(id)) return true;
   const modules = campaign?.modules;
   if (modules && typeof modules === 'object' && id in modules) return Boolean(modules[id]);
+  // Um sistema ESCOLHIDO que declara a aba, tem a aba.
+  //
+  // "livro" e "regras" foram barrados aqui porque eram o Livro da Mandíbula
+  // e as regras da Dinastia E — conteúdo de uma campanha, não do site. Mas o
+  // CAIN declara "livro" por conta própria: ali é o PDF do sistema, e o
+  // filtro escondia a aba de uma mesa que legitimamente a tem.
+  //
+  // A checagem exige `campaign.sistema` preenchido de propósito. Sem isso,
+  // sistemaDe() cai no padrão — que é a própria Dinastia E — e toda mesa sem
+  // sistema declarado voltaria a ganhar o Livro da Mandíbula de brinde,
+  // exatamente o que este filtro existe para impedir.
+  if (campaign?.sistema && sistemaTemAba(campaign, id)) return true;
   return isPrimaryCampaign(campaign);
 }
 
