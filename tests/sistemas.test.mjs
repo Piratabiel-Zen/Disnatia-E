@@ -92,10 +92,13 @@ test('a navegação vem do sistema: CAIN tem Mural, Dinastia E tem Bestiário', 
 
   const veneza = navegacaoDoSistema({ sistema: 'cain' }, padrao);
   const abas = veneza.flatMap(g => g.items.map(i => i.id));
-  for (const esperada of ['investigacao', 'documentos', 'pecados', 'fichas', 'livro', 'cronicas']) {
+  for (const esperada of ['investigacao', 'documentos', 'pecados', 'fichas', 'cronicas']) {
     assert.ok(abas.includes(esperada), `a aba "${esperada}" sumiu da navegação do CAIN`);
   }
   assert.ok(!abas.includes('bestiario'), 'Bestiário é da Dinastia E');
+  // "Livro" também é da Dinastia E: aquela tela renderiza o Livro da
+  // Mandíbula, e numa mesa de CAIN ela espelhava a campanha errada.
+  assert.ok(!abas.includes('livro'), 'Livro é o da Dinastia E, não do CAIN');
   assert.ok(!abas.includes('classes'), 'CAIN não tem linhagens');
   // O Painel do Admin saiu: ele só continha o bestiário da Dinastia E, que
   // não descreve um Pecado. O comando do Admin no CAIN mora nas abas que ele

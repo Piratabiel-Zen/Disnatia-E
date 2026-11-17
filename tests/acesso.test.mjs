@@ -190,11 +190,39 @@ test('quem cria a mesa entra nela como Admin, sem senha nenhuma', () => {
     'o criador voltou a precisar de uma senha que ainda não existe');
 });
 
-test('mesa órfã pode ser assumida e apagada, senão fica para sempre', () => {
+test('quem criou a mesa sempre consegue apagá-la', () => {
   const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-  // As mesas feitas antes do campo de dono existir não têm Admin nenhum.
-  assert.match(regras, /mesaSemDono\(cid\)/);
-  assert.match(regras, /allow delete: if mestre\(cid\) \|\| \(logado\(\) && mesaSemDono\(cid\)\)/);
+
+  // O ESTRAGO QUE ISTO EVITA, e que já aconteceu:
+  //
+  // Apagar dependia só de mestre(cid), que por sua vez depende do registro
+  // de membro trazer papel de Mestre. Criar uma mesa é uma sequência de
+  // escritas, e a última — a que grava esse registro — pode falhar sozinha.
+  // Quando falhava, a pessoa ficava com uma mesa criada por ela que nem ela
+  // nem ninguém conseguia remover. Mesas de teste encalhadas para sempre.
+  //
+  // criadoPor é o campo mais confiável que existe aqui: é gravado no mesmo
+  // ato de criação, e as regras exigem que seja o próprio autor.
+  assert.match(regras, /allow delete: if mestre\(cid\)\s*\n\s*\|\| \(logado\(\) && request\.auth\.uid == donoDaMesa\(cid\)\)/,
+    'quem criou a mesa voltou a depender do registro de membro para apagá-la');
+
+  // E as mesas feitas antes do campo de dono existir continuam removíveis:
+  // ninguém é Admin delas, e sem esta porta ficariam na lista para sempre.
+  assert.match(regras, /\|\| \(logado\(\) && mesaSemDono\(cid\)\)/);
+});
+
+test('apagar a mesa tira a senha e o membro antes do registro', () => {
+  // As regras da senha e dos membros perguntam quem é o dono da mesa, e para
+  // responder leem o registro dela. Apagando o registro primeiro, as duas
+  // ficam trancadas para sempre — e uma mesa nova com o mesmo id herdaria a
+  // senha antiga sem ninguém entender por quê.
+  const gate = readFileSync(
+    new URL('../src/features/campanhas/CampaignGate.jsx', import.meta.url), 'utf8');
+  const ordem = ['privado', 'membros', "globalDoc('campaigns', campaign.id))"]
+    .map(trecho => gate.indexOf(trecho, gate.indexOf('const removeCampaign')));
+  assert.ok(ordem.every(i => i > 0), 'sumiu uma das etapas da remoção');
+  assert.ok(ordem[0] < ordem[2] && ordem[1] < ordem[2],
+    'o registro da mesa está sendo apagado antes das peças de dentro');
 });
 
 test('ninguém se promove a Admin de mesa alheia', () => {

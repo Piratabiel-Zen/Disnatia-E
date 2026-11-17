@@ -9,7 +9,7 @@ import {
   podeSubirPericia, psiqueDaCategoria, resolverGancho,
   MAX_PONTOS_KIT, TETO_DA_BAGAGEM, bagagemDe, guardarNaBagagem, tirarDaBagagem,
 } from './fichaCain.mjs';
-import { compressImage } from '../../core/media';
+import { bytesDaDataUrl, comprimirParaDocumento } from '../../core/media';
 import './ficha-cain.css';
 
 const CATEGORIAS = ['I', 'II', 'III', 'IV', 'V'];
@@ -304,8 +304,17 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar, fichaLibera
                 if (!arquivo) return;
                 const leitor = new FileReader();
                 leitor.onload = async ev => {
-                  try { mudar('foto')(await compressImage(ev.target.result, 640, 640, 0.72)); }
-                  catch (_) { mudar('foto')(ev.target.result); }
+                  // Em HD: 1280px é o suficiente para o retrato aparecer
+                  // nítido numa tela grande, e o compressor cede sozinho se
+                  // não couber no documento.
+                  try {
+                    mudar('foto')(await comprimirParaDocumento(ev.target.result, {
+                      largura: 1280, altura: 1280, limite: 230 * 1024,
+                    }));
+                  } catch (_) {
+                    const bruto = ev.target.result;
+                    if (bytesDaDataUrl(bruto) <= 230 * 1024) mudar('foto')(bruto);
+                  }
                 };
                 leitor.readAsDataURL(arquivo);
               }}

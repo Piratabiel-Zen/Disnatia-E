@@ -109,11 +109,24 @@ service cloud.firestore {
 
       allow update: if mestre(cid);
 
-      // Apagar é do Admin. A exceção são as mesas criadas antes de existir o
-      // campo de dono: ninguém é Admin delas, então ninguém conseguiria
-      // removê-las nunca. Elas ficam apagáveis por quem está logado até
-      // sumirem; mesa nova já nasce com dono e não cai nesse caso.
-      allow delete: if mestre(cid) || (logado() && mesaSemDono(cid));
+      // APAGAR.
+      //
+      // Três portas, e a do meio existe porque a primeira falhava em
+      // silêncio. mestre(cid) depende do registro de membro trazer papel de
+      // Mestre; se esse registro não chegou a ser gravado — a criação da
+      // mesa é uma sequência de escritas, e a última pode falhar sozinha —,
+      // a pessoa ficava com uma mesa criada por ela que nem ela nem ninguém
+      // conseguia remover. Era o caso das mesas de teste encalhadas.
+      //
+      // Quem está em criadoPor responde pela mesa, tenha registro de membro
+      // ou não. É o campo mais confiável que existe aqui: é gravado no mesmo
+      // ato de criação e as regras exigem que ele seja o próprio autor.
+      //
+      // A terceira porta é para as mesas feitas antes de existir criadoPor:
+      // ninguém é dono delas, e sem isso ficariam na lista para sempre.
+      allow delete: if mestre(cid)
+        || (logado() && request.auth.uid == donoDaMesa(cid))
+        || (logado() && mesaSemDono(cid));
 
       // A senha. Nenhum caminho de leitura, para ninguém, nunca. As regras
       // acima ainda a consultam por get(), que roda no servidor.

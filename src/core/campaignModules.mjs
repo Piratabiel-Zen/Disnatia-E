@@ -31,10 +31,11 @@ export function campaignHasTab(campaign, tabId) {
   if (modules && typeof modules === 'object' && id in modules) return Boolean(modules[id]);
   // Um sistema ESCOLHIDO que declara a aba, tem a aba.
   //
-  // "livro" e "regras" foram barrados aqui porque eram o Livro da Mandíbula
-  // e as regras da Dinastia E — conteúdo de uma campanha, não do site. Mas o
-  // CAIN declara "livro" por conta própria: ali é o PDF do sistema, e o
-  // filtro escondia a aba de uma mesa que legitimamente a tem.
+  // "livro" e "regras" são barrados aqui porque, hoje, essas telas mostram o
+  // Livro da Mandíbula e as regras da Dinastia E — conteúdo de uma campanha,
+  // não do site. Nenhum outro sistema declara essas abas no momento, e é por
+  // isso que o CAIN não as tem. Quando um sistema trouxer livro próprio,
+  // basta declarar a aba e ela aparece, sem mexer neste filtro.
   //
   // A checagem exige `campaign.sistema` preenchido de propósito. Sem isso,
   // sistemaDe() cai no padrão — que é a própria Dinastia E — e toda mesa sem

@@ -4,7 +4,7 @@
 // para jogar sem parar e abrir o PDF. É texto próprio, escrito a partir das
 // regras — não é o livro transcrito, e não substitui o livro. A redação
 // completa, os textos de cada agenda, de cada poder de blasfêmia e de cada
-// Pecado continuam no PDF, na aba Livro, que é de quem comprou.
+// Pecado continuam no PDF do livro, que é de quem o comprou.
 //
 // O critério ao condensar foi: nenhuma regra pode sumir. Exemplo, piada e
 // ficção saem; número, gatilho e ordem de resolução ficam. Se uma mesa

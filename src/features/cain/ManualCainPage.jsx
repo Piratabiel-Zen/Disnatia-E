@@ -55,7 +55,7 @@ export default function ManualCainPage() {
         </p>
         <p className="ref-fonte">
           CAIN é de Tom Bloom. Este é um resumo operacional escrito para esta mesa;
-          o livro completo está na aba Livro.
+          o livro completo é de quem o comprou.
         </p>
         <input
           className="ref-busca" value={busca} placeholder="Procurar uma regra…"

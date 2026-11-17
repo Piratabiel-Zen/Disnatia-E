@@ -240,15 +240,39 @@ export default function CampaignGate({ onChoose }) {
     // se o servidor recusar, a mesa volta para a lista com o motivo.
     setRows(atuais => atuais.filter(row => String(row.id) !== String(campaign.id)));
     try {
+      // A ORDEM IMPORTA: as peças de dentro saem antes do registro da mesa.
+      //
+      // As regras que protegem a senha e os membros perguntam quem é o dono
+      // da mesa — e para responder isso elas leem o registro da mesa. Apagar
+      // o registro primeiro deixa as duas trancadas para sempre, com a senha
+      // antiga guardada numa mesa que não existe mais. Recriar uma mesa com
+      // o mesmo nome herdaria aquela senha sem ninguém entender por quê.
+      //
+      // As duas falham em silêncio de propósito: se já não existirem, ou se
+      // esta conta não alcançar, o que importa é a mesa sair da lista.
+      await deleteDoc(globalDoc('campaigns', campaign.id, 'privado', 'acesso')).catch(() => {});
+      if (conta?.uid) {
+        await deleteDoc(globalDoc('campaigns', campaign.id, 'membros', conta.uid)).catch(() => {});
+      }
       // Só sai da lista: os dados da mesa continuam guardados e voltam se ela for recriada.
       await deleteDoc(globalDoc('campaigns', campaign.id));
     } catch (erro) {
       setRows(atuais => (atuais.some(row => String(row.id) === String(campaign.id))
         ? atuais
         : [...atuais, campaign]));
-      setError(erro?.code === 'permission-denied'
-        ? 'Só quem criou esta mesa pode removê-la. Entre na conta que a criou.'
-        : mensagemDeErro(erro));
+      // Mensagem que diz o que fazer, e não só que deu errado. Quando a
+      // recusa vem do servidor, o que decide é quem está em criadoPor — e o
+      // navegador sabe disso, então dá para apontar o caminho em vez de
+      // repetir "sem permissão".
+      const meu = String(campaign.criadoPor || '') === String(conta?.uid || '');
+      setError(erro?.code !== 'permission-denied'
+        ? mensagemDeErro(erro)
+        : !conta
+          ? 'Entre na sua conta para remover uma mesa.'
+          : meu
+            ? 'O servidor recusou a remoção desta mesa, que foi criada por você. Confira se as regras do Firestore estão na versão mais recente.'
+            : 'Esta mesa foi criada por outra conta. Entre com a conta que a criou para removê-la.');
+      console.error('Não foi possível remover a mesa:', campaign.id, erro);
     } finally {
       setRemovendoId('');
     }

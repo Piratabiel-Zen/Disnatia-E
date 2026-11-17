@@ -12,7 +12,7 @@ import './referencia-cain.css';
  * classes teria.
  *
  * Os textos dos poderes de cada blasfêmia e das habilidades de cada agenda
- * estão no livro, na aba Livro. O que esta tela dá é o suficiente para
+ * estão no PDF do livro. O que esta tela dá é o suficiente para
  * escolher: o tema de cada uma e as regras que valem para todas.
  */
 export default function BlasfemiasPage() {
@@ -27,7 +27,7 @@ export default function BlasfemiasPage() {
         </p>
         <p className="ref-fonte">
           Os poderes de cada blasfêmia e as habilidades de cada agenda estão no livro,
-          na aba Livro. Aqui ficam o tema de cada uma e as regras comuns.
+          no PDF do livro. Aqui ficam o tema de cada uma e as regras comuns.
         </p>
       </header>
 

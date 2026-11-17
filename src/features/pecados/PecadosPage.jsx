@@ -9,7 +9,7 @@ import {
   categoriaPorNumeral, cortarTalisma, esconder, executar, pecadoNovo,
   pecadoVisivel, podeSerExecutado, progressoDaCacada, revelar,
 } from './pecados.mjs';
-import { compressImage } from '../../core/media';
+import { comprimirParaDocumento } from '../../core/media';
 import './pecados.css';
 
 /**
@@ -150,8 +150,15 @@ export default function PecadosPage() {
                         if (!arquivo) return;
                         const leitor = new FileReader();
                         leitor.onload = async ev => {
-                          try { salvar({ ...bruto, imagem: await compressImage(ev.target.result, 900, 620, 0.72) }); }
-                          catch (_) { salvar({ ...bruto, imagem: ev.target.result }); }
+                          // A criatura é a imagem que a mesa vai olhar de
+                          // perto quando o Pecado aparece, então vai maior
+                          // que o retrato — 1600 de largura, cedendo sozinha
+                          // se não couber no documento.
+                          try {
+                            salvar({ ...bruto, imagem: await comprimirParaDocumento(ev.target.result, {
+                              largura: 1600, altura: 1000, limite: 260 * 1024,
+                            }) });
+                          } catch (_) { /* arquivo ilegível: a ficha fica como estava */ }
                         };
                         leitor.readAsDataURL(arquivo);
                       }}

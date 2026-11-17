@@ -27,7 +27,7 @@ export default function TiposDePecadoPage() {
         </p>
         <p className="ref-fonte">
           Resumo escrito para esta mesa. Cada Pecado do livro vem com domínios,
-          palácio, aflições e vestígios prontos — isso está no PDF, na aba Livro.
+          palácio, aflições e vestígios prontos — isso está no PDF do livro.
         </p>
       </header>
 

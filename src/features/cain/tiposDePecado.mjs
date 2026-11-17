@@ -2,8 +2,8 @@
 //
 // Catálogo de referência dos Pecados do CAIN, escrito aqui a partir das
 // regras — não é o livro copiado. Cada Pecado do livro vem com domínios,
-// palácio, aflições, vestígios e traumas prontos; isso continua no PDF, na
-// aba Livro. O que mora aqui é o que a mesa precisa para reconhecer com o
+// palácio, aflições, vestígios e traumas prontos; isso continua no PDF do
+// livro. O que mora aqui é o que a mesa precisa para reconhecer com o
 // que está lidando e para o Admin montar um Pecado novo quando quiser.
 //
 // Não confundir com a aba Pecados: lá ficam os Pecados DESTA campanha, os

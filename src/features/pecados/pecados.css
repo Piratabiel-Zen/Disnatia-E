@@ -168,7 +168,13 @@
 .pecados-criatura{
   margin:0;position:relative;overflow:hidden;border-radius:3px;
   border:1px solid var(--linha,#2E2721);background:#070605;
-  aspect-ratio:16/7;display:grid;place-items:center;
+  aspect-ratio:16/9;display:grid;place-items:center;
+  /* Largura limitada e encostada à esquerda, e não a faixa inteira.
+     Ocupando toda a largura do painel ela virava a tela — o Pecado é um
+     item da ficha, não a capa dela. Teto em pixels, e não só proporção,
+     porque num monitor largo 16/9 em largura total dá uma imagem de meio
+     metro no meio de um texto de corpo 14. */
+  width:100%;max-width:420px;max-height:236px;box-sizing:border-box;
 }
 .pecados-criatura.editavel{border-style:dashed}
 .pecados-criatura img{width:100%;height:100%;object-fit:cover;display:block}
@@ -185,7 +191,13 @@
 /* Sem imagem os botões ficam sempre à vista: não há nada para descobrir no
    hover, e esconder a única ação possível seria esconder a função. */
 .pecados-criatura:not(:has(img)) .pecados-criatura-acoes{opacity:1;position:static;justify-content:center;margin-top:8px}
-.pecados-criatura:not(:has(img)){grid-auto-flow:row;align-content:center;gap:2px}
+/* Vazio, o quadro vira uma faixa baixa. Guardar 238px de altura para a
+   frase "sem retrato da criatura" era mais espaço morto do que o próprio
+   retrato ocuparia depois. */
+.pecados-criatura:not(:has(img)){
+  grid-auto-flow:row;align-content:center;gap:2px;
+  aspect-ratio:auto;min-height:0;padding:16px 12px;
+}
 .pecados-criatura-acoes button{
   padding:5px 11px;border-radius:2px;cursor:pointer;
   border:1px solid var(--linha-forte,#4A3E31);background:rgba(10,8,7,.9);

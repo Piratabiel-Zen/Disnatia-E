@@ -31,3 +31,49 @@ function encodeImage(dataUrl,maxW,maxH,quality,type){
 export function compressImage(dataUrl,maxW=900,maxH=900,quality=.72){return encodeImage(dataUrl,maxW,maxH,quality,'image/jpeg');}
 export function compressImagePNG(dataUrl,maxW=320,maxH=320){return encodeImage(dataUrl,maxW,maxH,1,'image/png');}
 export function compressImageSmall(dataUrl){return compressImage(dataUrl,700,700,.55);}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   IMAGEM EM HD, DENTRO DO QUE O DOCUMENTO AGUENTA
+
+   A imagem da ficha e a da criatura são guardadas DENTRO do documento, em
+   base64 — não num armazenamento de arquivos à parte. E as regras recusam
+   documento acima de 400 KiB, para que ninguém encha a cota da mesa.
+
+   Então "HD" aqui não pode ser um número fixo de qualidade: uma foto de
+   celular em 0,9 passa de um mega e a gravação é recusada; a mesma
+   qualidade num desenho pequeno desperdiça resolução à toa.
+
+   A saída é mirar no tamanho final. Começa grande e bom, mede o que saiu, e
+   só cede se não couber — primeiro na compressão, depois na resolução. O
+   resultado é sempre a melhor imagem que cabe, e não uma imagem média
+   escolhida por chute.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* O que ocupa no documento é o TEXTO da data URL, caractere por caractere —
+   não o tamanho do arquivo original nem o do JPEG decodificado. */
+export const bytesDaDataUrl = dataUrl => String(dataUrl || '').length;
+
+export async function comprimirParaDocumento(dataUrl, {
+  largura = 1600,
+  altura = 1600,
+  limite = 230 * 1024,
+} = {}) {
+  const menor = f => [Math.round(largura * f), Math.round(altura * f)];
+  const tentativas = [
+    [largura, altura, 0.92],
+    [largura, altura, 0.84],
+    [largura, altura, 0.76],
+    [...menor(0.78), 0.8],
+    [...menor(0.6), 0.76],
+    [...menor(0.45), 0.7],
+    [...menor(0.32), 0.62],
+  ];
+  let resultado = dataUrl;
+  for (const [w, h, q] of tentativas) {
+    resultado = await encodeImage(dataUrl, w, h, q, 'image/jpeg');
+    if (bytesDaDataUrl(resultado) <= limite) return resultado;
+  }
+  // Mesmo a menor tentativa estourou: devolve assim mesmo. A gravação pode
+  // ser recusada, e quem chama avisa — melhor isso do que um erro mudo.
+  return resultado;
+}

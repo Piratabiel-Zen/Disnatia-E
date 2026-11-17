@@ -276,14 +276,18 @@ test('os controles do token são uma barra só, não círculos soltos', () => {
   assert.match(css, /\.battlemap-facing-dial i::before/);
 });
 
-test('o Livro aparece numa mesa cujo sistema declara a aba', () => {
-  // O filtro de módulos barrava 'livro' em toda mesa que não fosse a
-  // Dinastia E, porque ali 'livro' é o Livro da Mandíbula. Só que o CAIN
-  // declara a aba por conta própria — é onde mora o PDF do sistema — e a
-  // mesa ficava sem acesso a ele.
-  assert.equal(campaignHasTab(mesaCain, 'livro'), true);
-  // E a mesa sem sistema declarado continua sem: senão sistemaDe() cai no
-  // padrão (a própria Dinastia E) e todas ganhariam o Livro de brinde.
+test('a mesa de CAIN não tem aba Livro', () => {
+  // Aquela tela renderiza o Livro da Mandíbula, escrito para a Dinastia E.
+  // Numa mesa de CAIN ela espelhava a campanha errada — e é por isso que o
+  // sistema não declara a aba.
+  assert.equal(sistemaTemAba(mesaCain, 'livro'), false);
+  assert.equal(campaignHasTab(mesaCain, 'livro'), false);
+  const ids = navegacaoDoSistema(mesaCain, []).flatMap(g => g.items.map(i => i.id));
+  assert.ok(!ids.includes('livro'), 'a aba Livro voltou à navegação do CAIN');
+
+  // O caminho continua aberto para um sistema que TRAGA livro próprio: basta
+  // declarar a aba. O que não pode é herdar a da Dinastia E sem pedir.
+  assert.equal(campaignHasTab({ id: 'x', sistema: 'dinastia-e' }, 'livro'), true);
   assert.equal(campaignHasTab({ id: 'mesa-qualquer' }, 'livro'), false);
 });
 
@@ -294,7 +298,43 @@ test('tudo que o CAIN oferece é visível ao jogador', () => {
   const grupos = navegacaoDoSistema(mesaCain, []);
   assert.ok(!grupos.some(g => g.masterOnly), 'voltou um grupo escondido do jogador');
   const ids = grupos.flatMap(g => g.items.map(i => i.id));
-  for (const publica of ['mapamundi', 'fichas', 'manual', 'agendas', 'tiposdepecado', 'livro']) {
+  for (const publica of ['mapamundi', 'fichas', 'manual', 'agendas', 'tiposdepecado', 'cronicas']) {
     assert.ok(ids.includes(publica), `a aba pública "${publica}" sumiu da navegação`);
   }
+});
+
+/* ──────────────── imagens: HD dentro do que cabe ──────────────── */
+
+test('as imagens miram no tamanho final, não numa qualidade fixa', () => {
+  // A imagem vai DENTRO do documento, em base64, e as regras recusam acima
+  // de 400 KiB. Qualidade fixa não resolve: foto de celular em 0,9 estoura o
+  // limite, e o mesmo 0,9 num desenho pequeno desperdiça resolução. Por isso
+  // o compressor começa grande e só cede se não couber.
+  const media = ler('src/core/media.js');
+  assert.match(media, /export async function comprimirParaDocumento/);
+  assert.match(media, /bytesDaDataUrl\(resultado\) <= limite/,
+    'o compressor parou de medir o que saiu');
+
+  const ficha = ler('src/features/cain/FichaCain.jsx');
+  assert.match(ficha, /comprimirParaDocumento\(ev\.target\.result, \{\s*\n?\s*largura: 1280/,
+    'o retrato voltou a ser gravado em baixa');
+  const pecados = ler('src/features/pecados/PecadosPage.jsx');
+  assert.match(pecados, /largura: 1600, altura: 1000/,
+    'a criatura voltou a ser gravada em baixa');
+
+  // E os dois tetos precisam caber no limite do documento, com folga para o
+  // resto da ficha.
+  for (const limite of [...ficha.matchAll(/limite: (\d+) \* 1024/g),
+                        ...pecados.matchAll(/limite: (\d+) \* 1024/g)]) {
+    assert.ok(Number(limite[1]) < 400, `limite de ${limite[1]} KiB não cabe no documento`);
+  }
+});
+
+test('o retrato da criatura não ocupa a ficha inteira', () => {
+  const css = ler('src/features/pecados/pecados.css');
+  const bloco = css.slice(css.indexOf('.pecados-criatura{'), css.indexOf('}', css.indexOf('.pecados-criatura{')));
+  assert.match(bloco, /max-width:\d+px/, 'a imagem voltou a esticar pela largura toda');
+  assert.match(bloco, /max-height:\d+px/);
+  const largura = Number(bloco.match(/max-width:(\d+)px/)[1]);
+  assert.ok(largura <= 520, `${largura}px ainda domina o painel`);
 });

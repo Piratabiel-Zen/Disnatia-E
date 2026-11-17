@@ -6,7 +6,7 @@
 //
 // Nada neste arquivo é o texto do livro. São os nomes das coisas e a forma da
 // ficha, que é o que o site precisa saber para montar a mesa. O texto fica no
-// PDF do Mestre, na aba Livro.
+// PDF do Mestre.
 
 import { rolarAcao } from './regras.mjs';
 
@@ -149,8 +149,12 @@ const SISTEMA = Object.freeze({
   // coleção daria fichas meio preenchidas dos dois lados.
   colecaoDeFichas: 'fichas',
 
+  // "livro" fica de fora de propósito. Aquela aba renderiza o Livro da
+  // Mandíbula — conteúdo escrito para a Dinastia E —, então numa mesa de
+  // CAIN ela só espelhava a campanha errada. O PDF do CAIN vai ganhar leitor
+  // próprio; até lá, o manual condensado faz o trabalho.
   abas: Object.freeze([
-    'investigacao', 'pecados', 'documentos', 'livro',
+    'investigacao', 'pecados', 'documentos',
     'manual', 'agendas', 'tiposdepecado',
   ]),
 
@@ -174,7 +178,6 @@ const SISTEMA = Object.freeze({
       { id: 'manual', label: 'Manual de Campo', icon: '§' },
       { id: 'agendas', label: 'Agendas e Blasfêmias', icon: '◈' },
       { id: 'tiposdepecado', label: 'Tipos de Inimigo', icon: '☠' },
-      { id: 'livro', label: 'Livro', icon: '✦' },
       { id: 'cronicas', label: 'Capítulos', icon: '🗒️' },
     ] },
     // O Painel do Admin trazia a aba "Pecados e NPCs" da Dinastia E, que é um
