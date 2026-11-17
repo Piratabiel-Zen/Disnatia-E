@@ -1,11 +1,13 @@
 // Senha de entrada da mesa, trocada pelo Mestre de dentro do próprio login.
 // Vale para a mesa em que ele está; cada mesa tem a sua.
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { setDoc } from 'firebase/firestore';
 import { globalDoc } from '../core/campaign';
 import { hashPassword, normalizePassword, rememberUnlock } from '../core/campaignPassword.mjs';
 import PasswordVisibilityInput from '../experience/PasswordVisibilityInput';
 import { pushToast } from '../core/toast';
+import { definirSegredosDaMesa } from '../core/auth';
 import './senha-da-mesa.css';
 
 /**
@@ -44,13 +46,24 @@ export default function CampaignPasswordButton({ campaign, tipo = 'entrada' }) {
     setBusy(true); setError('');
     try {
       const passwordHash = await hashPassword(clean);
-      // merge: só a senha muda; nome, tema e o resto do registro da mesa ficam como estão.
+
+      // A SENHA MORA EM DOIS LUGARES, E OS DOIS PRECISAM MUDAR JUNTOS.
+      //
+      // O registro público é o que a tela consulta para saber se precisa
+      // pedir senha. O documento privado é o que as REGRAS do servidor leem
+      // na hora de deixar alguém entrar.
+      //
+      // Trocar só o público era o pior dos mundos: a tela passava a aceitar
+      // a senha nova, o servidor continuava conferindo a antiga, e a pessoa
+      // digitava certo para ser recusada sem explicação. Era isso que fazia
+      // a troca parecer que "não salva".
       if (deMestre) {
         await setDoc(globalDoc('campaigns', campaign.id), { masterPinHash: passwordHash, masterPinUpdatedAt: Date.now() }, { merge: true });
+        await definirSegredosDaMesa(campaign.id, { senhaMestreHash: passwordHash });
         pushToast('Senha de Mestre atualizada para esta mesa.', '⚔', '#C9A96E');
       } else {
-        // merge: só a senha muda; nome, tema e o resto do registro ficam.
         await setDoc(globalDoc('campaigns', campaign.id), { passwordHash, passwordUpdatedAt: Date.now() }, { merge: true });
+        await definirSegredosDaMesa(campaign.id, { senhaMesaHash: passwordHash });
         // Este aparelho já conhece a senha nova e não volta para a porta.
         rememberUnlock(campaign.id, passwordHash);
         pushToast('Senha da mesa atualizada. Quem entrar agora precisa da nova.', '🔑', '#A855F7');
@@ -70,7 +83,7 @@ export default function CampaignPasswordButton({ campaign, tipo = 'entrada' }) {
         type="button" className="mesa-senha-button" onClick={() => setOpen(true)}
         title={deMestre ? 'Trocar a senha de Mestre desta mesa' : 'Trocar a senha de entrada desta mesa'}
       >{deMestre ? '⚔ Senha de Mestre' : '🔑 Senha da mesa'}</button>
-      {open && (
+      {open && createPortal(
         <div className="mesa-senha-backdrop" onClick={close}>
           <form className="mesa-senha-dialog" role="dialog" aria-modal="true" aria-label="Senha da mesa" onClick={event => event.stopPropagation()} onSubmit={save}>
             <h3>{deMestre ? 'Senha de Mestre' : 'Senha de entrada'} de {campaign.name || 'esta mesa'}</h3>
@@ -89,7 +102,8 @@ export default function CampaignPasswordButton({ campaign, tipo = 'entrada' }) {
               <button type="submit" className="is-primary" disabled={busy || !word || !again}>{busy ? 'Salvando...' : 'Salvar senha'}</button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

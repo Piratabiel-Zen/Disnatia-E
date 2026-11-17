@@ -144,3 +144,38 @@ test('o tema da Estrela de Absinto continua vindo do nome dela', () => {
     'o nome manda sobre o que foi escolhido no formulário');
   assert.equal(temaDaMesa({ name: 'Mesa qualquer', theme: 'medieval' }), 'medieval');
 });
+
+/* ──────── o cenário é parede, e parede não empurra móvel ──────── */
+
+test('nenhuma folha de atmosfera manda na posição dos filhos da sessão', () => {
+  // O ESTRAGO QUE ISTO EVITA, e que já aconteceu uma vez:
+  //
+  // ".cenario-mesa ~ *{position:relative}" e
+  // "html[data-tema-mesa] .adventure-shell>*{position:relative}" parecem
+  // inofensivos — só garantiriam que o conteúdo ficasse na frente da parede.
+  // Só que os dois são MAIS ESPECÍFICOS que ".grim-nav{position:fixed}".
+  // A navegação deixou de ser fixa, caiu no fluxo, ocupou altura no topo e
+  // empurrou a sessão inteira para baixo do cenário. A tela virou uma coluna
+  // torta com a foto no lugar do cabeçalho.
+  //
+  // Não é preciso regra nenhuma: a parede é fixed em z-index 0 e a sessão
+  // já vive acima disso, como o fundo cósmico sempre funcionou.
+  for (const arquivo of ['src/experience/cenario-da-mesa.css',
+                         'src/experience/atmosferas-de-mesa.css']) {
+    const css = ler(arquivo).replace(/\/\*[\s\S]*?\*\//g, '');
+    const curingas = css.match(/[~>]\s*\*\s*\{[^}]*\}/g) || [];
+    for (const regra of curingas) {
+      assert.ok(!/position\s*:/.test(regra),
+        `${arquivo} voltou a mandar na posição de todos os irmãos: ${regra}`);
+    }
+  }
+});
+
+test('a navegação continua fixa e a parede continua atrás', () => {
+  const nav = ler('src/experience/experience.css');
+  assert.match(nav, /\.grim-nav\{position:fixed/,
+    'a navegação precisa continuar fixa, senão ela entra no fluxo');
+  const cenario = ler('src/experience/cenario-da-mesa.css');
+  assert.match(cenario, /\.cenario-mesa\{[^}]*z-index:0/,
+    'a parede precisa ficar na camada de fundo');
+});

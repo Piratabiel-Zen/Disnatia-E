@@ -12,7 +12,9 @@
 
 .cenario-mesa{
   position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
-  contain:strict;
+  /* layout e paint, não strict: "strict" inclui contenção de tamanho, que
+     numa caixa fixa com inset:0 só adiciona surpresa sem ganho nenhum. */
+  contain:layout paint;
 }
 
 .cenario-mesa-foto,
@@ -119,8 +121,17 @@
   97%{opacity:0}
 }
 
-/* O conteúdo da mesa sobe uma camada, senão ele fica atrás da parede. */
-.cenario-mesa ~ *{position:relative;z-index:1}
+/* NÃO acrescentar aqui uma regra que mexa na posição dos irmãos.
+
+   A primeira versão tinha ".cenario-mesa ~ *{position:relative}" para
+   garantir que o conteúdo ficasse na frente. O efeito foi outro: aquele
+   seletor é mais específico que ".grim-nav{position:fixed}", então a
+   navegação deixou de ser fixa, caiu no fluxo, ocupou altura no topo e
+   empurrou a sessão inteira para baixo do cenário.
+
+   Não é preciso regra nenhuma: a parede é fixed em z-index 0, e a sessão
+   (.immersive-stage) e a navegação (.grim-nav) já vivem acima disso. É
+   exatamente como o fundo cósmico sempre funcionou. */
 
 /* Quem pediu menos movimento fica com a praça molhada e parada: a chuva é
    clima, não informação, e nada se perde em desligá-la. No modo Leve ela

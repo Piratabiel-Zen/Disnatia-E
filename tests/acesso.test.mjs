@@ -264,3 +264,33 @@ test('ficha liberada vazia não libera ficha sem id', () => {
   assert.equal(podeEditarFicha({ dono: '' }, beto, ''), false);
   assert.equal(podeVerSegredosDaFicha({ dono: '' }, beto, ''), false);
 });
+
+/* ───────── trocar a senha tem que trocar nos dois lugares ───────── */
+
+test('trocar a senha grava também onde o servidor confere', () => {
+  // O SINTOMA: trocar a senha e ela "não salvar".
+  //
+  // Ela salvava — só que no lugar errado. O registro público é o que a TELA
+  // consulta para saber se pede senha; o documento privado é o que as REGRAS
+  // leem para deixar entrar. Gravando só o público, a tela passava a aceitar
+  // a senha nova enquanto o servidor continuava conferindo a antiga: a pessoa
+  // digitava certo e era recusada sem explicação nenhuma.
+  const botao = readFileSync(
+    new URL('../src/shell/CampaignPasswordButton.jsx', import.meta.url), 'utf8');
+  assert.match(botao, /definirSegredosDaMesa\(campaign\.id, \{ senhaMestreHash: passwordHash \}\)/,
+    'a senha de Mestre não chega ao documento que as regras leem');
+  assert.match(botao, /definirSegredosDaMesa\(campaign\.id, \{ senhaMesaHash: passwordHash \}\)/,
+    'a senha de entrada não chega ao documento que as regras leem');
+  // E as duas continuam indo para o registro público, que é o que a tela lê.
+  assert.match(botao, /masterPinHash: passwordHash/);
+  assert.match(botao, /\{ passwordHash, passwordUpdatedAt/);
+});
+
+test('o diálogo da senha sai para fora da barra do topo', () => {
+  // Dentro da barra ele vira refém da pilha dela: por mais z-index que tenha,
+  // não consegue passar na frente de quem está acima da barra inteira.
+  const botao = readFileSync(
+    new URL('../src/shell/CampaignPasswordButton.jsx', import.meta.url), 'utf8');
+  assert.match(botao, /createPortal\(/);
+  assert.match(botao, /document\.body,/);
+});

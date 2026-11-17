@@ -62,7 +62,9 @@ html[data-tema-mesa="moderno"] .adventure-shell::before{
   opacity:.6;
 }
 
-/* O conteúdo fica acima da luz de ambiente. */
-html[data-tema-mesa] .adventure-shell>*{position:relative;z-index:1}
+/* Aqui também não entra regra de posição para os filhos da sessão. A luz de
+   ambiente é um ::before em z-index 0; a navegação e o palco já estão acima.
+   Mexer na posição de ".adventure-shell>*" tira o fixed da navegação e
+   derruba a sessão inteira para baixo. */
 
 html[data-quality="light"] .adventure-shell::before{opacity:.3}
