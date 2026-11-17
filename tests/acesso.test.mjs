@@ -211,18 +211,37 @@ test('quem criou a mesa sempre consegue apagá-la', () => {
   assert.match(regras, /\|\| \(logado\(\) && mesaSemDono\(cid\)\)/);
 });
 
-test('apagar a mesa tira a senha e o membro antes do registro', () => {
-  // As regras da senha e dos membros perguntam quem é o dono da mesa, e para
-  // responder leem o registro dela. Apagando o registro primeiro, as duas
-  // ficam trancadas para sempre — e uma mesa nova com o mesmo id herdaria a
-  // senha antiga sem ninguém entender por quê.
+test('apagar a mesa não joga fora a própria autoridade no meio do caminho', () => {
+  // O ERRO QUE ISTO EVITA, e que foi parar em produção:
+  //
+  // A limpeza apagava o registro de MEMBRO antes do registro da mesa. Só que
+  // é esse registro de membro que diz que a pessoa é Mestre, e é por ele que
+  // o servidor autoriza apagar a mesa. Apagando primeiro, o código tirava a
+  // autoridade de que precisava no passo seguinte — e o Firestore recusava a
+  // remoção da mesa que a própria pessoa tinha criado.
+  //
+  // Ordem certa: senha (que precisa da mesa viva para ser autorizada), depois
+  // a mesa, e o registro de membro só no fim, como faxina.
   const gate = readFileSync(
     new URL('../src/features/campanhas/CampaignGate.jsx', import.meta.url), 'utf8');
-  const ordem = ['privado', 'membros', "globalDoc('campaigns', campaign.id))"]
-    .map(trecho => gate.indexOf(trecho, gate.indexOf('const removeCampaign')));
-  assert.ok(ordem.every(i => i > 0), 'sumiu uma das etapas da remoção');
-  assert.ok(ordem[0] < ordem[2] && ordem[1] < ordem[2],
-    'o registro da mesa está sendo apagado antes das peças de dentro');
+  const trecho = gate.slice(gate.indexOf('const removeCampaign'), gate.indexOf('} catch (erro)', gate.indexOf('const removeCampaign')));
+  const senha = trecho.indexOf("'privado', 'acesso'");
+  const mesa = trecho.indexOf("globalDoc('campaigns', campaign.id))");
+  const membro = trecho.indexOf("'membros', conta.uid");
+  assert.ok(senha > 0 && mesa > 0 && membro > 0, 'sumiu uma das etapas da remoção');
+  assert.ok(senha < mesa, 'a senha precisa sair enquanto a mesa ainda existe');
+  assert.ok(mesa < membro,
+    'o registro de membro voltou a ser apagado antes da mesa, o que derruba a permissão');
+});
+
+test('um registro de membro sem papel não tranca a mesa inteira', () => {
+  // Ler um campo inexistente não devolve vazio nas regras: derruba a
+  // avaliação toda. Como mestre(cid) é o primeiro termo de vários "ou", um
+  // registro antigo sem papel negaria até os caminhos que nem dependem de
+  // ser Mestre — inclusive apagar a própria mesa.
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(regras, /function papel\(cid\)[\s\S]{0,220}\.data\.get\('papel', ''\)/,
+    'papel() voltou a ler o campo direto');
 });
 
 test('ninguém se promove a Admin de mesa alheia', () => {

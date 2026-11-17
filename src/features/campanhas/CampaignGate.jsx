@@ -240,22 +240,32 @@ export default function CampaignGate({ onChoose }) {
     // se o servidor recusar, a mesa volta para a lista com o motivo.
     setRows(atuais => atuais.filter(row => String(row.id) !== String(campaign.id)));
     try {
-      // A ORDEM IMPORTA: as peças de dentro saem antes do registro da mesa.
+      // A ORDEM IMPORTA, E EU JÁ ERREI ELA AQUI.
       //
-      // As regras que protegem a senha e os membros perguntam quem é o dono
-      // da mesa — e para responder isso elas leem o registro da mesa. Apagar
-      // o registro primeiro deixa as duas trancadas para sempre, com a senha
-      // antiga guardada numa mesa que não existe mais. Recriar uma mesa com
-      // o mesmo nome herdaria aquela senha sem ninguém entender por quê.
+      // A primeira versão apagava o registro de MEMBRO antes do registro da
+      // mesa. Só que é esse registro de membro que diz que você é Mestre — e
+      // é por ele que o servidor autoriza apagar a mesa. Apagando primeiro,
+      // o código tirava a própria autoridade de que precisava no passo
+      // seguinte, e o Firestore recusava a remoção. Quanto mais se clicava,
+      // mais garantido ficava o fracasso.
       //
-      // As duas falham em silêncio de propósito: se já não existirem, ou se
-      // esta conta não alcançar, o que importa é a mesa sair da lista.
+      // A ordem certa é: usar a autoridade enquanto se tem, e limpar depois.
+      //
+      //  1. a senha, que PRECISA sair antes da mesa: a regra que a protege
+      //     pergunta quem é o dono, e para responder lê o registro da mesa.
+      //     Com a mesa apagada, ela ficaria trancada para sempre — e uma
+      //     mesa nova com o mesmo id herdaria a senha antiga;
+      //  2. a mesa, que é o que a pessoa pediu;
+      //  3. o registro de membro, que é só faxina.
+      //
+      // Os passos 1 e 3 falham em silêncio: se já não existirem, ou se esta
+      // conta não alcançar, o que importa é a mesa ter saído.
       await deleteDoc(globalDoc('campaigns', campaign.id, 'privado', 'acesso')).catch(() => {});
+      // Só sai da lista: os dados da mesa continuam guardados e voltam se ela for recriada.
+      await deleteDoc(globalDoc('campaigns', campaign.id));
       if (conta?.uid) {
         await deleteDoc(globalDoc('campaigns', campaign.id, 'membros', conta.uid)).catch(() => {});
       }
-      // Só sai da lista: os dados da mesa continuam guardados e voltam se ela for recriada.
-      await deleteDoc(globalDoc('campaigns', campaign.id));
     } catch (erro) {
       setRows(atuais => (atuais.some(row => String(row.id) === String(campaign.id))
         ? atuais
@@ -270,7 +280,7 @@ export default function CampaignGate({ onChoose }) {
         : !conta
           ? 'Entre na sua conta para remover uma mesa.'
           : meu
-            ? 'O servidor recusou a remoção desta mesa, que foi criada por você. Confira se as regras do Firestore estão na versão mais recente.'
+            ? 'O servidor recusou a remoção desta mesa, que foi criada por você. Publique a versão mais recente das regras do Firestore e tente de novo.'
             : 'Esta mesa foi criada por outra conta. Entre com a conta que a criou para removê-la.');
       console.error('Não foi possível remover a mesa:', campaign.id, erro);
     } finally {

@@ -37,8 +37,13 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/campaigns/$(cid)/membros/$(request.auth.uid));
     }
 
+    // .get('papel', '') e não .papel: ler um campo que não existe não devolve
+    // vazio, derruba a avaliação inteira da regra. E como mestre(cid) é o
+    // primeiro termo de vários "ou", um registro de membro sem papel — de
+    // alguma versão antiga — negaria tudo, inclusive pelos caminhos que nem
+    // dependem de ser Mestre.
     function papel(cid) {
-      return get(/databases/$(database)/documents/campaigns/$(cid)/membros/$(request.auth.uid)).data.papel;
+      return get(/databases/$(database)/documents/campaigns/$(cid)/membros/$(request.auth.uid)).data.get('papel', '');
     }
 
     function mestre(cid) {
