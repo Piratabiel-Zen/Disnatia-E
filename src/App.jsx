@@ -12,6 +12,7 @@ import "./experience/realtime.css";
 import "./experience/golpes.css";
 import "./experience/cosmic-living-background.css";
 import "./experience/site-polish.css";
+import "./experience/atmosferas-de-mesa.css";
 
 import { ToastContainer } from "./core/toast";
 import { auth, migrarSegredosDaMesa } from "./core/auth";
@@ -123,8 +124,10 @@ export default function App(){
   // vai mudar de cara por causa disto.
   useEffect(() => {
     const raiz = document.documentElement;
+    const nomes = ['--accent', '--accent-soft', '--bronze', '--ink-mesa',
+                   '--contraste-mesa', '--superficie-mesa', '--linha-mesa', '--fundo-mesa'];
     if (!campaign || campaign.primary !== false) {
-      for (const nome of ['--accent', '--accent-soft', '--bronze', '--ink-mesa']) raiz.style.removeProperty(nome);
+      for (const nome of nomes) raiz.style.removeProperty(nome);
       raiz.removeAttribute('data-tema-mesa');
       return;
     }
@@ -132,6 +135,13 @@ export default function App(){
     raiz.style.setProperty('--accent-soft', theme.accentSoft);
     if (theme.bronze) raiz.style.setProperty('--bronze', theme.bronze);
     raiz.style.setProperty('--ink-mesa', theme.ink);
+    // A paleta inteira, não só o acento: sem superfície e linha próprias,
+    // trocar de mesa só trocava a cor dos botões e as cinco atmosferas
+    // continuavam sendo a mesma tela escura.
+    if (theme.contraste) raiz.style.setProperty('--contraste-mesa', theme.contraste);
+    if (theme.superficie) raiz.style.setProperty('--superficie-mesa', theme.superficie);
+    if (theme.linha) raiz.style.setProperty('--linha-mesa', theme.linha);
+    raiz.style.setProperty('--fundo-mesa', theme.bg);
     raiz.dataset.temaMesa = temaDaMesa(campaign);
   }, [campaign?.id, campaign?.primary, campaign?.theme, campaign?.name, theme]);
   const baseAtm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;

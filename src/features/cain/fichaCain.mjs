@@ -19,6 +19,10 @@ export const GANCHOS = 3;
 /* O gancho é um talismã curtinho: três traços e ele enche. */
 export const CAIXAS_DE_GANCHO = 3;
 export const MAX_CATEGORIA = 5;
+/* Cinco pontos de kit por missão, e o inventário é abstrato: não se decide o
+   que levar na saída, gasta-se ponto na hora em que o item faz falta. */
+export const MAX_PONTOS_KIT = 5;
+export const TETO_DA_BAGAGEM = 24;
 export const MAX_XP = 9;
 export const MAX_AVANCOS = 3;
 
@@ -45,7 +49,7 @@ export function fichaNova(id) {
     aflicoes: '',
     condicoes: [],
     // Kit, vínculo, avanço
-    kit: [], vinculo: '', vinculoNivel: 0,
+    kit: [], pontosDeKit: MAX_PONTOS_KIT, vinculo: '', vinculoNivel: 0,
     xp: 0, avancos: 0,
     // Narrativa
     historia: '', notas: '',
@@ -140,6 +144,44 @@ export function marcarEstresse(ficha, quantidade = 1) {
   }
   return { ...atual, estresse: 0 };
 }
+
+/* ─────────────────────────── A BAGAGEM ───────────────────────────
+   O kit do livro é abstrato — cinco pontos e pronto. Mas durante a caçada o
+   exorcista recolhe coisas em campo, e isso tem que morar em algum lugar que
+   não seja a memória de quem está jogando. É essa a função da bagagem: uma
+   lista simples, do dono da ficha, com o que ele está carregando.
+
+   Linha vazia não entra, e item repetido não duplica: as duas coisas que uma
+   lista digitada à mão acumula sozinha em duas sessões. */
+
+const itemLimpo = nome => String(nome || '').trim().slice(0, 80);
+const mesmaCoisa = (a, b) => itemLimpo(a).toLowerCase() === itemLimpo(b).toLowerCase();
+
+export function guardarNaBagagem(ficha, nome) {
+  const limpo = itemLimpo(nome);
+  const bagagem = Array.isArray(ficha?.kit) ? ficha.kit : [];
+  if (!limpo || bagagem.length >= TETO_DA_BAGAGEM) return ficha;
+  if (bagagem.some(item => mesmaCoisa(item?.nome ?? item, limpo))) return ficha;
+  return {
+    ...ficha,
+    kit: [...bagagem, { id: `i${Date.now().toString(36)}${bagagem.length}`, nome: limpo }],
+  };
+}
+
+export function tirarDaBagagem(ficha, id) {
+  const bagagem = Array.isArray(ficha?.kit) ? ficha.kit : [];
+  return { ...ficha, kit: bagagem.filter(item => String(item?.id) !== String(id)) };
+}
+
+/**
+ * Fichas antigas guardavam o kit como lista de texto puro. Normaliza para o
+ * formato com id, sem perder o que já estava escrito.
+ */
+export const bagagemDe = ficha => (Array.isArray(ficha?.kit) ? ficha.kit : [])
+  .map((item, i) => (typeof item === 'string'
+    ? { id: `antigo${i}`, nome: item }
+    : { id: String(item?.id ?? `antigo${i}`), nome: itemLimpo(item?.nome) }))
+  .filter(item => item.nome);
 
 /**
  * A perícia PSIQUE não é escolhida: é metade da categoria, arredondada para

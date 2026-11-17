@@ -9,6 +9,8 @@ import LiveStatus from './shell/LiveStatus';
 import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
+import CenarioDaMesa from './experience/CenarioDaMesa';
+import { cenarioDaMesa } from './core/atmosferaDaMesa.mjs';
 import SharedDiceReplay from './experience/SharedDiceReplay';
 import DiceCriticalFx from './experience/DiceCriticalFx';
 import ConnectionHealth from './experience/ConnectionHealth';
@@ -37,8 +39,11 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
   useHeaderClearance(headerRef);
   return(
     <ExperienceProvider key={`${access.role}:${playerSheetId || access.visitorId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId} access={access}>
-      <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'#C8B8A0',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
-        <CosmicLivingBackground quality={quality}/>
+      <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
+        {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
+            existe: duas paisagens sobrepostas não é clima, é sujeira. */}
+        <CenarioDaMesa campaign={campaign}/>
+        {!cenarioDaMesa(campaign) && <CosmicLivingBackground quality={quality}/>}
         <ToastContainer/>
         <RealtimeBroadcasts/>
         <SharedDiceReplay access={access}/>

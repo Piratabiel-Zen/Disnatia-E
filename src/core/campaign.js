@@ -33,70 +33,8 @@ export const PRIMARY_CAMPAIGN = {
 };
 
 /** Temas visuais: a campanha escolhe o seu e a interface inteira acompanha. */
-export const CAMPAIGN_THEMES = {
-  cosmico: {
-    label: 'Cósmico e mágico',
-    sigil: '✦',
-    accent: '#A855F7',
-    accentSoft: '#D6A7FF',
-    bg: '#0B0718',
-    ink: '#C8B8A0',
-    display: "'Cinzel', Georgia, serif",
-    body: "'Crimson Text', Georgia, serif",
-    background: 'cosmic',
-  },
-  sombrio: {
-    label: 'Investigativo e sombrio',
-    sigil: '◉',
-    accent: '#B4543A',
-    accentSoft: '#E0A080',
-    bg: '#120E0C',
-    ink: '#CBBBA8',
-    display: "'Cinzel', Georgia, serif",
-    body: "'Crimson Text', Georgia, serif",
-    background: 'smoke',
-  },
-  medieval: {
-    label: 'Medieval e mágico',
-    sigil: '⚜',
-    accent: '#C79A3C',
-    accentSoft: '#EBC97A',
-    bg: '#13100A',
-    ink: '#D6C7A6',
-    display: "'Cinzel', Georgia, serif",
-    body: "'Crimson Text', Georgia, serif",
-    background: 'parchment',
-  },
-  // Vitoriano sombrio: organização ocultista com investigação. O carmesim é o
-  // acento e o bronze é a estrutura — e o fundo puxa para o azul da água
-  // parada, não para o preto puro, senão o cenário some.
-  //
-  // O nome descreve o VISUAL, não um lugar: qualquer mesa pode escolhê-lo, e
-  // a cidade onde a campanha se passa é assunto do campo Mundo.
-  veneziano: {
-    label: 'Vitoriano sombrio',
-    sigil: '⚜',
-    accent: '#8E1F2B',
-    accentSoft: '#C4414F',
-    bronze: '#A98045',
-    bg: '#0D1016',
-    ink: '#CEC4B4',
-    display: "'Cinzel', Georgia, serif",
-    body: "'Crimson Text', Georgia, serif",
-    background: 'smoke',
-  },
-  moderno: {
-    label: 'Pé no chão',
-    sigil: '◈',
-    accent: '#3F8FA8',
-    accentSoft: '#8FD0E0',
-    bg: '#0C1114',
-    ink: '#BFCBD1',
-    display: "'Cinzel', Georgia, serif",
-    body: "'Crimson Text', Georgia, serif",
-    background: 'quiet',
-  },
-};
+import { CAMPAIGN_THEMES } from './temas.mjs';
+export { CAMPAIGN_THEMES };
 
 // O tema vem de atmosferaDaMesa: uma mesa com clima próprio (pelo nome) usa o
 // dela; as outras usam o que foi escolhido na criação.

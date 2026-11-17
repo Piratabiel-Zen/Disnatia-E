@@ -1,0 +1,68 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AS ATMOSFERAS DE MESA
+
+   Cada mesa escolhe um clima, e o clima tem que se ver na tela inteira — não
+   só na cor de um botão. Antes as cinco atmosferas eram a mesma tela escura
+   com acentos diferentes, e trocar de mesa não parecia trocar de mundo.
+
+   O que muda aqui é a LUZ do ambiente: duas manchas largas de cor atrás do
+   conteúdo, próprias de cada tema. É barato (dois gradientes fixos, sem
+   animação) e é o que o olho lê primeiro ao abrir a mesa.
+
+   Mesas com cenário de foto própria não recebem nada disto: lá a luz vem da
+   imagem, e somar uma mancha colorida em cima só sujaria.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-tema-mesa] .adventure-shell::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  opacity:.5;transition:opacity 1.2s ease;
+}
+/* A foto manda. */
+html[data-tema-mesa] .adventure-shell:has(.cenario-mesa)::before{content:none}
+
+/* Cósmico: o roxo da Dinastia E, com um sopro ciano no canto. */
+html[data-tema-mesa="cosmico"] .adventure-shell::before{
+  background:
+    radial-gradient(ellipse 70% 50% at 18% 12%,rgba(168,85,247,.2),transparent 70%),
+    radial-gradient(ellipse 60% 45% at 85% 82%,rgba(107,224,255,.1),transparent 70%);
+}
+
+/* Investigativo: vermelho forte em cima, como luz que vaza de outra sala, e
+   o branco frio embaixo. É o contraste que o tema pede — o resto é quase
+   preto para que esses dois pontos doam. */
+html[data-tema-mesa="sombrio"] .adventure-shell::before{
+  background:
+    radial-gradient(ellipse 85% 48% at 50% -6%,rgba(200,16,46,.3),transparent 72%),
+    radial-gradient(ellipse 50% 40% at 12% 92%,rgba(242,240,238,.07),transparent 70%);
+  opacity:.72;
+}
+
+/* Medieval: ouro de vela em cima, azul de noite embaixo. Um é a sala, o
+   outro é a janela. */
+html[data-tema-mesa="medieval"] .adventure-shell::before{
+  background:
+    radial-gradient(ellipse 70% 45% at 22% 8%,rgba(199,154,60,.22),transparent 70%),
+    radial-gradient(ellipse 75% 55% at 78% 88%,rgba(78,143,212,.16),transparent 72%);
+}
+
+/* Vitoriano: carvão e latão. A mancha quente é pequena e alta, como lampião
+   de rua — o resto fica cinza de propósito. */
+html[data-tema-mesa="veneziano"] .adventure-shell::before{
+  background:
+    radial-gradient(ellipse 45% 32% at 76% 6%,rgba(217,164,65,.17),transparent 72%),
+    radial-gradient(ellipse 90% 60% at 30% 100%,rgba(90,96,104,.16),transparent 70%);
+}
+
+/* Pé no chão: luz de dia útil entrando por uma janela. Nenhum clima, que é
+   exatamente o clima deste tema. */
+html[data-tema-mesa="moderno"] .adventure-shell::before{
+  background:
+    radial-gradient(ellipse 65% 45% at 82% 10%,rgba(232,201,160,.14),transparent 70%),
+    radial-gradient(ellipse 70% 50% at 15% 85%,rgba(127,168,160,.13),transparent 70%);
+  opacity:.6;
+}
+
+/* O conteúdo fica acima da luz de ambiente. */
+html[data-tema-mesa] .adventure-shell>*{position:relative;z-index:1}
+
+html[data-quality="light"] .adventure-shell::before{opacity:.3}

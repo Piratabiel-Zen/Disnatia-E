@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { deleteDoc, setDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
@@ -9,6 +9,7 @@ import {
   categoriaPorNumeral, cortarTalisma, esconder, executar, pecadoNovo,
   pecadoVisivel, podeSerExecutado, progressoDaCacada, revelar,
 } from './pecados.mjs';
+import { compressImage } from '../../core/media';
 import './pecados.css';
 
 /**
@@ -35,6 +36,7 @@ export default function PecadosPage() {
     await setDoc(docIn('pecados', String(id)), dados, { merge: true });
   }, []);
 
+  const criaturaRef = useRef(null);
   const mestre = ehMestre(membro);
   const lista = useMemo(
     () => pecados.map(p => pecadoVisivel(p, membro)).filter(Boolean),
@@ -121,6 +123,43 @@ export default function PecadosPage() {
                 </>
               )}
             </header>
+
+            {/* A CRIATURA
+                Fica logo abaixo do nome porque é a primeira coisa que a mesa
+                quer ver quando o Pecado aparece. Só o Admin anexa e só ele
+                troca: o retrato é a carta que ele vira na hora certa — se o
+                jogador pudesse mexer, a revelação deixaria de ser dele. */}
+            {(mestre || atual.imagem) && (
+              <figure className={`pecados-criatura${mestre ? ' editavel' : ''}`}>
+                {atual.imagem
+                  ? <img src={atual.imagem} alt={`O Pecado ${atual.nome || 'sem nome'}`} />
+                  : <span>Sem retrato da criatura</span>}
+                {mestre && (
+                  <div className="pecados-criatura-acoes">
+                    <button type="button" onClick={() => criaturaRef.current?.click()}>
+                      {bruto.imagem ? 'Trocar imagem' : 'Anexar imagem'}
+                    </button>
+                    {bruto.imagem && (
+                      <button type="button" onClick={() => salvar({ ...bruto, imagem: '' })}>Remover</button>
+                    )}
+                    <input
+                      ref={criaturaRef} type="file" accept="image/*" hidden
+                      onChange={async e => {
+                        const arquivo = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!arquivo) return;
+                        const leitor = new FileReader();
+                        leitor.onload = async ev => {
+                          try { salvar({ ...bruto, imagem: await compressImage(ev.target.result, 900, 620, 0.72) }); }
+                          catch (_) { salvar({ ...bruto, imagem: ev.target.result }); }
+                        };
+                        leitor.readAsDataURL(arquivo);
+                      }}
+                    />
+                  </div>
+                )}
+              </figure>
+            )}
 
             <Campo rotulo="Manifestação" visivel mestre={mestre}
               valor={mestre ? bruto.manifestacao : atual.manifestacao}

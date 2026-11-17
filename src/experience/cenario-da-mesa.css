@@ -1,0 +1,143 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   O CENÁRIO DA MESA
+
+   A foto do lugar, atrás de tudo, em todas as abas. Parede: sem clique, sem
+   foco, sem entrar no fluxo.
+
+   Fica em position:fixed e não absolute porque o conteúdo rola e a praça
+   não deveria rolar junto — quem anda pela ficha continua no mesmo lugar do
+   mundo. z-index 0 com o conteúdo em 1: o cenário fica atrás de tudo sem
+   abrir disputa de empilhamento com modal, mapa ou mural.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cenario-mesa{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  contain:strict;
+}
+
+.cenario-mesa-foto,
+.cenario-mesa-foto img{
+  position:absolute;inset:0;width:100%;height:100%;display:block;
+}
+/* cover e não contain: a foto é 16:9 e em monitor comum encaixa inteira;
+   numa tela mais larga ou mais alta ela corta pelas bordas em vez de
+   aparecer com faixa preta ou esticada. */
+.cenario-mesa-foto img{object-fit:cover}
+
+/* O véu. Mais pesado embaixo, onde mora o conteúdo, e mais leve no alto,
+   onde fica o céu — assim a imagem continua se vendo e o texto continua se
+   lendo, que é a única coisa que importa aqui. */
+.cenario-mesa-veu{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,
+      rgba(6,4,5,calc(var(--cenario-veu,.55) * .72)) 0%,
+      rgba(6,4,5,calc(var(--cenario-veu,.55) * .88)) 46%,
+      rgba(6,4,5,calc(var(--cenario-veu,.55) * 1.08)) 100%),
+    radial-gradient(ellipse 120% 80% at 50% 30%,transparent 30%,rgba(4,2,3,.55) 100%);
+}
+
+/* ───────────────────────────── A chuva ─────────────────────────────
+   Três camadas de gradiente repetido deslizando, e não uma gota por
+   elemento: centenas de nós animados numa tela que já tem mapa, tokens e
+   mural custam quadro. Aqui são três background-position animados, que o
+   compositor resolve na GPU — o custo não cresce com a quantidade de gotas.
+
+   As três têm inclinação, espessura e velocidade diferentes. É isso que dá
+   profundidade: a camada de trás é fina, lenta e apagada; a da frente é
+   grossa, rápida e mais clara. Iguais, as três viram listras. */
+
+.cenario-mesa-chuva{position:absolute;inset:0;display:block}
+.cenario-mesa-chuva i{
+  /* Cada camada é maior que a tela e girada: a inclinação da chuva vem da
+     rotação do plano inteiro, e aí basta animar a gota caindo reta dentro
+     dele. Girar o plano e não cada gota é o que permite usar gradiente
+     radial, que é a única forma de fazer PINGO — e não risco contínuo. */
+  position:absolute;inset:-40%;display:block;
+  background-repeat:repeat;
+  will-change:background-position;
+}
+
+/* A gota: uma elipse muito mais alta que larga, apagando nas pontas. Doze
+   por ladrilho, em posições tortas, para o olho não achar a grade. */
+.cenario-chuva-fundo{
+  opacity:.3;transform:rotate(11deg);
+  background-image:
+    radial-gradient(0.7px 9px at 7% 12%,rgba(216,228,240,.55),transparent),
+    radial-gradient(0.7px 7px at 23% 61%,rgba(216,228,240,.5),transparent),
+    radial-gradient(0.7px 10px at 38% 29%,rgba(216,228,240,.52),transparent),
+    radial-gradient(0.7px 8px at 52% 83%,rgba(216,228,240,.48),transparent),
+    radial-gradient(0.7px 9px at 66% 44%,rgba(216,228,240,.54),transparent),
+    radial-gradient(0.7px 7px at 79% 17%,rgba(216,228,240,.5),transparent),
+    radial-gradient(0.7px 10px at 91% 70%,rgba(216,228,240,.52),transparent),
+    radial-gradient(0.7px 8px at 15% 91%,rgba(216,228,240,.46),transparent);
+  background-size:170px 170px;--passo:170px;
+  animation:chuvaCai 1.5s linear infinite;
+}
+.cenario-chuva-meio{
+  opacity:.42;transform:rotate(13deg);
+  background-image:
+    radial-gradient(1px 15px at 11% 23%,rgba(230,240,250,.62),transparent),
+    radial-gradient(1px 12px at 29% 74%,rgba(230,240,250,.56),transparent),
+    radial-gradient(1px 16px at 44% 8%,rgba(230,240,250,.6),transparent),
+    radial-gradient(1px 13px at 61% 52%,rgba(230,240,250,.58),transparent),
+    radial-gradient(1px 15px at 76% 88%,rgba(230,240,250,.6),transparent),
+    radial-gradient(1px 12px at 88% 34%,rgba(230,240,250,.54),transparent);
+  background-size:260px 260px;--passo:260px;
+  animation:chuvaCai 1.05s linear infinite;
+}
+.cenario-chuva-frente{
+  opacity:.5;transform:rotate(15deg);
+  background-image:
+    radial-gradient(1.4px 24px at 19% 37%,rgba(244,249,255,.7),transparent),
+    radial-gradient(1.4px 20px at 47% 79%,rgba(244,249,255,.62),transparent),
+    radial-gradient(1.4px 26px at 72% 14%,rgba(244,249,255,.66),transparent),
+    radial-gradient(1.4px 21px at 93% 58%,rgba(244,249,255,.6),transparent);
+  background-size:380px 380px;--passo:380px;
+  animation:chuvaCai .72s linear infinite;
+}
+
+/* Cai reta DENTRO do plano girado, o que na tela sai inclinado. O passo é
+   igual ao ladrilho de cada camada, senão a volta do laço dá um salto. */
+@keyframes chuvaCai{
+  from{background-position:0 0}
+  to{background-position:0 var(--passo,260px)}
+}
+
+/* Um brilho que atravessa a praça de vez em quando, como relâmpago distante
+   refletindo na água. Raro de propósito: a cada doze segundos, e fraco. */
+.cenario-mesa-chuva::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 50% at 50% 12%,rgba(255,228,212,.2),transparent 60%);
+  opacity:0;animation:relampagoDistante 12s ease-in-out infinite;
+}
+@keyframes relampagoDistante{
+  0%,91%,100%{opacity:0}
+  92%{opacity:.75}
+  93.5%{opacity:.12}
+  95%{opacity:.5}
+  97%{opacity:0}
+}
+
+/* O conteúdo da mesa sobe uma camada, senão ele fica atrás da parede. */
+.cenario-mesa ~ *{position:relative;z-index:1}
+
+/* Quem pediu menos movimento fica com a praça molhada e parada: a chuva é
+   clima, não informação, e nada se perde em desligá-la. No modo Leve ela
+   também sai — é a camada mais barata de cortar quando a máquina aperta. */
+html[data-motion="reduced"] .cenario-mesa-chuva i,
+html[data-motion="reduced"] .cenario-mesa-chuva::after,
+html[data-quality="light"] .cenario-mesa-chuva i,
+html[data-quality="light"] .cenario-mesa-chuva::after{animation:none}
+html[data-quality="light"] .cenario-mesa-chuva{opacity:.5}
+/* Aba em segundo plano não precisa desenhar chuva. */
+html[data-away="true"] .cenario-mesa-chuva i{animation-play-state:paused}
+
+@media(max-width:640px){
+  /* No celular a tela é alta e estreita: a foto corta muito nas laterais,
+     então vale puxar o enquadramento para o centro e aliviar a chuva, que
+     numa tela pequena vira ruído em cima do texto. */
+  .cenario-mesa-foto img{object-position:center center!important}
+  .cenario-chuva-fundo{display:none}
+  .cenario-mesa-chuva{opacity:.7}
+}

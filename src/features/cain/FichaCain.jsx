@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { BLASFEMIAS, PERICIAS, PERICIA_ESPECIAL } from '../../core/sistemas/cain/index.mjs';
 import { MAX_PIEDADE, podeAgoniaDivina, resumoDaRolagem, rolarAcao } from '../../core/sistemas/cain/regras.mjs';
 import { podeEditarFicha, podeVerSegredosDaFicha } from '../../core/acesso.mjs';
@@ -7,7 +7,9 @@ import {
   ajustarPericia, condicoesDaFicha, cortarGancho, estadoDoExorcista, estresseMaximo,
   ganharFerimento, marcarEstresse, marcarPecado, periciasNoMaximo,
   podeSubirPericia, psiqueDaCategoria, resolverGancho,
+  MAX_PONTOS_KIT, TETO_DA_BAGAGEM, bagagemDe, guardarNaBagagem, tirarDaBagagem,
 } from './fichaCain.mjs';
+import { compressImage } from '../../core/media';
 import './ficha-cain.css';
 
 const CATEGORIAS = ['I', 'II', 'III', 'IV', 'V'];
@@ -55,6 +57,74 @@ function Trilha({ nome, nota, valor, max, cor, aoMudar, somenteLeitura, morteNaU
 }
 
 /* O rolador. A regra mora em regras.mjs; aqui só se escolhe e se lê. */
+/**
+ * A BAGAGEM DO EXORCISTA
+ *
+ * O kit do livro é abstrato — cinco pontos, gastos na hora em que o item faz
+ * falta. Esses pontos ficam aqui como trilha, porque são regra. Mas o que o
+ * exorcista recolhe em campo não é kit: é bagagem, e precisava de um lugar
+ * que não fosse a memória de quem está jogando.
+ *
+ * Lista simples de propósito. Quantidade, peso e preço transformariam uma
+ * anotação de dez segundos num formulário, e o CAIN não pesa nada do que se
+ * carrega.
+ */
+function Bagagem({ ficha, somenteLeitura, aoMudar }) {
+  const [novo, setNovo] = useState('');
+  const itens = bagagemDe(ficha);
+  const pontos = Number.isFinite(Number(ficha.pontosDeKit))
+    ? Math.max(0, Math.min(MAX_PONTOS_KIT, Number(ficha.pontosDeKit)))
+    : MAX_PONTOS_KIT;
+
+  const guardar = e => {
+    e?.preventDefault?.();
+    const antes = itens.length;
+    const depois = guardarNaBagagem(ficha, novo);
+    if (bagagemDe(depois).length > antes) aoMudar(depois);
+    setNovo('');
+  };
+
+  return (
+    <div className="cain-bagagem">
+      <Trilha
+        nome="Pontos de kit" valor={pontos} max={MAX_PONTOS_KIT} cor="#6E8A9E"
+        somenteLeitura={somenteLeitura}
+        nota="Cinco por missão. O item sai da mala na hora em que faz falta."
+        aoMudar={v => aoMudar({ ...ficha, pontosDeKit: v })}
+      />
+
+      <div className="cain-bagagem-lista">
+        <span className="cain-bagagem-titulo">Bagagem do exorcista</span>
+        {itens.length === 0 && <p className="cain-bagagem-vazia">Nada registrado ainda.</p>}
+        {itens.length > 0 && (
+          <ul>
+            {itens.map(item => (
+              <li key={item.id}>
+                <span>{item.nome}</span>
+                {!somenteLeitura && (
+                  <button
+                    type="button" title={`Tirar ${item.nome} da bagagem`}
+                    onClick={() => aoMudar(tirarDaBagagem(ficha, item.id))}
+                  >✕</button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {!somenteLeitura && itens.length < TETO_DA_BAGAGEM && (
+          <form className="cain-bagagem-novo" onSubmit={guardar}>
+            <input
+              value={novo} placeholder="Lanterna, chave enferrujada, carta…"
+              onChange={e => setNovo(e.target.value)}
+            />
+            <button type="submit" disabled={!novo.trim()}>Guardar</button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Rolador({ ficha, aoRolar }) {
   const [periciaId, setPericiaId] = useState(PERICIAS[0].id);
   const [vantagens, setVantagens] = useState(0);
@@ -194,6 +264,7 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar }) {
   );
   const noTopo = periciasNoMaximo(ficha);
 
+  const retratoRef = useRef(null);
   const mudar = campo => valor => aoMudar({ ...ficha, [campo]: valor });
   const aplicar = nova => aoMudar(nova);
 
@@ -202,10 +273,41 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar }) {
       {/* ── Registro ── */}
       <Painel aba="Exorcista registrado" classe="cain-largo">
         <div className="cain-registro">
-          <div className="cain-retrato">
+          {/* O retrato é anexo de ficha de repartição: clicar no quadro abre
+              o seletor. A imagem é reduzida antes de ser guardada porque ela
+              vai junto com a ficha no banco, e uma foto de celular inteira
+              estoura o teto de tamanho do documento sozinha. */}
+          <div
+            className={`cain-retrato${somenteLeitura ? '' : ' editavel'}`}
+            role={somenteLeitura ? undefined : 'button'}
+            tabIndex={somenteLeitura ? undefined : 0}
+            title={somenteLeitura ? undefined : 'Anexar um retrato'}
+            onClick={() => !somenteLeitura && retratoRef.current?.click()}
+            onKeyDown={e => { if (!somenteLeitura && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); retratoRef.current?.click(); } }}
+          >
             {ficha.foto
               ? <img src={ficha.foto} alt="" />
-              : <span>Sem retrato de arquivo</span>}
+              : <span>{somenteLeitura ? 'Sem retrato de arquivo' : 'Anexar retrato'}</span>}
+            {!somenteLeitura && ficha.foto && (
+              <button
+                type="button" className="cain-retrato-tirar" title="Remover o retrato"
+                onClick={e => { e.stopPropagation(); mudar('foto')(''); }}
+              >✕</button>
+            )}
+            <input
+              ref={retratoRef} type="file" accept="image/*" hidden
+              onChange={async e => {
+                const arquivo = e.target.files?.[0];
+                e.target.value = '';
+                if (!arquivo) return;
+                const leitor = new FileReader();
+                leitor.onload = async ev => {
+                  try { mudar('foto')(await compressImage(ev.target.result, 640, 640, 0.72)); }
+                  catch (_) { mudar('foto')(ev.target.result); }
+                };
+                leitor.readAsDataURL(arquivo);
+              }}
+            />
           </div>
           <div style={{ display: 'grid', gap: 12, minWidth: 0 }}>
             <div className="cain-linha">
@@ -414,6 +516,11 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar }) {
       {/* ── Rolagem ── */}
       <Painel aba="Métrica de avaliação de ação">
         <Rolador ficha={ficha} aoRolar={aoRolar} />
+      </Painel>
+
+      {/* ── Inventário ── */}
+      <Painel aba="Inventário">
+        <Bagagem ficha={ficha} somenteLeitura={somenteLeitura} aoMudar={aplicar} />
       </Painel>
 
       {/* ── Narrativa ── */}

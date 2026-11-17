@@ -17,6 +17,7 @@ import {
   CAIXAS_DE_GANCHO, MAX_ESTRESSE, MAX_FERIMENTOS, PULSOS_INICIAIS,
   cortarGancho, estadoDoExorcista, estresseMaximo, fichaNova,
   ganharFerimento, marcarEstresse, psiqueDaCategoria,
+  MAX_PONTOS_KIT, TETO_DA_BAGAGEM, bagagemDe, guardarNaBagagem, tirarDaBagagem,
 } from '../src/features/cain/fichaCain.mjs';
 
 test('o talismã de execução encolhe uma caixa por ferimento', () => {
@@ -106,4 +107,46 @@ test('PSIQUE é metade da categoria, para cima', () => {
 test('a caçada começa com três pulsos psíquicos', () => {
   assert.equal(PULSOS_INICIAIS, 3);
   assert.equal(fichaNova('x9').pulsos, 3);
+});
+
+/* ───────────────────────── A bagagem ───────────────────────── */
+
+test('a bagagem recusa linha vazia e item repetido', () => {
+  // As duas coisas que uma lista digitada à mão acumula sozinha em duas
+  // sessões: a linha em branco de quem apertou Enter sem querer e o
+  // "lanterna" que já estava lá três itens acima.
+  let f = fichaNova('b1');
+  f = guardarNaBagagem(f, '  ');
+  assert.equal(bagagemDe(f).length, 0, 'linha vazia não entra');
+  f = guardarNaBagagem(f, '  Lanterna  ');
+  assert.deepEqual(bagagemDe(f).map(i => i.nome), ['Lanterna'], 'o item entra sem as sobras');
+  f = guardarNaBagagem(f, 'lanterna');
+  assert.equal(bagagemDe(f).length, 1, 'repetido não duplica, nem com outra caixa');
+});
+
+test('tirar da bagagem tira só o item pedido', () => {
+  let f = fichaNova('b2');
+  for (const item of ['Corda', 'Fósforos', 'Caderno']) f = guardarNaBagagem(f, item);
+  const alvo = bagagemDe(f).find(i => i.nome === 'Fósforos');
+  f = tirarDaBagagem(f, alvo.id);
+  assert.deepEqual(bagagemDe(f).map(i => i.nome), ['Corda', 'Caderno']);
+});
+
+test('a bagagem tem teto', () => {
+  let f = fichaNova('b3');
+  for (let i = 0; i < TETO_DA_BAGAGEM + 5; i += 1) f = guardarNaBagagem(f, `Item ${i}`);
+  assert.equal(bagagemDe(f).length, TETO_DA_BAGAGEM);
+});
+
+test('bagagem de ficha antiga, gravada como texto puro, continua legível', () => {
+  // Fichas criadas antes do inventário guardavam o kit como lista de strings.
+  // Se bagagemDe tropeçasse nelas, a ficha abriria quebrada.
+  const antiga = { ...fichaNova('b4'), kit: ['Revólver de serviço', '', 'Terço'] };
+  assert.deepEqual(bagagemDe(antiga).map(i => i.nome), ['Revólver de serviço', 'Terço']);
+  assert.ok(bagagemDe(antiga).every(i => i.id), 'todo item precisa de id para a lista ter chave');
+});
+
+test('a ficha nova nasce com os cinco pontos de kit', () => {
+  assert.equal(fichaNova('b5').pontosDeKit, MAX_PONTOS_KIT);
+  assert.equal(MAX_PONTOS_KIT, 5);
 });

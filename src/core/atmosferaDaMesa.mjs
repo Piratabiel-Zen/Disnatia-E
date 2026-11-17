@@ -40,3 +40,33 @@ export function temaDaMesa(campanha) {
 /** Esta mesa tem clima próprio, definido pelo nome? */
 export const temAtmosferaPropria = campanha =>
   Boolean(ATMOSFERAS_POR_MESA[chave(campanha?.name)]);
+
+/**
+ * O CENÁRIO DE FUNDO DE UMA MESA
+ *
+ * Algumas campanhas têm um lugar, e o lugar merece estar atrás de tudo — não
+ * só na capa. A Estrela de Absinto se passa numa praça alagada da Terra
+ * Dourada onde nunca para de chover, e essa praça fica de fundo em todas as
+ * abas: ficha, mural, documentos, manual.
+ *
+ * `chuva` liga a animação de gotas. Não é enfeite: naquele mundo está sempre
+ * chovendo, e uma imagem parada de uma praça molhada não diz isso.
+ *
+ * `escurecer` é o quanto de preto entra entre a foto e o conteúdo. Sem isso,
+ * o texto fica ilegível em cima de uma imagem de contraste alto — e esta tem
+ * céu vermelho vivo com pedra quase preta, que é o pior caso.
+ */
+export const CENARIOS_POR_MESA = Object.freeze({
+  'estrela de absinto': Object.freeze({
+    imagem: '/media/mesas/terra-dourada.webp',
+    alternativa: '/media/mesas/terra-dourada.jpg',
+    descricao: 'Uma praça alagada da Terra Dourada sob céu vermelho, com a chuva que nunca para.',
+    chuva: true,
+    escurecer: 0.62,
+    posicao: 'center 42%',
+  }),
+});
+
+/** O cenário de fundo desta mesa, ou nada se ela não tiver um. */
+export const cenarioDaMesa = campanha =>
+  CENARIOS_POR_MESA[chave(campanha?.name)] || null;
