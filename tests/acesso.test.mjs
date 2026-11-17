@@ -375,7 +375,52 @@ test('ser Mestre vale por senha, não por ter criado a mesa', () => {
 test('o jogador alcança o que é da mesa e o que o Mestre liberou', () => {
   const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   // Mapa, fichas, manual, crônicas: basta ser da mesa.
-  assert.match(regras, /allow read: if colecaoDeCampanha\(colecao\) && membro\(idNaColecao\(colecao\)\)/);
+  assert.match(regras, /allow read: if daMesaComum\(colecao\) && membro\(idNaColecao\(colecao\)\)/);
   // Documento guardado, não. Esse só chega a quem foi nomeado.
   assert.match(regras, /request\.auth\.uid in resource\.data\.get\('liberadoPara', \[\]\)/);
+});
+
+/* ───────── o buraco das regras que se somam ───────── */
+
+test('as coleções de acesso seletivo ficam FORA da regra geral', () => {
+  // O ERRO QUE ISTO EVITA, e que esteve em produção:
+  //
+  // As regras do Firestore se SOMAM. Basta um match autorizar para a
+  // operação passar — não existe match que restrinja o que outro liberou.
+  //
+  // A primeira versão tinha a regra estreita dos documentos ao lado da regra
+  // geral "membro da mesa lê tudo da mesa". A geral já liberava, então a
+  // estreita não restringia nada: qualquer jogador lia, pelo console,
+  // documento que o Mestre nunca tinha revelado. Era segredo de tela,
+  // exatamente o que aquela regra existia para evitar.
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+
+  assert.match(regras, /function acessoSeletivo\(colecao\)/,
+    'sumiu a lista de coleções que a regra geral precisa pular');
+  assert.match(regras, /function daMesaComum\(colecao\)[\s\S]{0,140}!acessoSeletivo\(colecao\)/,
+    'a regra geral voltou a cobrir as coleções de acesso seletivo');
+
+  // E a regra geral precisa usar daMesaComum, não colecaoDeCampanha cru.
+  assert.match(regras, /allow read: if daMesaComum\(colecao\) && membro\(idNaColecao\(colecao\)\)/,
+    'a regra geral voltou a liberar tudo para qualquer membro');
+  assert.ok(!/allow (read|write): if colecaoDeCampanha\(colecao\) && membro\(/.test(regras),
+    'sobrou uma regra geral que cobre também as coleções seletivas');
+
+  // Documentos e cartões do mural são as duas coleções seletivas de hoje.
+  assert.match(regras, /c__\[a-z0-9-\]\+__documentos/);
+  assert.match(regras, /c__\[a-z0-9-\]\+__mural_cartoes/);
+});
+
+test('no mural, só o Mestre muda quem vê — mas todos movem cartão', () => {
+  // O mural é de todos: jogador prega, move e liga. O que não pode é um
+  // jogador editar o próprio cartão trancado para se liberar.
+  const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  const bloco = regras.slice(regras.indexOf("mural_cartoes"));
+  assert.match(bloco, /allow write: if colecao\.matches\('c__\[a-z0-9-\]\+__mural_cartoes'\)[\s\S]{0,200}membro\(idNaColecao\(colecao\)\)/,
+    'escrever no mural voltou a ser só do Mestre');
+  assert.match(bloco, /request\.resource\.data\.get\('liberadoPara', \[\]\)\s*\n?\s*== resource\.data\.get\('liberadoPara', \[\]\)/,
+    'o jogador voltou a poder mexer em quem vê o cartão');
+  // Cartão antigo, sem campo de liberação, continua legível por todos.
+  assert.match(bloco, /!\('liberadoParaTodos' in resource\.data\)/,
+    'o mural antigo sumiria para os jogadores na primeira publicação');
 });

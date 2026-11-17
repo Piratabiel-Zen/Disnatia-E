@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ESTADOS_DA_PISTA, TIPOS_DE_CARTAO,
-  cartaoNovo, contagemPorTipo, definirEstado, desligar, estadoDoCartao,
-  filtrarMural, ligar, linhasDoMural, moverCartao, prender, removerCartao,
+  alternarPessoaNoCartao, cartaoNovo, cartaoTemImagem, contagemPorTipo,
+  definirEstado, desligar, estadoDoCartao, filtrarMural, liberarCartaoParaTodos,
+  ligar, linhasDoMural, moverCartao, prender, removerCartao, resumoDeQuemVe,
   tipoDoCartao,
 } from './mural.mjs';
+import { comprimirParaDocumento } from '../../core/media';
 import './mural.css';
 
 /* O barbante com folga.
@@ -24,10 +26,14 @@ function fioEntre(x1, y1, x2, y2) {
 }
 
 function Cartao({
-  cartao, apagado, ligandoDaqui, podeEditar, aoMedir,
-  aoArrastar, aoSoltar, aoAlfinete, aoMudar, aoRemover,
+  cartao, apagado, ligandoDaqui, podeEditar, aoMedir, mestre, fichas, nomePorUid,
+  aoArrastar, aoSoltar, aoAlfinete, aoMudar, aoRemover, aoLiberarTodos, aoAlternarPessoa,
 }) {
   const [editando, setEditando] = useState(!cartao.titulo);
+  const [vendoQuemVe, setVendoQuemVe] = useState(false);
+  const imagemRef = useRef(null);
+  const temImagem = cartaoTemImagem(cartao);
+  const restrito = cartao.liberadoParaTodos === false;
   const tipo = tipoDoCartao(cartao);
   const estado = estadoDoCartao(cartao);
   const temEstado = cartao.tipo === 'pista' || cartao.tipo === 'documento';
@@ -57,12 +63,27 @@ function Cartao({
   return (
     <article
       className={`mural-cartao${apagado ? ' apagado' : ''}${ligandoDaqui ? ' ligando' : ''}`}
-      style={{ left: `${cartao.x * 100}%`, top: `${cartao.y * 100}%`, '--cor': tipo.cor }}
+      style={{
+        left: `${cartao.x * 100}%`, top: `${cartao.y * 100}%`, '--cor': tipo.cor,
+        // Com a plateia aberta, o cartão sobe acima dos vizinhos. A lista
+        // desce para fora do papel, e qualquer cartão pregado logo abaixo
+        // cobria metade dos nomes — justamente os de baixo, que é onde fica
+        // quem foi nomeado por último.
+        ...(vendoQuemVe ? { zIndex: 60 } : null),
+      }}
       onPointerDown={comecar}
       onPointerMove={mover}
       onPointerUp={soltar}
       onPointerCancel={soltar}
+      onContextMenu={e => {
+        // O Mestre decide quem vê pelo menu de contexto do próprio cartão.
+        // É onde a mão já está: ele acabou de pregar a pista ali.
+        if (!mestre) return;
+        e.preventDefault();
+        setVendoQuemVe(v => !v);
+      }}
       aria-label={`${tipo.nome}: ${cartao.titulo || 'sem título'}`}
+      data-restrito={restrito ? 'sim' : 'nao'}
       ref={el => aoMedir?.(cartao.id, el)}
     >
       <button
@@ -72,7 +93,45 @@ function Cartao({
         onClick={e => { e.stopPropagation(); aoAlfinete(cartao.id); }}
       />
 
-      <header className="mural-aba"><i>{tipo.icone}</i>{tipo.nome}</header>
+      <header className="mural-aba">
+        <i>{tipo.icone}</i>{tipo.nome}
+        {mestre && (
+          <button
+            type="button" className="mural-quem-ve"
+            data-restrito={restrito ? 'sim' : 'nao'}
+            title={`Quem vê: ${resumoDeQuemVe(cartao, nomePorUid)}`}
+            aria-label="Escolher quem vê este cartão"
+            onClick={e => { e.stopPropagation(); setVendoQuemVe(v => !v); }}
+          >{restrito ? '◑' : '◉'}</button>
+        )}
+      </header>
+
+      {mestre && vendoQuemVe && (
+        <div className="mural-plateia" onPointerDown={e => e.stopPropagation()}>
+          <span className="mural-plateia-titulo">Quem pode ver?</span>
+          <button
+            type="button" className="mural-plateia-todos"
+            data-ligado={!restrito ? 'sim' : 'nao'}
+            onClick={() => aoLiberarTodos(cartao.id, restrito)}
+          >Toda a mesa</button>
+          <div className="mural-plateia-lista">
+            {fichas.map(f => (
+              <button
+                key={f.id} type="button"
+                data-ligado={(cartao.liberadoPara || []).map(String).includes(String(f.dono)) ? 'sim' : 'nao'}
+                onClick={() => aoAlternarPessoa(cartao.id, String(f.dono))}
+              >{f.nome || 'Exorcista sem nome'}</button>
+            ))}
+          </div>
+          {fichas.length === 0 && (
+            <p className="mural-plateia-vazio">
+              Nenhuma ficha entregue ainda. Entregue as fichas aos jogadores na aba
+              Fichas: é isso que põe os nomes aqui.
+            </p>
+          )}
+          <p className="mural-plateia-resumo">{resumoDeQuemVe(cartao, nomePorUid)}</p>
+        </div>
+      )}
 
       <div className="mural-corpo">
         {editando && podeEditar ? (
@@ -93,6 +152,36 @@ function Cartao({
           </>
         ) : (
           <>
+            {temImagem && (
+              <div className={`mural-foto${podeEditar ? ' editavel' : ''}`}>
+                {cartao.imagem
+                  ? <img src={cartao.imagem} alt={cartao.titulo || 'Fotografia'} />
+                  : <span>{podeEditar ? 'Anexar fotografia' : 'Sem imagem'}</span>}
+                {podeEditar && (
+                  <button
+                    type="button" className="mural-foto-trocar"
+                    onClick={e => { e.stopPropagation(); imagemRef.current?.click(); }}
+                  >{cartao.imagem ? 'Trocar' : 'Anexar'}</button>
+                )}
+                <input
+                  ref={imagemRef} type="file" accept="image/*" hidden
+                  onChange={async e => {
+                    const arquivo = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!arquivo) return;
+                    const leitor = new FileReader();
+                    leitor.onload = async ev => {
+                      try {
+                        aoMudar({ ...cartao, imagem: await comprimirParaDocumento(ev.target.result, {
+                          largura: 1400, altura: 1000, limite: 240 * 1024,
+                        }) });
+                      } catch (_) { /* arquivo ilegível: o cartão fica como estava */ }
+                    };
+                    leitor.readAsDataURL(arquivo);
+                  }}
+                />
+              </div>
+            )}
             <h3 onDoubleClick={() => podeEditar && setEditando(true)}>
               {cartao.titulo || 'Sem título'}
             </h3>
@@ -131,8 +220,20 @@ function Cartao({
  */
 export default function MuralInvestigacao({
   cartoes = [], ligacoes = [], podeEditar = true, autor = '',
+  mestre = false, fichas = [],
   aoMudarCartoes, aoMudarLigacoes, aoArrastarVivo,
 }) {
+  // Quem recebe um cartão restrito sai das FICHAS, igual aos documentos: a
+  // mesa pensa em personagem, não em conta. Só entram as fichas já entregues
+  // a alguém — uma ficha sem dono não tem para onde revelar.
+  const fichasComDono = useMemo(
+    () => (fichas || []).filter(f => String(f.dono || '').trim()),
+    [fichas],
+  );
+  const nomePorUid = useMemo(
+    () => Object.fromEntries(fichasComDono.map(f => [String(f.dono), f.nome || 'exorcista sem nome'])),
+    [fichasComDono],
+  );
   const quadro = useRef(null);
   // Altura de cada cartão, em fração do quadro, para o barbante sair do
   // alfinete e não do meio do papel. O alfinete fica na borda de cima, e os
@@ -296,6 +397,11 @@ export default function MuralInvestigacao({
             apagado={!visiveis.has(String(c.id))}
             ligandoDaqui={String(ligandoDe) === String(c.id)}
             podeEditar={podeEditar}
+            mestre={mestre}
+            fichas={fichasComDono}
+            nomePorUid={nomePorUid}
+            aoLiberarTodos={(id, valor) => aoMudarCartoes?.(liberarCartaoParaTodos(cartoes, id, valor))}
+            aoAlternarPessoa={(id, uid) => aoMudarCartoes?.(alternarPessoaNoCartao(cartoes, id, uid))}
             aoArrastar={arrastar}
             aoSoltar={soltar}
             aoAlfinete={alfinete}

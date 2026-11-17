@@ -204,3 +204,89 @@ html[data-motion="reduced"] .mural-cartao{transition:none}
 .mural-escolha button:last-child{border-bottom:0}
 .mural-escolha button:hover{background:color-mix(in srgb,var(--cor) 16%,transparent);color:var(--cor)}
 .mural-escolha i{font-style:normal;font-size:13px;color:var(--cor)}
+
+/* ═════════════ FOTOGRAFIA E QUEM PODE VER ═════════════
+   Dois acréscimos ao cartão: a imagem que vira pista, e a escolha de quem
+   enxerga aquele cartão. */
+
+.mural-foto{
+  position:relative;margin:0 0 7px;border-radius:2px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.12);background:#0A0908;
+  aspect-ratio:4/3;display:grid;place-items:center;
+}
+.mural-foto.editavel{border-style:dashed}
+.mural-foto img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  /* A fotografia de prova é revelada, não produzida: o leve dessaturado e o
+     contraste a puxam para o papel da época sem esconder o que ela mostra. */
+  filter:saturate(.86) contrast(1.06);
+}
+.mural-foto>span{
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(206,196,180,.5);text-align:center;padding:0 8px;
+}
+.mural-foto-trocar{
+  position:absolute;right:4px;bottom:4px;
+  padding:3px 8px;border-radius:2px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.2);background:rgba(10,8,7,.86);
+  color:rgba(236,228,214,.9);font-family:inherit;font-size:8.5px;
+  letter-spacing:.12em;text-transform:uppercase;
+  opacity:0;transition:opacity .15s ease;
+}
+.mural-foto:hover .mural-foto-trocar,
+.mural-foto-trocar:focus-visible{opacity:1}
+.mural-foto:not(:has(img)) .mural-foto-trocar{opacity:1;position:static;margin-top:6px}
+
+/* O cartão restrito ganha uma marca discreta na borda. Discreta porque quem
+   a vê é só o Mestre — para o jogador o cartão nem está lá. */
+.mural-cartao[data-restrito="sim"]{
+  box-shadow:0 10px 24px rgba(0,0,0,.5),inset 0 0 0 1px rgba(200,16,46,.35);
+}
+.mural-quem-ve{
+  margin-left:auto;width:16px;height:16px;padding:0;flex-shrink:0;
+  display:grid;place-items:center;border-radius:50%;cursor:pointer;
+  border:1px solid rgba(255,255,255,.22);background:transparent;
+  color:rgba(236,228,214,.75);font-size:9px;line-height:1;
+}
+.mural-quem-ve[data-restrito="sim"]{
+  border-color:rgba(200,16,46,.6);color:#E0697A;background:rgba(200,16,46,.14);
+}
+.mural-quem-ve:hover{background:rgba(255,255,255,.12)}
+
+/* A plateia. Abre sobre o cartão e não ao lado: ao lado ela sairia do
+   quadro nos cartões pregados perto da borda. */
+.mural-plateia{
+  position:absolute;left:0;right:0;top:100%;z-index:40;
+  margin-top:5px;padding:9px 10px;border-radius:3px;
+  min-width:184px;
+  background:rgba(12,10,9,.97);border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 12px 30px rgba(0,0,0,.6);
+  display:grid;gap:7px;cursor:default;
+}
+.mural-plateia-titulo{
+  font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(206,196,180,.55);
+}
+.mural-plateia-todos,
+.mural-plateia-lista button{
+  width:100%;padding:5px 8px;border-radius:2px;cursor:pointer;text-align:left;
+  border:1px solid rgba(255,255,255,.14);background:transparent;
+  color:rgba(236,228,214,.85);font-family:inherit;font-size:10.5px;
+}
+.mural-plateia-todos[data-ligado="sim"],
+.mural-plateia-lista button[data-ligado="sim"]{
+  border-color:var(--cor,#A98045);
+  background:color-mix(in srgb,var(--cor,#A98045) 24%,transparent);
+  color:#fff;
+}
+.mural-plateia-todos:hover,
+.mural-plateia-lista button:hover{background:rgba(255,255,255,.08)}
+.mural-plateia-lista{display:grid;gap:4px;max-height:132px;overflow:auto}
+.mural-plateia-vazio,
+.mural-plateia-resumo{
+  margin:0;font-size:9.5px;line-height:1.5;color:rgba(206,196,180,.55);
+}
+.mural-plateia-resumo{
+  padding-top:6px;border-top:1px solid rgba(255,255,255,.1);
+  font-style:italic;
+}

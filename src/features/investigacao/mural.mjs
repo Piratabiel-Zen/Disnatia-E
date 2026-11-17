@@ -27,7 +27,12 @@ export const TIPOS_DE_CARTAO = Object.freeze([
   { id: 'documento', nome: 'Documento', cor: '#8A7A5E', icone: '▤' },
   { id: 'evento', nome: 'Evento', cor: '#6F5B8E', icone: '◈' },
   { id: 'teoria', nome: 'Teoria', cor: '#5E7F5E', icone: '✎' },
+  { id: 'fotografia', nome: 'Fotografia', cor: '#7E8CA8', icone: '▣' },
 ]);
+
+/** Cartões que carregam imagem em vez de texto. */
+export const TIPOS_COM_IMAGEM = Object.freeze(['fotografia']);
+export const cartaoTemImagem = cartao => TIPOS_COM_IMAGEM.includes(cartao?.tipo);
 
 export const ESTADOS_DA_PISTA = Object.freeze([
   { id: 'encontrada', nome: 'Encontrada', cor: '#A98045', resumo: 'Apareceu. Ninguém olhou direito ainda.' },
@@ -61,10 +66,85 @@ export function cartaoNovo({ id, tipo = 'pista', titulo = '', texto = '', x = 0.
     x: prender(x), y: prender(y),
     autor: String(autor),
     criadoEm: Date.now(),
+    // A fotografia guarda a imagem no próprio cartão.
+    imagem: tipo === 'fotografia' ? '' : null,
+    // QUEM VÊ ESTE CARTÃO.
+    //
+    // Nasce aberto, e isso é escolha. O mural é de todo mundo: jogador prega
+    // cartão, move, liga. Se cada cartão novo nascesse trancado, a mesa teria
+    // que liberar um por um para o mural voltar a funcionar como funcionava.
+    //
+    // Trancar é o caso excepcional, e é do Mestre: ele planta a pista que só
+    // dois investigadores encontraram.
+    liberadoParaTodos: true,
+    liberadoPara: [],
     // Suspeito tem página própria; os campos extras moram aqui para o cartão
     // continuar sendo um cartão.
     ficha: tipo === 'suspeito' ? { foto: '', descricao: '', alibi: '', relacoes: '', evidencias: '' } : null,
   };
+}
+
+/* ────────────────────── quem enxerga o cartão ────────────────────── */
+
+/**
+ * Este cartão aparece para esta pessoa?
+ *
+ * O Mestre vê tudo. Para o resto, vale o que ele liberou — e um cartão
+ * restrito não fica borrado nem cinza: ele simplesmente não existe naquele
+ * mural. É essa a ficção: o jogador não achou aquilo.
+ *
+ * Cartão sem campo de liberação é cartão de antes desta regra, e esses são
+ * abertos. Tratá-los como trancados faria o mural inteiro de toda mesa
+ * desaparecer para os jogadores na primeira atualização.
+ */
+export function podeVerCartao(cartao, membro) {
+  if (!membro) return false;
+  if (String(membro.papel) === 'mestre') return true;
+  if (!cartao || cartao.liberadoParaTodos === undefined) return true;
+  if (cartao.liberadoParaTodos) return true;
+  return (cartao.liberadoPara || []).map(String).includes(String(membro.uid));
+}
+
+export const cartoesVisiveis = (cartoes, membro) =>
+  (cartoes || []).filter(c => podeVerCartao(c, membro));
+
+/** Abre ou fecha o cartão para a mesa inteira. */
+export function liberarCartaoParaTodos(cartoes, id, valor) {
+  return (cartoes || []).map(c => (String(c.id) === String(id)
+    ? { ...c, liberadoParaTodos: Boolean(valor), liberadoPara: valor ? [] : (c.liberadoPara || []) }
+    : c));
+}
+
+/**
+ * Entrega ou tira o cartão de uma pessoa.
+ *
+ * Nomear alguém tira o "para todos": as duas coisas juntas não querem dizer
+ * nada — ou o cartão é da mesa, ou é de quem foi nomeado.
+ */
+export function alternarPessoaNoCartao(cartoes, id, uid) {
+  const alvo = String(uid || '');
+  if (!alvo) return cartoes || [];
+  return (cartoes || []).map(c => {
+    if (String(c.id) !== String(id)) return c;
+    const atual = (c.liberadoPara || []).map(String);
+    const tem = atual.includes(alvo);
+    return {
+      ...c,
+      liberadoParaTodos: false,
+      liberadoPara: tem ? atual.filter(u => u !== alvo) : [...atual, alvo],
+    };
+  });
+}
+
+/** Em uma linha: quem está vendo este cartão. */
+export function resumoDeQuemVe(cartao, nomePorUid = {}) {
+  if (!cartao || cartao.liberadoParaTodos === undefined || cartao.liberadoParaTodos) {
+    return 'Toda a mesa';
+  }
+  const nomes = (cartao.liberadoPara || []).map(uid => nomePorUid[String(uid)] || 'alguém');
+  if (nomes.length === 0) return 'Ninguém ainda';
+  if (nomes.length === 1) return `Só ${nomes[0]}`;
+  return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
 }
 
 /* ─────────────────────────── mover ─────────────────────────── */

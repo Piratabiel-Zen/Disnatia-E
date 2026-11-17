@@ -4,7 +4,8 @@ import { setDoc, deleteDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
 import { useMembro } from '../acesso/useMembro';
 import MuralInvestigacao from './MuralInvestigacao';
-import { chaveDaLigacao } from './mural.mjs';
+import { cartoesVisiveis, chaveDaLigacao } from './mural.mjs';
+import { ehMestre } from '../../core/acesso.mjs';
 
 /**
  * A PÁGINA DO MURAL
@@ -18,15 +19,21 @@ export default function InvestigacaoPage() {
   const { membro, carregando } = useMembro();
   const [cartoes, setCartoes] = useState([]);
   const [ligacoes, setLigacoes] = useState([]);
+  const [fichas, setFichas] = useState([]);
 
   useEffect(() => {
+    // As fichas alimentam a lista de "quem pode ver". Só o Mestre precisa
+    // dela, mas a leitura é a mesma que a aba Fichas já faz — e é barata.
+    const u0 = onSnapshot(col('fichas'), snap => {
+      setFichas(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    }, () => {});
     const u1 = onSnapshot(col('mural_cartoes'), snap => {
       setCartoes(snap.docs.map(d => ({ ...d.data(), id: d.id })));
     });
     const u2 = onSnapshot(col('mural_ligacoes'), snap => {
       setLigacoes(snap.docs.map(d => ({ ...d.data(), chave: d.id })));
     });
-    return () => { u1(); u2(); };
+    return () => { u0(); u1(); u2(); };
   }, []);
 
   /* Grava só o que mudou. Comparar antes de escrever não é otimização: é o que
@@ -59,10 +66,22 @@ export default function InvestigacaoPage() {
     }
   }, [ligacoes]);
 
-  const normalizadas = useMemo(
-    () => ligacoes.map(l => ({ ...l, chave: l.chave || chaveDaLigacao(l.de, l.para) })),
-    [ligacoes],
-  );
+  const mestre = ehMestre(membro);
+
+  // O cartão restrito não fica borrado nem cinza para o jogador: ele não
+  // existe naquele mural. É essa a ficção — ele não achou aquilo.
+  //
+  // O servidor já recusa a leitura; este filtro é o que mantém a tela
+  // coerente para quem é Mestre em outra aba, e o que garante que nenhum
+  // barbante fique apontando para um cartão que não está lá.
+  const meusCartoes = useMemo(() => cartoesVisiveis(cartoes, membro), [cartoes, membro]);
+
+  const normalizadas = useMemo(() => {
+    const visiveis = new Set(meusCartoes.map(c => String(c.id)));
+    return ligacoes
+      .map(l => ({ ...l, chave: l.chave || chaveDaLigacao(l.de, l.para) }))
+      .filter(l => visiveis.has(String(l.de)) && visiveis.has(String(l.para)));
+  }, [ligacoes, meusCartoes]);
 
   if (carregando) return <div className="pagina-aviso">Abrindo o mural…</div>;
   if (!membro) {
@@ -77,9 +96,11 @@ export default function InvestigacaoPage() {
   return (
     <div style={{ height: '100%', minHeight: 0, padding: 14, boxSizing: 'border-box' }}>
       <MuralInvestigacao
-        cartoes={cartoes}
+        cartoes={meusCartoes}
         ligacoes={normalizadas}
         autor={membro.uid}
+        mestre={mestre}
+        fichas={fichas}
         podeEditar
         aoMudarCartoes={salvarCartoes}
         aoMudarLigacoes={salvarLigacoes}

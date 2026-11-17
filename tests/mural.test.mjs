@@ -9,6 +9,8 @@ import {
   cartaoNovo, chaveDaLigacao, contagemPorTipo, definirEstado, desligar,
   estadoDoCartao, filtrarMural, ligar, linhasDoMural, moverCartao, prender,
   removerCartao, tipoDoCartao, vizinhos,
+  alternarPessoaNoCartao, cartaoTemImagem, cartoesVisiveis,
+  liberarCartaoParaTodos, podeVerCartao, resumoDeQuemVe,
 } from '../src/features/investigacao/mural.mjs';
 
 const montar = () => ([
@@ -144,4 +146,92 @@ test('a contagem por tipo cobre todos os tipos, mesmo os zerados', () => {
   assert.equal(c.suspeito, 1);
   assert.equal(c.teoria, 0, 'tipo sem cartão aparece como zero, não sumido');
   assert.equal(Object.keys(c).length, TIPOS_DE_CARTAO.length);
+});
+
+/* ═════════════ QUEM VÊ CADA CARTÃO ═════════════ */
+
+const mestre = { uid: 'm1', papel: 'mestre' };
+const rafael = { uid: 'r1', papel: 'jogador' };
+const joao = { uid: 'j1', papel: 'jogador' };
+
+test('cartão novo nasce aberto para a mesa', () => {
+  // Se nascesse trancado, a mesa teria que liberar um por um para o mural
+  // voltar a funcionar como sempre funcionou. Trancar é o caso excepcional.
+  const c = cartaoNovo({ id: 'c1' });
+  assert.equal(c.liberadoParaTodos, true);
+  assert.deepEqual(c.liberadoPara, []);
+  assert.equal(podeVerCartao(c, joao), true);
+});
+
+test('cartão restrito só aparece para quem foi nomeado', () => {
+  let cartoes = [cartaoNovo({ id: 'c1', titulo: 'A carta rasgada' })];
+  cartoes = alternarPessoaNoCartao(cartoes, 'c1', 'r1');
+
+  assert.equal(podeVerCartao(cartoes[0], rafael), true, 'Rafael foi nomeado');
+  assert.equal(podeVerCartao(cartoes[0], joao), false, 'João não achou isso');
+  assert.equal(podeVerCartao(cartoes[0], mestre), true, 'o Mestre vê tudo');
+  // Nomear alguém tira o "para todos": ou é da mesa, ou é de quem foi nomeado.
+  assert.equal(cartoes[0].liberadoParaTodos, false);
+});
+
+test('nomear de novo a mesma pessoa a retira', () => {
+  let cartoes = [cartaoNovo({ id: 'c1' })];
+  cartoes = alternarPessoaNoCartao(cartoes, 'c1', 'r1');
+  cartoes = alternarPessoaNoCartao(cartoes, 'c1', 'h1');
+  assert.deepEqual(cartoes[0].liberadoPara, ['r1', 'h1']);
+  cartoes = alternarPessoaNoCartao(cartoes, 'c1', 'r1');
+  assert.deepEqual(cartoes[0].liberadoPara, ['h1']);
+  assert.equal(podeVerCartao(cartoes[0], rafael), false);
+});
+
+test('liberar para todos limpa a lista de nomeados', () => {
+  // Guardar os nomes junto com "todos" deixaria um estado que não quer dizer
+  // nada, e que volta sozinho ao se fechar o cartão de novo.
+  let cartoes = alternarPessoaNoCartao([cartaoNovo({ id: 'c1' })], 'c1', 'r1');
+  cartoes = liberarCartaoParaTodos(cartoes, 'c1', true);
+  assert.equal(cartoes[0].liberadoParaTodos, true);
+  assert.deepEqual(cartoes[0].liberadoPara, []);
+  assert.equal(podeVerCartao(cartoes[0], joao), true);
+});
+
+test('cartão de antes desta regra continua aberto', () => {
+  // Sem isto, publicar a mudança faria o mural inteiro de toda mesa sumir
+  // para os jogadores — eles veriam um quadro vazio sem nenhum aviso.
+  const antigo = { id: 'velho', tipo: 'pista', titulo: 'Pegada', x: .5, y: .5 };
+  assert.equal(podeVerCartao(antigo, joao), true);
+  assert.equal(cartoesVisiveis([antigo], joao).length, 1);
+});
+
+test('quem não está na mesa não vê cartão nenhum', () => {
+  assert.equal(podeVerCartao(cartaoNovo({ id: 'c1' }), null), false);
+  assert.deepEqual(cartoesVisiveis([cartaoNovo({ id: 'c1' })], null), []);
+});
+
+test('o resumo diz em uma linha quem está vendo', () => {
+  const nomes = { r1: 'Rafael', h1: 'Henrique', j1: 'João' };
+  const aberto = cartaoNovo({ id: 'c1' });
+  assert.equal(resumoDeQuemVe(aberto, nomes), 'Toda a mesa');
+
+  let cartoes = alternarPessoaNoCartao([aberto], 'c1', 'r1');
+  assert.equal(resumoDeQuemVe(cartoes[0], nomes), 'Só Rafael');
+
+  cartoes = alternarPessoaNoCartao(cartoes, 'c1', 'h1');
+  assert.equal(resumoDeQuemVe(cartoes[0], nomes), 'Rafael e Henrique');
+
+  cartoes = alternarPessoaNoCartao(cartoes, 'c1', 'j1');
+  assert.equal(resumoDeQuemVe(cartoes[0], nomes), 'Rafael, Henrique e João');
+
+  // Trancado e sem ninguém nomeado é um estado real: o Mestre está montando.
+  const trancado = liberarCartaoParaTodos([cartaoNovo({ id: 'c2' })], 'c2', false)[0];
+  assert.equal(resumoDeQuemVe(trancado, nomes), 'Ninguém ainda');
+});
+
+test('a fotografia é um tipo de cartão e carrega imagem', () => {
+  const foto = cartaoNovo({ id: 'f1', tipo: 'fotografia', titulo: 'O retrato na escrivaninha' });
+  assert.equal(foto.tipo, 'fotografia');
+  assert.equal(foto.imagem, '', 'a fotografia nasce com lugar para a imagem');
+  assert.equal(cartaoTemImagem(foto), true);
+  // Os outros tipos não ganham campo de imagem à toa.
+  assert.equal(cartaoTemImagem(cartaoNovo({ id: 'p1', tipo: 'pista' })), false);
+  assert.ok(TIPOS_DE_CARTAO.some(t => t.id === 'fotografia'), 'o tipo precisa estar na lista');
 });

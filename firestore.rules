@@ -209,27 +209,44 @@ service cloud.firestore {
       return request.resource == null || request.resource.size() < 400 * 1024;
     }
 
+    // COLEÇÕES DE ACESSO SELETIVO
+    //
+    // Estas não seguem a regra geral de "membro da mesa vê tudo da mesa":
+    // nelas o Mestre decide, documento a documento, quem enxerga.
+    //
+    // E elas precisam ficar DE FORA da regra geral, não apenas ganhar uma
+    // regra própria mais estreita. As regras do Firestore se somam: basta um
+    // match autorizar para a operação passar. A primeira versão disto tinha
+    // a regra estreita dos documentos ao lado da regra geral, e a geral já
+    // liberava tudo para qualquer membro — então a restrição não restringia
+    // nada. Era segredo de tela, exatamente o que ela existia para evitar.
+    function acessoSeletivo(colecao) {
+      return colecao.matches('c__[a-z0-9-]+__documentos')
+        || colecao.matches('c__[a-z0-9-]+__mural_cartoes');
+    }
+
+    function daMesaComum(colecao) {
+      return colecaoDeCampanha(colecao) && !acessoSeletivo(colecao);
+    }
+
     match /{colecao}/{documento} {
       // Só membros da mesa entram nos dados dela. Isso cobre fichas, mapas,
-      // crônicas, pecados, mural — tudo que é escopado por campanha.
-      allow read: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
-      allow write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
+      // crônicas, pecados — tudo que é escopado por campanha e aberto à mesa.
+      allow read: if daMesaComum(colecao) && membro(idNaColecao(colecao));
+      allow write: if daMesaComum(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
     }
 
     match /{colecao}/{documento}/{resto=**} {
-      allow read: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao));
-      allow write: if colecaoDeCampanha(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
+      allow read: if daMesaComum(colecao) && membro(idNaColecao(colecao));
+      allow write: if daMesaComum(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
     }
 
     // Documentos liberados por pessoa.
     //
-    // A regra acima já exige ser da mesa; esta estreita mais: um documento
-    // guardado só chega a quem o Mestre liberou. É o que faz "revelar para um
-    // jogador" significar alguma coisa, em vez de ser um ocultar visual que
-    // some ao abrir o console.
+    // Um documento guardado só chega a quem o Mestre liberou. Escrever é só
+    // do Mestre: o documento é material dele.
     match /{colecao}/{documento} {
-      allow read: if colecaoDeCampanha(colecao)
-        && colecao.matches('c__[a-z0-9-]+__documentos')
+      allow read: if colecao.matches('c__[a-z0-9-]+__documentos')
         && membro(idNaColecao(colecao))
         && (
           mestre(idNaColecao(colecao))
@@ -237,9 +254,49 @@ service cloud.firestore {
           || request.auth.uid in resource.data.get('liberadoPara', [])
         );
 
-      allow write: if colecaoDeCampanha(colecao)
-        && colecao.matches('c__[a-z0-9-]+__documentos')
-        && mestre(idNaColecao(colecao));
+      allow write: if colecao.matches('c__[a-z0-9-]+__documentos')
+        && mestre(idNaColecao(colecao))
+        && tamanhoRazoavel();
+    }
+
+    // Cartões do mural.
+    //
+    // Leitura funciona como a dos documentos, com uma diferença: cartão sem
+    // campo de liberação é de antes desta regra, e esses continuam abertos.
+    // Tratá-los como trancados faria o mural de toda mesa sumir para os
+    // jogadores na primeira publicação.
+    //
+    // Escrever é de qualquer membro, e isso é de propósito: o mural é de
+    // todos, jogador prega cartão, move e liga. O que só o Mestre muda é
+    // QUEM VÊ — senão bastaria um jogador editar o próprio cartão trancado
+    // para se liberar.
+    match /{colecao}/{documento} {
+      allow read: if colecao.matches('c__[a-z0-9-]+__mural_cartoes')
+        && membro(idNaColecao(colecao))
+        && (
+          mestre(idNaColecao(colecao))
+          || !('liberadoParaTodos' in resource.data)
+          || resource.data.get('liberadoParaTodos', false) == true
+          || request.auth.uid in resource.data.get('liberadoPara', [])
+        );
+
+      allow write: if colecao.matches('c__[a-z0-9-]+__mural_cartoes')
+        && membro(idNaColecao(colecao))
+        && tamanhoRazoavel()
+        && (
+          mestre(idNaColecao(colecao))
+          || (
+            // Jogador cria cartão aberto e não mexe em liberação nenhuma.
+            resource == null
+              ? request.resource.data.get('liberadoParaTodos', true) == true
+              : (
+                request.resource.data.get('liberadoParaTodos', true)
+                  == resource.data.get('liberadoParaTodos', true)
+                && request.resource.data.get('liberadoPara', [])
+                  == resource.data.get('liberadoPara', [])
+              )
+          )
+        );
     }
 
     // ───────────────────────────────────────────────────────────────────

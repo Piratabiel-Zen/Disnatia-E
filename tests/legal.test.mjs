@@ -105,5 +105,12 @@ test('as regras limitam o tamanho do que se grava numa mesa', () => {
   // de responder para todo mundo.
   assert.match(regras, /function tamanhoRazoavel\(\)/);
   assert.match(regras, /request\.resource\.size\(\) < 400 \* 1024/);
-  assert.match(regras, /allow write: if colecaoDeCampanha\(colecao\) && membro\(idNaColecao\(colecao\)\) && tamanhoRazoavel\(\)/);
+  assert.match(regras, /allow write: if daMesaComum\(colecao\) && membro\(idNaColecao\(colecao\)\) && tamanhoRazoavel\(\)/);
+  // E o teto também vale nas coleções de acesso seletivo, que ficam de fora
+  // da regra geral: é justamente nelas que moram as imagens.
+  for (const seletiva of ['documentos', 'mural_cartoes']) {
+    const bloco = regras.slice(regras.indexOf(`c__[a-z0-9-]+__${seletiva}'`));
+    assert.match(bloco.slice(0, 1400), /tamanhoRazoavel\(\)/,
+      `escrever em ${seletiva} ficou sem teto de tamanho`);
+  }
 });

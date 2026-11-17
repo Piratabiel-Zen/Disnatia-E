@@ -18,6 +18,7 @@ const SOUND_CATEGORIES = [
 ];
 const ALL_CATEGORY = { id: 'todas', label: 'Todas', icon: '🎶', color: '#D6B4F5' };
 import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
+import { embedDoSpotify, embedDoYoutube, lerLinkDeMusica } from './linkDeMusica.mjs';
 import { docIn } from '../core/campaign';
 export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const [open, setOpen] = useState(false);
@@ -79,20 +80,11 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     return () => { unsub(); window.removeEventListener('online', refreshFromServer); window.removeEventListener('focus', refreshFromServer); document.removeEventListener('visibilitychange', onVisible); };
   }, []);
 
-  const parseMediaLink = (value) => {
-    const raw = value.trim();
-    const spotify = raw.match(/(?:open\.spotify\.com\/(?:embed\/)?)?(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/i)
-      || raw.match(/^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]+)$/i);
-    if (spotify) return { provider: 'spotify', spotifyUri: 'spotify:' + spotify[1].toLowerCase() + ':' + spotify[2] };
-    const youtube = raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
-    const videoId = youtube ? youtube[1] : raw;
-    return videoId ? { provider: 'youtube', videoId } : null;
-  };
-
-  const spotifyEmbedSrc = (uri) => {
-    const match = String(uri || '').match(/^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]+)$/);
-    return match ? 'https://open.spotify.com/embed/' + match[1] + '/' + match[2] + '?utm_source=generator&theme=0' : '';
-  };
+  // O reconhecimento do link mora em linkDeMusica.mjs, com teste próprio: é
+  // a única parte do tocador que quebra em silêncio, devolvendo um id quase
+  // certo que só falha na hora de tocar.
+  const parseMediaLink = lerLinkDeMusica;
+  const spotifyEmbedSrc = embedDoSpotify;
 
   const sendCmd = (func, args = []) => {
     try {
@@ -194,7 +186,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const isSpotify = current?.provider === 'spotify' && Boolean(current?.spotifyUri);
   const hasCurrentMedia = Boolean(current?.videoId || current?.spotifyUri);
   const isPlaying = current?.playing && hasCurrentMedia && !userMuted;
-  const embedSrc = current?.videoId ? `https://www.youtube.com/embed/${current.videoId}?autoplay=1&loop=1&playlist=${current.videoId}&enablejsapi=1&controls=0` : '';
+  const embedSrc = embedDoYoutube(current?.videoId);
   const spotifySrc = spotifyEmbedSrc(current?.spotifyUri);
   const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
