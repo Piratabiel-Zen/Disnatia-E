@@ -20,7 +20,7 @@ export const PRIMARY_DEFAULT_PASSWORD_HASH = 'bf2f289661aa88b6945d270025d73a5bf6
 // Agora cada mesa tem a sua, definida na criação e trocável de dentro da
 // sessão. A Dinastia E fica com a de sempre — ela é anterior a isto e o
 // Mestre dela não vai ser deslogado por uma mudança de arquitetura.
-export const PRIMARY_MASTER_PIN_HASH = 'b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1';
+export const PRIMARY_MASTER_PIN_HASH = 'f0b20bb6d6fad7901c81dcd90cd10fa59d889be1bfb7653efc36d0e9944e3311';
 const UNLOCK_PREFIX = 'dinastia_campaign_unlock_v1:';
 
 export const normalizePassword = value => String(value || '').trim().toLowerCase();

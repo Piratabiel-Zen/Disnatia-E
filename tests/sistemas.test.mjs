@@ -97,7 +97,12 @@ test('a navegação vem do sistema: CAIN tem Mural, Dinastia E tem Bestiário', 
   }
   assert.ok(!abas.includes('bestiario'), 'Bestiário é da Dinastia E');
   assert.ok(!abas.includes('classes'), 'CAIN não tem linhagens');
-  assert.ok(veneza.some(g => g.masterOnly), 'o painel do Admin precisa ser só do Admin');
+  // O Painel do Admin saiu: ele só continha o bestiário da Dinastia E, que
+  // não descreve um Pecado. O comando do Admin no CAIN mora nas abas que ele
+  // já usa — Fichas, Documentos, Pecados —, não num painel à parte com um
+  // formulário de outro sistema.
+  assert.ok(!veneza.some(g => g.masterOnly && g.items.length === 0),
+    'sobrou um grupo de navegação vazio');
 
   // E a cópia é profunda: a tela reordena itens sem corromper o sistema.
   veneza[0].items.push({ id: 'intruso' });

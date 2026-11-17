@@ -14,6 +14,7 @@ import "./experience/cosmic-living-background.css";
 import "./experience/site-polish.css";
 
 import { ToastContainer } from "./core/toast";
+import { auth, migrarSegredosDaMesa } from "./core/auth";
 import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";
 import EnhancedSoundscape from "./experience/EnhancedSoundscape";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
@@ -103,6 +104,17 @@ export default function App(){
     },()=>{});
     return()=>unsub();
   },[campaign?.id]);
+
+  // Mesas criadas antes da correção guardaram as senhas só no registro
+  // público; as regras leem o documento privado. Enquanto os dois não
+  // conversam, a mesa fica sem porta: só o criador entra. Quem conserta é o
+  // próprio criador, ao abrir a mesa — ele é o único que as regras deixam
+  // escrever ali. Roda uma vez por mesa e falha calado para todo mundo mais.
+  useEffect(() => {
+    if (!campaign?.id || campaign.primary) return;
+    if (!auth.currentUser || campaign.criadoPor !== auth.currentUser.uid) return;
+    migrarSegredosDaMesa(campaign).catch(() => {});
+  }, [campaign?.id, campaign?.criadoPor]);
 
   const theme = campaignTheme(campaign);
   // O tema da mesa vira variável de CSS, para alcançar o site inteiro e não

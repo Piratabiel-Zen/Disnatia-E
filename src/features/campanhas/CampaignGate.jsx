@@ -15,7 +15,7 @@ import './portais.css';
 import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
 import PortaDeEntrada from '../acesso/PortaDeEntrada';
 import LegalPage from '../legal/LegalPage';
-import { aoMudarConta, assumirMesa, auth, mensagemDeErro } from '../../core/auth';
+import { aoMudarConta, assumirMesa, auth, definirSegredosDaMesa, entrarNaMesa, mensagemDeErro } from '../../core/auth';
 
 // Gerenciar a lista de mesas continua pedindo a senha da campanha principal:
 // é a chave de quem administra o site, não a de nenhuma mesa específica.
@@ -37,6 +37,7 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage }) {
   const [word, setWord] = useState('');
   const [wrong, setWrong] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [aviso, setAviso] = useState('');
 
   const enter = () => {
     if (locked) { setAsking(true); return; }
@@ -47,9 +48,30 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage }) {
     if (!word || checking) return;
     setChecking(true);
     const ok = await tryUnlock(campaign, word);
+    if (!ok) { setChecking(false); setWrong(true); setWord(''); return; }
+
+    // Acertar a senha abre a tela. O que faz a mesa CARREGAR é virar membro
+    // no servidor — as regras só entregam os dados de uma campanha para quem
+    // tem registro de membro nela. Enquanto isto não era feito, quem não
+    // tinha criado a mesa entrava num cômodo vazio: o navegador pedia tudo e
+    // o servidor negava tudo, sem erro visível.
+    //
+    // A Dinastia E é a exceção: ela é anterior às regras e seus dados estão
+    // nas coleções antigas, abertas. Ela não espera ninguém se cadastrar.
+    if (!campaign.primary) {
+      try {
+        await entrarNaMesa({ campanhaId: campaign.id, senha: word, papel: 'jogador' });
+      } catch (erro) {
+        setChecking(false);
+        setWord('');
+        setAviso(!auth.currentUser
+          ? 'Entre com seu e-mail ou com o Google ali em cima antes: a mesa só carrega para quem está identificado.'
+          : (erro?.message || 'Não foi possível entrar nesta mesa.'));
+        return;
+      }
+    }
     setChecking(false);
-    if (ok) { onEnter(campaign); return; }
-    setWrong(true); setWord('');
+    onEnter(campaign);
   };
 
   return (
@@ -75,11 +97,12 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage }) {
             <PasswordVisibilityInput
               value={word}
               autoFocus
-              onChange={event => { setWord(event.target.value); setWrong(false); }}
+              onChange={event => { setWord(event.target.value); setWrong(false); setAviso(''); }}
               placeholder="Diga a palavra para atravessar"
             />
           </label>
           {wrong ? <span className="portal-word-error" role="alert">O portal não reconheceu essa palavra. Tente de novo.</span> : null}
+          {aviso ? <span className="portal-word-error" role="alert">{aviso}</span> : null}
           <div className="portal-word-actions">
             <button type="submit" className="portal-enter" disabled={!word || checking}>{checking ? 'Abrindo...' : 'Atravessar'}</button>
             <button type="button" className="portal-back" onClick={() => { setAsking(false); setWord(''); setWrong(false); }}>Voltar</button>
@@ -170,6 +193,14 @@ export default function CampaignGate({ onChoose }) {
         passwordHash: await hashPassword(senhaMesa),
         masterPinHash: await hashPassword(senhaMestre),
         createdAt: Date.now(),
+      });
+      // Os mesmos resumos vão para o documento privado, que é de onde as
+      // regras os leem. Sem este passo a mesa nasce sem porta: só o criador
+      // entra, e qualquer outra pessoa digita a senha certa e mesmo assim não
+      // vira membro — foi assim que a Estrela de Absinto nasceu trancada.
+      await definirSegredosDaMesa(id, {
+        senhaMesaHash: await hashPassword(senhaMesa),
+        senhaMestreHash: await hashPassword(senhaMestre),
       });
       // E vira Admin dela no mesmo gesto, senão a mesa nasce trancada.
       await assumirMesa(id, conta.displayName || conta.email || '');

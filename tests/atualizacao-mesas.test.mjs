@@ -61,7 +61,7 @@ test('a senha de Mestre deixou de ser uma só para o site inteiro', () => {
   // de QUALQUER mesa, inclusive de uma que acabou de conhecer.
   for (const arquivo of ['../src/experience/PlayerAccess.jsx', '../src/shell/MasterToggle.jsx']) {
     const fonte = read(arquivo);
-    assert.doesNotMatch(fonte, /b1e87e31fe1147efac5412f9fc1c744753aa903395d57e51033b31d9223a61b1/,
+    assert.doesNotMatch(fonte, /f0b20bb6d6fad7901c81dcd90cd10fa59d889be1bfb7653efc36d0e9944e3311/,
       `${arquivo} voltou a ter a senha de Mestre fixa no código`);
     assert.match(fonte, /requiredMasterHash/, `${arquivo} não consulta a senha da mesa`);
   }

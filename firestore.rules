@@ -45,9 +45,25 @@ service cloud.firestore {
       return membro(cid) && papel(cid) == 'mestre';
     }
 
-    // A senha da mesa, lida de um lugar que o cliente não alcança.
+    // As senhas da mesa, lidas de um lugar que o cliente não alcança.
+    //
+    // O exists() não é zelo: get() num documento que não existe derruba a
+    // avaliação inteira da regra, e o efeito disso em produção foi uma mesa
+    // onde ninguém além do criador conseguia entrar — a senha certa era
+    // recusada sem explicação, porque o documento das senhas nunca tinha
+    // sido escrito.
+    function temAcesso(cid) {
+      return exists(/databases/$(database)/documents/campaigns/$(cid)/privado/acesso);
+    }
     function senhaDaMesa(cid) {
-      return get(/databases/$(database)/documents/campaigns/$(cid)/privado/acesso).data.senhaHash;
+      return temAcesso(cid)
+        ? get(/databases/$(database)/documents/campaigns/$(cid)/privado/acesso).data.get('senhaHash', '')
+        : '';
+    }
+    function senhaDeMestre(cid) {
+      return temAcesso(cid)
+        ? get(/databases/$(database)/documents/campaigns/$(cid)/privado/acesso).data.get('senhaMestreHash', '')
+        : '';
     }
 
     // O nome da coleção de uma campanha é "c__{id}__colecao". Daí sai o id.
@@ -103,7 +119,11 @@ service cloud.firestore {
       // acima ainda a consultam por get(), que roda no servidor.
       match /privado/{doc} {
         allow read: if false;
-        allow write: if mestre(cid);
+        // Também o criador, e não só o Mestre: na hora de criar a mesa ele
+        // ainda não é membro de nada, e é justamente aí que as senhas
+        // precisam ser gravadas. Exigir ser Mestre aqui fecharia o mesmo nó
+        // de antes, um passo adiante.
+        allow write: if mestre(cid) || (logado() && request.auth.uid == donoDaMesa(cid));
       }
 
       match /membros/{uid} {
@@ -117,13 +137,36 @@ service cloud.firestore {
         //     hash; o servidor compara com o que está no lugar invisível.
         //  3. Mesa sem dono (feita antes do campo existir) pode ser assumida,
         //     senão ela fica órfã para sempre.
-        allow create: if logado()
+        //  4. Quem sabe a senha de MESTRE vira Mestre, com a mesma visão e o
+        //     mesmo comando de quem criou a mesa. É o que a mesa espera: a
+        //     senha de Mestre é passada de pessoa para pessoa, e quem a
+        //     recebe assume a mesa. Antes ela só acendia um botão na tela,
+        //     enquanto o servidor continuava vendo um jogador comum.
+        //
+        // Vale para create e para update do próprio registro, porque quem já
+        // entrou como jogador precisa poder subir sem ser apagado antes. A
+        // senha é reconferida em toda escrita: trocá-la derruba o acesso de
+        // quem só tinha a antiga.
+        allow create, update: if logado()
           && request.auth.uid == uid
           && request.resource.data.papel in ['jogador', 'mestre']
           && (
             request.auth.uid == donoDaMesa(cid)
             || mesaSemDono(cid)
-            || request.resource.data.senhaHash == senhaDaMesa(cid)
+            || (
+              request.resource.data.papel == 'mestre'
+              && senhaDeMestre(cid) != ''
+              && request.resource.data.get('senhaHash', '') == senhaDeMestre(cid)
+            )
+            || (
+              // A senha de entrada dá jogador, nunca Mestre. Sem este
+              // "papel == 'jogador'", qualquer um que soubesse a senha da
+              // mesa se declararia Mestre na própria escrita — a porta mais
+              // larga do arquivo abrindo a sala mais estreita.
+              request.resource.data.papel == 'jogador'
+              && senhaDaMesa(cid) != ''
+              && request.resource.data.get('senhaHash', '') == senhaDaMesa(cid)
+            )
           );
 
         // Cada um vê a própria entrada; o Mestre vê a mesa toda.

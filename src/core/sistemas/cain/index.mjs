@@ -129,9 +129,11 @@ const SISTEMA = Object.freeze({
     // O CAIN não usa outro dado. Oferecer d20 na mesa de dados seria
     // convidar a mesa a rolar uma coisa que o sistema não sabe ler.
     faces: Object.freeze([6]),
-    // Reserva de até 3 de perícia + 3 de vantagem, e a Agonia Divina pode
-    // passar disso — 8 cobre a mesa inteira sem virar brinquedo.
-    maximoDeDados: 8,
+    // Três de perícia mais três de vantagem é o teto que o livro dá, e é onde
+    // a mesa para. A Agonia Divina pode passar disso no papel, mas na prática
+    // ninguém monta reserva maior — oferecer mais caixas era convidar a
+    // clicar numa que não se usa.
+    maximoDeDados: 6,
     rolar: rolarAcao,
   }),
 
@@ -170,9 +172,11 @@ const SISTEMA = Object.freeze({
       { id: 'livro', label: 'Livro', icon: '✦' },
       { id: 'cronicas', label: 'Capítulos', icon: '🗒️' },
     ] },
-    { id: 'master', label: 'Painel do Admin', icon: '⚔', masterOnly: true, items: [
-      { id: 'inimigos', label: 'Pecados e NPCs', icon: '💀' },
-    ] },
+    // O Painel do Admin trazia a aba "Pecados e NPCs" da Dinastia E, que é um
+    // bestiário de ficha com atributos, dano e resistência. Nada disso existe
+    // no CAIN: um Pecado se descreve por domínios, palácio, traumas e talismã
+    // de execução. A aba Pecados já faz esse trabalho, e manter as duas só
+    // dava ao Admin um formulário que ele nunca ia preencher.
   ]),
 });
 

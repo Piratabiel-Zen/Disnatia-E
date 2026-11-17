@@ -122,10 +122,48 @@ const acessoRef = campanhaId => doc(db, 'campaigns', String(campanhaId), 'privad
  * senha sem servidor próprio e sem expô-la.
  */
 export async function definirSenhaDaMesa(campanhaId, senha) {
-  await setDoc(acessoRef(campanhaId), {
-    senhaHash: await hashDaSenha(senha),
-    atualizadoEm: serverTimestamp(),
-  });
+  await definirSegredosDaMesa(campanhaId, { senhaMesaHash: await hashDaSenha(senha) });
+}
+
+/**
+ * Guarda os dois resumos da mesa: o da senha de entrada e o da senha de Mestre.
+ *
+ * Os dois moram aqui, e não no registro público da campanha, porque é daqui
+ * que as regras os leem por get() na hora de decidir se alguém entra. Era
+ * exatamente isso que faltava: o registro público tinha os resumos, as regras
+ * liam este documento — que nunca era escrito — e a conta não fechava. Quem
+ * não tinha criado a mesa digitava a senha certa, o navegador dizia "pode
+ * entrar" e o servidor negava tudo depois.
+ */
+export async function definirSegredosDaMesa(campanhaId, { senhaMesaHash, senhaMestreHash } = {}) {
+  const dados = { atualizadoEm: serverTimestamp() };
+  if (senhaMesaHash) dados.senhaHash = String(senhaMesaHash);
+  if (senhaMestreHash) dados.senhaMestreHash = String(senhaMestreHash);
+  await setDoc(acessoRef(campanhaId), dados, { merge: true });
+}
+
+/**
+ * Leva para o lugar certo os resumos de uma mesa criada antes desta correção.
+ *
+ * Mesas antigas têm as senhas só no registro público. Enquanto os resumos não
+ * estiverem no documento privado, as regras não têm com o que comparar e
+ * ninguém além do criador consegue entrar. Quem roda isto é o Mestre, ao
+ * abrir a mesa — é o único que as regras deixam escrever ali.
+ *
+ * Falha em silêncio de propósito: para um jogador a escrita é negada, e isso
+ * não é motivo para estragar a entrada dele.
+ */
+export async function migrarSegredosDaMesa(campanha) {
+  if (!campanha?.id) return false;
+  const senhaMesaHash = campanha.passwordHash;
+  const senhaMestreHash = campanha.masterPinHash;
+  if (!senhaMesaHash && !senhaMestreHash) return false;
+  try {
+    await definirSegredosDaMesa(campanha.id, { senhaMesaHash, senhaMestreHash });
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 /**
@@ -134,20 +172,23 @@ export async function definirSenhaDaMesa(campanhaId, senha) {
  * O servidor recusa se o hash não bater, então uma senha errada não cria
  * membro nenhum — a mensagem de erro aqui é só tradução da recusa.
  */
-export async function entrarNaMesa({ campanhaId, senha, papel = 'jogador', nome }) {
+export async function entrarNaMesa({ campanhaId, senha, senhaHash, papel = 'jogador', nome }) {
   const usuario = auth.currentUser;
   if (!usuario) throw new Error('Entre na sua conta antes de entrar na mesa.');
+  const resumo = senhaHash || await hashDaSenha(senha);
   try {
     await setDoc(membroRef(campanhaId, usuario.uid), {
       uid: usuario.uid,
-      nome: String(nome || usuario.displayName || '').trim(),
+      nome: String(nome || usuario.displayName || usuario.email || '').trim(),
       papel: normalizarPapel(papel),
-      senhaHash: await hashDaSenha(senha),
+      // O resumo vai junto porque é com ele que as regras conferem a senha no
+      // servidor. É o que torna o papel real em vez de um interruptor de tela.
+      senhaHash: resumo,
       entrouEm: serverTimestamp(),
     });
   } catch (erro) {
     if (erro?.code === 'permission-denied') {
-      const e = new Error('Senha da mesa incorreta.');
+      const e = new Error(papel === 'mestre' ? 'Senha de Mestre incorreta.' : 'Senha da mesa incorreta.');
       e.code = 'senha-incorreta';
       throw e;
     }

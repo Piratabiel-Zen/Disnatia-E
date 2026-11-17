@@ -40,11 +40,19 @@ test('a Dinastia E mantém a mesa de dados que sempre teve', () => {
   assert.equal(maximo, 5);
 });
 
-test('a reserva do CAIN cabe na mesa de dados', () => {
-  // 3 de perícia + 3 de vantagem já são 6, e a Agonia Divina passa disso.
-  // Uma mesa com teto de 5 não conseguiria rolar a jogada mais importante
-  // do sistema.
-  assert.ok(dadosDoSistema(mesaCain).maximo >= 6);
+test('a reserva do CAIN vai até seis dados', () => {
+  // 3 de perícia + 3 de vantagem é o teto do livro. Menos que isso não
+  // rolaria a jogada mais importante do sistema; mais seriam caixas que
+  // ninguém clica.
+  assert.equal(dadosDoSistema(mesaCain).maximo, 6);
+});
+
+test('o sistema CAIN não oferece mais o bestiário da Dinastia E', () => {
+  assert.equal(sistemaTemAba(mesaCain, 'inimigos'), false);
+  const nav = navegacaoDoSistema(mesaCain, []);
+  const ids = nav.flatMap(g => g.items.map(i => i.id));
+  assert.ok(!ids.includes('inimigos'),
+    'a aba de fichas de inimigo da Dinastia E voltou à navegação do CAIN');
 });
 
 test('sistema sem dados declarados não quebra a mesa de dados', () => {

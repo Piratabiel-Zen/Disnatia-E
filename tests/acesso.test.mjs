@@ -115,10 +115,19 @@ test('as regras do Firestore guardam a senha num lugar que ninguém lê', () => 
   const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   assert.match(regras, /match \/privado\/\{doc\}[\s\S]{0,80}allow read: if false/,
     'a senha da mesa voltou a ser legível pelo cliente');
-  assert.match(regras, /request\.resource\.data\.senhaHash == senhaDaMesa\(cid\)/,
+  assert.match(regras, /request\.resource\.data\.get\('senhaHash', ''\) == senhaDaMesa\(cid\)/,
     'entrar na mesa deixou de exigir a senha certa');
   assert.match(regras, /allow update, delete: if mestre\(cid\)/,
-    'alguém pode se promover a Mestre');
+    'o Mestre deixou de poder rebaixar ou remover alguém');
+  // O get() num documento inexistente derruba a avaliação inteira da regra.
+  // Foi assim que a Estrela de Absinto nasceu trancada: as senhas estavam no
+  // registro público, as regras liam o documento privado, e o privado nunca
+  // tinha sido escrito. Toda senha certa era recusada sem explicação.
+  assert.match(regras, /function temAcesso\(cid\)[\s\S]{0,160}exists\(/,
+    'o get() das senhas voltou a rodar sem conferir se o documento existe');
+  // Mesa sem senha gravada não vira mesa de porta aberta.
+  assert.match(regras, /senhaDaMesa\(cid\) != ''/,
+    'uma mesa sem senha gravada aceitaria qualquer hash vazio');
   assert.match(regras, /request\.auth\.uid in resource\.data\.get\('liberadoPara', \[\]\)/,
     'o servidor parou de filtrar documentos por pessoa');
 });
@@ -190,8 +199,40 @@ test('mesa órfã pode ser assumida e apagada, senão fica para sempre', () => {
 
 test('ninguém se promove a Admin de mesa alheia', () => {
   const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-  // Entrar continua exigindo uma das três portas, e nenhuma delas é "pedir".
-  assert.match(regras, /request\.resource\.data\.senhaHash == senhaDaMesa\(cid\)/);
-  // Mudar o papel de um membro continua sendo só do Admin.
+  // Entrar continua exigindo uma das portas, e nenhuma delas é "pedir".
+  assert.match(regras, /request\.resource\.data\.get\('senhaHash', ''\) == senhaDaMesa\(cid\)/);
+  // Mudar o papel de OUTRO membro continua sendo só do Admin.
   assert.match(regras, /allow update, delete: if mestre\(cid\)/);
+
+  // A porta larga não abre a sala estreita: a senha de entrada dá jogador.
+  // Sem esta linha, quem soubesse só a senha da mesa escreveria o próprio
+  // registro já como Mestre e assumiria a campanha de outra pessoa.
+  assert.match(
+    regras,
+    /request\.resource\.data\.papel == 'jogador'\s*\n\s*&& senhaDaMesa\(cid\) != ''/,
+    'a senha de entrada voltou a poder gravar papel de Mestre',
+  );
+  // E virar Mestre exige a senha de Mestre daquela mesa, não a de outra.
+  assert.match(
+    regras,
+    /request\.resource\.data\.papel == 'mestre'[\s\S]{0,200}senhaDeMestre\(cid\)/,
+    'promover a Mestre deixou de exigir a senha de Mestre da mesa',
+  );
+});
+
+test('a senha de Mestre promove no servidor, não só na tela', () => {
+  // O sintoma em produção: o amigo entrava com a senha de Mestre, via os
+  // botões de Mestre e o servidor negava cada um deles — porque o papel
+  // nunca saía do navegador.
+  const toggle = readFileSync(new URL('../src/shell/MasterToggle.jsx', import.meta.url), 'utf8');
+  assert.match(toggle, /entrarNaMesa/, 'a senha de Mestre voltou a ser só um interruptor de tela');
+  assert.match(toggle, /papel:\s*'mestre'/);
+
+  // E a senha da mesa precisa criar o registro de membro, senão a pessoa
+  // atravessa o portal e cai numa mesa que não carrega nada.
+  const gate = readFileSync(new URL('../src/features/campanhas/CampaignGate.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /entrarNaMesa\(\{\s*campanhaId: campaign\.id/,
+    'acertar a senha voltou a não criar membro nenhum');
+  assert.match(gate, /definirSegredosDaMesa/,
+    'a mesa nova voltou a nascer sem as senhas no lugar que as regras leem');
 });
