@@ -25,6 +25,8 @@ import MapAtmosphere from './MapAtmosphere';
 import { listaDeAtmosferas } from './atmosferas.mjs';
 import { mapasProntosDe } from './mapasProntos.mjs';
 import { activeCampaign } from '../../core/campaign';
+import { colecaoDeFichas, sistemaDe } from '../../core/sistemas/index.mjs';
+import { caixasDoTalisma, resumoDoTalisma, talismaDoToken } from './talismaDeToken.mjs';
 import { storageSuffix } from '../../core/escopo.mjs';
 
 // Os caches do mapa também são por mesa. Sem isso, uma campanha nova abria com
@@ -246,6 +248,12 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const lastTokenWriteRef = useRef({});
 
   const [sheets, setSheets] = useState([]);
+  // De qual coleção vêm as fichas desta mesa. A Dinastia E guarda em
+  // 'sheets'; o CAIN, em 'fichas'. Lendo a errada, o mapa não acha ficha
+  // nenhuma para anexar aos tokens.
+  const mesaAtual = activeCampaign();
+  const colecaoDasFichas = colecaoDeFichas(mesaAtual);
+  const ehCain = sistemaDe(mesaAtual).id === 'cain';
   const visitorSheetIds = new Set(access?.role === 'visitor'
     ? sheets.filter(sheet => String(sheet.visitorId || '') === String(access.visitorId || '')).map(sheet => String(sheet.id))
     : []);
@@ -254,6 +262,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [customAbilities, setCustomAbilities] = useState({});
   const [floatingSheets, setFloatingSheets] = useState([]); // {sheetId, x, y, z}
   const [enemies, setEnemies] = useState([]);
+  // No CAIN os corpos não têm ponto de vida: têm talismã de execução. O
+  // exorcista guarda o dele na ficha; o Pecado, no registro da aba Pecados.
+  // Então o mapa precisa das duas listas para saber o que desenhar sobre a
+  // cabeça de cada token.
+  const [pecadosDaMesa, setPecadosDaMesa] = useState([]);
   const [floatingEnemies, setFloatingEnemies] = useState([]); // {enemyId, x, y, z}
   const zTopRef = useRef(60);
   const [unlockedIds, setUnlockedIds] = useState({});
@@ -484,7 +497,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const u2 = onSnapshot(activeMapRef, snap => {
       if (snap.exists()) applyActiveMap(snap.data());
     }, err => console.error('Erro ao sincronizar mapa ativo:', err));
-    const u3 = onSnapshot(access?.role==='visitor'?query(col('sheets'),where('visitorId','==',String(access.visitorId||'invalid'))):col('sheets'), snap => {
+    const u3 = onSnapshot(access?.role==='visitor'?query(col(colecaoDasFichas),where('visitorId','==',String(access.visitorId||'invalid'))):col(colecaoDasFichas), snap => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const vitals = {};
       all.forEach(s => { vitals[String(s.id)] = { id:String(s.id), nome:s.nome||'', foto:s.foto||'', classe:s.classe||'', hp:Number(s.hp||0), maxHp:getSheetMaxHp(s) }; });
@@ -496,6 +509,9 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const u4 = onSnapshot(docIn('config', 'customAbilities'), snap => {
       if (snap.exists()) setCustomAbilities(snap.data() || {});
     });
+    const uPecados = ehCain
+      ? onSnapshot(col('pecados'), snap => setPecadosDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => {})
+      : null;
     const uEnemies = onSnapshot(col('enemies'), snap => {
       setEnemies(snap.docs.map(d => ({ id:d.id, ...d.data() })));
     });
@@ -513,7 +529,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       setFloatingEffects(prev=>[...prev.filter(x=>x.id!==fx.id),fx]);
       setTimeout(()=>setFloatingEffects(prev=>prev.filter(x=>x.id!==fx.id)),2800);
     });
-    return () => { u1(); u1b(); u2(); u3(); u4(); uEnemies(); uFog(); uLibrary(); uFx(); };
+    return () => { u1(); u1b(); u2(); u3(); u4(); uEnemies(); uPecados?.(); uFog(); uLibrary(); uFx(); };
   }, []);
 
 
@@ -2092,7 +2108,12 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   // sheet. Everyone else sees the tactical bar without numbers.
                   const isOwnLinkedToken = !!token.sheetId && !!playerSheetId && String(token.sheetId) === String(playerSheetId);
                   const canSeeTokenHp = masterMode || isOwnLinkedToken;
-                  const healthRingColor = displayMaxHp > 0 ? hpColor(displayHp, displayMaxHp) : 'transparent';
+                  const talismaDesteToken = ehCain
+                    ? talismaDoToken(token, { fichas: sheets, pecados: pecadosDaMesa })
+                    : null;
+                  const healthRingColor = ehCain
+                    ? (talismaDesteToken?.critico ? '#C8102E' : 'transparent')
+                    : (displayMaxHp > 0 ? hpColor(displayHp, displayMaxHp) : 'transparent');
                   return (
                     <div
                       key={token.id}
@@ -2111,7 +2132,32 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                       }}
                     >
                      {isSelected && Number(token.rangeMeters||0)>0 && <div style={{position:'absolute',width:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,height:(Number(token.rangeMeters)*pixelsPerMeter*2)*tokenScale,borderRadius:'50%',border:`${1.5*tokenScale}px dashed ${info.color}99`,background:`${info.color}0C`,pointerEvents:'none',zIndex:-1}}/>}
-                     {displayMaxHp>0 && <>{canSeeTokenHp && (<div style={{fontSize:9*labelScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*labelScale,padding:`${Math.max(1,labelScale)}px ${Math.max(3,6*labelScale)}px`,marginBottom:Math.max(0,1*labelScale),textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*labelScale,dispSize*labelScale),height:Math.max(4,5*labelScale),borderRadius:5*labelScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${Math.max(.5,.7*labelScale)}px solid rgba(255,255,255,.2)`,marginBottom:Math.max(0,1*labelScale)}}>{displayBonusHp>0?<div style={{display:'flex',height:'100%',width:'100%'}}><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(greenHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(greenHp,baseHpCapacity),transition:'width .25s'}}/><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(blueHp/Math.max(1,displayMaxHp))*100))}%`,background:'#38BDF8',boxShadow:'0 0 5px rgba(56,189,248,.7)',transition:'width .25s'}}/></div>:<div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/>}</div></>}
+                     {/* No CAIN a barra de HP não serve: lá o corpo se mede
+                         por talismã de execução, e a caixa PERDIDA — a que o
+                         ferimento apagou e não volta — é justamente o que uma
+                         barra contínua não sabe desenhar. */}
+                     {ehCain && talismaDesteToken && (
+                       <div
+                         className="token-talisma"
+                         data-critico={talismaDesteToken.critico ? 'sim' : 'nao'}
+                         style={{'--escala':labelScale,'--largura':`${Math.max(46*labelScale,dispSize*labelScale)}px`}}
+                         title={`Talismã de execução · ${resumoDoTalisma(talismaDesteToken)}`}
+                         aria-label={`Talismã de execução: ${resumoDoTalisma(talismaDesteToken)}`}
+                       >
+                         {caixasDoTalisma(talismaDesteToken).map((estado, i) => (
+                           <i key={i} data-estado={estado} />
+                         ))}
+                       </div>
+                     )}
+                     {/* O número só para quem pode: o Admin e o dono da peça.
+                         Pecado nunca mostra número — a mesa descobre o estado
+                         dele olhando, que é metade da tensão da cena. */}
+                     {ehCain && talismaDesteToken && canSeeTokenHp && talismaDesteToken.tipo === 'exorcista' && (
+                       <div className="token-talisma-numero" style={{'--escala':labelScale}}>
+                         {resumoDoTalisma(talismaDesteToken)}
+                       </div>
+                     )}
+                     {!ehCain && displayMaxHp>0 && <>{canSeeTokenHp && (<div style={{fontSize:9*labelScale,color:hpColor(displayHp,displayMaxHp),fontFamily:'Cinzel,serif',fontWeight:800,background:'rgba(3,4,10,.76)',borderRadius:5*labelScale,padding:`${Math.max(1,labelScale)}px ${Math.max(3,6*labelScale)}px`,marginBottom:Math.max(0,1*labelScale),textShadow:'0 1px 4px #000'}}>❤ {displayHp}/{displayMaxHp}</div>)}<div style={{width:Math.max(46*labelScale,dispSize*labelScale),height:Math.max(4,5*labelScale),borderRadius:5*labelScale,overflow:'hidden',background:'rgba(0,0,0,.7)',border:`${Math.max(.5,.7*labelScale)}px solid rgba(255,255,255,.2)`,marginBottom:Math.max(0,1*labelScale)}}>{displayBonusHp>0?<div style={{display:'flex',height:'100%',width:'100%'}}><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(greenHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(greenHp,baseHpCapacity),transition:'width .25s'}}/><i style={{display:'block',height:'100%',width:`${Math.max(0,Math.min(100,(blueHp/Math.max(1,displayMaxHp))*100))}%`,background:'#38BDF8',boxShadow:'0 0 5px rgba(56,189,248,.7)',transition:'width .25s'}}/></div>:<div style={{height:'100%',width:`${Math.max(0,Math.min(100,(displayHp/Math.max(1,displayMaxHp))*100))}%`,background:hpColor(displayHp,displayMaxHp),transition:'width .25s'}}/>}</div></>}
                      <div
                       className="map-token-body"
                       data-vitals={displayMaxHp > 0 ? (displayHp <= 0 ? 'caido' : displayHp / displayMaxHp <= 0.34 ? 'ferido' : 'ok') : 'ok'}
