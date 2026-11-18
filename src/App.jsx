@@ -148,7 +148,9 @@ export default function App(){
   }, [campaign?.id, campaign?.primary, campaign?.theme, campaign?.name, theme]);
   const baseAtm = ATMOSPHERES[atmosphere] || ATMOSPHERES.neutro;
   // Fora da campanha principal, o tema da mesa manda na cor de fundo e no acento.
-  const atm = campaign && campaign.primary === false
+  // Mesmo `=== false` de antes, mesmo engano: as mesas novas não guardam o
+  // campo, então a cor da mesa nunca chegava a entrar aqui.
+  const atm = campaign && !campaign.primary
     ? { ...baseAtm, bg:theme.bg, accent:theme.accent }
     : baseAtm;
   const lockPageScroll = tab === 'mapabatalha';

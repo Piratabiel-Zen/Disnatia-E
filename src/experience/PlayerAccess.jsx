@@ -141,7 +141,16 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
     }
     // Acertar a senha não basta: o papel precisa valer no servidor, senão a
     // pessoa vê os botões de Mestre e cada um deles é negado na hora de usar.
-    if (campaign && campaign.primary === false) {
+    //
+    // `=== false` era um bug, e dos caros: NENHUMA mesa guarda primary como
+    // false. O campo só existe, e só vale true, na campanha principal; nas
+    // outras ele simplesmente não está lá. Então esta condição nunca era
+    // verdadeira e a promoção no servidor nunca acontecia. Quem digitava a
+    // senha de Mestre numa mesa nova virava Mestre só na tela: via tudo,
+    // porque membro lê a mesa inteira, e não conseguia editar nem criar nada,
+    // porque para o servidor continuava sendo jogador. Só o criador da mesa
+    // escapava, e por outro motivo — ele já nasce Mestre ao criá-la.
+    if (campaign && !campaign.primary) {
       try {
         await entrarNaMesa({ campanhaId: campaign.id, senhaHash: digest, papel: 'mestre' });
       } catch (erro) {
