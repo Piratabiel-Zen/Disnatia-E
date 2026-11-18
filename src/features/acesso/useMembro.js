@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { aoMudarConta, lerMembro } from '../../core/auth';
+import { aoMudarConta, observarMembro } from '../../core/auth';
 import { activeCampaign, isPrimaryCampaign } from '../../core/campaign';
 
 /**
@@ -8,6 +8,12 @@ import { activeCampaign, isPrimaryCampaign } from '../../core/campaign';
  * Devolve o registro de membro (uid, nome, papel) ou null quando a pessoa não
  * é da mesa. As telas usam isto para saber o que oferecer — mas quem decide
  * de verdade é o servidor, nas regras.
+ *
+ * ACOMPANHA, NÃO LÊ UMA VEZ. A primeira versão lia o registro no momento em
+ * que a conta aparecia e parava ali. Quem entrava na mesa e só depois digitava
+ * a senha de Mestre ficava com todas as telas vazias e um aviso de "entre na
+ * campanha" — já estava registrado no servidor, mas nada na tela voltava a
+ * perguntar. Só recarregando a página a mesa aparecia, e ninguém adivinha isso.
  *
  * A Dinastia E é o caso à parte: ela existe desde antes do login e não exige
  * conta. Ali todo mundo entra como membro, para a mesa em andamento não parar.
@@ -24,15 +30,18 @@ export function useMembro() {
       return undefined;
     }
     let vivo = true;
-    const parar = aoMudarConta(async conta => {
+    let pararDeObservar = () => {};
+    const parar = aoMudarConta(conta => {
+      pararDeObservar();
+      pararDeObservar = () => {};
       if (!conta) { if (vivo) { setMembro(null); setCarregando(false); } return; }
-      try {
-        const registro = await lerMembro(campanha?.id, conta.uid);
-        if (vivo) setMembro(registro);
-      } catch { if (vivo) setMembro(null); }
-      finally { if (vivo) setCarregando(false); }
+      pararDeObservar = observarMembro(campanha?.id, conta.uid, registro => {
+        if (!vivo) return;
+        setMembro(registro);
+        setCarregando(false);
+      });
     });
-    return () => { vivo = false; parar(); };
+    return () => { vivo = false; pararDeObservar(); parar(); };
   }, [campanha?.id]);
 
   return { membro, carregando, campanha };

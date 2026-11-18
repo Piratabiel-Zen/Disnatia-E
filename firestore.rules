@@ -71,6 +71,25 @@ service cloud.firestore {
         : '';
     }
 
+    // MESA SEM PORTA.
+    //
+    // Uma mesa pode não ter senha nenhuma — é o estado em que ela nasce,
+    // antes de o Mestre definir uma. A tela sempre tratou isso como "entra
+    // quem quiser", e durante um tempo o servidor tratou como "não entra
+    // ninguém": as portas de senha abaixo exigiam um resumo não vazio. O
+    // resultado era a pior combinação possível. A pessoa entrava pela tela,
+    // nenhum registro de membro era gravado, e dali em diante o servidor
+    // negava cada leitura em silêncio — mesa montada, tudo vazio.
+    //
+    // Agora o servidor concorda com a tela: mesa sem senha admite qualquer
+    // pessoa logada, como jogador. Exige-se que as DUAS senhas estejam
+    // vazias, a pública e a privada, para que uma mesa cujas senhas ainda
+    // não migraram para privado/acesso não seja confundida com mesa aberta.
+    function mesaSemSenha(cid) {
+      return senhaDaMesa(cid) == ''
+        && get(/databases/$(database)/documents/campaigns/$(cid)).data.get('passwordHash', '') == '';
+    }
+
     // O nome da coleção de uma campanha é "c__{id}__colecao". Daí sai o id.
     function idNaColecao(colecao) {
       return colecao.split('__')[1];
@@ -184,6 +203,12 @@ service cloud.firestore {
               request.resource.data.papel == 'jogador'
               && senhaDaMesa(cid) != ''
               && request.resource.data.get('senhaHash', '') == senhaDaMesa(cid)
+            )
+            || (
+              // Mesa que ainda não tem senha: entra quem está logado, como
+              // jogador. Definir a senha da mesa fecha esta porta na hora.
+              request.resource.data.papel == 'jogador'
+              && mesaSemSenha(cid)
             )
           );
 

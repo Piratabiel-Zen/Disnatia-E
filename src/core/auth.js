@@ -21,7 +21,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup,
   signInWithRedirect, signOut as firebaseSignOut, getAuth, updateProfile,
 } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from './firebase';
 import { normalizarPapel } from './acesso.mjs';
 
@@ -172,10 +172,13 @@ export async function migrarSegredosDaMesa(campanha) {
  * O servidor recusa se o hash não bater, então uma senha errada não cria
  * membro nenhum — a mensagem de erro aqui é só tradução da recusa.
  */
-export async function entrarNaMesa({ campanhaId, senha, senhaHash, papel = 'jogador', nome }) {
+export async function entrarNaMesa({ campanhaId, senha, senhaHash, papel = 'jogador', nome, semSenha = false }) {
   const usuario = auth.currentUser;
   if (!usuario) throw new Error('Entre na sua conta antes de entrar na mesa.');
-  const resumo = senhaHash || await hashDaSenha(senha);
+  // Mesa sem senha nenhuma manda resumo vazio, e não o resumo do texto vazio:
+  // as regras reconhecem a mesa aberta por ele. Hashear "" daria um resumo
+  // que não bate com senha alguma e a entrada seria recusada sem motivo.
+  const resumo = semSenha ? '' : (senhaHash || await hashDaSenha(senha));
   try {
     await setDoc(membroRef(campanhaId, usuario.uid), {
       uid: usuario.uid,
@@ -231,6 +234,35 @@ export async function lerMembro(campanhaId, uid = auth.currentUser?.uid) {
     if (erro?.code === 'permission-denied') return null;
     throw erro;
   }
+}
+
+/**
+ * Acompanha o meu registro de membro, em vez de lê-lo uma vez só.
+ *
+ * Isto existe por causa de um sintoma que custou caro: quem entrava numa mesa
+ * e SÓ DEPOIS virava Mestre continuava vendo todas as telas vazias, porque a
+ * tela tinha lido o registro antes de ele existir e nada mandava reler. A
+ * pessoa estava registrada no servidor e mesmo assim via "entre na campanha".
+ *
+ * Com onSnapshot não há esse buraco: no instante em que a entrada é gravada —
+ * por esta aba, por outra, ou pelo Mestre promovendo alguém — a tela sabe.
+ *
+ * Ler o PRÓPRIO registro é sempre permitido, exista ele ou não, então este
+ * observador não morre por falta de permissão como morreria um que apontasse
+ * para os dados da mesa.
+ */
+export function observarMembro(campanhaId, uid, aoMudar) {
+  if (!campanhaId || !uid) { aoMudar(null); return () => {}; }
+  return onSnapshot(
+    membroRef(campanhaId, uid),
+    snap => {
+      if (!snap.exists()) { aoMudar(null); return; }
+      const dados = snap.data();
+      aoMudar({ ...dados, uid, papel: normalizarPapel(dados.papel) });
+    },
+    // Negado é a resposta correta para quem não é da mesa: não é membro.
+    () => aoMudar(null),
+  );
 }
 
 /**

@@ -9,13 +9,13 @@ import {
   CAMPAIGN_THEMES, PRIMARY_CAMPAIGN, PRIMARY_CAMPAIGN_ID, campaignSlug, campaignTheme,
 } from '../../core/campaign';
 import PasswordVisibilityInput from '../../experience/PasswordVisibilityInput';
-import { isUnlocked, requiredPasswordHash, tryUnlock } from '../../core/campaignPassword.mjs';
+import { isUnlocked, rememberUnlock, requiredPasswordHash, tryUnlock } from '../../core/campaignPassword.mjs';
 import './campanhas.css';
 import './portais.css';
 import { SISTEMA_PADRAO, listaDeSistemas } from '../../core/sistemas/index.mjs';
 import PortaDeEntrada from '../acesso/PortaDeEntrada';
 import LegalPage from '../legal/LegalPage';
-import { aoMudarConta, assumirMesa, auth, definirSegredosDaMesa, entrarNaMesa, mensagemDeErro } from '../../core/auth';
+import { aoMudarConta, assumirMesa, auth, definirSegredosDaMesa, entrarNaMesa, lerMembro, mensagemDeErro } from '../../core/auth';
 
 // Gerenciar a lista de mesas continua pedindo a senha da campanha principal:
 // é a chave de quem administra o site, não a de nenhuma mesa específica.
@@ -50,9 +50,49 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage, contaUid, remo
   const [checking, setChecking] = useState(false);
   const [aviso, setAviso] = useState('');
 
-  const enter = () => {
+  // ENTRAR É VIRAR MEMBRO. NÃO BASTA ABRIR A PORTA.
+  //
+  // Antes isto era `if (locked) perguntar; senão entrar` — e as duas formas de
+  // não estar trancado deixavam a pessoa entrar sem registro nenhum no
+  // servidor: mesa sem senha definida, e aparelho que já guardava o resumo da
+  // senha de uma visita anterior. Quem entrava assim virava um fantasma: a
+  // tela montava a mesa inteira e o servidor negava cada pedido, um por um.
+  // O sintoma era o pior possível de diagnosticar — "Desconectado" no canto e
+  // todas as abas vazias, sem nenhum erro à vista.
+  //
+  // Agora: já é membro, entra. Não é e a mesa tem senha, a senha é pedida,
+  // mesmo que o aparelho ache que já passou por aqui. Não é e a mesa não tem
+  // senha, o registro é criado na hora — é o que "mesa aberta" sempre quis
+  // dizer, e agora o servidor concorda com a tela.
+  const enter = async () => {
     if (locked) { setAsking(true); return; }
-    onEnter(campaign);
+    if (campaign.primary) { onEnter(campaign); return; }
+    if (!auth.currentUser) {
+      setAviso('Entre com seu e-mail ou com o Google ali em cima antes: a mesa só carrega para quem está identificado.');
+      return;
+    }
+    setChecking(true);
+    try {
+      if (await lerMembro(campaign.id, auth.currentUser.uid)) {
+        setChecking(false);
+        onEnter(campaign);
+        return;
+      }
+      if (requiredPasswordHash(campaign)) {
+        // O aparelho guardou a senha, o servidor não conhece a pessoa. Pedir
+        // de novo é o único caminho: é a senha que prova quem pode entrar.
+        setChecking(false);
+        rememberUnlock(campaign.id, '');
+        setAsking(true);
+        return;
+      }
+      await entrarNaMesa({ campanhaId: campaign.id, papel: 'jogador', semSenha: true });
+      setChecking(false);
+      onEnter(campaign);
+    } catch (erro) {
+      setChecking(false);
+      setAviso(erro?.message || 'Não foi possível entrar nesta mesa.');
+    }
   };
   const speak = async event => {
     event?.preventDefault();
