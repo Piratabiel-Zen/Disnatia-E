@@ -96,3 +96,50 @@ test('a playlist de música não caiu nas coleções de acesso seletivo', () => 
   assert.match(tocador, /docIn\('config', 'ambient_playlists'\)/,
     'o tocador mudou de lugar de gravação');
 });
+
+/* ───────────────────────────────────────────────────────────────────────
+   O SILÊNCIO DE 2026-11-18
+
+   A mesa colava o link, a faixa aparecia na lista e não tocava nada. A
+   causa: qualquer endereço não reconhecido virava "id do vídeo", e o
+   endereço inteiro ia costurado dentro do embed. Links de /live/ e
+   /shorts/ — que é o que o YouTube dá ao compartilhar pelo celular — caíam
+   todos nesse buraco, sem erro nenhum.
+   ─────────────────────────────────────────────────────────────────────── */
+
+test('as formas que o YouTube serve pelo celular são reconhecidas', () => {
+  for (const [link, id] of [
+    ['https://www.youtube.com/live/abc123XYZ99', 'abc123XYZ99'],
+    ['https://www.youtube.com/shorts/abc123XYZ99', 'abc123XYZ99'],
+    ['https://www.youtube.com/v/abc123XYZ99', 'abc123XYZ99'],
+    ['https://youtu.be/dQw4w9WgXcQ?si=qualquer', 'dQw4w9WgXcQ'],
+    ['https://music.youtube.com/watch?v=dQw4w9WgXcQ&si=x', 'dQw4w9WgXcQ'],
+  ]) {
+    assert.deepEqual(lerLinkDeMusica(link), { provider: 'youtube', videoId: id }, link);
+  }
+});
+
+test('link de playlist toca a lista inteira', () => {
+  assert.deepEqual(
+    lerLinkDeMusica('https://www.youtube.com/playlist?list=PLabc123'),
+    { provider: 'youtube', videoId: '', listaId: 'PLabc123' },
+  );
+  const src = embedDoYoutube('', 'PLabc123');
+  assert.match(src, /videoseries\?list=PLabc123/);
+  // Playlist não repete vídeo: `playlist=<id>` é o truque de loop de um só.
+  assert.ok(!/playlist=&/.test(src));
+});
+
+test('o que não é link nem id é recusado, não transformado em id', () => {
+  // É esta recusa que faz a tela avisar em vez de salvar uma faixa muda.
+  for (const lixo of ['https://www.youtube.com/playlist', 'https://exemplo.com/musica',
+                      'tema do combate', 'http://', 'abc']) {
+    assert.equal(lerLinkDeMusica(lixo), null, lixo);
+  }
+});
+
+test('colar só o id continua valendo, se for mesmo um id', () => {
+  assert.deepEqual(lerLinkDeMusica('dQw4w9WgXcQ'), { provider: 'youtube', videoId: 'dQw4w9WgXcQ' });
+  // Onze caracteres é a medida de um id do YouTube; dez não é.
+  assert.equal(lerLinkDeMusica('dQw4w9WgXc'), null);
+});

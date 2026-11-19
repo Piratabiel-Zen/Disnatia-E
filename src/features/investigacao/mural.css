@@ -290,3 +290,17 @@ html[data-motion="reduced"] .mural-cartao{transition:none}
   padding-top:6px;border-top:1px solid rgba(255,255,255,.1);
   font-style:italic;
 }
+
+/* O MURAL NO CELULAR
+   O quadro é uma parede com cartões posicionados à mão, então aqui não se
+   mexe no arranjo — só na densidade. Cartão mais estreito, foto num recorte
+   mais baixo e a barra de filtros em duas linhas, para sobrar parede. */
+@media(max-width:720px){
+  .mural-barra{flex-wrap:wrap;gap:7px}
+  .mural-filtros{gap:5px}
+  .mural-filtro{padding:4px 8px;font-size:11px}
+  .mural-cartao{width:min(188px,62vw)}
+  .mural-foto{aspect-ratio:16/10;margin-bottom:5px}
+  /* 16px evita o zoom automático do iOS ao focar um campo. */
+  .mural-cartao textarea,.mural-cartao input,.mural-busca input{font-size:16px}
+}

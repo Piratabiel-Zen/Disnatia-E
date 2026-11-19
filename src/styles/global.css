@@ -303,3 +303,28 @@ html[data-motion="reduced"] .chronicles-reading .chronicles-memory,html[data-mot
 }
 .pagina-aviso strong{font:600 17px/1.3 "Cinzel",Georgia,serif;letter-spacing:.05em;color:var(--accent-soft,#C9A96E)}
 .pagina-aviso span{font:400 14px/1.65 "Crimson Text",Georgia,serif;color:rgba(255,255,255,.45);max-width:40ch}
+
+/* O BOTÃO DE DESTRAVAR A MÚSICA
+   O navegador não deixa tocar som sem um toque da pessoa. Para quem põe a
+   música isso é invisível — ela clicou. Para o resto da mesa o comando chega
+   sozinho e o áudio é bloqueado em silêncio. Este botão é o toque que falta,
+   e some assim que a pessoa interage com qualquer coisa. */
+.ambient-destravar{
+  position:fixed;z-index:5000;right:16px;bottom:calc(104px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:10px 16px;border-radius:12px;cursor:pointer;
+  background:rgba(10,12,28,.97);border:1px solid rgba(74,222,128,.5);
+  box-shadow:0 10px 32px rgba(0,0,0,.6);
+  font-family:Cinzel,serif;color:#4ADE80;text-align:left;
+  animation:ambient-destravar-entra .3s ease-out both;
+}
+.ambient-destravar span{font-size:17px;line-height:1}
+.ambient-destravar b{font-size:12px;letter-spacing:.06em;font-weight:600}
+.ambient-destravar small{font-size:10px;color:#7E8A9A;max-width:30ch;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ambient-destravar:hover{border-color:rgba(74,222,128,.8);background:rgba(16,22,38,.99)}
+@keyframes ambient-destravar-entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+html[data-motion="reduced"] .ambient-destravar{animation:none}
+@media(max-width:720px){
+  .ambient-destravar{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));align-items:center}
+}

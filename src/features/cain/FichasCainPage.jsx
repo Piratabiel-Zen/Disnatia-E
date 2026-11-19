@@ -3,9 +3,10 @@ import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { deleteDoc, setDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
 import { listarMembros } from '../../core/auth';
-import { ehMestre, podeEditarFicha } from '../../core/acesso.mjs';
+import { ehMestre, podeAbrirFicha } from '../../core/acesso.mjs';
 import { useMembro } from '../acesso/useMembro';
 import FichaCain from './FichaCain';
+import SeloDeAcessoRestrito from './SeloDeAcessoRestrito.jsx';
 import { estadoDoExorcista, fichaNova } from './fichaCain.mjs';
 import './fichas-cain.css';
 
@@ -21,15 +22,24 @@ const TETO_DE_FICHAS = 12;
  * ficha que ainda não foi entregue a ele — o que é a diferença entre um
  * esquadrão designado e um balcão de retirada.
  *
- * O esquadrão inteiro se lê: todos veem as fichas uns dos outros, porque numa
- * caçada saber que o colega está a um ferimento da morte muda a jogada. O que
- * não se lê são os segredos, que ficam entre o dono e o Admin.
+ * O esquadrão inteiro se VÊ, mas não se lê. A fileira mostra todas as fichas
+ * com nome e estado, porque saber que o colega está a um ferimento da morte é
+ * informação de mesa. Abrir a ficha do outro, não: quem tenta recebe o selo de
+ * acesso restrito. Perícias, blasfêmia, bagagem e marcas de pecado são do dono
+ * e do Admin.
+ *
+ * Isto é a TELA recusando. O servidor ainda entrega as fichas da mesa a
+ * qualquer membro — separar isso nas regras exige guardar nome e corpo da
+ * ficha em lugares diferentes, porque uma consulta no Firestore falha inteira
+ * se um só documento da lista for negado.
  */
 export default function FichasCainPage({ playerSheetId = '' }) {
   const { membro, carregando, campanha } = useMembro();
   const [fichas, setFichas] = useState([]);
   const [membros, setMembros] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
+  const [recusada, setRecusada] = useState(null);
+  const [tremendo, setTremendo] = useState(false);
   const [prontas, setProntas] = useState(false);
   const adiarGravacao = useRef({});
 
@@ -105,6 +115,18 @@ export default function FichasCainPage({ playerSheetId = '' }) {
       || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
   }, [fichas, membro?.uid]);
 
+  // Tocar numa ficha que não é sua: a mesa estremece e o selo se fecha.
+  const tocarNaFicha = useCallback(ficha => {
+    const chave = String(ficha.id);
+    if (!podeAbrirFicha(ficha, membro, playerSheetId)) {
+      setRecusada(ficha);
+      setTremendo(true);
+      setTimeout(() => setTremendo(false), 460);
+      return;
+    }
+    setAbertaId(atual => (atual === chave ? null : chave));
+  }, [membro, playerSheetId]);
+
   const aberta = lista.find(f => String(f.id) === abertaId) || null;
   // A ficha aberta na porta de entrada é desta pessoa, mesmo que o Admin
   // ainda não tenha amarrado a conta dela.
@@ -125,14 +147,14 @@ export default function FichasCainPage({ playerSheetId = '' }) {
   }
 
   return (
-    <div className="registro">
+    <div className={`registro${tremendo ? ' registro-tremendo' : ''}`}>
       <header className="registro-barra">
         <div>
           <h2>Registro de exorcistas</h2>
           <p>
             {mestre
               ? 'O Admin abre a ficha e entrega a quem vai jogar com ela.'
-              : 'Você edita a ficha que foi entregue a você. As outras são leitura.'}
+              : 'Você abre e edita a ficha entregue a você. As outras estão seladas.'}
           </p>
         </div>
         {mestre && (
@@ -166,7 +188,8 @@ export default function FichasCainPage({ playerSheetId = '' }) {
                   type="button"
                   className={`registro-cartao${abertaId === String(f.id) ? ' aberto' : ''}${semDono ? ' sem-dono' : ''}`}
                   style={{ '--cor': estado.cor }}
-                  onClick={() => setAbertaId(abertaId === String(f.id) ? null : String(f.id))}
+                  onClick={() => tocarNaFicha(f)}
+                  aria-disabled={!podeAbrirFicha(f, membro, playerSheetId)}
                 >
                   <span className="registro-retrato">
                     {f.foto ? <img src={f.foto} alt="" /> : <i>{f.categoria || 'I'}</i>}
@@ -182,6 +205,13 @@ export default function FichasCainPage({ playerSheetId = '' }) {
             );
           })}
         </ul>
+      )}
+
+      {recusada && (
+        <SeloDeAcessoRestrito
+          nome={nomePorUid[recusada.dono] || ''}
+          aoFechar={() => setRecusada(null)}
+        />
       )}
 
       {aberta && (
@@ -223,12 +253,6 @@ export default function FichasCainPage({ playerSheetId = '' }) {
                 Arquivar esta ficha
               </button>
             </div>
-          )}
-
-          {!mestre && !podeEditarFicha(aberta, membro) && !minhaPelaPorta(aberta) && (
-            <p className="registro-aviso">
-              Esta ficha é de {nomePorUid[aberta.dono] || 'outro exorcista'}. Você está lendo, não editando.
-            </p>
           )}
 
           <FichaCain

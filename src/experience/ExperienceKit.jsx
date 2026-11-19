@@ -19,7 +19,7 @@ import {artifactAbilities,artifactUseReason} from '../adventure/artifactRules.mj
 import { abilityType } from '../adventure/abilityPresentation.mjs';
 import { visibleSheets, ownsVisitorSheet } from '../adventure/visitorAccess.mjs';
 import { col, docIn } from '../core/campaign';
-import { campaignHasTab, filterNavGroups } from '../core/campaignModules.mjs';
+import { filterNavGroups } from '../core/campaignModules.mjs';
 import { navegacaoDoSistema, termo } from '../core/sistemas/index.mjs';
 import MarcaDaMesa from './MarcaDaMesa';
 
@@ -658,16 +658,22 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
     items:group.items.map(item=>access?.role==='visitor'&&item.id==='fichas'?{...item,label:'Meus personagens'}:item),
   })),campaign).filter(group=>group.items.length);
   const go=id=>{ onNavigate(id); setMobileMenu(false); };
-  // MOBILE CLEAN NAV 2026-09-15
+  // A BARRA DE BAIXO SAI DO SISTEMA DA MESA, NÃO DE UMA LISTA FIXA.
+  //
+  // Ela era escrita à mão e por isso ignorava o sistema: numa mesa de CAIN
+  // oferecia "Classes", que abre os Assassinos do Fogo Azul, e "Crônicas",
+  // que é vocabulário da Dinastia E. O menu lateral já vinha filtrado, então
+  // a mesa inteira parecia certa até alguém pegar o celular.
+  //
+  // Agora as duas primeiras vagas são as de sempre — início e a própria ficha,
+  // que toda mesa tem — e as duas seguintes são as primeiras abas que o
+  // sistema declarou, na ordem dele. Sistema novo entra sem tocar aqui.
+  const itensDoSistema=desktopGroups.flatMap(g=>g.items)
+    .filter(i=>!['session','fichas','mapabatalha','mapamundi'].includes(i.id));
   const mobileMain=[
     {id:'session',label:'Início',icon:'⌂'},
     {id:'fichas',label:access?.role==='visitor'?'Personagens':'Ficha',icon:'📋'},
-    {id:'cronicas',label:termo(campaign,'capitulos','Crônicas'),icon:'🗒️'},
-    // A quarta vaga é a aba mais usada da mesa: o Mural numa investigação, o
-    // Livro onde ele existe, e as Classes no resto.
-    gruposDoSistema.some(g=>g.items.some(i=>i.id==='investigacao'))
-      ? {id:'investigacao',label:'Mural',icon:'🧵'}
-      : campaignHasTab(campaign,'livro')?{id:'livro',label:'Livro',icon:'✦'}:{id:'classes',label:'Classes',icon:'⚔️'},
+    ...itensDoSistema.slice(0,2).map(i=>({id:i.id,label:i.label,icon:i.icon})),
   ];
   const mobileGroups=desktopGroups.map(g=>({...g,items:g.items.filter(i=>i.id!=='mapabatalha')})).filter(g=>g.items.length);
   return <>
@@ -695,7 +701,7 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
     </nav>
     {mobileMenu&&<div className="mobile-menu-backdrop" onClick={()=>setMobileMenu(false)}>
       <div className="mobile-menu-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="mobile-menu-head"><b>Grimório de Navegação</b><button onClick={()=>setMobileMenu(false)}>✕</button></div>
+        <div className="mobile-menu-head"><b>{termo(campaign,'navegacao','Grimório de Navegação')}</b><button onClick={()=>setMobileMenu(false)}>✕</button></div>
         {mobileGroups.map(group=><section key={group.id}><h4>{group.icon} {group.label}</h4><div>{/* MOBILE MENU MAP FILTER 2026-09-15 */ group.items.filter(item=>item.id!=='mapamundi'&&item.id!=='mapabatalha').map(item=><button key={item.id} onClick={()=>go(item.id)} className={tab===item.id?'active':''}>{item.icon} {item.label}</button>)}</div></section>)}
       </div>
     </div>}

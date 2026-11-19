@@ -10,7 +10,14 @@
 
 const FORMAS_DO_SPOTIFY = /(?:open\.spotify\.com\/(?:embed\/)?)?(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/i;
 const URI_DO_SPOTIFY = /^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]+)$/i;
-const FORMAS_DO_YOUTUBE = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/;
+// Todas as formas que o YouTube serve hoje, e não só a de colar da barra de
+// endereços: /live/ e /shorts/ chegam de compartilhamento pelo celular, que é
+// de onde a maioria dos links da mesa vem.
+const FORMAS_DO_YOUTUBE = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/|youtube\.com\/shorts\/|youtube\.com\/v\/)([^&\n?#/]+)/;
+// Um id de vídeo do YouTube tem exatamente 11 caracteres deste alfabeto.
+const ID_DE_VIDEO = /^[A-Za-z0-9_-]{11}$/;
+// Playlist do YouTube: o Mestre monta a trilha lá e cola um link só.
+const PLAYLIST_DO_YOUTUBE = /[?&]list=([A-Za-z0-9_-]+)/;
 
 export function lerLinkDeMusica(valor) {
   const cru = String(valor || '').trim();
@@ -22,10 +29,18 @@ export function lerLinkDeMusica(valor) {
   }
 
   const youtube = cru.match(FORMAS_DO_YOUTUBE);
-  // Sem nenhuma forma reconhecida, o que sobrou é tratado como id de vídeo:
-  // colar só o id é um jeito legítimo de adicionar uma faixa.
-  const videoId = youtube ? youtube[1] : cru;
-  return videoId ? { provider: 'youtube', videoId } : null;
+  if (youtube) return { provider: 'youtube', videoId: youtube[1] };
+
+  // Link de playlist sem vídeo: toca a lista inteira, na ordem.
+  const lista = cru.match(PLAYLIST_DO_YOUTUBE);
+  if (lista) return { provider: 'youtube', videoId: '', listaId: lista[1] };
+
+  // Colar só o id é um jeito legítimo de adicionar faixa — mas SÓ se o que
+  // sobrou for mesmo um id. Antes, qualquer coisa não reconhecida virava o
+  // "id", e o endereço inteiro era costurado dentro do embed. A faixa era
+  // salva, aparecia na lista, e não tocava nada: nenhum erro, nenhum aviso,
+  // só silêncio no meio da sessão. Recusar aqui é o que faz a tela avisar.
+  return ID_DE_VIDEO.test(cru) ? { provider: 'youtube', videoId: cru } : null;
 }
 
 export function embedDoSpotify(uri) {
@@ -33,6 +48,17 @@ export function embedDoSpotify(uri) {
   return m ? `https://open.spotify.com/embed/${m[1].toLowerCase()}/${m[2]}?utm_source=generator&theme=0` : '';
 }
 
-export const embedDoYoutube = videoId => (videoId
-  ? `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&controls=0`
-  : '');
+/**
+ * O endereço do tocador.
+ *
+ * Com uma playlist, o YouTube repete a lista sozinho e não se deve repetir o
+ * vídeo; com um vídeo só, `loop` precisa do próprio id em `playlist`, que é
+ * como o YouTube faz vídeo único repetir.
+ */
+export function embedDoYoutube(videoId, listaId = '') {
+  const base = 'https://www.youtube.com/embed/';
+  const comum = 'autoplay=1&enablejsapi=1&controls=0';
+  if (listaId) return `${base}videoseries?list=${listaId}&${comum}&loop=1`;
+  if (!videoId) return '';
+  return `${base}${videoId}?${comum}&loop=1&playlist=${videoId}`;
+}

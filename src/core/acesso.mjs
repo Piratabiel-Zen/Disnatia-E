@@ -47,6 +47,25 @@ export function podeVerSegredosDaFicha(ficha, membro, fichaLiberada = '') {
 }
 
 /**
+ * Esta ficha chega a abrir para esta pessoa?
+ *
+ * Mais fechado que editar: no CAIN o jogador nem lê a ficha dos outros. Ele
+ * vê na fileira que elas existem, com nome e estado — saber que o colega está
+ * a um ferimento da morte é informação de mesa, dita em voz alta —, mas
+ * abrir, não. Perícias, blasfêmia, bagagem e marcas de pecado são do dono e
+ * do Admin.
+ *
+ * Quem abre: o Admin, o dono da ficha, e quem entrou por ela na porta da mesa.
+ */
+export function podeAbrirFicha(ficha, membro, fichaLiberada = '') {
+  if (!membro) return false;
+  if (ehMestre(membro)) return true;
+  if (fichaLiberada && String(ficha?.id || '') === String(fichaLiberada)) return true;
+  const dono = String(ficha?.dono || '');
+  return dono !== '' && dono === String(membro.uid);
+}
+
+/**
  * O jogador pode editar esta ficha?
  *
  * O Mestre edita qualquer uma; o jogador, só a que foi entregue a ele.

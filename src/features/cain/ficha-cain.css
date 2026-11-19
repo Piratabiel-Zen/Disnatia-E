@@ -316,3 +316,53 @@
 
 html[data-motion="reduced"] .cain-ponto:hover:not(:disabled),
 html[data-motion="reduced"] .cain-rolar:hover:not(:disabled){transform:none}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   A FICHA NO CELULAR
+
+   Esta folha não tinha nenhum recorte de tela estreita — a ficha é a página
+   mais densa do site e descia no celular com as mesmas medidas da mesa de
+   trabalho. A conta é simples: cada painel gastava ~40px de moldura e ~22px
+   de respiro no topo, e são nove painéis. Sumia meia tela em borda.
+
+   O que muda aqui é só medida e densidade. Nada é escondido: numa caçada,
+   a caixa de talismã que não está na tela é a que a pessoa esquece de marcar.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media(max-width:720px){
+  .cain{gap:11px;font-size:12.5px}
+
+  /* Moldura mais justa, e a aba sobe para dentro do painel: o entalhe
+     custava 7px de espaço vertical entre cada par de painéis. */
+  .cain-painel{padding:17px 12px 13px}
+  .cain-painel>legend,.cain-aba{left:10px;font-size:8.5px;letter-spacing:.2em}
+
+  /* Retrato menor: ele ocupava um terço da largura antes do primeiro campo. */
+  .cain-registro{grid-template-columns:72px minmax(0,1fr);gap:11px}
+  .cain-retrato{min-height:96px}
+
+  /* Dois campos por linha onde couber, em vez de um por linha: nome, XID e
+     CID são curtos e empilhados gastavam três alturas de campo. */
+  .cain-linha{gap:9px;grid-template-columns:repeat(auto-fit,minmax(min(100%,108px),1fr))}
+
+  /* Perícias: é a lista mais longa da ficha, com quinze linhas. */
+  .cain-pericia{gap:8px;padding:5px 0}
+  .cain-ponto{width:15px;height:15px}
+  .cain-pontos{gap:5px}
+
+  /* Caixas de talismã e ferimento continuam todas visíveis, só menores —
+     e com alvo de toque ainda confortável. */
+  .cain-caixa{width:23px;height:23px}
+  .cain-caixas{gap:4px}
+  .cain-trilhas{gap:12px}
+
+  .cain-rolagem-controles{gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr))}
+  .cain-interruptores{gap:6px}
+
+  .cain-bagagem{gap:10px}
+  .cain-bagagem-novo{flex-wrap:wrap}
+
+  /* 16px é o mínimo que impede o iOS de dar zoom ao focar um campo — e o
+     zoom automático desalinha a página inteira, que é pior que o campo
+     grande. */
+  .cain-campo input,.cain-campo textarea,.cain-campo select{font-size:16px;padding:7px 8px}
+}

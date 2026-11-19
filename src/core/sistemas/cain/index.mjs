@@ -121,6 +121,10 @@ const SISTEMA = Object.freeze({
     sessao: 'caçada',
     inimigo: 'Pecado',
     inimigos: 'Pecados',
+    capitulos: 'Capítulos',
+    // O menu do celular se chamava "Grimório de Navegação" em qualquer mesa.
+    // Grimório é da Dinastia E; a repartição tem índice.
+    navegacao: 'Índice da repartição',
   }),
 
   dados: Object.freeze({

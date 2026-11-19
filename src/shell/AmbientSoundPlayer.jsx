@@ -37,6 +37,27 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const lastTs = useRef(0);
   const lastAmbientRevisionRef = useRef(0);
   const [combatActive, setCombatActive] = useState(false);
+  // O NAVEGADOR EXIGE UM TOQUE ANTES DE TOCAR SOM.
+  //
+  // Quem põe a música clicou em algo, então para essa pessoa toca. Para o
+  // resto da mesa o comando chega pelo snapshot, sem nenhum clique no meio —
+  // e o Chrome bloqueia o áudio em silêncio. Era isso que fazia a trilha
+  // "não tocar" para metade da mesa sem nenhum erro aparecer.
+  //
+  // Então: enquanto a pessoa não tocar em nada, oferecemos o botão. Qualquer
+  // interação com a página serve, inclusive a dela mesma navegando.
+  const [gestoDado, setGestoDado] = useState(false);
+  useEffect(() => {
+    if (gestoDado) return undefined;
+    const marcar = () => setGestoDado(true);
+    const opcoes = { once: true, passive: true };
+    window.addEventListener('pointerdown', marcar, opcoes);
+    window.addEventListener('keydown', marcar, opcoes);
+    return () => {
+      window.removeEventListener('pointerdown', marcar);
+      window.removeEventListener('keydown', marcar);
+    };
+  }, [gestoDado]);
 
   useEffect(() => {
     if (current?.provider === 'spotify' && current?.spotifyUri && current?.playing && !userMuted) setSpotifyPlayerOpen(true);
@@ -102,6 +123,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     const nextAmbient = {
       provider: track.provider || (track.spotifyUri ? 'spotify' : 'youtube'),
       videoId: track.videoId || '',
+      listaId: track.listaId || '',
       spotifyUri: track.spotifyUri || '',
       nome: track.nome,
       categoria,
@@ -131,7 +153,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const stopAll = async () => {
     const now = Date.now();
     const nextAmbient = {
-      provider: '', videoId: '', spotifyUri: '', nome: '', categoria: '', playing: false,
+      provider: '', videoId: '', listaId: '', spotifyUri: '', nome: '', categoria: '', playing: false,
       ts: now,
       revision: now * 1000 + Math.floor(Math.random() * 1000),
       commandId: 'ambient_stop_' + now + '_' + Math.random().toString(36).slice(2, 9),
@@ -142,8 +164,16 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   };
 
   const addTrack = async () => {
+    if (!novoNome.trim()) return;
     const media = parseMediaLink(novoLink);
-    if (!media || !novoNome.trim()) return;
+    // Antes isto só dava `return` e a mesa ficava olhando para um botão que
+    // não fazia nada. Pior: links de /live/ e /shorts/ eram "aceitos" com o
+    // endereço inteiro no lugar do id, salvavam, apareciam na lista e não
+    // tocavam. Recusar e dizer por quê é metade do conserto.
+    if (!media) {
+      pushToast('Link não reconhecido. Use um endereço do YouTube ou do Spotify.', '⚠️', '#E8A020');
+      return;
+    }
     const categoria = activeCategory === ALL_CATEGORY.id ? addCategory : activeCategory;
     const nova = { id: Date.now(), nome: novoNome.trim(), ...media };
     const playlistRef = docIn('config', 'ambient_playlists');
@@ -184,9 +214,9 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   };
 
   const isSpotify = current?.provider === 'spotify' && Boolean(current?.spotifyUri);
-  const hasCurrentMedia = Boolean(current?.videoId || current?.spotifyUri);
+  const hasCurrentMedia = Boolean(current?.videoId || current?.listaId || current?.spotifyUri);
   const isPlaying = current?.playing && hasCurrentMedia && !userMuted;
-  const embedSrc = embedDoYoutube(current?.videoId);
+  const embedSrc = embedDoYoutube(current?.videoId, current?.listaId);
   const spotifySrc = spotifyEmbedSrc(current?.spotifyUri);
   const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
@@ -197,9 +227,22 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
 
   return (
     <div className={`ambient-topbar-player${immersive ? ' immersive-ambient-player' : ''}`} style={{ position: 'relative', zIndex: 100, flexShrink: 0 }}>
-      {isPlaying && volume > 0 && embedSrc && (
-        <div style={{ position: 'fixed', bottom: -400, left: -400, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-          <iframe key={`${current?.videoId || 'none'}_${current?.revision || current?.ts || 0}`} ref={iframeRef} src={embedSrc} width="1" height="1" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
+      {isPlaying && !isSpotify && !gestoDado && createPortal(
+        <button
+          type="button" className="ambient-destravar" onClick={() => setGestoDado(true)}
+          title="O navegador pede um toque antes de liberar o som"
+        >
+          <span>🔊</span>
+          <b>Tocar a música da mesa</b>
+          <small>{current?.nome || 'som ambiente'}</small>
+        </button>,
+        document.body,
+      )}
+      {isPlaying && volume > 0 && embedSrc && gestoDado && (
+        /* Fora da tela, mas com tamanho de verdade: um iframe de 1x1 pixel
+           entra nas heurísticas de "mídia escondida" de alguns navegadores. */
+        <div style={{ position: 'fixed', bottom: -300, left: -500, width: 320, height: 180, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
+          <iframe key={`${current?.videoId || current?.listaId || 'none'}_${current?.revision || current?.ts || 0}`} ref={iframeRef} src={embedSrc} title="Música da mesa" width="320" height="180" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
         </div>
       )}
       {isSpotify && spotifyPlayerOpen && spotifySrc && createPortal(
@@ -220,14 +263,14 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
               <input type="range" min="0" max="100" step="1" value={volume} onChange={handleVolumeChange} disabled={isSpotify} aria-label="Volume da música" title={isSpotify ? 'Ajuste Spotify no próprio player' : 'Volume local da música'} />
               <output>{volume}%</output>
             </div>
-          ) : current?.videoId && (
+          ) : hasCurrentMedia && !isSpotify && (
             <button onClick={() => setUserMuted(m => !m)} title={userMuted ? 'Ativar som' : 'Silenciar para mim'} className="ambient-mute-button" style={{ width: 36, height: 36, borderRadius: '50%', background: isPlaying ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isPlaying ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.14)'}`, color: isPlaying ? '#4ADE80' : '#7A6A8A', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter:'none', boxShadow: isPlaying ? '0 0 18px rgba(74,222,128,0.28)' : 'none', transition: 'all 0.3s', animation: isPlaying ? 'pulse 2.5s ease-in-out infinite' : 'none' }}>{volIcon}</button>
           )}
           {hasCurrentMedia && (
             <div className="ambient-track-pill" onClick={() => isSpotify && setSpotifyPlayerOpen(true)} title={isSpotify ? 'Abrir player do Spotify' : undefined} style={{ cursor: isSpotify ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(10,12,28,0.92)', border: `1px solid ${catInfo ? catInfo.color+'44' : 'rgba(74,222,128,0.25)'}`, borderRadius: 24, padding: '6px 14px', backdropFilter:'none', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', maxWidth: 180 }}>
               <span style={{ fontSize: 13 }}>{catInfo?.icon || '🎵'}</span>
               <span style={{ fontSize: 11, color: catInfo?.color || '#4ADE80', fontFamily: 'Cinzel,serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.nome || 'Som ambiente'}</span>
-              {!immersive && isPlaying && current?.videoId && (
+              {!immersive && isPlaying && !isSpotify && (
                 <input type="range" min={0} max={100} step={5} value={volume} onChange={handleVolumeChange} style={{ width: 60, accentColor: catInfo?.color || '#4ADE80', cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }} />
               )}
             </div>
