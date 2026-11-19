@@ -22,7 +22,9 @@ async function prepareLivroImage(dataUrl) {
     [1800, 1350, 0.80],
     [1600, 1200, 0.76],
   ];
-  let candidate = dataUrl;
+  // Sem valor inicial: o laço sempre atribui antes de ler, e começar com o
+  // dataUrl cru dava a impressão de que a imagem original seria aceita.
+  let candidate;
   for (const [w,h,q] of presets) {
     candidate = await compressImage(dataUrl, w, h, q);
     if (candidate.length <= BOOK_IMAGE_SAFE_LIMIT) return candidate;

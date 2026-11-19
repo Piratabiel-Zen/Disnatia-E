@@ -263,6 +263,13 @@ export default function MuralInvestigacao({
   const [busca, setBusca] = useState('');
   const [tiposLigados, setTiposLigados] = useState([]);
   const [ligandoDe, setLigandoDe] = useState(null);
+
+  // PREGAR E PUXAR BARBANTE SÃO DE QUALQUER MEMBRO.
+  //
+  // A permissão por autoria vale para reescrever e despregar — o que cada um
+  // pôs é de quem pôs. Montar a parede junto, não: é disso que a mesa de
+  // investigação vive. Quem está na mesa prega cartão e liga o que quiser.
+  const podeParticipar = Boolean(membro);
   const [arrastando, setArrastando] = useState(null);
   const [ponteiro, setPonteiro] = useState(null);
   const [abrindoNovo, setAbrindoNovo] = useState(false);
@@ -300,7 +307,7 @@ export default function MuralInvestigacao({
   }, [posicaoNoQuadro, cartoes, aoMudarCartoes]);
 
   const alfinete = useCallback(id => {
-    if (!podeEditar) return;
+    if (!podeParticipar) return;
     if (!ligandoDe) { setLigandoDe(id); return; }
     if (ligandoDe === id) { setLigandoDe(null); return; }
     // Clicar numa dupla já ligada desfaz: é o mesmo gesto, e ninguém precisa
@@ -311,7 +318,7 @@ export default function MuralInvestigacao({
       ? desligar(ligacoes, ligandoDe, id)
       : ligar(ligacoes, ligandoDe, id, autor));
     setLigandoDe(null);
-  }, [podeEditar, ligandoDe, ligacoes, aoMudarLigacoes, autor]);
+  }, [podeParticipar, ligandoDe, ligacoes, aoMudarLigacoes, autor]);
 
   const criar = tipo => {
     const novo = cartaoNovo({ tipo, autor, x: 0.3 + Math.random() * 0.4, y: 0.3 + Math.random() * 0.35 });
@@ -345,7 +352,7 @@ export default function MuralInvestigacao({
             );
           })}
         </div>
-        {podeEditar && (
+        {podeParticipar && (
           <div className="mural-pregar">
             <button
               type="button" className="mural-novo"
