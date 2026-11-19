@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { deleteDoc, setDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
-import { listarMembros } from '../../core/auth';
+import { listarMembros, sairDoComando } from '../../core/auth';
+import { clearStoredAccess } from '../../experience/PlayerAccess';
 import { ehMestre, podeAbrirFicha } from '../../core/acesso.mjs';
 import { useMembro } from '../acesso/useMembro';
 import { verComoJogador } from '../acesso/previaDeJogador.mjs';
@@ -41,6 +42,7 @@ export default function FichasCainPage({ playerSheetId = '' }) {
   const [abertaId, setAbertaId] = useState(null);
   const [recusada, setRecusada] = useState(null);
   const [tremendo, setTremendo] = useState(false);
+  const [confirmandoSaida, setConfirmandoSaida] = useState(false);
   const [prontas, setProntas] = useState(false);
   const adiarGravacao = useRef({});
 
@@ -166,6 +168,44 @@ export default function FichasCainPage({ playerSheetId = '' }) {
           >＋ Nova ficha</button>
         )}
       </header>
+
+      {/* DEVOLVER O COMANDO.
+          Quem cria a mesa fica Mestre no servidor para sempre — o que está
+          certo, mas deixa o criador sem como jogar com a própria conta: ele
+          vê toda ficha e todo documento guardado, porque para o servidor ele
+          é o Mestre. Daqui ele troca o próprio papel de verdade, e o servidor
+          passa a recusar: os dados nem chegam ao navegador. */}
+      {ehMestre(membroReal) && !previa && (
+        <div className="registro-comando">
+          {!confirmandoSaida ? (
+            <button type="button" onClick={() => setConfirmandoSaida(true)}>
+              Sair do comando desta mesa
+            </button>
+          ) : (
+            <div className="registro-comando-confirma">
+              <p>
+                Você deixa de ser Admin e passa a jogar só com a ficha que for
+                entregue a você. Para voltar ao comando, saia pelo seu nome no
+                alto da tela e entre de novo escolhendo <b>Mestre</b>, com a
+                senha de Mestre desta mesa.
+              </p>
+              <div>
+                <button type="button" onClick={async () => {
+                  try {
+                    await sairDoComando(campanha?.id);
+                    clearStoredAccess();
+                    window.location.reload();
+                  } catch (erro) {
+                    console.error('Erro ao sair do comando:', erro);
+                    setConfirmandoSaida(false);
+                  }
+                }}>Sim, virar jogador</button>
+                <button type="button" onClick={() => setConfirmandoSaida(false)}>Cancelar</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {!prontas && <p className="registro-vazio">Consultando o arquivo…</p>}
 

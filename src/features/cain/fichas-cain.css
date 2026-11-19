@@ -141,3 +141,26 @@
 }
 .registro-cartao[data-selada="sim"] .registro-retrato{filter:grayscale(1) opacity(.6)}
 .registro-cartao[data-selada="sim"]:hover{opacity:.9;border-color:#CBD5E1}
+
+/* Devolver o comando da mesa. Fica discreto: é raro, e é uma troca de papel
+   de verdade no servidor, não um modo de visualização. */
+.registro-comando{margin:-4px 0 14px}
+.registro-comando>button{
+  padding:5px 11px;border-radius:3px;cursor:pointer;background:transparent;
+  border:1px dashed var(--linha-forte,#4A3E31);color:var(--tinta-fraca,#7E7466);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+.registro-comando>button:hover{border-color:#C4414F;color:#C4414F}
+.registro-comando-confirma{
+  padding:12px 14px;border:1px solid #8E1F2B;border-radius:4px;
+  background:color-mix(in srgb,var(--painel,#100E0D) 80%,#8E1F2B 10%);
+}
+.registro-comando-confirma p{margin:0 0 10px;font-size:13px;line-height:1.55;max-width:62ch}
+.registro-comando-confirma div{display:flex;gap:8px;flex-wrap:wrap}
+.registro-comando-confirma button{
+  padding:6px 13px;border-radius:3px;cursor:pointer;background:transparent;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
+  border:1px solid var(--linha-forte,#4A3E31);color:var(--tinta,#CEC4B4);
+}
+.registro-comando-confirma button:first-child{border-color:#8E1F2B;color:#C4414F}

@@ -237,6 +237,40 @@ export async function lerMembro(campanhaId, uid = auth.currentUser?.uid) {
 }
 
 /**
+ * Devolve o comando da mesa: eu deixo de ser Mestre e viro jogador.
+ *
+ * Existe porque quem CRIA a mesa fica Mestre no servidor para sempre, e isso
+ * é o certo — mas deixa o criador sem como jogar de verdade com a própria
+ * conta. Ele vê toda ficha, todo documento guardado, todo cartão restrito,
+ * porque para o servidor ele é o Mestre. Não há escolha na porta de entrada
+ * que mude isso: o papel gravado é o que as regras leem.
+ *
+ * Então o caminho é gravar outro papel. Depois disto o servidor passa a
+ * recusar de verdade — os dados nem chegam ao navegador — e voltar ao
+ * comando é digitar a senha de Mestre na porta, como qualquer pessoa faria.
+ *
+ * Quem criou a mesa nunca se tranca para fora: as regras deixam o dono
+ * escrever o próprio registro independentemente de senha. Mesmo esquecendo
+ * a senha de Mestre, o comando volta.
+ */
+export async function sairDoComando(campanhaId) {
+  const usuario = auth.currentUser;
+  if (!usuario) throw new Error('Entre na sua conta antes.');
+  const atual = await lerMembro(campanhaId, usuario.uid);
+  await setDoc(membroRef(campanhaId, usuario.uid), {
+    uid: usuario.uid,
+    nome: atual?.nome || usuario.displayName || '',
+    papel: 'jogador',
+    // Sem resumo de senha: este registro passa pela porta do dono da mesa,
+    // e guardar o resumo da senha de Mestre num registro de jogador seria
+    // deixar a credencial onde ela não precisa estar.
+    senhaHash: '',
+    entrouEm: serverTimestamp(),
+  });
+  return true;
+}
+
+/**
  * Acompanha o meu registro de membro, em vez de lê-lo uma vez só.
  *
  * Isto existe por causa de um sintoma que custou caro: quem entrava numa mesa
