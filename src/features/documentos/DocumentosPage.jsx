@@ -10,7 +10,10 @@ import {
   documentoNovo, guardar, liberarParaTodos, notaDe, ordenarParaJogador,
   ordenarParaMestre, tipoDoDocumento,
 } from './documentos.mjs';
+import CorpoDoDocumento from './CorpoDoDocumento.jsx';
+import { cartaoDeDocumento, jaNoMural } from './paraOMural.mjs';
 import './documentos.css';
+import './documentos-tipos.css';
 
 /**
  * O ARQUIVO
@@ -53,6 +56,23 @@ export default function DocumentosPage() {
   useEffect(() => onSnapshot(col('fichas'), snap => {
     setFichas(snap.docs.map(d => ({ ...d.data(), id: d.id })));
   }, () => {}), []);
+
+  // Os cartões do mural entram aqui só para saber o que já está pendurado —
+  // pendurar duas vezes o mesmo documento enche a parede de repetição.
+  const [cartoes, setCartoes] = useState([]);
+  useEffect(() => onSnapshot(col('mural_cartoes'), snap => {
+    setCartoes(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+  }, () => {}), []);
+
+  const pendurarNoMural = useCallback(async doc => {
+    const cartao = cartaoDeDocumento(doc, {
+      // Espalha um pouco: cartão novo sempre no mesmo ponto esconde o anterior.
+      x: 60 + Math.round(Math.random() * 180),
+      y: 60 + Math.round(Math.random() * 140),
+    });
+    const { id, ...dados } = cartao;
+    await setDoc(docIn('mural_cartoes', id), dados);
+  }, []);
 
   const salvar = useCallback(async doc => {
     const { id, ...dados } = doc;
@@ -152,14 +172,9 @@ export default function DocumentosPage() {
               />
             ) : <h3 className="arquivo-titulo">{atual.titulo}</h3>}
 
-            {atual.imagem && <img className="arquivo-imagem" src={atual.imagem} alt="" />}
-
-            {mestre ? (
-              <textarea
-                className="arquivo-corpo-texto" value={atual.corpo} placeholder="O que o documento diz…"
-                onChange={e => salvar({ ...atual, corpo: e.target.value })}
-              />
-            ) : <p className="arquivo-corpo-texto leitura">{atual.corpo}</p>}
+            {/* Cada tipo tem forma própria: jornal em colunas, carta com
+                assinatura, fotografia com moldura e anexo de verdade. */}
+            <CorpoDoDocumento doc={atual} tipo={atual.tipo} mestre={mestre} salvar={salvar} />
 
             {mestre && (
               <div className="arquivo-liberacao">
@@ -199,12 +214,27 @@ export default function DocumentosPage() {
               </div>
             )}
 
-            {!mestre && atual.liberadoPara?.includes(membro.uid) && !atual.liberadoParaTodos && (
-              <button
-                type="button" className="arquivo-compartilhar"
-                onClick={() => salvar(compartilharComAMesa(atual, membro.uid))}
-              >Mostrar isto à mesa</button>
-            )}
+            <div className="arquivo-acoes">
+              {!mestre && atual.liberadoPara?.includes(membro.uid) && !atual.liberadoParaTodos && (
+                <button
+                  type="button" className="arquivo-compartilhar"
+                  onClick={() => salvar(compartilharComAMesa(atual, membro.uid))}
+                >Mostrar isto à mesa</button>
+              )}
+
+              {/* Pendurar na parede não copia nem move o documento: cria um
+                  cartão que o aponta, com a MESMA plateia. Senão alfinetar
+                  viraria atalho para revelar o que estava guardado. */}
+              {jaNoMural(atual, cartoes) ? (
+                <span className="arquivo-ja-no-mural">Já está no mural</span>
+              ) : (
+                <button
+                  type="button" className="arquivo-pendurar"
+                  onClick={() => pendurarNoMural(atual)}
+                  title="Cria um cartão no mural apontando para este documento"
+                >Pendurar no mural</button>
+              )}
+            </div>
 
             <label className="arquivo-anotacao">
               <span className="arquivo-rotulo">Sua anotação</span>

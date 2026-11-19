@@ -116,3 +116,19 @@
   font-family:'Cinzel',serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
 }
 .arquivo-remover:hover{border-color:rgba(142,31,43,.6);color:#E8A8AE}
+
+/* As ações de pé da folha. Mostrar à mesa e pendurar no mural são as duas
+   coisas que se faz COM um documento depois de ler, então andam juntas. */
+.arquivo-acoes{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.arquivo-pendurar{
+  padding:7px 14px;border-radius:4px;cursor:pointer;background:transparent;
+  border:1px solid var(--contraste-mesa,#A98045);color:var(--contraste-claro-mesa,#D4AC6E);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.arquivo-pendurar:hover{background:color-mix(in srgb,var(--contraste-mesa,#A98045) 14%,transparent)}
+.arquivo-ja-no-mural{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:#6E6658;
+}
+.arquivo-falha{color:#C4414F;line-height:1.55}

@@ -1,0 +1,273 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   SEIS DOCUMENTOS, SEIS FORMAS
+
+   Metade do que uma prova diz, ela diz pela forma: um recorte de jornal
+   convence de um jeito, uma etiqueta de recolhimento de outro. Antes os
+   seis tipos eram o mesmo retângulo com outro ícone, e o tipo virava
+   rótulo em vez de coisa.
+
+   Todos puxam a paleta da MESA (--contraste-mesa e companhia) para a
+   moldura, e usam tinta escura sobre papel claro no miolo — é papel, e
+   papel é claro em qualquer tema. A exceção é a gravação, que não é papel.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.doc{
+  --papel-claro:#E7E2D6;
+  --papel-sombra:#D6CFBE;
+  --tinta-papel:#1C1915;
+  --tinta-fraca-papel:#5E5649;
+  --borda-mesa:var(--linha-mesa,#2E2721);
+  --realce:var(--contraste-claro-mesa,#D4AC6E);
+  display:grid;gap:12px;
+}
+
+/* Campos de edição do Mestre: ficam FORA da folha, porque não fazem parte
+   do documento — são o painel de quem o fabrica. */
+.doc-campos{
+  display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));
+  padding:11px 12px;border:1px dashed var(--borda-mesa);border-radius:4px;
+}
+.doc-campos label{display:grid;gap:3px;min-width:0}
+.doc-campos span{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--realce);
+}
+.doc-campos input{
+  width:100%;box-sizing:border-box;padding:5px 7px;font-size:12.5px;
+  background:rgba(0,0,0,.25);border:1px solid var(--borda-mesa);border-radius:3px;
+  color:var(--ink-mesa,#CEC4B4);
+}
+
+.doc-anexo{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.doc-anexo-botao{
+  display:inline-block;padding:6px 13px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--realce);color:var(--realce);background:transparent;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.doc-anexo-botao:hover{background:color-mix(in srgb,var(--realce) 14%,transparent)}
+.doc-anexo-botao input{display:none}
+.doc-anexo-tirar{
+  padding:6px 11px;border-radius:4px;cursor:pointer;background:transparent;
+  border:1px solid rgba(232,25,60,.4);color:#C4414F;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
+}
+
+/* Base comum das folhas de papel. */
+.doc-jornal-folha,.doc-carta-folha,.doc-relatorio-folha,.doc-objeto-etiqueta{
+  background:var(--papel-claro);color:var(--tinta-papel);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.doc textarea{
+  width:100%;box-sizing:border-box;resize:vertical;border:0;outline:0;
+  background:transparent;color:inherit;font:inherit;
+}
+.doc textarea::placeholder{color:var(--tinta-fraca-papel);opacity:.65}
+
+/* ---------- JORNAL ---------------------------------------------------
+   Broadsheet: cabeçalho entre filetes, manchete grande, corpo em duas
+   colunas justificadas. É a única folha com colunas, de propósito. */
+.doc-jornal-folha{padding:20px 22px 24px;border:1px solid var(--papel-sombra)}
+.doc-jornal-cabeca{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding-bottom:7px;margin-bottom:12px;
+  border-top:3px solid var(--tinta-papel);border-bottom:1px solid var(--tinta-papel);
+  padding-top:7px;
+}
+.doc-jornal-cabeca b{
+  font-family:'Cinzel',Georgia,serif;font-size:clamp(17px,3.4vw,25px);
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.doc-jornal-cabeca small{
+  font-family:'Crimson Text',Georgia,serif;font-size:11.5px;
+  font-style:italic;color:var(--tinta-fraca-papel);white-space:nowrap;
+}
+.doc-jornal-manchete{
+  margin:0 0 6px;font-family:'Crimson Text',Georgia,serif;
+  font-size:clamp(21px,4.6vw,33px);font-weight:700;line-height:1.14;
+  text-wrap:balance;
+}
+.doc-jornal-chamada{
+  margin:0 0 13px;padding-bottom:11px;border-bottom:1px solid var(--papel-sombra);
+  font-family:'Crimson Text',Georgia,serif;font-size:15px;font-style:italic;
+  color:var(--tinta-fraca-papel);
+}
+.doc-jornal-foto{
+  width:100%;max-height:260px;object-fit:cover;display:block;margin:0 0 12px;
+  /* Meio-tom de jornal: cinza impresso, não foto colorida. */
+  filter:grayscale(1) contrast(1.16);border:1px solid var(--papel-sombra);
+}
+.doc-jornal-colunas{
+  font-family:'Crimson Text',Georgia,serif;font-size:14.5px;line-height:1.58;
+  text-align:justify;hyphens:auto;min-height:150px;
+  columns:2;column-gap:22px;column-rule:1px solid var(--papel-sombra);
+}
+/* Campo de edição não acompanha colunas: digitar em texto que reflui entre
+   duas colunas é desagradável, e o Mestre só precisa escrever. */
+.doc-jornal-folha textarea.doc-jornal-colunas{columns:1;column-rule:none}
+
+/* ---------- CARTA ----------------------------------------------------
+   Coluna única, estreita, entrelinha larga. A assinatura à direita é o
+   único elemento fora do eixo, e é o que faz ler como carta. */
+.doc-carta-folha{
+  padding:26px 28px 22px;border:1px solid var(--papel-sombra);
+  /* Pauta discreta, como papel de carta. */
+  background-image:repeating-linear-gradient(transparent 0 27px,rgba(92,82,66,.11) 27px 28px);
+  background-position:0 10px;
+}
+.doc-carta-topo{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  margin-bottom:16px;font-family:'Crimson Text',Georgia,serif;font-size:15px;
+}
+.doc-carta-topo small{font-style:italic;color:var(--tinta-fraca-papel)}
+.doc-carta-texto{
+  font-family:'Crimson Text',Georgia,serif;font-size:16px;line-height:28px;
+  max-width:58ch;min-height:168px;white-space:pre-wrap;
+}
+.doc-carta-assinatura{
+  margin:20px 0 0;text-align:right;
+  font-family:'Crimson Text',Georgia,serif;font-size:17px;font-style:italic;
+}
+
+/* ---------- FOTOGRAFIA -----------------------------------------------
+   A imagem é o documento. Moldura tipo revelação: borda clara, mais
+   grossa embaixo, e a legenda escrita nessa borda. */
+.doc-foto-moldura{
+  margin:0;padding:11px 11px 0;background:#EFEDE6;
+  box-shadow:0 12px 34px rgba(0,0,0,.55);
+  /* Leve desalinho: foto encostada na mesa, não diagrama. */
+  transform:rotate(-.5deg);
+}
+.doc-foto-moldura img{width:100%;display:block;background:#15120F}
+.doc-foto-vazia{
+  display:grid;place-items:center;min-height:190px;padding:20px;text-align:center;
+  background:#1A1714;color:#7E7466;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;
+  letter-spacing:.1em;border:1px dashed #3A332B;
+}
+.doc-foto-moldura figcaption{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:13px 4px 17px;color:#2A2520;
+  font-family:'Crimson Text',Georgia,serif;font-size:14.5px;font-style:italic;
+}
+.doc-foto-moldura figcaption em{font-size:12px;color:#6B6358;white-space:nowrap}
+.doc-foto-verso{
+  padding:11px 13px;border:1px dashed var(--borda-mesa);border-radius:4px;
+  color:var(--ink-mesa,#CEC4B4);
+  font-family:'Crimson Text',Georgia,serif;font-size:14px;line-height:1.6;
+  min-height:60px;white-space:pre-wrap;
+}
+
+/* ---------- RELATÓRIO ------------------------------------------------
+   Burocracia: monoespaçada, grade de campos no alto, carimbo torto. */
+.doc-relatorio-folha{
+  position:relative;padding:18px 20px 22px;border:1px solid var(--papel-sombra);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+}
+.doc-relatorio-grade{
+  display:grid;gap:7px;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));
+  padding-bottom:12px;margin-bottom:14px;border-bottom:2px solid var(--tinta-papel);
+}
+.doc-relatorio-grade span{display:grid;gap:2px;font-size:8.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--tinta-fraca-papel)}
+.doc-relatorio-grade b{font-size:12.5px;letter-spacing:.02em;color:var(--tinta-papel);
+  text-transform:none;word-break:break-word}
+.doc-relatorio-carimbo{
+  position:absolute;bottom:16px;right:18px;transform:rotate(-11deg);
+  padding:5px 12px;border:2.5px solid rgba(142,31,43,.72);border-radius:3px;
+  color:rgba(142,31,43,.78);font-size:12px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;pointer-events:none;
+}
+.doc-relatorio-anexo{
+  width:100%;max-height:230px;object-fit:cover;display:block;margin:0 0 13px;
+  border:1px solid var(--papel-sombra);filter:grayscale(.75);
+}
+.doc-relatorio-texto{
+  font-size:13px;line-height:1.72;min-height:150px;white-space:pre-wrap;
+  color:var(--tinta-papel);
+}
+
+/* ---------- GRAVAÇÃO -------------------------------------------------
+   Não é papel: é fita. Fundo escuro, texto monoespaçado, carretel girando
+   devagar no cabeçalho. É o único tipo que não imita folha. */
+.doc-gravacao-folha{
+  padding:16px 18px 20px;border:1px solid var(--borda-mesa);border-radius:5px;
+  background:linear-gradient(170deg,#15161C 0%,#0C0D11 100%);
+  color:var(--ink-mesa,#CEC4B4);
+}
+.doc-gravacao-cabeca{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.doc-gravacao-cabeca b{font-family:'Cinzel',Georgia,serif;font-size:14px;letter-spacing:.07em}
+.doc-gravacao-cabeca small{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;
+  letter-spacing:.12em;color:var(--realce);margin-left:auto;
+}
+.doc-gravacao-carretel{
+  width:22px;height:22px;flex:0 0 auto;border-radius:50%;
+  border:2px solid var(--realce);
+  /* Os três raios do carretel, em gradiente cônico: sem imagem, sem svg. */
+  background:conic-gradient(from 0deg,transparent 0 24deg,color-mix(in srgb,var(--realce) 55%,transparent) 24deg 36deg,
+    transparent 36deg 144deg,color-mix(in srgb,var(--realce) 55%,transparent) 144deg 156deg,
+    transparent 156deg 264deg,color-mix(in srgb,var(--realce) 55%,transparent) 264deg 276deg,transparent 276deg 360deg);
+  animation:carretel-gira 3.4s linear infinite;
+}
+@keyframes carretel-gira{to{transform:rotate(360deg)}}
+html[data-motion="reduced"] .doc-gravacao-carretel{animation:none}
+.doc-gravacao-aviso{
+  margin:13px 0 9px;padding-bottom:7px;border-bottom:1px solid var(--borda-mesa);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
+  letter-spacing:.26em;text-transform:uppercase;color:#7E7466;
+}
+.doc-gravacao-texto{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
+  line-height:1.95;min-height:160px;white-space:pre-wrap;color:var(--ink-mesa,#CEC4B4);
+  /* Sem recuo pendurado: com pre-wrap o text-indent negativo só vale para a
+     PRIMEIRA linha do bloco inteiro, então ele empurrava todas as outras
+     falas para a direita em vez de alinhá-las. Monoespaçada já alinha as
+     marcas de tempo sozinha, que é o que importa aqui. */
+}
+
+/* ---------- OBJETO ---------------------------------------------------
+   Etiqueta de recolhimento: cantoneira cortada, furo e barbante. */
+.doc-objeto-etiqueta{
+  position:relative;padding:16px 18px 16px 34px;
+  border:1px solid var(--papel-sombra);
+  /* O canto cortado é o que faz ler como etiqueta e não como cartão. */
+  clip-path:polygon(0 0,100% 0,100% 100%,16px 100%,0 calc(100% - 16px));
+}
+.doc-objeto-etiqueta b{
+  display:block;margin-bottom:11px;
+  font-family:'Cinzel',Georgia,serif;font-size:15px;letter-spacing:.07em;
+}
+.doc-objeto-furo{
+  position:absolute;left:12px;top:17px;width:11px;height:11px;border-radius:50%;
+  background:var(--fundo-mesa,#0A0908);box-shadow:inset 0 0 0 1px var(--papel-sombra);
+}
+.doc-objeto-etiqueta dl{display:grid;gap:7px;margin:0}
+.doc-objeto-etiqueta dl>div{display:grid;gap:1px}
+.doc-objeto-etiqueta dt{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--tinta-fraca-papel);
+}
+.doc-objeto-etiqueta dd{margin:0;font-family:'Crimson Text',Georgia,serif;font-size:14.5px}
+.doc-objeto-foto{
+  width:100%;max-height:240px;object-fit:cover;display:block;
+  border:1px solid var(--borda-mesa);
+}
+.doc-objeto-texto{
+  padding:11px 13px;border:1px dashed var(--borda-mesa);border-radius:4px;
+  color:var(--ink-mesa,#CEC4B4);
+  font-family:'Crimson Text',Georgia,serif;font-size:14px;line-height:1.62;
+  min-height:70px;white-space:pre-wrap;
+}
+
+@media(max-width:720px){
+  /* Duas colunas de jornal num telefone dão sete palavras por linha. */
+  .doc-jornal-colunas{columns:1;column-rule:none;text-align:left;hyphens:none}
+  .doc-jornal-folha,.doc-relatorio-folha{padding:15px 14px 18px}
+  .doc-carta-folha{padding:18px 16px 16px}
+  .doc-carta-texto{font-size:15px;line-height:26px}
+  .doc-carta-folha{background-image:repeating-linear-gradient(transparent 0 25px,rgba(92,82,66,.11) 25px 26px)}
+  .doc-relatorio-carimbo{position:static;transform:none;display:inline-block;margin-bottom:11px}
+  .doc-gravacao-texto{font-size:12px}
+  .doc-campos input,.doc textarea{font-size:16px}
+}

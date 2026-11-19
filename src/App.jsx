@@ -13,6 +13,9 @@ import "./experience/golpes.css";
 import "./experience/cosmic-living-background.css";
 import "./experience/site-polish.css";
 import "./experience/atmosferas-de-mesa.css";
+// Repinta por cima o roxo de Cosmum, e só fora da atmosfera cósmica.
+// Precisa vir DEPOIS das folhas que ela corrige.
+import "./experience/sem-roxo-fora-da-dinastia.css";
 
 import { ToastContainer } from "./core/toast";
 import { auth, migrarSegredosDaMesa } from "./core/auth";

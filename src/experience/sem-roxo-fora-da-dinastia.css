@@ -1,0 +1,101 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   O ROXO É DA DINASTIA E
+
+   O site nasceu como uma campanha só, e o roxo de Cosmum foi parar cravado
+   em dezenas de lugares: a faixa de contexto da sessão, o acento da
+   navegação, os dados, o portão de acesso. Numa mesa de CAIN o cenário é
+   vermelho e azul-marinho e a interface por cima continuava lilás — duas
+   campanhas disputando a mesma tela.
+
+   Em vez de caçar cada hex nos arquivos que a Dinastia E usa (e arriscar
+   mudar a mesa que já está no ar), esta folha repinta por cima, e SÓ fora
+   da atmosfera cósmica. A Dinastia E é `data-tema-mesa="cosmico"` e não é
+   tocada por nada daqui.
+
+   Tudo sai de --accent-mesa e --contraste-mesa, que são as cores que a mesa
+   declarou. Nenhuma cor nova é inventada nesta folha.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]){
+  --roxo-acento:var(--accent-mesa,var(--contraste-mesa,#A98045));
+  --roxo-apagado:var(--contraste-mesa,#8CA0C4);
+  --roxo-tinta:var(--ink-mesa,#CEC4B4);
+}
+
+/* ---- A faixa de contexto da sessão ---------------------------------
+   "EXPLORAÇÃO · LOCAL ATUAL · OBJETIVO". É a primeira coisa que se vê ao
+   entrar na mesa, e estava em lilás sobre um cenário vermelho. */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-location small,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-objective small,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-now small{
+  color:color-mix(in srgb,var(--roxo-apagado) 62%,transparent);
+}
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-location b,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-objective b{
+  color:var(--roxo-tinta);
+}
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-mode-chip,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .g3-context-card{
+  border-color:color-mix(in srgb,var(--roxo-acento) 34%,transparent);
+}
+
+/* ---- Navegação, dados, portão --------------------------------------
+   Estes recebem a cor por --accent em linha, com o roxo como padrão. */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .grim-link.active,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .mobile-dock button.active{
+  --accent:var(--roxo-acento);
+  color:var(--roxo-acento);
+}
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .grim-group-title b,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .mobile-menu-head b{
+  color:var(--roxo-acento);
+}
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .master-sigil,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .grim-avatar.master-sigil{
+  background:color-mix(in srgb,var(--roxo-acento) 22%,transparent);
+  border-color:color-mix(in srgb,var(--roxo-acento) 55%,transparent);
+  color:var(--roxo-acento);
+}
+
+/* O selo de sincronização em "sincronizando" era lilás. */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .connection-health.warn i{
+  background:var(--roxo-acento);
+}
+
+/* ---- Cartões de sessão ---------------------------------------------- */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .session-card header,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .objective-glyph{
+  color:var(--roxo-acento);
+}
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .session-card{
+  border-color:color-mix(in srgb,var(--roxo-acento) 26%,transparent);
+}
+
+/* ---- Portão de acesso ------------------------------------------------
+   A tela de "quem se apresenta ao expediente" abria em lilás mesmo depois
+   de a mesa inteira já estar vermelha. */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .access-sigil,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .access-kicker,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .access-master-orb{
+  color:var(--roxo-acento);
+}
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .access-enter.master{
+  background:color-mix(in srgb,var(--roxo-acento) 16%,transparent);
+  border-color:color-mix(in srgb,var(--roxo-acento) 52%,transparent);
+  color:var(--roxo-acento);
+}
+
+/* ---- Dados -----------------------------------------------------------
+   A bandeja e o botão de rolar usavam o lilás de jogador como cor fixa. */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .dice-launcher,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .dice-tray-head b{
+  border-color:color-mix(in srgb,var(--roxo-acento) 45%,transparent);
+  color:var(--roxo-acento);
+}
+
+/* As estrelas de Cosmum não são cenário de mesa nenhuma além da dela —
+   e numa mesa com imagem de fundo própria elas ficam por cima da imagem. */
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .grim-stars,
+html[data-tema-mesa]:not([data-tema-mesa="cosmico"]) .access-stars{
+  display:none;
+}
