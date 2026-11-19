@@ -111,6 +111,18 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const parseMediaLink = lerLinkDeMusica;
   const spotifyEmbedSrc = embedDoSpotify;
 
+  // O QUE ESTÁ TOCANDO, DERIVADO ANTES DE QUALQUER EFEITO USAR.
+  //
+  // Estas três linhas moravam lá embaixo, perto do JSX, e o efeito que monta
+  // o tocador — escrito depois — passou a ler `isSpotify` acima da declaração
+  // dele. Um `const` acima da própria declaração não é `undefined`: é um
+  // ReferenceError lançado durante a renderização. Como este componente vive
+  // na barra de cima da sessão, o erro derrubava a árvore inteira e a mesa
+  // abria preta, sem nada na tela.
+  const isSpotify = current?.provider === 'spotify' && Boolean(current?.spotifyUri);
+  const hasCurrentMedia = Boolean(current?.videoId || current?.listaId || current?.spotifyUri);
+  const isPlaying = current?.playing && hasCurrentMedia && !userMuted;
+
   const ajustarVolume = valor => {
     try { tocador.current?.setVolume?.(Number(valor) || 0); } catch (_) { /* ainda montando */ }
   };
@@ -264,9 +276,6 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     }
   };
 
-  const isSpotify = current?.provider === 'spotify' && Boolean(current?.spotifyUri);
-  const hasCurrentMedia = Boolean(current?.videoId || current?.listaId || current?.spotifyUri);
-  const isPlaying = current?.playing && hasCurrentMedia && !userMuted;
   const spotifySrc = spotifyEmbedSrc(current?.spotifyUri);
   const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
