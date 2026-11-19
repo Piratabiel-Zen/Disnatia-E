@@ -4,6 +4,7 @@ import { deleteDoc, setDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
 import { documentosVisiveis, ehMestre, resumoDaLiberacao } from '../../core/acesso.mjs';
 import { useMembro } from '../acesso/useMembro';
+import { observarLiberados } from '../acesso/observarLiberados';
 import {
   TIPOS_DE_DOCUMENTO, alternarPessoa, anotar, buscarDocumentos, compartilharComAMesa,
   documentoNovo, guardar, liberarParaTodos, notaDe, ordenarParaJogador,
@@ -28,10 +29,19 @@ export default function DocumentosPage() {
   const [fichas, setFichas] = useState([]);
   const [busca, setBusca] = useState('');
   const [aberto, setAberto] = useState(null);
+  const [falha, setFalha] = useState('');
 
-  useEffect(() => onSnapshot(col('documentos'), snap => {
-    setDocumentos(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-  }), []);
+  // Uma escuta direta em toda a coleção era negada por inteiro para o
+  // jogador — bastava existir um documento guardado na mesa. Ver
+  // observarLiberados: ele pede só o que a regra aprova.
+  useEffect(() => {
+    if (!membro) return undefined;
+    setFalha('');
+    return observarLiberados('documentos', membro, setDocumentos, erro => {
+      console.error('Erro ao abrir o arquivo:', erro);
+      setFalha('O servidor recusou a leitura do arquivo. Recarregue a página; se continuar, avise o Admin da mesa.');
+    });
+  }, [membro?.uid, membro?.papel]);
 
   // Quem recebe um documento sai das FICHAS, não de uma lista de contas.
   //
@@ -100,7 +110,12 @@ export default function DocumentosPage() {
 
       <div className="arquivo-corpo">
         <ul className="arquivo-lista">
-          {lista.length === 0 && (
+          {/* Gaveta vazia e gaveta recusada são coisas diferentes, e durante
+              um bom tempo as duas apareceram iguais: "nada foi liberado para
+              você". Dizer qual é qual é o que evita o Mestre jurar que
+              liberou enquanto o jogador jura que não chegou. */}
+          {falha && <li className="arquivo-vazio arquivo-falha">{falha}</li>}
+          {!falha && lista.length === 0 && (
             <li className="arquivo-vazio">
               {mestre ? 'Nada no arquivo ainda. Crie o primeiro documento acima.'
                       : 'Nada foi liberado para você até agora.'}

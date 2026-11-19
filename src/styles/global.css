@@ -328,3 +328,25 @@ html[data-motion="reduced"] .ambient-destravar{animation:none}
 @media(max-width:720px){
   .ambient-destravar{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));align-items:center}
 }
+
+/* O AVISO DE FAIXA RECUSADA
+   Só o Mestre vê: é ele quem escolhe a faixa e quem pode trocar. Avisar a
+   mesa inteira que um vídeo não tocou seria barulho para quem não pode agir. */
+.ambient-erro{
+  position:fixed;z-index:5000;right:16px;bottom:calc(104px + env(safe-area-inset-bottom,0px));
+  display:grid;gap:5px;max-width:min(330px,calc(100vw - 32px));
+  padding:12px 14px;border-radius:12px;
+  background:rgba(14,10,12,.98);border:1px solid rgba(232,160,32,.55);
+  box-shadow:0 10px 32px rgba(0,0,0,.65);
+}
+.ambient-erro b{font-family:Cinzel,serif;font-size:12px;color:#E8A020;letter-spacing:.05em}
+.ambient-erro span{font-size:11.5px;line-height:1.5;color:#B9AEA0}
+.ambient-erro button{
+  justify-self:end;margin-top:2px;padding:4px 11px;border-radius:7px;cursor:pointer;
+  background:transparent;border:1px solid rgba(232,160,32,.4);color:#E8A020;
+  font-family:Cinzel,serif;font-size:10.5px;letter-spacing:.08em;
+}
+.ambient-erro button:hover{background:rgba(232,160,32,.12)}
+@media(max-width:720px){
+  .ambient-erro{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+}

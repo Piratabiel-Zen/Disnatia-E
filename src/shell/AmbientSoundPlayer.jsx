@@ -18,7 +18,8 @@ const SOUND_CATEGORIES = [
 ];
 const ALL_CATEGORY = { id: 'todas', label: 'Todas', icon: '🎶', color: '#D6B4F5' };
 import { usePlayerPreferences } from '../adventure/usePlayerPreferences';
-import { embedDoSpotify, embedDoYoutube, lerLinkDeMusica } from './linkDeMusica.mjs';
+import { embedDoSpotify, lerLinkDeMusica } from './linkDeMusica.mjs';
+import { estaTocando, montarTocador } from './tocadorDoYoutube.mjs';
 import { docIn } from '../core/campaign';
 export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const [open, setOpen] = useState(false);
@@ -33,7 +34,6 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const [novoNome, setNovoNome] = useState('');
   const [novoLink, setNovoLink] = useState('');
   const [spotifyPlayerOpen, setSpotifyPlayerOpen] = useState(false);
-  const iframeRef = useRef(null);
   const lastTs = useRef(0);
   const lastAmbientRevisionRef = useRef(0);
   const [combatActive, setCombatActive] = useState(false);
@@ -47,6 +47,10 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   // Então: enquanto a pessoa não tocar em nada, oferecemos o botão. Qualquer
   // interação com a página serve, inclusive a dela mesma navegando.
   const [gestoDado, setGestoDado] = useState(false);
+  const [erroDoVideo, setErroDoVideo] = useState('');
+  const [soando, setSoando] = useState(false);
+  const caixaDoTocador = useRef(null);
+  const tocador = useRef(null);
   useEffect(() => {
     if (gestoDado) return undefined;
     const marcar = () => setGestoDado(true);
@@ -107,16 +111,63 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const parseMediaLink = lerLinkDeMusica;
   const spotifyEmbedSrc = embedDoSpotify;
 
-  const sendCmd = (func, args = []) => {
-    try {
-      iframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func, args }), '*'
-      );
-    } catch (_) {}
+  const ajustarVolume = valor => {
+    try { tocador.current?.setVolume?.(Number(valor) || 0); } catch (_) { /* ainda montando */ }
   };
 
-  useEffect(()=>{sendCmd('setVolume',[volume]);},[volume]);
-  const handleVolumeChange = (e) => { const v = Number(e.target.value); setVolume(v); sendCmd('setVolume', [v]); };
+  useEffect(() => { ajustarVolume(volume); }, [volume]);
+  const handleVolumeChange = (e) => { const v = Number(e.target.value); setVolume(v); ajustarVolume(v); };
+
+  // O toque que o navegador exige. Pedir play de dentro do clique é o que faz
+  // a diferença: fora dele, o mesmo comando é ignorado sem erro.
+  const destravarSom = () => {
+    setGestoDado(true);
+    try { tocador.current?.playVideo?.(); } catch (_) { /* o estado conta */ }
+  };
+
+  // MONTA, TROCA E DESMONTA O TOCADOR.
+  //
+  // Recria a cada faixa de propósito: trocar o vídeo de um player vivo deixa
+  // estado para trás (volume, loop, fila da playlist) e já rendeu faixa
+  // tocando por cima de faixa.
+  useEffect(() => {
+    const caixa = caixaDoTocador.current;
+    const querTocar = !isSpotify && current?.playing && (current?.videoId || current?.listaId);
+    if (!caixa || !querTocar) {
+      try { tocador.current?.destroy?.(); } catch (_) { /* já foi */ }
+      tocador.current = null;
+      setSoando(false);
+      return undefined;
+    }
+
+    let vivo = true;
+    setErroDoVideo('');
+    setSoando(false);
+    const alvo = document.createElement('div');
+    caixa.replaceChildren(alvo);
+
+    montarTocador(alvo, {
+      videoId: current.videoId,
+      listaId: current.listaId,
+      volume: userMuted ? 0 : volume,
+      aoEstado: estado => { if (vivo) setSoando(estaTocando(estado)); },
+      aoErro: mensagem => { if (vivo) { setErroDoVideo(mensagem); setSoando(false); } },
+    }).then(player => {
+      if (!vivo) { try { player.destroy(); } catch (_) {} return; }
+      tocador.current = player;
+    }).catch(() => {
+      if (vivo) setErroDoVideo('A API do YouTube não carregou. Verifique a conexão.');
+    });
+
+    return () => {
+      vivo = false;
+      try { tocador.current?.destroy?.(); } catch (_) { /* já foi */ }
+      tocador.current = null;
+    };
+  }, [current?.videoId, current?.listaId, current?.playing, current?.revision, isSpotify]);
+
+  // Silenciar para mim não para a mesa: zera o volume local.
+  useEffect(() => { ajustarVolume(userMuted ? 0 : volume); }, [userMuted]);
 
   const playTrack = async (track, categoria) => {
     const now = Date.now();
@@ -216,7 +267,6 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const isSpotify = current?.provider === 'spotify' && Boolean(current?.spotifyUri);
   const hasCurrentMedia = Boolean(current?.videoId || current?.listaId || current?.spotifyUri);
   const isPlaying = current?.playing && hasCurrentMedia && !userMuted;
-  const embedSrc = embedDoYoutube(current?.videoId, current?.listaId);
   const spotifySrc = spotifyEmbedSrc(current?.spotifyUri);
   const volIcon = userMuted ? '🔇' : volume === 0 ? '🔇' : volume < 40 ? '🔈' : volume < 75 ? '🔉' : '🔊';
   const catInfo = SOUND_CATEGORIES.find(c => c.id === current?.categoria);
@@ -227,9 +277,23 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
 
   return (
     <div className={`ambient-topbar-player${immersive ? ' immersive-ambient-player' : ''}`} style={{ position: 'relative', zIndex: 100, flexShrink: 0 }}>
-      {isPlaying && !isSpotify && !gestoDado && createPortal(
+      {/* A caixa do tocador existe sempre que há vídeo: a API do YouTube
+          substitui este elemento pelo iframe dela. Fica fora da tela, com
+          tamanho real — um quadro de 1x1 entra nas heurísticas de "mídia
+          escondida" de alguns navegadores e é barrado antes de soar. */}
+      {!isSpotify && hasCurrentMedia && current?.playing && (
+        <div style={{ position: 'fixed', bottom: -300, left: -500, width: 320, height: 180, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
+          <div ref={caixaDoTocador} />
+        </div>
+      )}
+
+      {/* O navegador exige um toque antes de liberar som. Para quem põe a
+          música isso é invisível — ela clicou. Para o resto da mesa o comando
+          chega sozinho e o áudio é barrado em silêncio. Este é o toque que
+          falta, e só aparece quando o tocador confirma que NÃO está soando. */}
+      {isPlaying && !isSpotify && !soando && !erroDoVideo && createPortal(
         <button
-          type="button" className="ambient-destravar" onClick={() => setGestoDado(true)}
+          type="button" className="ambient-destravar" onClick={destravarSom}
           title="O navegador pede um toque antes de liberar o som"
         >
           <span>🔊</span>
@@ -238,13 +302,19 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
         </button>,
         document.body,
       )}
-      {isPlaying && volume > 0 && embedSrc && gestoDado && (
-        /* Fora da tela, mas com tamanho de verdade: um iframe de 1x1 pixel
-           entra nas heurísticas de "mídia escondida" de alguns navegadores. */
-        <div style={{ position: 'fixed', bottom: -300, left: -500, width: 320, height: 180, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
-          <iframe key={`${current?.videoId || current?.listaId || 'none'}_${current?.revision || current?.ts || 0}`} ref={iframeRef} src={embedSrc} title="Música da mesa" width="320" height="180" allow="autoplay; encrypted-media" onLoad={() => setTimeout(() => sendCmd('setVolume', [volume]), 1800)} />
-        </div>
+
+      {/* Clipe de gravadora costuma proibir reprodução fora do YouTube. O
+          iframe carregava, não soava, e não dizia nada — era a causa mais
+          provável de "a música não funciona". */}
+      {erroDoVideo && masterMode && createPortal(
+        <div className="ambient-erro" role="status">
+          <b>{current?.nome || 'A faixa'} não tocou</b>
+          <span>{erroDoVideo}</span>
+          <button type="button" onClick={() => setErroDoVideo('')}>Entendi</button>
+        </div>,
+        document.body,
       )}
+
       {isSpotify && spotifyPlayerOpen && spotifySrc && createPortal(
         <div style={{ position: 'fixed', zIndex: 4800, right: 16, bottom: 'calc(104px + env(safe-area-inset-bottom, 0px))', width: 'min(352px, calc(100vw - 32px))', padding: 8, borderRadius: 14, background: 'rgba(8,10,24,0.98)', border: '1px solid rgba(168,85,247,0.55)', boxShadow: '0 12px 38px rgba(0,0,0,0.65)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 5px 7px', color: '#C4A5FF', font: '11px Cinzel,serif' }}>

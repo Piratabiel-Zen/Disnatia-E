@@ -3,6 +3,7 @@ import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { setDoc, deleteDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
 import { useMembro } from '../acesso/useMembro';
+import { observarLiberados } from '../acesso/observarLiberados';
 import MuralInvestigacao from './MuralInvestigacao';
 import { cartoesVisiveis, chaveDaLigacao } from './mural.mjs';
 import { ehMestre } from '../../core/acesso.mjs';
@@ -27,14 +28,17 @@ export default function InvestigacaoPage() {
     const u0 = onSnapshot(col('fichas'), snap => {
       setFichas(snap.docs.map(d => ({ ...d.data(), id: d.id })));
     }, () => {});
-    const u1 = onSnapshot(col('mural_cartoes'), snap => {
-      setCartoes(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    });
+    // O mural escapava por sorte: cartão nasce aberto, então a consulta
+    // inteira passava na regra. Bastava o Mestre restringir UM cartão para a
+    // parede inteira sumir para os jogadores — uma regra que olha o conteúdo
+    // do documento reprova a consulta toda, não filtra. Ver observarLiberados.
+    const u1 = observarLiberados('mural_cartoes', membro, setCartoes,
+      erro => console.error('Erro ao abrir o mural:', erro));
     const u2 = onSnapshot(col('mural_ligacoes'), snap => {
       setLigacoes(snap.docs.map(d => ({ ...d.data(), chave: d.id })));
     });
     return () => { u0(); u1(); u2(); };
-  }, []);
+  }, [membro?.uid, membro?.papel]);
 
   /* Grava só o que mudou. Comparar antes de escrever não é otimização: é o que
      impede uma tela de reescrever os seis cartões a cada movimento de um. */
