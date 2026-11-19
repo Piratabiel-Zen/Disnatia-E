@@ -39,6 +39,14 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const [combatActive, setCombatActive] = useState(false);
   const [erroDoVideo, setErroDoVideo] = useState('');
   const [soando, setSoando] = useState(false);
+  // O quadro do tocador só se mostra quando o navegador REALMENTE barrou.
+  //
+  // Barrar é a exceção, não a regra: quem aperta "Tocar" já deu o gesto que
+  // o navegador pede, e quem está na mesa há algum tempo também já clicou em
+  // outras coisas. O caso que falha é estreito — a aba aberta e intocada até
+  // a faixa chegar pelo tempo real. Mostrar o quadro para todo mundo, sempre,
+  // cobrava de todos o preço de poucos.
+  const [precisaDeToque, setPrecisaDeToque] = useState(false);
   const caixaDoTocador = useRef(null);
   const tocador = useRef(null);
   useEffect(() => {
@@ -126,6 +134,7 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
     let vivo = true;
     setErroDoVideo('');
     setSoando(false);
+    setPrecisaDeToque(false);
     const alvo = document.createElement('div');
     caixa.replaceChildren(alvo);
 
@@ -133,7 +142,14 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
       videoId: current.videoId,
       listaId: current.listaId,
       volume: userMuted ? 0 : volume,
-      aoEstado: estado => { if (vivo) setSoando(estaTocando(estado)); },
+      aoEstado: estado => {
+        if (!vivo) return;
+        const tocando = estaTocando(estado);
+        setSoando(tocando);
+        // Tocou: se o quadro estava à mostra por causa de um bloqueio, ele
+        // já cumpriu o papel e some.
+        if (tocando) setPrecisaDeToque(false);
+      },
       aoErro: mensagem => { if (vivo) { setErroDoVideo(mensagem); setSoando(false); } },
     }).then(player => {
       if (!vivo) { try { player.destroy(); } catch (_) {} return; }
@@ -142,8 +158,20 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
       if (vivo) setErroDoVideo('A API do YouTube não carregou. Verifique a conexão.');
     });
 
+    // Dois segundos é o bastante para um vídeo liberado começar, mesmo em
+    // conexão ruim — o YouTube avisa PLAYING assim que o som sai, e não
+    // espera o buffer encher. Passou disso em silêncio, foi barrado.
+    const relogio = setTimeout(() => {
+      if (!vivo) return;
+      setSoando(tocandoAgora => {
+        if (!tocandoAgora) setPrecisaDeToque(true);
+        return tocandoAgora;
+      });
+    }, 2000);
+
     return () => {
       vivo = false;
+      clearTimeout(relogio);
       try { tocador.current?.destroy?.(); } catch (_) { /* já foi */ }
       tocador.current = null;
     };
@@ -257,24 +285,24 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
 
   return (
     <div className={`ambient-topbar-player${immersive ? ' immersive-ambient-player' : ''}`} style={{ position: 'relative', zIndex: 100, flexShrink: 0 }}>
-      {/* O TOCADOR FICA VISÍVEL ATÉ CONFIRMAR QUE SAIU SOM.
-          Duas tentativas de tocar escondido falharam, e falharam caladas. O
-          navegador não libera áudio sem um gesto da pessoa, e um quadro
-          escondido fora da tela não ganha esse gesto de ninguém: quem recebe
-          a música pelo tempo real nunca clicou em nada.
-          Então o quadro aparece de verdade, pequeno, no canto. Apertar o play
-          DELE é um gesto no próprio tocador, e isso nenhum navegador recusa.
-          Assim que o YouTube confirma que está tocando, ele se recolhe
-          sozinho para fora da tela — bloqueio só acontece no início, depois
-          de tocando dá para esconder sem parar o som. */}
+      {/* O TOCADOR TOCA SOZINHO; O QUADRO SÓ APARECE SE FOR BARRADO.
+          O navegador não libera áudio sem um gesto da pessoa naquela aba —
+          mas quem aperta "Tocar" já deu esse gesto, e quem está na mesa há
+          algum tempo também. O caso que falha é a aba aberta e intocada até
+          a faixa chegar pelo tempo real.
+          Então o quadro nasce fora da tela e tenta tocar. Se em dois segundos
+          não saiu som, ele vem à frente para a pessoa apertar o play dele —
+          um clique no próprio tocador nenhum navegador recusa — e volta a se
+          esconder assim que o som sai. Bloqueio só acontece no início; depois
+          de tocando dá para esconder sem parar. */}
       {/* Com erro, o quadro sai: ele não vai tocar, e deixar os dois no
           mesmo canto empilha um aviso em cima do outro. */}
       {!isSpotify && hasCurrentMedia && current?.playing && !erroDoVideo && createPortal(
-        <div className={`ambient-palco${soando ? ' tocando' : ''}`}>
-          {!soando && (
+        <div className={`ambient-palco${precisaDeToque && !soando ? '' : ' tocando'}`}>
+          {precisaDeToque && !soando && (
             <div className="ambient-palco-aviso">
               <b>Aperte o play para ouvir a mesa</b>
-              <small>O navegador só libera som depois de um toque seu. Depois disso ele some.</small>
+              <small>Seu navegador barrou o som porque você ainda não clicou em nada nesta aba. Depois disso ele some.</small>
             </div>
           )}
           <div className="ambient-palco-quadro"><div ref={caixaDoTocador} /></div>

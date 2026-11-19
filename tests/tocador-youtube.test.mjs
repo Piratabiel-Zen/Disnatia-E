@@ -41,12 +41,13 @@ test('o componente usa a API e não um iframe cego', () => {
   assert.match(fonte, /montarTocador/, 'o tocador voltou a ser um iframe solto');
   assert.ok(!/embedDoYoutube/.test(fonte), 'o endereço de embed cru voltou ao componente');
   assert.ok(!/sendCmd/.test(fonte), 'os comandos voltaram a ser postMessage no escuro');
-  // O quadro fica VISÍVEL até o YouTube confirmar que saiu som, e só então
-  // se recolhe. Tocar escondido falhou duas vezes, e falhou calado.
-  assert.match(fonte, /ambient-palco\$\{soando \? ' tocando' : ''\}/,
-    'o tocador voltou a nascer escondido');
-  assert.match(fonte, /\{!soando && \(\s*<div className="ambient-palco-aviso">/,
-    'sumiu o aviso que explica por que o quadro está à vista');
+  // O quadro nasce escondido e tenta tocar sozinho. Só vem à frente se o
+  // navegador tiver barrado — barrar é a exceção, não a regra: quem aperta
+  // "Tocar" já deu o gesto que o navegador pede.
+  assert.match(fonte, /ambient-palco\$\{precisaDeToque && !soando \? '' : ' tocando'\}/,
+    'o quadro voltou a aparecer para todo mundo, sempre');
+  assert.match(fonte, /\{precisaDeToque && !soando && \(\s*<div className="ambient-palco-aviso">/,
+    'sumiu o aviso que explica por que o quadro apareceu');
 });
 
 test('a faixa recusada é explicada a quem ficou sem som, não só ao Mestre', () => {
@@ -56,4 +57,24 @@ test('a faixa recusada é explicada a quem ficou sem som, não só ao Mestre', (
   const fonte = readFileSync(new URL('../src/shell/AmbientSoundPlayer.jsx', import.meta.url), 'utf8');
   assert.match(fonte, /\{erroDoVideo && createPortal\(/);
   assert.ok(!/erroDoVideo && masterMode/.test(fonte));
+});
+
+test('o bloqueio é detectado por silêncio, não presumido', () => {
+  const fonte = readFileSync(new URL('../src/shell/AmbientSoundPlayer.jsx', import.meta.url), 'utf8');
+  // Dois segundos: o YouTube avisa PLAYING assim que o som sai, sem esperar
+  // o buffer encher, então silêncio depois disso é bloqueio e não lentidão.
+  assert.match(fonte, /setTimeout\(\(\) => \{[\s\S]{0,260}setPrecisaDeToque\(true\)[\s\S]{0,80}\}, 2000\)/,
+    'o tocador voltou a adivinhar se foi barrado');
+  // E o relógio precisa morrer com a faixa, senão a faixa seguinte herda
+  // um aviso de bloqueio da anterior.
+  assert.match(fonte, /clearTimeout\(relogio\)/);
+  // Tocou: o quadro some, mesmo que tenha vindo à frente.
+  assert.match(fonte, /if \(tocando\) setPrecisaDeToque\(false\)/);
+});
+
+test('cada faixa começa sem a marca de bloqueio da anterior', () => {
+  const fonte = readFileSync(new URL('../src/shell/AmbientSoundPlayer.jsx', import.meta.url), 'utf8');
+  const efeito = fonte.slice(fonte.indexOf('let vivo = true;'));
+  assert.match(efeito.slice(0, 220), /setPrecisaDeToque\(false\)/,
+    'o aviso de bloqueio ficaria pendurado na faixa seguinte');
 });
