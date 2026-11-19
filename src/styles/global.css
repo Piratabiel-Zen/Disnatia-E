@@ -304,30 +304,6 @@ html[data-motion="reduced"] .chronicles-reading .chronicles-memory,html[data-mot
 .pagina-aviso strong{font:600 17px/1.3 "Cinzel",Georgia,serif;letter-spacing:.05em;color:var(--accent-soft,#C9A96E)}
 .pagina-aviso span{font:400 14px/1.65 "Crimson Text",Georgia,serif;color:rgba(255,255,255,.45);max-width:40ch}
 
-/* O BOTÃO DE DESTRAVAR A MÚSICA
-   O navegador não deixa tocar som sem um toque da pessoa. Para quem põe a
-   música isso é invisível — ela clicou. Para o resto da mesa o comando chega
-   sozinho e o áudio é bloqueado em silêncio. Este botão é o toque que falta,
-   e some assim que a pessoa interage com qualquer coisa. */
-.ambient-destravar{
-  position:fixed;z-index:5000;right:16px;bottom:calc(104px + env(safe-area-inset-bottom,0px));
-  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
-  padding:10px 16px;border-radius:12px;cursor:pointer;
-  background:rgba(10,12,28,.97);border:1px solid rgba(74,222,128,.5);
-  box-shadow:0 10px 32px rgba(0,0,0,.6);
-  font-family:Cinzel,serif;color:#4ADE80;text-align:left;
-  animation:ambient-destravar-entra .3s ease-out both;
-}
-.ambient-destravar span{font-size:17px;line-height:1}
-.ambient-destravar b{font-size:12px;letter-spacing:.06em;font-weight:600}
-.ambient-destravar small{font-size:10px;color:#7E8A9A;max-width:30ch;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ambient-destravar:hover{border-color:rgba(74,222,128,.8);background:rgba(16,22,38,.99)}
-@keyframes ambient-destravar-entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-html[data-motion="reduced"] .ambient-destravar{animation:none}
-@media(max-width:720px){
-  .ambient-destravar{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));align-items:center}
-}
 
 /* O AVISO DE FAIXA RECUSADA
    Só o Mestre vê: é ele quem escolhe a faixa e quem pode trocar. Avisar a
@@ -349,4 +325,35 @@ html[data-motion="reduced"] .ambient-destravar{animation:none}
 .ambient-erro button:hover{background:rgba(232,160,32,.12)}
 @media(max-width:720px){
   .ambient-erro{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+}
+
+/* O PALCO DO TOCADOR
+   Duas tentativas de tocar escondido falharam, e caladas. O navegador não
+   libera áudio sem gesto da pessoa, e um quadro fora da tela não recebe
+   gesto de ninguém — quem recebe a música pelo tempo real nunca clicou.
+   Então o quadro aparece: apertar o play DELE é um gesto no próprio tocador,
+   e isso nenhum navegador recusa. Confirmado o som, ele se recolhe sozinho:
+   o bloqueio só acontece no início, depois dá para esconder sem parar. */
+.ambient-palco{
+  position:fixed;z-index:4900;right:16px;bottom:calc(104px + env(safe-area-inset-bottom,0px));
+  display:grid;gap:7px;padding:9px;border-radius:12px;
+  background:rgba(8,10,24,.98);border:1px solid rgba(74,222,128,.45);
+  box-shadow:0 12px 36px rgba(0,0,0,.66);
+  transition:opacity .4s ease;
+}
+.ambient-palco-aviso{display:grid;gap:2px;max-width:246px}
+.ambient-palco-aviso b{font-family:Cinzel,serif;font-size:11.5px;color:#4ADE80;letter-spacing:.04em}
+.ambient-palco-aviso small{font-size:10px;line-height:1.45;color:#8A9A88}
+.ambient-palco-quadro{width:246px;height:139px;overflow:hidden;border-radius:7px;background:#000}
+.ambient-palco-quadro iframe{display:block;border:0;width:246px;height:139px}
+
+/* Tocando: sai da tela, mas continua montado — desmontar pararia o som. */
+.ambient-palco.tocando{
+  right:auto;bottom:auto;left:-9999px;top:-9999px;
+  opacity:0;pointer-events:none;border-color:transparent;box-shadow:none;
+}
+
+@media(max-width:720px){
+  .ambient-palco{left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));justify-items:center}
+  .ambient-palco-aviso{max-width:none;text-align:center}
 }

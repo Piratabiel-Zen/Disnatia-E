@@ -5,7 +5,7 @@ import { col, docIn } from '../../core/campaign';
 import { useMembro } from '../acesso/useMembro';
 import { observarLiberados } from '../acesso/observarLiberados';
 import MuralInvestigacao from './MuralInvestigacao';
-import { cartoesVisiveis, chaveDaLigacao } from './mural.mjs';
+import { cartoesVisiveis, chaveDaLigacao, podeMexerNoCartao } from './mural.mjs';
 import { ehMestre } from '../../core/acesso.mjs';
 
 /**
@@ -105,7 +105,8 @@ export default function InvestigacaoPage() {
         autor={membro.uid}
         mestre={mestre}
         fichas={fichas}
-        podeEditar
+        membro={membro}
+        podeMexer={cartao => podeMexerNoCartao(cartao, membro)}
         aoMudarCartoes={salvarCartoes}
         aoMudarLigacoes={salvarLigacoes}
       />

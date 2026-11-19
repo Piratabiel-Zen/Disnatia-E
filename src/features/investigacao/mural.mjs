@@ -188,6 +188,24 @@ export function desligar(ligacoes, a, b) {
 }
 
 /** Tira do mural um cartão e todo barbante preso nele. */
+/**
+ * Quem pode mexer no conteúdo deste cartão — reescrever ou tirar do mural.
+ *
+ * O mural é de todo mundo, mas o que cada um pregou é de quem pregou. Um
+ * jogador tira o que ele mesmo pôs e não encosta no que o colega anotou;
+ * o Admin tira qualquer coisa, porque a parede é da mesa dele.
+ *
+ * Cartão sem autor é de antes desta regra: fica com o Admin. Deixá-lo para
+ * qualquer um seria abrir a exceção justamente nos cartões mais antigos, que
+ * são os que a investigação já construiu em cima.
+ */
+export function podeMexerNoCartao(cartao, membro) {
+  if (!membro) return false;
+  if (membro.papel === 'mestre') return true;
+  const autor = String(cartao?.autor || '');
+  return autor !== '' && autor === String(membro.uid || '');
+}
+
 export function removerCartao(cartoes, ligacoes, id) {
   const alvo = String(id);
   return {

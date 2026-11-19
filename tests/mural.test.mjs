@@ -4,10 +4,11 @@
    dois só aparecem no meio de uma cena, que é o pior momento. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   ESTADOS_DA_PISTA, ESTADO_PADRAO, TIPOS_DE_CARTAO,
   cartaoNovo, chaveDaLigacao, contagemPorTipo, definirEstado, desligar,
-  estadoDoCartao, filtrarMural, ligar, linhasDoMural, moverCartao, prender,
+  estadoDoCartao, filtrarMural, ligar, linhasDoMural, moverCartao, podeMexerNoCartao, prender,
   removerCartao, tipoDoCartao, vizinhos,
   alternarPessoaNoCartao, cartaoTemImagem, cartoesVisiveis,
   liberarCartaoParaTodos, podeVerCartao, resumoDeQuemVe,
@@ -234,4 +235,46 @@ test('a fotografia é um tipo de cartão e carrega imagem', () => {
   // Os outros tipos não ganham campo de imagem à toa.
   assert.equal(cartaoTemImagem(cartaoNovo({ id: 'p1', tipo: 'pista' })), false);
   assert.ok(TIPOS_DE_CARTAO.some(t => t.id === 'fotografia'), 'o tipo precisa estar na lista');
+});
+
+/* ───────────────────────────────────────────────────────────────────────
+   O QUE CADA UM PREGOU É DE QUEM PREGOU
+
+   Um jogador pregou uma nota por engano e não achou como despregar: o
+   "Tirar do mural" morava dentro do modo de edição, atrás de um duplo
+   clique no título. E, achando, ele poderia despregar o cartão do colega
+   também, porque a tela dava a mesma permissão a todo mundo.
+   ─────────────────────────────────────────────────────────────────────── */
+
+test('o autor mexe no que é dele; o Admin, em tudo', () => {
+  const admin = { uid: 'u-admin', papel: 'mestre' };
+  const ana = { uid: 'u-ana', papel: 'jogador' };
+  const bob = { uid: 'u-bob', papel: 'jogador' };
+  const daAna = { id: 'c1', autor: 'u-ana' };
+
+  assert.equal(podeMexerNoCartao(daAna, ana), true);
+  assert.equal(podeMexerNoCartao(daAna, bob), false);
+  assert.equal(podeMexerNoCartao(daAna, admin), true);
+});
+
+test('cartão sem autor é de antes da regra e fica com o Admin', () => {
+  // Liberar os antigos para qualquer um seria abrir a exceção justamente
+  // nos cartões em que a investigação já construiu em cima.
+  const antigo = { id: 'c0' };
+  assert.equal(podeMexerNoCartao(antigo, { uid: 'u-ana', papel: 'jogador' }), false);
+  assert.equal(podeMexerNoCartao(antigo, { uid: 'u-admin', papel: 'mestre' }), true);
+  // E nem uid vazio casa com autor vazio.
+  assert.equal(podeMexerNoCartao(antigo, { uid: '', papel: 'jogador' }), false);
+});
+
+test('sem membro, ninguém mexe', () => {
+  assert.equal(podeMexerNoCartao({ autor: 'u-ana' }, null), false);
+});
+
+test('descartar está à vista, sem precisar entrar em edição', () => {
+  const tela = readFileSync(new URL('../src/features/investigacao/MuralInvestigacao.jsx', import.meta.url), 'utf8');
+  assert.match(tela, /className="mural-acao perigo"[\s\S]{0,160}>Descartar<\/button>/,
+    'despregar voltou a ficar escondido atrás do modo de edição');
+  // E a permissão é por cartão, não uma chave única para a parede toda.
+  assert.match(tela, /podeEditar=\{podeMexer\(c\)\}/);
 });

@@ -41,14 +41,19 @@ test('o componente usa a API e não um iframe cego', () => {
   assert.match(fonte, /montarTocador/, 'o tocador voltou a ser um iframe solto');
   assert.ok(!/embedDoYoutube/.test(fonte), 'o endereço de embed cru voltou ao componente');
   assert.ok(!/sendCmd/.test(fonte), 'os comandos voltaram a ser postMessage no escuro');
-  // O botão de destravar só aparece quando a API confirma que não há som.
-  assert.match(fonte, /!soando && !erroDoVideo/, 'o botão de destravar voltou a adivinhar');
-  // Pedir play de dentro do clique é o que o navegador exige.
-  assert.match(fonte, /const destravarSom = \(\) => \{[\s\S]{0,180}playVideo/);
+  // O quadro fica VISÍVEL até o YouTube confirmar que saiu som, e só então
+  // se recolhe. Tocar escondido falhou duas vezes, e falhou calado.
+  assert.match(fonte, /ambient-palco\$\{soando \? ' tocando' : ''\}/,
+    'o tocador voltou a nascer escondido');
+  assert.match(fonte, /\{!soando && \(\s*<div className="ambient-palco-aviso">/,
+    'sumiu o aviso que explica por que o quadro está à vista');
 });
 
-test('o aviso de faixa recusada é só para quem pode trocar a faixa', () => {
+test('a faixa recusada é explicada a quem ficou sem som, não só ao Mestre', () => {
+  // Era só para o Mestre, por ser quem troca a faixa. Mas quem fica sem som
+  // é o jogador, e ele ficava sem explicação nenhuma — concluindo que o site
+  // estava quebrado.
   const fonte = readFileSync(new URL('../src/shell/AmbientSoundPlayer.jsx', import.meta.url), 'utf8');
-  assert.match(fonte, /erroDoVideo && masterMode &&/,
-    'a mesa inteira voltou a receber aviso que só o Mestre resolve');
+  assert.match(fonte, /\{erroDoVideo && createPortal\(/);
+  assert.ok(!/erroDoVideo && masterMode/.test(fonte));
 });

@@ -37,32 +37,10 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
   const lastTs = useRef(0);
   const lastAmbientRevisionRef = useRef(0);
   const [combatActive, setCombatActive] = useState(false);
-  // O NAVEGADOR EXIGE UM TOQUE ANTES DE TOCAR SOM.
-  //
-  // Quem põe a música clicou em algo, então para essa pessoa toca. Para o
-  // resto da mesa o comando chega pelo snapshot, sem nenhum clique no meio —
-  // e o Chrome bloqueia o áudio em silêncio. Era isso que fazia a trilha
-  // "não tocar" para metade da mesa sem nenhum erro aparecer.
-  //
-  // Então: enquanto a pessoa não tocar em nada, oferecemos o botão. Qualquer
-  // interação com a página serve, inclusive a dela mesma navegando.
-  const [gestoDado, setGestoDado] = useState(false);
   const [erroDoVideo, setErroDoVideo] = useState('');
   const [soando, setSoando] = useState(false);
   const caixaDoTocador = useRef(null);
   const tocador = useRef(null);
-  useEffect(() => {
-    if (gestoDado) return undefined;
-    const marcar = () => setGestoDado(true);
-    const opcoes = { once: true, passive: true };
-    window.addEventListener('pointerdown', marcar, opcoes);
-    window.addEventListener('keydown', marcar, opcoes);
-    return () => {
-      window.removeEventListener('pointerdown', marcar);
-      window.removeEventListener('keydown', marcar);
-    };
-  }, [gestoDado]);
-
   useEffect(() => {
     if (current?.provider === 'spotify' && current?.spotifyUri && current?.playing && !userMuted) setSpotifyPlayerOpen(true);
     else setSpotifyPlayerOpen(false);
@@ -129,13 +107,6 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
 
   useEffect(() => { ajustarVolume(volume); }, [volume]);
   const handleVolumeChange = (e) => { const v = Number(e.target.value); setVolume(v); ajustarVolume(v); };
-
-  // O toque que o navegador exige. Pedir play de dentro do clique é o que faz
-  // a diferença: fora dele, o mesmo comando é ignorado sem erro.
-  const destravarSom = () => {
-    setGestoDado(true);
-    try { tocador.current?.playVideo?.(); } catch (_) { /* o estado conta */ }
-  };
 
   // MONTA, TROCA E DESMONTA O TOCADOR.
   //
@@ -286,36 +257,35 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
 
   return (
     <div className={`ambient-topbar-player${immersive ? ' immersive-ambient-player' : ''}`} style={{ position: 'relative', zIndex: 100, flexShrink: 0 }}>
-      {/* A caixa do tocador existe sempre que há vídeo: a API do YouTube
-          substitui este elemento pelo iframe dela. Fica fora da tela, com
-          tamanho real — um quadro de 1x1 entra nas heurísticas de "mídia
-          escondida" de alguns navegadores e é barrado antes de soar. */}
-      {!isSpotify && hasCurrentMedia && current?.playing && (
-        <div style={{ position: 'fixed', bottom: -300, left: -500, width: 320, height: 180, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
-          <div ref={caixaDoTocador} />
-        </div>
-      )}
-
-      {/* O navegador exige um toque antes de liberar som. Para quem põe a
-          música isso é invisível — ela clicou. Para o resto da mesa o comando
-          chega sozinho e o áudio é barrado em silêncio. Este é o toque que
-          falta, e só aparece quando o tocador confirma que NÃO está soando. */}
-      {isPlaying && !isSpotify && !soando && !erroDoVideo && createPortal(
-        <button
-          type="button" className="ambient-destravar" onClick={destravarSom}
-          title="O navegador pede um toque antes de liberar o som"
-        >
-          <span>🔊</span>
-          <b>Tocar a música da mesa</b>
-          <small>{current?.nome || 'som ambiente'}</small>
-        </button>,
+      {/* O TOCADOR FICA VISÍVEL ATÉ CONFIRMAR QUE SAIU SOM.
+          Duas tentativas de tocar escondido falharam, e falharam caladas. O
+          navegador não libera áudio sem um gesto da pessoa, e um quadro
+          escondido fora da tela não ganha esse gesto de ninguém: quem recebe
+          a música pelo tempo real nunca clicou em nada.
+          Então o quadro aparece de verdade, pequeno, no canto. Apertar o play
+          DELE é um gesto no próprio tocador, e isso nenhum navegador recusa.
+          Assim que o YouTube confirma que está tocando, ele se recolhe
+          sozinho para fora da tela — bloqueio só acontece no início, depois
+          de tocando dá para esconder sem parar o som. */}
+      {/* Com erro, o quadro sai: ele não vai tocar, e deixar os dois no
+          mesmo canto empilha um aviso em cima do outro. */}
+      {!isSpotify && hasCurrentMedia && current?.playing && !erroDoVideo && createPortal(
+        <div className={`ambient-palco${soando ? ' tocando' : ''}`}>
+          {!soando && (
+            <div className="ambient-palco-aviso">
+              <b>Aperte o play para ouvir a mesa</b>
+              <small>O navegador só libera som depois de um toque seu. Depois disso ele some.</small>
+            </div>
+          )}
+          <div className="ambient-palco-quadro"><div ref={caixaDoTocador} /></div>
+        </div>,
         document.body,
       )}
 
-      {/* Clipe de gravadora costuma proibir reprodução fora do YouTube. O
-          iframe carregava, não soava, e não dizia nada — era a causa mais
-          provável de "a música não funciona". */}
-      {erroDoVideo && masterMode && createPortal(
+      {/* Faixa recusada: clipe de gravadora costuma proibir reprodução fora
+          do YouTube. Antes isto só aparecia para o Mestre — e o jogador, que
+          é quem fica sem som, não recebia explicação nenhuma. */}
+      {erroDoVideo && createPortal(
         <div className="ambient-erro" role="status">
           <b>{current?.nome || 'A faixa'} não tocou</b>
           <span>{erroDoVideo}</span>

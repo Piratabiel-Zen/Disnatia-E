@@ -304,3 +304,8 @@ html[data-motion="reduced"] .mural-cartao{transition:none}
   /* 16px evita o zoom automático do iOS ao focar um campo. */
   .mural-cartao textarea,.mural-cartao input,.mural-busca input{font-size:16px}
 }
+
+/* Descartar é destrutivo e irreversível: carrega a cor do dano para não ser
+   confundido com "Editar", que está ao lado. */
+.mural-acao.perigo{border-color:rgba(142,31,43,.5);color:#C4414F}
+.mural-acao.perigo:hover{border-color:#C4414F;background:rgba(142,31,43,.14)}

@@ -147,6 +147,9 @@ function Cartao({
             />
             <div className="mural-acoes">
               <button type="button" className="mural-acao" onClick={() => setEditando(false)}>Pronto</button>
+              {/* Tirar do mural morava só aqui dentro, atrás de um duplo
+                  clique no título — quem pregou um cartão por engano não
+                  achava como despregar. Agora também fica no alfinete. */}
               <button type="button" className="mural-acao" onClick={() => aoRemover(cartao.id)}>Tirar do mural</button>
             </div>
           </>
@@ -189,6 +192,13 @@ function Cartao({
             {podeEditar && (
               <div className="mural-acoes">
                 <button type="button" className="mural-acao" onClick={() => setEditando(true)}>Editar</button>
+                {/* Despregar sem precisar entrar em edição: quem pregou por
+                    engano quer desfazer, não editar o que vai jogar fora. */}
+                <button
+                  type="button" className="mural-acao perigo"
+                  onClick={() => aoRemover(cartao.id)}
+                  title="Tirar este cartão do mural"
+                >Descartar</button>
               </div>
             )}
           </>
@@ -219,7 +229,7 @@ function Cartao({
  * mexendo ao mesmo tempo, acaba antes.
  */
 export default function MuralInvestigacao({
-  cartoes = [], ligacoes = [], podeEditar = true, autor = '',
+  cartoes = [], ligacoes = [], podeMexer = () => true, autor = '', membro = null,
   mestre = false, fichas = [],
   aoMudarCartoes, aoMudarLigacoes, aoArrastarVivo,
 }) {
@@ -396,7 +406,7 @@ export default function MuralInvestigacao({
             aoMedir={medir}
             apagado={!visiveis.has(String(c.id))}
             ligandoDaqui={String(ligandoDe) === String(c.id)}
-            podeEditar={podeEditar}
+            podeEditar={podeMexer(c)}
             mestre={mestre}
             fichas={fichasComDono}
             nomePorUid={nomePorUid}

@@ -411,13 +411,27 @@ test('as coleções de acesso seletivo ficam FORA da regra geral', () => {
   assert.match(regras, /c__\[a-z0-9-\]\+__mural_cartoes/);
 });
 
-test('no mural, só o Mestre muda quem vê — mas todos movem cartão', () => {
-  // O mural é de todos: jogador prega, move e liga. O que não pode é um
-  // jogador editar o próprio cartão trancado para se liberar.
+test('no mural, cada um desprega o que pregou — e todos movem qualquer cartão', () => {
+  // O mural é de todos: jogador prega, move e liga. O que não pode é mexer
+  // no que o colega escreveu, nem se liberar um cartão trancado.
   const regras = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-  const bloco = regras.slice(regras.indexOf("mural_cartoes"));
-  assert.match(bloco, /allow write: if colecao\.matches\('c__\[a-z0-9-\]\+__mural_cartoes'\)[\s\S]{0,200}membro\(idNaColecao\(colecao\)\)/,
-    'escrever no mural voltou a ser só do Mestre');
+  const bloco = regras.slice(regras.indexOf('mural_cartoes'));
+
+  // Pregar é de qualquer membro, mas o cartão sai assinado.
+  assert.match(bloco, /allow create: if colecao\.matches\('c__\[a-z0-9-\]\+__mural_cartoes'\)[\s\S]{0,260}request\.resource\.data\.get\('autor', ''\) == request\.auth\.uid/,
+    'pregar deixou de exigir assinatura, e aí ninguém sabe de quem é o cartão');
+
+  // Reescrever e despregar: só o autor, ou o Admin.
+  assert.match(bloco, /allow update:[\s\S]{0,420}resource\.data\.get\('autor', ''\) == request\.auth\.uid/,
+    'um jogador voltou a poder reescrever o cartão do colega');
+  assert.match(bloco, /allow delete:[\s\S]{0,220}resource\.data\.get\('autor', ''\) == request\.auth\.uid/,
+    'um jogador voltou a poder descartar o cartão do colega');
+
+  // Mover continua sendo de todos: arrastar o cartão do colega pela parede
+  // é como a mesa trabalha. Por isso a exceção é estreita — só x e y.
+  assert.match(bloco, /affectedKeys\(\)\.hasOnly\(\['x', 'y'\]\)/,
+    'mover o cartão do colega deixou de ser possível');
+
   assert.match(bloco, /request\.resource\.data\.get\('liberadoPara', \[\]\)\s*\n?\s*== resource\.data\.get\('liberadoPara', \[\]\)/,
     'o jogador voltou a poder mexer em quem vê o cartão');
   // Cartão antigo, sem campo de liberação, continua legível por todos.

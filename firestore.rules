@@ -305,22 +305,47 @@ service cloud.firestore {
           || request.auth.uid in resource.data.get('liberadoPara', [])
         );
 
-      allow write: if colecao.matches('c__[a-z0-9-]+__mural_cartoes')
+      // Pregar: qualquer membro, com cartão aberto e assinado por ele.
+      allow create: if colecao.matches('c__[a-z0-9-]+__mural_cartoes')
         && membro(idNaColecao(colecao))
         && tamanhoRazoavel()
         && (
           mestre(idNaColecao(colecao))
           || (
-            // Jogador cria cartão aberto e não mexe em liberação nenhuma.
-            resource == null
-              ? request.resource.data.get('liberadoParaTodos', true) == true
-              : (
-                request.resource.data.get('liberadoParaTodos', true)
-                  == resource.data.get('liberadoParaTodos', true)
-                && request.resource.data.get('liberadoPara', [])
-                  == resource.data.get('liberadoPara', [])
-              )
+            request.resource.data.get('liberadoParaTodos', true) == true
+            && request.resource.data.get('autor', '') == request.auth.uid
           )
+        );
+
+      // Reescrever e despregar: o que cada um pregou é de quem pregou.
+      //
+      // A exceção é mover. Arrastar o cartão do colega pela parede é como a
+      // mesa trabalha — mudar o que ele escreveu, não. Por isso quem não é o
+      // autor só passa se NADA além de x e y tiver mudado.
+      //
+      // Cartão sem autor é de antes desta regra e fica com o Admin: abrir
+      // exceção para eles seria liberar justamente os mais antigos, que são
+      // os que a investigação já construiu em cima.
+      allow update: if colecao.matches('c__[a-z0-9-]+__mural_cartoes')
+        && membro(idNaColecao(colecao))
+        && tamanhoRazoavel()
+        && (
+          mestre(idNaColecao(colecao))
+          || (
+            resource.data.get('autor', '') == request.auth.uid
+            && request.resource.data.get('liberadoParaTodos', true)
+              == resource.data.get('liberadoParaTodos', true)
+            && request.resource.data.get('liberadoPara', [])
+              == resource.data.get('liberadoPara', [])
+          )
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['x', 'y'])
+        );
+
+      allow delete: if colecao.matches('c__[a-z0-9-]+__mural_cartoes')
+        && membro(idNaColecao(colecao))
+        && (
+          mestre(idNaColecao(colecao))
+          || resource.data.get('autor', '') == request.auth.uid
         );
     }
 
