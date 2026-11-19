@@ -1,0 +1,44 @@
+/* A FAIXA DE PRÉVIA
+   Presa no alto, atravessando a tela inteira. É deliberadamente a coisa mais
+   evidente da página: um Admin que esquece que está em prévia conclui que o
+   site escondeu um documento dele e vai caçar um bug que não existe.
+   Âmbar, que não é cor de nenhum tema de mesa — é aviso, não decoração. */
+.previa-barra{
+  position:fixed;z-index:5600;top:0;left:0;right:0;
+  display:flex;align-items:center;gap:12px;
+  padding:9px 16px calc(9px + env(safe-area-inset-top,0px));
+  background:linear-gradient(180deg,rgba(32,22,6,.98) 0%,rgba(20,14,4,.97) 100%);
+  border-bottom:1px solid rgba(232,160,32,.5);
+  box-shadow:0 4px 22px rgba(0,0,0,.5);
+}
+.previa-olho{color:#E8A020;font-size:15px;line-height:1;flex:0 0 auto}
+.previa-texto{display:grid;gap:1px;min-width:0;flex:1}
+.previa-texto b{
+  font-family:Cinzel,serif;font-size:12px;letter-spacing:.06em;color:#E8A020;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.previa-texto small{font-size:10.5px;color:#9A8C72;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.previa-barra button{
+  flex:0 0 auto;padding:6px 13px;border-radius:6px;cursor:pointer;
+  background:rgba(232,160,32,.14);border:1px solid rgba(232,160,32,.55);color:#E8A020;
+  font-family:Cinzel,serif;font-size:10.5px;letter-spacing:.08em;
+}
+.previa-barra button:hover{background:rgba(232,160,32,.24)}
+
+/* A barra empurra a página: sobreposta, ela cobriria a navegação de cima. */
+body:has(.previa-barra) .adventure-shell{padding-top:46px;box-sizing:border-box}
+
+/* O botão que entra na prévia, na fileira de fichas. */
+.registro-espiar{
+  margin-left:auto;padding:4px 9px;border-radius:3px;cursor:pointer;
+  background:transparent;border:1px solid var(--linha-forte,#4A3E31);color:var(--tinta-fraca,#7E7466);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+.registro-espiar:hover{border-color:#E8A020;color:#E8A020}
+
+@media(max-width:720px){
+  .previa-texto small{display:none}
+  .previa-barra{padding:7px 11px calc(7px + env(safe-area-inset-top,0px))}
+}

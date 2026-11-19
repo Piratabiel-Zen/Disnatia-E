@@ -5,6 +5,7 @@ import { col, docIn } from '../../core/campaign';
 import { listarMembros } from '../../core/auth';
 import { ehMestre, podeAbrirFicha } from '../../core/acesso.mjs';
 import { useMembro } from '../acesso/useMembro';
+import { verComoJogador } from '../acesso/previaDeJogador.mjs';
 import FichaCain from './FichaCain';
 import SeloDeAcessoRestrito from './SeloDeAcessoRestrito.jsx';
 import { estadoDoExorcista, fichaNova } from './fichaCain.mjs';
@@ -34,7 +35,7 @@ const TETO_DE_FICHAS = 12;
  * se um só documento da lista for negado.
  */
 export default function FichasCainPage({ playerSheetId = '' }) {
-  const { membro, carregando, campanha } = useMembro();
+  const { membro, membroReal, previa, carregando, campanha } = useMembro();
   const [fichas, setFichas] = useState([]);
   const [membros, setMembros] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
@@ -184,12 +185,16 @@ export default function FichasCainPage({ playerSheetId = '' }) {
             const semDono = !String(f.dono || '');
             return (
               <li key={f.id}>
+                {/* `data-selada`, e não `aria-disabled`: o botão NÃO está
+                    desativado — ele responde, e o que responde é o selo.
+                    Marcá-lo como desativado faria o leitor de tela anunciar
+                    que não há nada ali, quando há uma recusa a ouvir. */}
                 <button
                   type="button"
                   className={`registro-cartao${abertaId === String(f.id) ? ' aberto' : ''}${semDono ? ' sem-dono' : ''}`}
                   style={{ '--cor': estado.cor }}
                   onClick={() => tocarNaFicha(f)}
-                  aria-disabled={!podeAbrirFicha(f, membro, playerSheetId)}
+                  data-selada={podeAbrirFicha(f, membro, playerSheetId) ? 'nao' : 'sim'}
                 >
                   <span className="registro-retrato">
                     {f.foto ? <img src={f.foto} alt="" /> : <i>{f.categoria || 'I'}</i>}
@@ -201,6 +206,15 @@ export default function FichasCainPage({ playerSheetId = '' }) {
                   {(minha || minhaPelaPorta(f)) && <span className="registro-selo">sua</span>}
                   {semDono && mestre && <span className="registro-selo pendente">sem dono</span>}
                 </button>
+                {/* Só o Admin de verdade entra em prévia, e só a partir daqui:
+                    é o único lugar onde ele já está escolhendo de quem falar. */}
+                {ehMestre(membroReal) && !previa && (
+                  <button
+                    type="button" className="registro-espiar"
+                    onClick={() => verComoJogador(f)}
+                    title={`Ver a mesa como ${f.nome || 'este exorcista'}`}
+                  >ver como</button>
+                )}
               </li>
             );
           })}

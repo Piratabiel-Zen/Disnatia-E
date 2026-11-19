@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { aoMudarConta, observarMembro } from '../../core/auth';
 import { activeCampaign, isPrimaryCampaign } from '../../core/campaign';
+import { aoMudarPrevia, membroEfetivo, previaDeJogador } from './previaDeJogador.mjs';
 
 /**
  * Quem eu sou nesta mesa.
@@ -21,6 +22,8 @@ import { activeCampaign, isPrimaryCampaign } from '../../core/campaign';
 export function useMembro() {
   const campanha = activeCampaign();
   const [membro, setMembro] = useState(null);
+  const [previa, setPrevia] = useState(previaDeJogador);
+  useEffect(() => aoMudarPrevia(setPrevia), []);
   const [carregando, setCarregando] = useState(!isPrimaryCampaign());
 
   useEffect(() => {
@@ -44,5 +47,8 @@ export function useMembro() {
     return () => { vivo = false; pararDeObservar(); parar(); };
   }, [campanha?.id]);
 
-  return { membro, carregando, campanha };
+  // `membro` já sai com a prévia aplicada, para nenhuma tela precisar saber
+  // que ela existe: quem está em prévia simplesmente É jogador para elas.
+  // `membroReal` fica disponível para a barra que oferece sair da prévia.
+  return { membro: membroEfetivo(membro, previa), membroReal: membro, previa, carregando, campanha };
 }
