@@ -155,7 +155,10 @@ export default function AmbientSoundPlayer({ masterMode, immersive = false }) {
       if (!vivo) { try { player.destroy(); } catch (_) {} return; }
       tocador.current = player;
     }).catch(() => {
-      if (vivo) setErroDoVideo('A API do YouTube não carregou. Verifique a conexão.');
+      // "Verifique a conexão" mandava a mesa para o lugar errado: durante
+      // dias o que barrava era a política de segurança do próprio site, que
+      // não listava o YouTube. Bloqueador de anúncios faz o mesmo.
+      if (vivo) setErroDoVideo('O tocador do YouTube foi bloqueado antes de carregar — costuma ser extensão de bloqueio de anúncios no navegador.');
     });
 
     // Dois segundos é o bastante para um vídeo liberado começar, mesmo em
