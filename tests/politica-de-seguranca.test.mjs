@@ -78,3 +78,48 @@ test('a política continua fechada para o que o site não usa', () => {
   assert.deepEqual(politica['object-src'], ["'none'"]);
   assert.deepEqual(politica['frame-ancestors'], ["'none'"]);
 });
+
+/* ───────────────────────────────────────────────────────────────────────
+   O SITE NÃO PODE DESLIGAR O QUE ELE MESMO USA
+
+   Segundo caso do mesmo endurecimento de segurança. A política de
+   permissões saiu com `camera=()`, que quer dizer "nenhuma origem pode
+   usar a câmera" — a própria incluída. A mesa dava permissão no
+   navegador, o navegador recusava assim mesmo, e a tela mandava a pessoa
+   conferir a permissão que ela já tinha dado.
+   ─────────────────────────────────────────────────────────────────────── */
+
+const permissoes = (() => {
+  const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  const regra = vercel.headers.flatMap(h => h.headers)
+    .find(h => h.key === 'Permissions-Policy');
+  assert.ok(regra, 'a política de permissões sumiu do vercel.json');
+  return Object.fromEntries(
+    regra.value.split(',').map(p => p.trim()).filter(Boolean)
+      .map(p => { const [nome, lista] = p.split('='); return [nome.trim(), lista.trim()]; }),
+  );
+})();
+
+test('o site pode usar a câmera que a sala de câmeras pede', () => {
+  assert.equal(permissoes.camera, '(self)',
+    'a câmera voltou a ser desligada para o próprio site — a sala de câmeras para de funcionar');
+});
+
+test('nada é aberto além do que o código usa', () => {
+  // A regra aqui é a mesma da política de conteúdo: abrir o estritamente
+  // necessário. Microfone fica fechado porque a sala pede audio:false.
+  const sala = readFileSync(new URL('../src/experience/TableCameraRoom.jsx', import.meta.url), 'utf8');
+  assert.match(sala, /audio:\s*false/, 'a sala passou a pedir microfone e a política não acompanhou');
+  assert.equal(permissoes.microphone, '()');
+  assert.equal(permissoes.geolocation, '()');
+  assert.equal(permissoes.payment, '()');
+  assert.equal(permissoes.usb, '()');
+});
+
+test('o aviso de câmera bloqueada não manda conferir o que já está certo', () => {
+  // A frase antiga mandava a pessoa às configurações do navegador para
+  // permitir algo que ela já tinha permitido — e o bloqueio vinha do site.
+  const sala = readFileSync(new URL('../src/experience/TableCameraRoom.jsx', import.meta.url), 'utf8');
+  assert.ok(!/Permita a câmera para este site nas configurações do navegador/.test(sala));
+  assert.match(sala, /Se você já permitiu para este site/);
+});

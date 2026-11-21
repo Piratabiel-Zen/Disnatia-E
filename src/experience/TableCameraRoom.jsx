@@ -189,7 +189,7 @@ export default function TableCameraRoom({access,selectedSheet,selectedClass,mast
     }catch(problem){
       if(session.current!==room||generation!==operation.current)return;
       stopMedia();setCameraOn(false);setStreams(previous=>({...previous,[room.id]:null}));room.peers.forEach(peer=>peer.setTrack(null).catch(()=>{}));setDoc(room.ref,{cameraOn:false},{merge:true}).catch(()=>{});
-      setIssue(problem.name==='NotAllowedError'?'Câmera bloqueada. Permita a câmera para este site nas configurações do navegador.':problem.name==='NotFoundError'?'Nenhuma câmera foi encontrada.':problem.name==='NotReadableError'?'A câmera está ocupada por outro programa.':'Não foi possível ativar a câmera. Confira o dispositivo e tente novamente.');
+      setIssue(problem.name==='NotAllowedError'?'Câmera bloqueada pelo navegador. Se você já permitiu para este site, recarregue com Ctrl+Shift+R — a permissão fica guardada no cabeçalho da página.':problem.name==='NotFoundError'?'Nenhuma câmera foi encontrada.':problem.name==='NotReadableError'?'A câmera está ocupada por outro programa.':'Não foi possível ativar a câmera. Confira o dispositivo e tente novamente.');
     }finally{if(live.current&&generation===operation.current)setBusy(false);}
   };
   const reset=()=>{members.forEach(row=>{try{localStorage.removeItem('dinastia_camera_position_'+(row.userKey||row.id));}catch{}});setLayoutVersion(value=>value+1);};
