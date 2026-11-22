@@ -15,6 +15,8 @@ import { pushToast } from "../../core/toast";
 import { CLASSES,ATTRS,SHEET_COLORS,STATUS_LIST,getSheetMaxHp } from "../../data/gameData";
 import { hpColor } from "../../core/ui";
 import { resolveEquipIcon,HabilidadesPanel,StatusPanel,VigosWithLocked,newSheet } from "../sheets/SheetComponents";
+import BibliotecaDeTokens from "./BibliotecaDeTokens.jsx";
+import "./campos-do-mapa.css";
 import { FloatingEnemyPanel } from "../../experience/BattleMapEnemySheet.jsx";
 import useMapFullscreen from '../../experience/useMapFullscreen';
 import { fitMapWithReference } from '../../adventure/mapFit.mjs';
@@ -1361,6 +1363,45 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     finally { locks.delete(lockKey); }
   };
 
+  /**
+   * Põe vários tokens no mapa de uma vez.
+   *
+   * Cinco tokens no mesmo ponto viram um só visualmente, e o Mestre perde
+   * mais tempo desempilhando do que ganhou escolhendo em lote. Então eles
+   * caem numa grade curta em volta do centro, perto o bastante para serem
+   * lidos como um grupo e separados o bastante para pegar um e arrastar.
+   *
+   * Uma gravação só para todos: cada token gravado em separado é uma ida ao
+   * servidor, e eles iam aparecendo aos poucos na tela da mesa.
+   */
+  const addLibraryTokens = async (lista) => {
+    if (!currentMap || !lista?.length) return;
+    const mapId = String(currentMap.id);
+    const porLinha = Math.min(lista.length, 4);
+    const novos = lista.map((tpl, i) => {
+      const coluna = i % porLinha;
+      const linha = Math.floor(i / porLinha);
+      const recuo = (porLinha - 1) / 2;
+      return initializeEnemyToken({
+        ...newToken(crypto.randomUUID()),
+        nome: tpl.nome || 'Token', foto: tpl.foto || '', tipo: tpl.tipo || 'jogador',
+        size: tpl.size || 70,
+        x: Math.min(93, Math.max(7, 50 + (coluna - recuo) * 9)),
+        y: Math.min(93, Math.max(7, 50 + linha * 11)),
+        hp: tpl.hp || 0, maxHp: tpl.maxHp || tpl.hp || 0,
+        sheetId: tpl.sheetId || '', enemyId: tpl.enemyId || '',
+        controllerSheetId: tpl.controllerSheetId || tpl.sheetId || '',
+      });
+    });
+    const tokens = [...(mapTokensRef.current[mapId] || currentMap.tokens || []), ...novos];
+    mapTokensRef.current = { ...mapTokensRef.current, [mapId]: tokens };
+    setMapTokens(prev => ({ ...prev, [mapId]: tokens }));
+    setSelectedId(novos[novos.length - 1].id);
+    setShowTokenLibrary(false);
+    try { await writeLiveTokens(mapId, novos, true); }
+    catch { /* A fila de saída guarda estes tokens e tenta de novo. */ }
+  };
+
   const deleteLibraryToken = async id => { if(confirm('Remover este token salvo?')) await deleteDoc(docIn('battlemap_token_library',String(id))); };
 
 
@@ -1965,16 +2006,21 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
           )}
 
           {currentMap && (()=>{const sync=tokenOutbox.status(currentMap.id);if(!sync.count)return null;const code=String(sync.error?.code||'').split('/').pop();const message=code==='permission-denied'?'O Firebase recusou a gravação deste token.':sync.failed?'Conexão instável; o token permanece no mapa e será reenviado.':'Sincronizando tokens…';return <div role="status" style={{position:'absolute',bottom:12,left:12,zIndex:45,padding:'8px 12px',borderRadius:8,background:'#10121b',color:sync.failed?'#E8A020':'#C8A8E8',fontSize:12}}>{message}{sync.failed&&<button onClick={()=>tokenOutbox.retry(currentMap.id).catch(()=>{})} style={{marginLeft:10,padding:'6px 10px',cursor:'pointer'}}>Tentar novamente</button>}</div>;})()}
+          {/* A gaveta de tokens virou componente próprio: era um bloco de
+              oito linhas de estilo em linha, com uma grade de retratos de
+              ficha no alto que criava "tokens" de foto de perfil — rosto
+              recortado em círculo, irreconhecível no mapa. Saiu. O que ficou
+              é a lista dos tokens salvos, que é o que de fato se usa, agora
+              com busca e escolha de vários de uma vez. */}
           {showTokenLibrary && masterMode && currentMap && (
-            <div style={{position:'absolute',top:70,left:10,zIndex:42,width:330,maxHeight:'62%',overflowY:'auto',border:'1px solid rgba(168,85,247,.32)',borderRadius:12,background:'rgba(8,10,20,.97)',padding:12,boxShadow:'0 12px 34px rgba(0,0,0,.7)',backdropFilter:'none'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><span style={{fontFamily:'Cinzel,serif',fontSize:10,letterSpacing:'.18em',color:'#C8A8E8'}}>BIBLIOTECA DE TOKENS</span><button onClick={()=>setShowTokenLibrary(false)} style={{background:'none',border:'none',color:'#7A6A8A',cursor:'pointer'}}>✕</button></div>
-              {masterMode&&sheets.length>0&&<><div style={{fontFamily:'Cinzel,serif',fontSize:9,letterSpacing:'.15em',color:'#8e78a2',margin:'4px 0 8px'}}>ADICIONAR TOKEN DE PERSONAGEM</div><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:14}}>{sheets.map(sheet=><button key={`sheet_token_${sheet.id}`} onClick={()=>addLibraryToken({nome:sheet.nome||'Personagem',foto:sheet.foto||'',tipo:'jogador',size:70,sheetId:String(sheet.id),hp:Number(sheet.hp||0),maxHp:getSheetMaxHp(sheet)})} style={{minWidth:0,padding:7,borderRadius:9,border:'1px solid rgba(110,213,139,.2)',background:'rgba(110,213,139,.04)',cursor:'pointer',color:'#C8B8A0'}}><div style={{height:52,display:'flex',alignItems:'center',justifyContent:'center'}}>{sheet.foto?<img src={sheet.foto} alt='' style={{width:44,height:44,borderRadius:'50%',objectFit:'cover'}}/>:<span style={{fontSize:20,color:'#70d58b'}}>{String(sheet.nome||'?').slice(0,1)}</span>}</div><div style={{fontSize:9,fontFamily:'Cinzel,serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sheet.nome||'Personagem'}</div></button>)}</div></>}
-              {tokenLibrary.length===0?<div style={{padding:18,textAlign:'center',color:'#5A5070',fontSize:11}}>Nenhum token salvo na biblioteca. Você ainda pode adicionar os personagens acima ou criar um token novo.</div>:
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{tokenLibrary.map(t=><div key={t.id} style={{padding:7,borderRadius:9,border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.025)',textAlign:'center',position:'relative'}}>
-                <button onClick={()=>addLibraryToken(t)} style={{width:'100%',background:'none',border:'none',cursor:'pointer',color:'#C8B8A0'}}><div style={{height:62,display:'flex',alignItems:'center',justifyContent:'center'}}>{t.foto?<img src={t.foto} alt='' style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>:<span>🎭</span>}</div><div style={{fontSize:9,fontFamily:'Cinzel,serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.nome}</div></button>
-                <button onClick={()=>deleteLibraryToken(t.id)} title='Excluir salvo' style={{position:'absolute',top:2,right:2,width:18,height:18,borderRadius:'50%',border:'none',background:'rgba(232,25,60,.18)',color:'#E8193C',cursor:'pointer',fontSize:9}}>✕</button>
-              </div>)}</div>}
-            </div>
+            <BibliotecaDeTokens
+              tokens={tokenLibrary}
+              fichas={sheets}
+              aoColocar={addLibraryTokens}
+              aoExcluir={deleteLibraryToken}
+              aoFechar={() => setShowTokenLibrary(false)}
+              aoCriarNovo={() => { setShowTokenLibrary(false); setShowAddForm(true); }}
+            />
           )}
 
           {/* FORM DE NOVO TOKEN — flutuante */}
@@ -2019,8 +2065,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   </div>
                 </div>
               </div>
-              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const linked=kind==='sheet'?sheets.find(row=>String(row.id)===id):enemies.find(row=>String(row.id)===id);setFormSheetId(kind==='sheet'?id:'');setFormControllerSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');if(linked){setFormNome(linked.nome||'');setFormFoto(linked.foto||'');if(kind==='sheet')setFormTipo('jogador');}}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
-              <label style={{display:'block',marginTop:9,fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif'}}>Jogador autorizado a mover<select value={formControllerSheetId||formSheetId||''} onChange={e=>setFormControllerSheetId(e.target.value)} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_form_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select></label>
+              <label className="mapa-campo">Ficha de referência<select value={formEnemyId?`enemy:${formEnemyId}`:(formSheetId?`sheet:${formSheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const linked=kind==='sheet'?sheets.find(row=>String(row.id)===id):enemies.find(row=>String(row.id)===id);setFormSheetId(kind==='sheet'?id:'');setFormControllerSheetId(kind==='sheet'?id:'');setFormEnemyId(kind==='enemy'?id:'');if(linked){setFormNome(linked.nome||'');setFormFoto(linked.foto||'');if(kind==='sheet')setFormTipo('jogador');}}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_form_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_form_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'}</option>)}</optgroup>}</select></label>
+              <label className="mapa-campo">Jogador autorizado a mover<select value={formControllerSheetId||formSheetId||''} onChange={e=>setFormControllerSheetId(e.target.value)}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_form_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select></label>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={saveTokenToLibrary} disabled={!formNome.trim() || !formFoto} style={{padding:'8px 10px',borderRadius:8,border:'1px solid rgba(168,85,247,.4)',background:'rgba(168,85,247,.12)',color:'#C8A8E8',cursor:(formNome.trim()&&formFoto)?'pointer':'not-allowed',fontFamily:'Cinzel,serif',fontSize:11}}>📚 Salvar</button>
                 <button onClick={addToken} disabled={!formNome.trim() || (!formFoto&&!formSheetId&&!formEnemyId)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid rgba(74,222,128,0.45)', background: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.02)', color: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? '#4ADE80' : '#5A5070', cursor: (formNome.trim() && (formFoto||formSheetId||formEnemyId)) ? 'pointer' : 'not-allowed', fontFamily: 'Cinzel,serif', fontSize: 11 }}>✦ Adicionar</button>
@@ -2295,8 +2341,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                 <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 12 }} />
                 <button onClick={() => {setSelectedId(null);setSelectedTokenIds([]);}} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>
               </div>
-              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Ficha de referência<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};const next={...selectedToken,...patch};const source=enemyTemplateForToken(next);updateToken(selectedToken.id,{...patch,...(hasIndividualHp(next)&&source?{hp:source.hp,maxHp:source.maxHp,hpMode:'individual'}:{})});}} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>Inimigos têm HP individual. A ficha fornece a vida inicial; alterar este token não altera os demais.</span></label>
-              <label style={{display:'block',fontSize:9,color:'#7B6D8A',fontFamily:'Cinzel,serif',marginBottom:10}}>Pessoa autorizada a mover<select value={selectedToken.controllerSheetId||selectedToken.ownerSheetId||selectedToken.sheetId||''} onChange={e=>updateToken(selectedToken.id,{controllerSheetId:e.target.value})} style={{width:'100%',marginTop:4,fontSize:10}}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select><span style={{display:'block',marginTop:4,color:'#51465D',fontSize:8}}>O jogador ou visitante dono desta ficha pode mover o token; o Mestre mantém controle total.</span></label>
+              <label className="mapa-campo" style={{marginBottom:10}}>Ficha de referência<select value={selectedToken.enemyId?`enemy:${selectedToken.enemyId}`:(selectedToken.sheetId?`sheet:${selectedToken.sheetId}`:'')} onChange={e=>{const raw=e.target.value;const idx=raw.indexOf(':');const kind=idx>0?raw.slice(0,idx):'';const id=idx>0?raw.slice(idx+1):'';const patch={sheetId:kind==='sheet'?id:'',enemyId:kind==='enemy'?id:''};const next={...selectedToken,...patch};const source=enemyTemplateForToken(next);updateToken(selectedToken.id,{...patch,...(hasIndividualHp(next)&&source?{hp:source.hp,maxHp:source.maxHp,hpMode:'individual'}:{})});}}><option value=''>Nenhuma — HP manual</option><optgroup label='Personagens'>{sheets.map(s=><option key={`sheet_${s.id}`} value={`sheet:${s.id}`}>{s.nome||'Personagem'}</option>)}</optgroup>{masterMode&&<optgroup label='Inimigos'>{enemies.map(enemy=><option key={`enemy_${enemy.id}`} value={`enemy:${enemy.id}`}>💀 {enemy.nome||'Inimigo'} · {Number(enemy.hp||0)}/{enemyMaxHpForToken(enemy)} HP</option>)}</optgroup>}</select><span className="mapa-campo-nota">Inimigos têm HP individual. A ficha fornece a vida inicial; alterar este token não altera os demais.</span></label>
+              <label className="mapa-campo" style={{marginBottom:10}}>Pessoa autorizada a mover<select value={selectedToken.controllerSheetId||selectedToken.ownerSheetId||selectedToken.sheetId||''} onChange={e=>updateToken(selectedToken.id,{controllerSheetId:e.target.value})}><option value=''>Somente o Mestre</option>{sheets.map(s=><option key={`controller_${s.id}`} value={s.id}>{s.nome||'Personagem'}</option>)}</select><span className="mapa-campo-nota">O jogador ou visitante dono desta ficha pode mover o token; o Mestre mantém controle total.</span></label>
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, color: '#7B6D8A', fontFamily: 'Cinzel,serif' }}>Tamanho do token</span>

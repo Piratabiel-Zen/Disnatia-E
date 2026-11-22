@@ -1,0 +1,51 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   OS CAMPOS DE SELEÇÃO DO MAPA
+
+   Eram <select> crus, sem estilo nenhum, com o tamanho de letra forçado em
+   10px. O navegador desenhava a caixa branca do sistema em cima de um painel
+   escuro — era isso que deixava os painéis do Mestre com cara de inacabado.
+
+   Aqui eles ganham a mesma pele dos painéis: fundo escuro, borda fina e a
+   cor da mesa no foco. A seta é desenhada à mão porque a do sistema vem
+   preta e some no escuro.
+
+   12px e não 10: abaixo disso o iOS dá zoom ao focar, e no desktop o Mestre
+   lê de relance durante a narração.
+   ═══════════════════════════════════════════════════════════════════════ */
+.mapa-campo{
+  display:block;margin-top:9px;
+  font-family:Cinzel,serif;font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:#8E82A0;
+}
+.mapa-campo select,.mapa-campo input{
+  display:block;width:100%;box-sizing:border-box;margin-top:5px;
+  padding:7px 26px 7px 9px;border-radius:7px;
+  background:rgba(4,6,15,.85);border:1px solid rgba(255,255,255,.12);
+  color:#D8CEC0;font-family:inherit;font-size:12px;letter-spacing:0;text-transform:none;
+  appearance:none;cursor:pointer;
+}
+.mapa-campo input{padding-right:9px;cursor:text}
+.mapa-campo select{
+  /* Seta desenhada: a do sistema vem preta e desaparece no painel escuro. */
+  background-image:linear-gradient(45deg,transparent 50%,#8E82A0 50%),
+                   linear-gradient(135deg,#8E82A0 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+}
+.mapa-campo select:focus,.mapa-campo input:focus{
+  outline:none;border-color:var(--contraste-mesa,#A855F7);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--contraste-mesa,#A855F7) 22%,transparent);
+}
+.mapa-campo select:hover,.mapa-campo input:hover{border-color:rgba(255,255,255,.26)}
+/* As opções vêm do sistema: forçar a cor evita texto branco em fundo branco
+   nos navegadores que herdam a cor do select. */
+.mapa-campo option,.mapa-campo optgroup{background:#0B0D17;color:#D8CEC0}
+
+/* A linha de explicação sob o campo. Informação de regra, não enfeite:
+   é onde se diz que inimigo tem vida individual. */
+.mapa-campo-nota{
+  display:block;margin-top:5px;
+  font-family:system-ui,sans-serif;font-size:10px;line-height:1.45;
+  letter-spacing:0;text-transform:none;color:#6B6078;
+}

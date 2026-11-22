@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   BIBLIOTECA DE TOKENS
+
+   Gaveta de trabalho, usada com a mesa esperando. Densidade acima de
+   enfeite: linha baixa, miniatura pequena, nome legível de relance.
+
+   Cores da mesa, não roxo fixo: o painel antigo era lilás de Cosmum em
+   cima de um mapa veneziano.
+   ═══════════════════════════════════════════════════════════════════════ */
+.bib-tokens{
+  position:absolute;top:70px;left:10px;z-index:42;
+  width:312px;max-height:64%;display:flex;flex-direction:column;
+  border:1px solid var(--linha-mesa,rgba(168,85,247,.32));border-radius:12px;
+  background:rgba(8,10,20,.97);box-shadow:0 12px 34px rgba(0,0,0,.6);
+  backdrop-filter:blur(4px);
+}
+
+.bib-cabeca{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:11px 12px 9px;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.bib-cabeca span{
+  font-family:Cinzel,serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--contraste-claro-mesa,#C8A8E8);
+}
+.bib-cabeca button{
+  width:22px;height:22px;flex:0 0 auto;border-radius:6px;cursor:pointer;
+  background:transparent;border:1px solid rgba(255,255,255,.12);color:#8A8098;font-size:11px;
+}
+.bib-cabeca button:hover{border-color:rgba(255,255,255,.3);color:#D8D0E0}
+
+.bib-busca{
+  margin:9px 12px 4px;padding:6px 9px;border-radius:7px;
+  background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);
+  color:#D8D0E0;font-size:12px;
+}
+.bib-busca::placeholder{color:#5A5070}
+.bib-busca:focus{outline:none;border-color:var(--contraste-mesa,#A855F7)}
+
+.bib-lista{
+  list-style:none;margin:0;padding:6px;overflow-y:auto;flex:1;
+  display:flex;flex-direction:column;gap:2px;
+}
+.bib-lista li{
+  display:flex;align-items:center;gap:2px;border-radius:8px;
+  border:1px solid transparent;
+}
+.bib-lista li[data-marcado="sim"]{
+  border-color:color-mix(in srgb,var(--contraste-mesa,#A855F7) 55%,transparent);
+  background:color-mix(in srgb,var(--contraste-mesa,#A855F7) 14%,transparent);
+}
+.bib-lista li:hover{background:rgba(255,255,255,.04)}
+
+.bib-linha{
+  flex:1;min-width:0;display:flex;align-items:center;gap:9px;
+  padding:6px 7px;background:none;border:0;cursor:pointer;color:#C8B8A0;text-align:left;
+}
+/* A marca é um quadrado, não um círculo: redondo lê como rádio, e aqui a
+   escolha é múltipla. */
+.bib-marca{
+  width:14px;height:14px;flex:0 0 auto;border-radius:3px;
+  border:1px solid rgba(255,255,255,.22);
+}
+li[data-marcado="sim"] .bib-marca{
+  background:var(--contraste-mesa,#A855F7);border-color:var(--contraste-mesa,#A855F7);
+  box-shadow:inset 0 0 0 2px rgba(8,10,20,.95);
+}
+.bib-mini{
+  width:30px;height:30px;flex:0 0 auto;border-radius:6px;object-fit:cover;
+  background:rgba(255,255,255,.05);
+}
+.bib-mini-vazia{
+  display:grid;place-items:center;
+  font-family:Cinzel,serif;font-size:13px;color:var(--contraste-claro-mesa,#C8A8E8);
+}
+.bib-nomes{display:grid;gap:1px;min-width:0}
+.bib-nomes b{
+  font-family:Cinzel,serif;font-size:11.5px;font-weight:600;color:#D8CEC0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* O nome da ficha é o que diz que este token traz vida e talismã junto.
+   Era verde fixo, o que numa mesa vermelha brigava com tudo em volta; agora
+   puxa a cor da mesa, mais apagada que o nome do token para ficar claro qual
+   dos dois é o título. */
+.bib-nomes em{
+  font-style:normal;font-size:9px;letter-spacing:.06em;
+  color:color-mix(in srgb,var(--contraste-claro-mesa,#C8A8E8) 72%,transparent);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.bib-nomes em::before{content:'⚯ ';opacity:.7}
+
+.bib-so-este,.bib-excluir{
+  width:24px;height:28px;flex:0 0 auto;border-radius:6px;cursor:pointer;
+  background:transparent;border:0;font-size:12px;opacity:0;transition:opacity .12s ease;
+}
+.bib-so-este{color:var(--contraste-claro-mesa,#C8A8E8)}
+.bib-excluir{color:#7A4040;font-size:10px}
+.bib-lista li:hover .bib-so-este,.bib-lista li:hover .bib-excluir,
+.bib-lista li:focus-within .bib-so-este,.bib-lista li:focus-within .bib-excluir{opacity:1}
+.bib-so-este:hover{background:color-mix(in srgb,var(--contraste-mesa,#A855F7) 22%,transparent)}
+.bib-excluir:hover{background:rgba(232,25,60,.16);color:#E8193C}
+
+.bib-vazia,.bib-sem-resultado{
+  margin:0;padding:18px 14px;text-align:center;color:#5A5070;font-size:11px;line-height:1.55;
+}
+.bib-sem-resultado{padding:12px}
+
+.bib-rodape{
+  display:flex;gap:7px;padding:9px 12px 11px;border-top:1px solid rgba(255,255,255,.07);
+}
+.bib-rodape button{
+  padding:7px 10px;border-radius:8px;cursor:pointer;
+  font-family:Cinzel,serif;font-size:10px;letter-spacing:.08em;
+}
+.bib-novo{
+  flex:0 0 auto;background:transparent;color:#8A8098;border:1px solid rgba(255,255,255,.14);
+}
+.bib-novo:hover{color:#D8D0E0;border-color:rgba(255,255,255,.3)}
+.bib-colocar{
+  flex:1;border:1px solid var(--contraste-mesa,#A855F7);
+  background:color-mix(in srgb,var(--contraste-mesa,#A855F7) 20%,transparent);
+  color:var(--contraste-claro-mesa,#C8A8E8);
+}
+.bib-colocar:hover:not(:disabled){background:color-mix(in srgb,var(--contraste-mesa,#A855F7) 34%,transparent)}
+.bib-colocar:disabled{opacity:.4;cursor:default;border-color:rgba(255,255,255,.12);background:transparent;color:#5A5070}
