@@ -38,3 +38,144 @@
   .osr-secao p{font-size:15px}
   .osr-barra input{font-size:16px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O LIVRO DA NOITE
+
+   Índice à esquerda, capítulo à direita. O capítulo é coluna de livro:
+   medida curta, serifa grande e entrelinha larga — texto de regra que se lê
+   antes de jogar, não bula que se consulta correndo. Para correndo existe a
+   busca, que achata tudo.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.osr{max-width:none}
+.osr-livro{
+  display:grid;grid-template-columns:minmax(190px,232px) minmax(0,1fr);
+  gap:22px;align-items:start;
+}
+
+/* ---- O índice ---- */
+.osr-indice{position:sticky;top:12px;display:grid;gap:9px}
+.osr-indice h3{
+  margin:0;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:8.5px;letter-spacing:.26em;text-transform:uppercase;color:#6B5636;
+}
+.osr-indice ol{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.osr-indice button{
+  width:100%;display:flex;align-items:baseline;gap:10px;
+  padding:7px 9px;border:0;border-left:2px solid transparent;
+  background:transparent;color:#8A7C68;cursor:pointer;text-align:left;
+  font-family:Cinzel,Georgia,serif;font-size:11.5px;letter-spacing:.04em;
+  transition:color .16s ease,border-color .16s ease,background .16s ease;
+}
+.osr-indice button i{
+  flex:0 0 26px;font-style:normal;text-align:right;
+  font-size:9.5px;letter-spacing:.1em;color:#5A4C38;
+}
+.osr-indice button:hover{color:#D7CDBA;background:rgba(192,168,110,.06)}
+/* Lido fica mais apagado: numa one-shot ninguém volta para reler, então o
+   que precisa saltar é o que ainda falta. */
+.osr-indice button[data-lido]{color:#5A5349}
+.osr-indice button[data-lido] i{color:#4A3F30}
+.osr-indice button[data-atual]{
+  color:#E3C782;border-left-color:#B08A42;background:rgba(192,168,110,.08);
+}
+.osr-indice button[data-atual] i{color:#B08A42}
+
+/* ---- O capítulo ---- */
+.osr-capitulo{
+  padding:26px 30px 20px;border:1px solid #2E251C;border-radius:3px;
+  background:
+    radial-gradient(80% 50% at 50% 0%,rgba(192,168,110,.045),transparent 62%),
+    linear-gradient(170deg,#1C1712,#15110D);
+  display:grid;gap:18px;
+}
+.osr-capitulo-topo{display:grid;justify-items:center;text-align:center;gap:7px}
+/* A gravura. Grande e solta, com um fio de latão embaixo: é abertura de
+   capítulo, não ícone de lista. */
+.osr-emblema{font-size:58px;color:#8B7A52;opacity:.92}
+.osr-capitulo-topo::after{
+  content:'';width:120px;height:1px;margin-top:4px;
+  background:linear-gradient(90deg,transparent,#8B7A52,transparent);
+}
+.osr-numeral{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:8.5px;letter-spacing:.3em;text-transform:uppercase;color:#6B5636;
+}
+.osr-capitulo h3{
+  margin:0;font-family:Cinzel,Georgia,serif;font-size:21px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:#E3C782;
+  text-wrap:balance;
+}
+.osr-abertura{
+  margin:0;max-width:52ch;
+  font-family:'Crimson Text',Georgia,serif;font-size:16px;font-style:italic;
+  line-height:1.5;color:#A89B85;text-wrap:balance;
+}
+
+.osr-corpo{display:grid;gap:13px;justify-items:center}
+.osr-corpo p{
+  margin:0;max-width:62ch;
+  font-family:'Crimson Text',Georgia,serif;font-size:17px;line-height:1.68;
+  color:#D7CDBA;
+}
+/* A capitular: a primeira letra do capítulo, grande, como em livro. Só no
+   primeiro parágrafo — em todos, viraria enfeite repetido. */
+.osr-corpo p:first-child::first-letter{
+  float:left;margin:4px 9px 0 0;
+  font-family:Cinzel,Georgia,serif;font-size:44px;line-height:.82;
+  color:#B08A42;
+}
+
+/* ---- Virar a página ---- */
+.osr-passos{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding-top:14px;border-top:1px solid #2E251C;
+}
+.osr-passos button{
+  padding:7px 13px;border:1px solid #3A2E22;border-radius:2px;cursor:pointer;
+  background:transparent;color:#A89B85;
+  font-family:Cinzel,Georgia,serif;font-size:10.5px;letter-spacing:.08em;
+  max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:border-color .16s ease,color .16s ease,transform .12s ease;
+}
+.osr-passos button:hover:not(:disabled){border-color:#B08A42;color:#E3C782;transform:translateY(-1px)}
+.osr-passos button:disabled{opacity:.3;cursor:default}
+.osr-adiante{border-color:#4A3B29 !important;color:#D7CDBA !important}
+.osr-conta{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
+  letter-spacing:.14em;color:#5A4C38;
+}
+
+/* ---- Procurando ---- */
+.osr-achados{display:grid;gap:12px}
+.osr-ir{
+  border:0;background:transparent;cursor:pointer;padding:0;
+  display:flex;align-items:baseline;gap:9px;
+  font:inherit;color:inherit;text-align:left;
+}
+.osr-ir i{
+  font-style:normal;font-size:9px;letter-spacing:.12em;color:#8B7A52;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+}
+.osr-ir:hover{color:#E3C782}
+
+@media(max-width:860px){
+  .osr-livro{grid-template-columns:1fr;gap:14px}
+  /* No celular o índice vira uma fileira que rola de lado: coluna de índice
+     numa tela estreita empurra o capítulo inteiro para baixo da dobra. */
+  .osr-indice{position:static}
+  .osr-indice ol{
+    grid-auto-flow:column;grid-auto-columns:max-content;
+    overflow-x:auto;gap:4px;padding-bottom:4px;
+  }
+  .osr-indice button{border-left:0;border-bottom:2px solid transparent;padding:6px 10px}
+  .osr-indice button[data-atual]{border-left:0;border-bottom-color:#B08A42}
+  .osr-indice button span{display:none}
+  .osr-indice button i{flex:0 0 auto;font-size:11px}
+  .osr-capitulo{padding:20px 16px 16px}
+  .osr-capitulo h3{font-size:18px}
+  .osr-corpo p{font-size:16px}
+  .osr-emblema{font-size:46px}
+  .osr-passos button{font-size:10px;max-width:44%}
+}

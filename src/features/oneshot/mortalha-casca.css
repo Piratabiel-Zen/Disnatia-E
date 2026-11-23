@@ -382,3 +382,19 @@ html[data-motion="reduced"][data-tema-mesa="mortalha"] *:hover{transform:none !i
 
 /* No modo leve some o lustro, que é o único que anima continuamente. */
 html[data-quality="light"][data-tema-mesa="mortalha"] .ad-action-dock>button::after{display:none}
+
+/* ───────── A BARRA DE CONTEXTO NÃO É DESTE SISTEMA ─────────
+   A faixa translúcida do topo do mapa — "EXPLORAÇÃO · LOCAL ATUAL ·
+   OBJETIVO" — é vocabulário da Dinastia E: lá a sessão tem modo, local
+   declarado e objetivo revelado. Numa noite de terror não existe nenhuma
+   das três coisas; o lugar é o mapa que está aberto, e dizer o objetivo
+   em cima da tela entrega o que a mesa tem que descobrir.
+
+   Escondida por CSS e só na mortalha: o componente continua inteiro para
+   as outras duas mesas, que dependem dele. */
+html[data-tema-mesa="mortalha"] .g3-top-context{display:none !important}
+/* Sem a barra, o mapa recupera o espaço que ela ocupava. */
+html[data-tema-mesa="mortalha"] .access-player:has(.game3-mode-combat) .immersive-content,
+html[data-tema-mesa="mortalha"] .access-master:has(.game3-mode-combat) .immersive-content{
+  padding-top:calc(var(--mor-topo) + var(--mor-fita) + 14px) !important;
+}

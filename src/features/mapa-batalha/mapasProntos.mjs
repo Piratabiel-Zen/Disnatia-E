@@ -9,6 +9,8 @@
 // São mapas da Dinastia E, então só aparecem nela: outra campanha monta o
 // próprio acervo.
 import { isPrimaryCampaign } from '../../core/campaignModules.mjs';
+import { sistemaDe } from '../../core/sistemas/index.mjs';
+import { MAPAS as MAPAS_DA_CASA } from '../oneshot/mapasDaCasa.mjs';
 
 export const MAPAS_PRONTOS = [
   {
@@ -62,6 +64,36 @@ export const MAPAS_PRONTOS = [
   },
 ];
 
+/**
+ * O ACERVO DE CADA MESA.
+ *
+ * A regra é que mesa nenhuma vê mapa de outra. A pirâmide e o posto de
+ * gasolina são cenário da Dinastia E; mostrá-los numa mesa de CAIN ou numa
+ * noite de terror quebra a ficção antes de a sessão começar.
+ *
+ * Por isso o acervo é uma TABELA e não uma condição: cada conjunto declara a
+ * que mesa pertence, e o que não está na tabela não aparece em lugar nenhum.
+ * Mesa nova nasce sem acervo e só enxerga o que o próprio Mestre subir —
+ * que é o caso normal.
+ *
+ * Para amarrar um conjunto a UMA mesa específica, e não a um sistema
+ * inteiro, a chave pode ser o id da campanha: a busca tenta o id primeiro.
+ */
+const ACERVOS = Object.freeze({
+  // Os sete mapas da casa do avô Hiroshi, do One Shot Terror.
+  oneshot: MAPAS_DA_CASA.map(m => ({
+    id: m.id,
+    nome: m.nome,
+    img: m.imagem,
+    atmosfera: 'mortalha',
+    descricao: `${m.onde} — ${m.luz}`,
+  })),
+});
+
 export function mapasProntosDe(campaign) {
-  return isPrimaryCampaign(campaign) ? MAPAS_PRONTOS : [];
+  // A Dinastia E tem o acervo dela desde antes de existirem outras mesas.
+  if (isPrimaryCampaign(campaign)) return MAPAS_PRONTOS;
+  const porMesa = ACERVOS[String(campaign?.id || '')];
+  if (porMesa) return porMesa;
+  return ACERVOS[sistemaDe(campaign)?.id] || [];
 }

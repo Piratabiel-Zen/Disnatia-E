@@ -22,6 +22,10 @@ const regua = DIFICULDADES.map(d => `${d.nome} ${d.alvo}`).join(', ');
 export const SECOES_DAS_REGRAS = Object.freeze([
   {
     id: 'o-que-e',
+    ordem: 1,
+    numeral: 'I',
+    emblema: 'casa',
+    abertura: 'Uma história que começa e termina na mesma noite.',
     titulo: 'Do que trata esta noite',
     corpo: [
       'Uma história que começa e termina na mesma noite. Quem a atravessa é gente comum: nenhum dom, nenhum treino, ninguém que já tenha visto isto antes e sobrevivido para contar direito.',
@@ -31,6 +35,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'rolagem',
+    ordem: 2,
+    numeral: 'II',
+    emblema: 'dado',
+    abertura: 'Um d20, mais a competência que couber, contra o número que o Mestre declara.',
     titulo: 'Como se rola',
     corpo: [
       'Um d20, mais a competência que couber, contra um número que o Mestre declara. Igual ou acima, passou.',
@@ -41,6 +49,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'atributos',
+    ordem: 3,
+    numeral: 'III',
+    emblema: 'mao',
+    abertura: 'Oito números, e o que você deixa em branco custa a noite inteira.',
     titulo: 'Os oito atributos',
     corpo: [
       `Força, Agilidade, Precisão, Inteligência, Percepção, Carisma, Vontade e Sorte. Todos começam em ${ATRIBUTO_MINIMO} e a pessoa distribui ${PONTOS_DE_ATRIBUTO} pontos entre eles, até ${ATRIBUTO_MAXIMO} em cada.`,
@@ -50,6 +62,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'competencias',
+    ordem: 4,
+    numeral: 'IV',
+    emblema: 'chave',
+    abertura: 'Competência não se compra: ela escala do que você é.',
     titulo: 'As doze competências',
     corpo: [
       `Competência não se compra: ela escala do atributo que a sustenta, menos dois. Atributo 3 dá +1; atributo ${ATRIBUTO_MAXIMO} dá ${COMPETENCIA_MAXIMA}, que é o teto.`,
@@ -62,6 +78,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'condicoes',
+    ordem: 5,
+    numeral: 'V',
+    emblema: 'coracao',
+    abertura: 'A vida cai. O pavor e a sanidade enchem — e é pior.',
     titulo: 'Vida, Pavor e Sanidade',
     corpo: [
       `Vida: ${PV_ADULTO} pontos. Dos ${IDADE_JOVEM_MIN} aos ${IDADE_JOVEM_MAX} anos, ${PV_JOVEM} — corpo pequeno quebra antes, e a mesa precisa saber disso antes de pôr uma criança nesta história, não depois.`,
@@ -72,6 +92,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'visao',
+    ordem: 6,
+    numeral: 'VI',
+    emblema: 'olho',
+    abertura: 'Medidor cheio, vem a visão. E toda visão oferece alguma coisa.',
     titulo: 'A visão',
     corpo: [
       'Medidor cheio, vem a visão. Ela é sempre apavorante, e nem sempre é monstro: às vezes é só uma coisa muito errada a respeito de quem está olhando.',
@@ -82,6 +106,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'sorte-e-talento',
+    ordem: 7,
+    numeral: 'VII',
+    emblema: 'vela',
+    abertura: 'Duas chances e uma permissão para quebrar uma regra.',
     titulo: 'Sorte e talento',
     corpo: [
       `${PONTOS_DE_SORTE} pontos de sorte na noite inteira. Cada um rola de novo um teste e fica com o segundo resultado, mesmo que seja pior. Não voltam.`,
@@ -94,6 +122,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
   },
   {
     id: 'mesa',
+    ordem: 8,
+    numeral: 'VIII',
+    emblema: 'portao',
+    abertura: 'Não se evolui aqui. O que a ficha diz no começo é o que ela diz no fim.',
     titulo: 'A noite em si',
     corpo: [
       'O Mural é onde vocês juntam o que foi sobrando. Qualquer um prega e amarra cartões; cada um mexe no que ele mesmo pregou. O que o Mestre pregar lá, fica.',
