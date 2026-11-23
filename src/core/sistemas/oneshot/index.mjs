@@ -29,6 +29,7 @@ const SISTEMA = Object.freeze({
     ficha: 'ficha',
     grupo: 'grupo',
     sessao: 'Sessão',
+    mapabatalha: 'Cenário do Horror',
     capitulos: 'Notas da noite',
     inimigo: 'aparição',
     inimigos: 'aparições',
@@ -45,14 +46,17 @@ const SISTEMA = Object.freeze({
   // dois lados.
   colecaoDeFichas: 'fichas_oneshot',
 
-  // As três condições da noite. A cor é o que a mesa lê antes do texto: osso
-  // para a vida, vermelho para o pavor e um lilás acinzentado para a sanidade
-  // — perto o bastante do cinza para não virar cor de campanha, longe o
-  // bastante para não se confundir com o pavor na hora de olhar a ficha.
+  // As três condições da noite. A cor é o que a mesa lê antes do texto, então
+  // as três precisam ser distinguíveis de relance, no escuro, de canto de olho:
+  // osso para a vida, roxo para o pavor e vermelho para a sanidade.
+  //
+  // O vermelho ficou na sanidade e não no pavor porque é o medidor mais final
+  // dos dois — pavor passa, cabeça quebrada não volta. Gastar o vermelho no
+  // medidor curto tiraria o sinal de onde ele importa mais.
   condicoes: Object.freeze([
     { id: 'pv', nome: 'Vida', cor: '#C9C2B4', resumo: '5 pontos; 3 de 6 a 18 anos. Zerou, acabou.' },
-    { id: 'pavor', nome: 'Pavor', cor: '#C4414F', resumo: 'Enche até 5. Cheio, vem a visão.' },
-    { id: 'sanidade', nome: 'Sanidade', cor: '#9A8FA8', resumo: 'Enche até 6. Cheia, vem a visão — e é sobre você.' },
+    { id: 'pavor', nome: 'Pavor', cor: '#8B5FAF', resumo: 'Enche até 3. Cheio, vem a visão.' },
+    { id: 'sanidade', nome: 'Sanidade', cor: '#C4414F', resumo: 'Enche até 6. Cheia, vem a visão — e é sobre você.' },
   ]),
 
   // A paleta faz parte do sistema, como a caveira e o d20: qualquer mesa de
@@ -65,11 +69,14 @@ const SISTEMA = Object.freeze({
   // competiria com a cena que o Mestre está descrevendo.
   nevoa: true,
 
-  abas: Object.freeze(['investigacao', 'regras', 'aparicoes']),
+  abas: Object.freeze(['investigacao', 'regras', 'aparicoes', 'mapabatalha']),
 
   navegacao: Object.freeze([
     { id: 'session', label: 'A noite', icon: '✦', items: [
       { id: 'session', label: 'Sessão Atual', icon: '✦' },
+      // O mesmo mapa de combate das outras mesas, com outro nome: aqui não
+      // há combate tático, há um lugar e onde cada um está dentro dele.
+      { id: 'mapabatalha', label: 'Cenário do Horror', icon: '☗' },
     ] },
     { id: 'character', label: 'Personagem', icon: '◆', items: [
       { id: 'fichas', label: 'Fichas', icon: '📋' },

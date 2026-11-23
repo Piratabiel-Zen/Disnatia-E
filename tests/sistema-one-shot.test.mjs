@@ -13,9 +13,7 @@ import { readFileSync } from 'node:fs';
 
 /* Tira comentário antes de procurar: o texto que EXPLICA uma armadilha cita a
    armadilha, e o teste não pode confundir o aviso com o erro. */
-const semComentarios = fonte => fonte
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/\/\/[^\n]*/g, '');
+import { semComentarios } from './ajuda/semComentarios.mjs';
 import { SISTEMAS, dadosDoSistema, navegacaoDoSistema, sistemaDe, termo } from '../src/core/sistemas/index.mjs';
 import { temaDaMesa } from '../src/core/atmosferaDaMesa.mjs';
 import { CAMPAIGN_THEMES } from '../src/core/temas.mjs';
@@ -36,8 +34,11 @@ test('só d20 — e no máximo dois', () => {
   assert.equal(dados.maximo, 2);
 });
 
-test('as abas são só as três, mais as estruturais', () => {
-  assert.deepEqual([...SISTEMAS.oneshot.abas], ['investigacao', 'regras', 'aparicoes']);
+test('as abas são as da noite, mais as estruturais', () => {
+  // O mapa entrou depois, como "Cenário do Horror": a noite ganhou tabuleiro
+  // porque a mesa pediu a casa desenhada, com os tokens andando pelos quartos.
+  assert.deepEqual([...SISTEMAS.oneshot.abas],
+    ['investigacao', 'regras', 'aparicoes', 'mapabatalha']);
   const abas = navegacaoDoSistema(mesa, []).flatMap(g => g.items.map(i => i.id));
   for (const alheia of ['livro', 'classes', 'bestiario', 'pecados', 'documentos', 'manual', 'agendas']) {
     assert.ok(!abas.includes(alheia), `"${alheia}" é de outro sistema e entrou na navegação da noite`);
@@ -45,9 +46,11 @@ test('as abas são só as três, mais as estruturais', () => {
   assert.ok(abas.includes('fichas') && abas.includes('aparicoes') && abas.includes('regras'));
 });
 
-test('mapa de combate fica de fora: uma noite não tem tabuleiro', () => {
+test('a noite tem tabuleiro, mas não tem mapa múndi', () => {
+  // Mapa múndi é geografia de campanha longa. Uma noite não tem continente:
+  // tem uma casa. O tabuleiro dela é o Cenário do Horror e nada mais.
   const abas = navegacaoDoSistema(mesa, []).flatMap(g => g.items.map(i => i.id));
-  assert.ok(!abas.includes('mapabatalha'));
+  assert.ok(abas.includes('mapabatalha'), 'o Cenário do Horror saiu da navegação');
   assert.ok(!abas.includes('mapamundi'));
 });
 
@@ -108,20 +111,35 @@ test('a marca que gira é a caveira, desenhada e não emoji', () => {
   assert.match(caveira, /caveira3d-orbita/);
 });
 
-test('névoa e som da noite só aparecem onde o sistema os pede', () => {
+test('o som da noite só aparece onde o sistema o pede', () => {
   assert.equal(SISTEMAS.oneshot.nevoa, true);
   assert.notEqual(SISTEMAS.cain.nevoa, true);
   const sessao = readFileSync(new URL('../src/AuthenticatedSession.jsx', import.meta.url), 'utf8');
-  assert.match(sessao, /temNevoa && <Mortalha/);
   assert.match(sessao, /temNevoa && <ChaveDaNoite/);
 });
 
-test('a névoa não posiciona irmão nenhum', () => {
-  // Uma regra de irmão foi o que derrubou o layout da Estrela de Absinto:
-  // ganhou da posição fixa da navegação e jogou a barra para dentro do fluxo.
-  const folha = semComentarios(readFileSync(new URL('../src/features/oneshot/mortalha.css', import.meta.url), 'utf8'));
-  assert.ok(!/\.mortalha\s*~/.test(folha), 'voltou a regra de irmão que derruba o layout');
-  assert.match(folha, /z-index:0/);
+test('a névoa é camada do cenário, e não uma camada solta na página', () => {
+  // Solta, ela nascia ATRÁS do fundo opaco da casca da sessão: a chave
+  // ligava, gravava no servidor, e nada mudava na tela.
+  const sessao = readFileSync(new URL('../src/AuthenticatedSession.jsx', import.meta.url), 'utf8');
+  assert.ok(!/<Mortalha/.test(sessao), 'a névoa voltou para fora da casca da sessão');
+  const cenario = readFileSync(new URL('../src/experience/CenarioDaMesa.jsx', import.meta.url), 'utf8');
+  assert.match(cenario, /cenario\.nevoa && \(/);
+  const folha = semComentarios(readFileSync(new URL('../src/experience/cenario-da-mesa.css', import.meta.url), 'utf8'));
+  // Sem regra de irmão: foi uma delas que derrubou o layout da Estrela de
+  // Absinto, ganhando da posição fixa da navegação.
+  assert.ok(!/\.cenario-mesa-nevoa\s*~/.test(folha));
+  // E fora do modo imersivo ela some, como a mesa pediu.
+  assert.match(folha, /data-quality="light"\] \.cenario-mesa-nevoa\{display:none\}/);
+});
+
+test('a mesa de uma noite nasce com a casa de fundo', () => {
+  const atm = readFileSync(new URL('../src/core/atmosferaDaMesa.mjs', import.meta.url), 'utf8');
+  assert.match(atm, /CENARIOS_POR_SISTEMA/);
+  assert.match(atm, /casa-do-horror\.webp/);
+  // Pelo SISTEMA e não pelo nome: cada noite é uma casa diferente, e não dá
+  // para listar nome de mesa que ainda não existe.
+  assert.match(atm, /CENARIOS_POR_SISTEMA\[sistemaDe\(campanha\)\?\.id\]/);
 });
 
 test('o som da noite é sintetizado, sem arquivo nem domínio novo', () => {

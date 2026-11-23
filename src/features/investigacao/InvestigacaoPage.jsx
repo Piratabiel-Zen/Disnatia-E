@@ -3,6 +3,7 @@ import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { setDoc, deleteDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
 import { useMembro } from '../acesso/useMembro';
+import '../oneshot/mural-ouija.css';
 import { observarLiberados } from '../acesso/observarLiberados';
 import MuralInvestigacao from './MuralInvestigacao';
 import { cartoesVisiveis, chaveDaLigacao, podeMexerNoCartao } from './mural.mjs';

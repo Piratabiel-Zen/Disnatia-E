@@ -19,6 +19,10 @@
   --osf-tinta-fraca:#6E6C6A;
   --osf-perigo:#8E1F2B;
   --osf-perigo-claro:#C4414F;
+  /* O roxo do pavor. Violeta surrado, não neon: numa paleta de cinza, roxo
+     saturado vira adesivo. */
+  --osf-roxo:#6E4489;
+  --osf-roxo-claro:#8B5FAF;
   --osf-mono:'IBM Plex Mono',ui-monospace,monospace;
   --osf-serif:'Crimson Text',Georgia,serif;
   display:grid;gap:12px;color:var(--osf-tinta);
@@ -57,9 +61,33 @@
   opacity:1;color:var(--osf-tinta);border-color:transparent;background:transparent;
   padding-left:0;
 }
+/* O retrato à esquerda, os campos à direita. */
+.osf-quem{display:grid;gap:14px;grid-template-columns:84px minmax(0,1fr);align-items:start}
+.osf-quem-campos{display:grid;gap:10px;min-width:0}
+
+/* 3 por 4 de verdade, pela razão de aspecto — não por altura fixa, que
+   quebraria no celular. */
+.osf-retrato{
+  position:relative;aspect-ratio:3/4;border-radius:2px;overflow:hidden;
+  background:var(--osf-papel);border:1px solid var(--osf-linha-forte);
+}
+.osf-retrato img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.45) contrast(1.06)}
+.osf-retrato-vazio{
+  position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+  font-family:var(--osf-mono);font-size:8.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:#45443F;line-height:1.5;
+}
+.osf-retrato-trocar{
+  position:absolute;left:0;right:0;bottom:0;padding:3px 0;cursor:pointer;
+  background:rgba(8,8,9,.86);text-align:center;
+  font-family:var(--osf-mono);font-size:8px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8A8784;
+}
+.osf-retrato-trocar:hover{color:var(--osf-tinta)}
+.osf-retrato-trocar input{display:none}
+
 .osf-identidade{
   display:grid;gap:10px;grid-template-columns:minmax(0,2fr) minmax(0,.7fr) minmax(0,1.3fr);
-  margin-bottom:10px;
 }
 .osf-historico{margin-top:0}
 .osf-aviso{
@@ -98,8 +126,20 @@
 .osf-caixas button[data-cheia="sim"]{
   background:var(--osf-tinta);border-color:var(--osf-tinta);
 }
-.osf-medidor[data-perigo="sim"] .osf-caixas button[data-cheia="sim"]{
+/* Cada condição tem a sua cor, e a mesa a reconhece antes de ler o rótulo.
+   As caixas cheias já levam a cor; o "perigo" só clareia quando falta pouco. */
+.osf-medidor[data-cor="roxo"] .osf-caixas button[data-cheia="sim"]{
+  background:var(--osf-roxo);border-color:var(--osf-roxo-claro);
+}
+.osf-medidor[data-cor="roxo"][data-perigo="sim"] .osf-caixas button[data-cheia="sim"]{
+  background:var(--osf-roxo-claro);border-color:#A97FD0;
+}
+.osf-medidor[data-cor="roxo"][data-perigo="sim"] .osf-medidor-topo b{color:var(--osf-roxo-claro)}
+.osf-medidor[data-cor="sangue"] .osf-caixas button[data-cheia="sim"]{
   background:var(--osf-perigo);border-color:var(--osf-perigo-claro);
+}
+.osf-medidor[data-cor="sangue"][data-perigo="sim"] .osf-caixas button[data-cheia="sim"]{
+  background:var(--osf-perigo-claro);border-color:#D86070;
 }
 .osf-caixas button:not(:disabled):hover{border-color:var(--osf-tinta)}
 
@@ -182,6 +222,7 @@
 }
 
 @media(max-width:720px){
+  .osf-quem{grid-template-columns:68px minmax(0,1fr);gap:11px}
   .osf-identidade{grid-template-columns:1fr 1fr}
   .osf-identidade>label:first-child{grid-column:1 / -1}
   .osf-bloco{padding:13px 12px 14px}

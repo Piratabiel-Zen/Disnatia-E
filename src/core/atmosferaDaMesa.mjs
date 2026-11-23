@@ -75,6 +75,29 @@ export const CENARIOS_POR_MESA = Object.freeze({
   }),
 });
 
+/**
+ * Cenário que vem do SISTEMA, e não do nome da mesa.
+ *
+ * A Estrela de Absinto tem a praça dela porque é aquela campanha. Uma mesa de
+ * One Shot Terror não tem nome fixo — cada noite é uma casa diferente —, mas
+ * todas se passam no mesmo tipo de lugar. Então o cenário acompanha o
+ * sistema, e qualquer one-shot nasce com a casa e a névoa sem configurar nada.
+ */
+const CENARIOS_POR_SISTEMA = Object.freeze({
+  oneshot: Object.freeze({
+    imagem: '/media/mesas/casa-do-horror.webp',
+    alternativa: '/media/mesas/casa-do-horror.jpg',
+    descricao: 'Um casarão atrás do portão de ferro, sob lua cheia, com o cemitério tomado de névoa.',
+    nevoa: true,
+    // Mais escuro que a praça veneziana: aqui a imagem é noite, e o texto da
+    // mesa precisa se ler por cima dela sem concorrência.
+    escurecer: 0.72,
+    posicao: 'center 38%',
+  }),
+});
+
 /** O cenário de fundo desta mesa, ou nada se ela não tiver um. */
 export const cenarioDaMesa = campanha =>
-  CENARIOS_POR_MESA[chave(campanha?.name)] || null;
+  CENARIOS_POR_MESA[chave(campanha?.name)]
+  || CENARIOS_POR_SISTEMA[sistemaDe(campanha)?.id]
+  || null;

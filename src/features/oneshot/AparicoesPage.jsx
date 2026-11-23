@@ -7,8 +7,8 @@ import { comprimirParaDocumento } from '../../core/media';
 import { useMembro } from '../acesso/useMembro';
 import { observarLiberados } from '../acesso/observarLiberados';
 import {
-  TIPOS_DE_APARICAO, alternarPessoa, aparicaoNova, estaRevelada,
-  quemVe, revelarParaTodos, tipoDaAparicao,
+  TIPOS_DE_APARICAO, alternarPessoa, aparicaoNova, cartaoDeAparicao, estaRevelada,
+  jaNoMural, quemVe, revelarParaTodos, tipoDaAparicao,
 } from './aparicoes.mjs';
 import './aparicoes.css';
 
@@ -29,6 +29,7 @@ export default function AparicoesPage() {
   const [fichas, setFichas] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [cartoes, setCartoes] = useState([]);
 
   const mestre = ehMestre(membro);
 
@@ -46,6 +47,25 @@ export default function AparicoesPage() {
       setFichas(snap.docs.map(d => ({ ...d.data(), id: d.id })));
     }, () => {});
   }, [mestre, campanha?.id]);
+
+  // Os cartões do mural entram só para saber o que já está pregado: pregar
+  // duas vezes a mesma aparição enche a parede de repetição.
+  useEffect(() => {
+    if (!mestre) return undefined;
+    return onSnapshot(col('mural_cartoes'), snap => {
+      setCartoes(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    }, () => {});
+  }, [mestre, campanha?.id]);
+
+  const pregarNoMural = useCallback(async aparicao => {
+    const cartao = cartaoDeAparicao(aparicao, {
+      // Espalha: cartão novo sempre no mesmo ponto esconde o anterior.
+      x: 0.26 + Math.random() * 0.46,
+      y: 0.3 + Math.random() * 0.36,
+    });
+    const { id, ...dados } = cartao;
+    await setDoc(docIn('mural_cartoes', id), dados);
+  }, []);
 
   const nomePorUid = useMemo(() => Object.fromEntries(
     fichas.filter(f => f.dono).map(f => [String(f.dono), f.nome || 'personagem']),
@@ -171,6 +191,17 @@ export default function AparicoesPage() {
             </button>
             {/* Revelar fica na linha, não dentro do detalhe: é a ação que o
                 Mestre faz no meio de uma frase, sem tirar os olhos da mesa. */}
+            {/* Pregar no mural fica ao lado de revelar porque são as duas
+                coisas que o Mestre faz com uma aparição no meio de uma cena:
+                mostrar agora, ou deixar à vista para a mesa trabalhar em cima. */}
+            {jaNoMural(a, cartoes) ? (
+              <span className="apa-no-mural" title="Já está pregada no mural">no mural</span>
+            ) : (
+              <button
+                type="button" className="apa-pregar" onClick={() => pregarNoMural(a)}
+                title="Cria um cartão no mural, com a mesma plateia desta aparição"
+              >Pregar</button>
+            )}
             <button
               type="button" className="apa-revelar"
               onClick={() => salvar({ ...revelarParaTodos(a, !a.liberadoParaTodos), id: a.id })}

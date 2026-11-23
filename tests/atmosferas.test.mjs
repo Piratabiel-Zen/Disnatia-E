@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { semComentarios } from './ajuda/semComentarios.mjs';
 import { dirname, join as joinPath } from 'node:path';
 
 import { CAMPAIGN_THEMES } from '../src/core/temas.mjs';
@@ -176,7 +177,7 @@ test('nenhuma folha de atmosfera manda na posição dos filhos da sessão', () =
   // já vive acima disso, como o fundo cósmico sempre funcionou.
   for (const arquivo of ['src/experience/cenario-da-mesa.css',
                          'src/experience/atmosferas-de-mesa.css']) {
-    const css = ler(arquivo).replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = semComentarios(ler(arquivo));
     const curingas = css.match(/[~>]\s*\*\s*\{[^}]*\}/g) || [];
     for (const regra of curingas) {
       assert.ok(!/position\s*:/.test(regra),

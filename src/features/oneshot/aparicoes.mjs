@@ -67,3 +67,41 @@ export function quemVe(aparicao, nomePorUid = {}) {
 
 export const tipoDaAparicao = id =>
   TIPOS_DE_APARICAO.find(t => t.id === id) || TIPOS_DE_APARICAO[0];
+
+/**
+ * A APARIÇÃO PREGADA NO MURAL
+ *
+ * Revelar mostra a imagem na aba das Aparições, e ali ela fica — uma de cada
+ * vez, isolada. No mural ela vira outra coisa: um cartão que a mesa arrasta,
+ * liga a outros por barbante e mantém à vista enquanto discute. É a diferença
+ * entre "olhem isto" e "isto é a terceira vez que esse símbolo aparece".
+ *
+ * Não copia nem move: cria um cartão que aponta para a aparição, com a MESMA
+ * plateia. Pregar não pode virar atalho para revelar o que estava escondido —
+ * é a mesma regra dos documentos, pelo mesmo motivo.
+ *
+ * `origemAparicao` é o que impede pregar duas vezes a mesma coisa.
+ */
+export function cartaoDeAparicao(aparicao, { id, x = 0.4, y = 0.4 } = {}) {
+  if (!aparicao) return null;
+  const tipo = tipoDaAparicao(aparicao.tipo);
+  return {
+    id: String(id || `c${Date.now().toString(36)}`),
+    // Com imagem é fotografia; sem, é pista — que é o tipo do mural feito
+    // para pedaço de informação que se liga a outros.
+    tipo: aparicao.imagem ? 'fotografia' : 'pista',
+    titulo: String(aparicao.titulo || tipo.nome),
+    texto: String(aparicao.descricao || ''),
+    imagem: String(aparicao.imagem || ''),
+    x, y,
+    liberadoParaTodos: aparicao.liberadoParaTodos === true,
+    liberadoPara: Array.isArray(aparicao.liberadoPara) ? [...aparicao.liberadoPara] : [],
+    origemAparicao: String(aparicao.id || ''),
+    criadoEm: Date.now(),
+  };
+}
+
+/** Esta aparição já está pregada? */
+export const jaNoMural = (aparicao, cartoes) =>
+  Boolean(aparicao?.id) && (Array.isArray(cartoes) ? cartoes : [])
+    .some(c => String(c?.origemAparicao || '') === String(aparicao.id));

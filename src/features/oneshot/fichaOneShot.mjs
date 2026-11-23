@@ -34,7 +34,10 @@ export const PV_JOVEM = 3;
 export const IDADE_JOVEM_MIN = 6;
 export const IDADE_JOVEM_MAX = 18;
 
-export const PAVOR_MAXIMO = 5;
+// Três, e não cinco: a mesa pediu depois de ver o medidor na tela. Pavor é o
+// medidor curto de propósito — ele enche numa cena ruim, e a visão vem antes
+// de a pessoa se acostumar com o medo.
+export const PAVOR_MAXIMO = 3;
 export const SANIDADE_MAXIMA = 6;
 /** Resistir à visão não zera o medidor: recua dois. O alívio é curto. */
 export const RECUO_AO_RESISTIR = 2;
@@ -229,6 +232,7 @@ export function fichaNova(nome = '') {
     sorte: PONTOS_DE_SORTE,
     talento: '',
     talentoResumo: '',
+    retrato: '',
     visaoPendente: '',
     dono: '',
     criadoEm: Date.now(),

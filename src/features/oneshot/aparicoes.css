@@ -153,3 +153,18 @@
   .apa-detalhe input,.apa-detalhe textarea{font-size:16px}
   .apa-galeria{gap:16px}
 }
+
+/* Pregar no mural, ao lado de revelar: são as duas coisas que o Mestre faz
+   com uma aparição no meio de uma cena. */
+.apa-pregar{
+  flex:0 0 auto;padding:5px 10px;border-radius:2px;cursor:pointer;
+  background:transparent;border:1px solid #2E2E33;color:#6E6C6A;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.apa-pregar:hover{border-color:#8B7A52;color:#8B7A52}
+.apa-no-mural{
+  flex:0 0 auto;padding:5px 10px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
+  letter-spacing:.12em;text-transform:uppercase;color:#4A4843;
+}

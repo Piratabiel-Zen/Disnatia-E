@@ -2,6 +2,10 @@
 import { createRoot } from 'react-dom/client';
 import MuralInvestigacao from '../../src/features/investigacao/MuralInvestigacao.jsx';
 import { podeMexerNoCartao } from '../../src/features/investigacao/mural.mjs';
+// A repintura de ouija viaja com a PÁGINA, não com o mural. Sem este import a
+// fixture mostra o mural marrom de sempre e dá a impressão de que o tema da
+// noite não pegou.
+import '../../src/features/oneshot/mural-ouija.css';
 
 const v={'--fundo-mesa':'#070910','--superficie-mesa':'#0F1320','--linha-mesa':'#232C42',
  '--contraste-mesa':'#8CA0C4','--contraste-claro-mesa':'#C3D0E6','--ink-mesa':'#D4D7E0'};

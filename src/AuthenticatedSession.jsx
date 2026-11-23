@@ -8,9 +8,8 @@ import CampaignPasswordButton from './shell/CampaignPasswordButton';
 import LiveStatus from './shell/LiveStatus';
 import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import BarraDePrevia from './features/acesso/BarraDePrevia.jsx';
-import Mortalha from './features/oneshot/Mortalha.jsx';
 import ChaveDaNoite from './features/oneshot/ChaveDaNoite.jsx';
-import { sistemaDe } from './core/sistemas/index.mjs';
+import { sistemaDe, termo } from './core/sistemas/index.mjs';
 import { useMembro } from './features/acesso/useMembro';
 import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
@@ -44,15 +43,18 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
   // aqui e não numa aba: quem esquece que está em prévia conclui que o site
   // escondeu dele um documento que ele mesmo criou.
   const { previa } = useMembro();
-  // Névoa e som da noite são do One Shot Terror. Montá-los em toda mesa
-  // penduraria duas alavancas de ambiente em campanhas que não as pediram.
+  // O som da noite é do One Shot Terror. Montá-lo em toda mesa penduraria
+  // uma alavanca de ambiente em campanhas que não a pediram.
+  //
+  // A névoa saiu daqui: ela é camada do CENÁRIO agora, desenhada dentro da
+  // casca da sessão. Fora dela, nascia atrás do fundo opaco da casca e não
+  // aparecia por mais que a chave fosse ligada.
   const temNevoa = Boolean(sistemaDe(campaign)?.nevoa);
   const headerRef=useRef(null);
   useHeaderClearance(headerRef);
   return(
     <ExperienceProvider key={`${access.role}:${playerSheetId || access.visitorId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId} access={access}>
       <BarraDePrevia previa={previa} />
-      {temNevoa && <Mortalha mestre={masterMode} />}
       {temNevoa && <ChaveDaNoite />}
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
@@ -78,7 +80,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
               <span className="brand-mark">✦</span>
               <div>
                 <h1>{campaign?.name || 'Dinastia E'}</h1>
-                <small>{campaign?.world ? `${campaign.world} · ` : ''}{TAB_LABELS[tab] || 'Livro do Mundo'}</small>
+                <small>{campaign?.world ? `${campaign.world} · ` : ''}{termo(campaign, tab, TAB_LABELS[tab] || 'Livro do Mundo')}</small>
               </div>
             </div>
             <div className="top-actions">

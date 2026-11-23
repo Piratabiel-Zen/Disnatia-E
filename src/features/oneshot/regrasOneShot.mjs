@@ -20,21 +20,21 @@ const regua = DIFICULDADES.map(d => `${d.nome} ${d.alvo}`).join(', ');
 export const SECOES_DAS_REGRAS = Object.freeze([
   {
     id: 'o-que-e',
-    titulo: 'O que é uma noite destas',
+    titulo: 'Do que trata esta noite',
     corpo: [
-      'Uma história fechada, do começo ao fim, numa sessão. Os personagens são gente comum — não há treinamento, não há dom, não há quem já tenha visto isto antes.',
-      'Ninguém evolui. Não há experiência para gastar nem nível a subir: o que a ficha diz no começo é o que ela diz no fim. O que muda ao longo da noite é só o quanto a pessoa foi gasta.',
-      'E ela pode acabar. Morrer é um desfecho possível, e perder a cabeça também. Uma mesa que não aceita isso está jogando outra coisa.',
+      'Uma história que começa e termina na mesma noite. Quem a atravessa é gente comum: nenhum dom, nenhum treino, ninguém que já tenha visto isto antes e sobrevivido para contar direito.',
+      'Não se evolui aqui. Não há experiência a juntar nem degrau a subir — o que a ficha declara no começo é o que ela declara no fim, menos o que a noite tiver levado.',
+      'E ela leva. Morrer é um desfecho; enlouquecer é outro, e nem sempre é o mais brando. Mesa que não aceita perder personagem está jogando outra coisa, e tudo bem — mas não é isto.',
     ],
   },
   {
     id: 'rolagem',
     titulo: 'Como se rola',
     corpo: [
-      `Um d20, mais a competência que couber, contra um número que o Mestre diz. Igual ou acima, passou.`,
-      `A régua de dificuldade: ${regua}. O Mestre escolhe antes de a pessoa rolar, e diz em voz alta.`,
-      `20 natural passa, somando o que somar. 1 natural falha, somando o que somar — e custa 1 de Pavor.`,
-      'Se não há risco nem pressa, não se rola: a pessoa simplesmente faz. Dado só entra quando falhar significa alguma coisa.',
+      'Um d20, mais a competência que couber, contra um número que o Mestre declara. Igual ou acima, passou.',
+      `A régua: ${regua}. O Mestre escolhe antes de o dado sair da mão, e diz em voz alta — número combinado depois do resultado não é dificuldade, é sentença.`,
+      '20 natural passa, some o que somar. 1 natural falha, some o que somar — e cobra 1 de Pavor, porque errar feio na frente do que está ali custa mais do que a tentativa.',
+      'Sem risco e sem pressa, não se rola: a pessoa simplesmente faz. O dado só entra quando falhar significa alguma coisa — e, nesta casa, significa quase sempre.',
     ],
   },
   {
@@ -59,20 +59,20 @@ export const SECOES_DAS_REGRAS = Object.freeze([
     id: 'condicoes',
     titulo: 'Vida, Pavor e Sanidade',
     corpo: [
-      `Vida: ${PV_ADULTO} pontos. De ${IDADE_JOVEM_MIN} a ${IDADE_JOVEM_MAX} anos, ${PV_JOVEM} — é mais frágil mesmo, e a mesa deve saber disso antes de pôr uma criança na história.`,
-      `Pavor vai até ${PAVOR_MAXIMO} e Sanidade até ${SANIDADE_MAXIMA}. Os dois ENCHEM: eles contam o quanto a pessoa já foi gasta, não o quanto ela ainda aguenta.`,
-      'Enchem com o que acontece e com o que se escolhe: levar um susto, falhar feio, tirar 1 natural, fazer barulho onde não se podia fazer nenhum, ver o que não devia.',
-      'Momento de calma, conforto ou um vestígio de normalidade tira marca. É pouco, e é curto.',
+      `Vida: ${PV_ADULTO} pontos. Dos ${IDADE_JOVEM_MIN} aos ${IDADE_JOVEM_MAX} anos, ${PV_JOVEM} — corpo pequeno quebra antes, e a mesa precisa saber disso antes de pôr uma criança nesta história, não depois.`,
+      `Pavor vai até ${PAVOR_MAXIMO}; Sanidade, até ${SANIDADE_MAXIMA}. Os dois ENCHEM, e é essa a diferença: eles não medem o que a pessoa aguenta, medem o quanto dela já foi gasto.`,
+      'Enchem com o que acontece e com o que se escolhe. Um susto. Uma falha feia. O 1 natural. Barulho onde não se podia fazer nenhum. E, principalmente, olhar o que era melhor não ter olhado.',
+      'Calma, conforto, um vestígio de normalidade — isso devolve marca. Pouco, e por pouco tempo. A casa tem mais noite do que vocês têm fôlego.',
     ],
   },
   {
     id: 'visao',
     titulo: 'A visão',
     corpo: [
-      'Quando um dos dois medidores enche, vem uma visão. Ela é sempre apavorante — nem sempre monstro, às vezes só uma coisa muito errada sobre a própria pessoa.',
-      'E ela oferece alguma coisa. Aí a pessoa escolhe, na frente da mesa.',
-      `Ceder: perde 1 de Vida. O que a visão mostrou entra na história e o Mestre usa depois.`,
-      `Resistir: nada de dano, e o medidor recua ${RECUO_AO_RESISTIR}. Fica a ${RECUO_AO_RESISTIR} do máximo — o alívio é curto de propósito, e a próxima visão vem logo.`,
+      'Medidor cheio, vem a visão. Ela é sempre apavorante, e nem sempre é monstro: às vezes é só uma coisa muito errada a respeito de quem está olhando.',
+      'E ela oferece. Toda visão oferece alguma coisa — alívio, resposta, saída. Aí a pessoa escolhe, em voz alta, na frente da mesa.',
+      'CEDER custa 1 de Vida. O que a visão mostrou passa a fazer parte da história, e o Mestre vai usar isso.',
+      `RESISTIR não custa nada agora, e o medidor recua ${RECUO_AO_RESISTIR}. Repare no tamanho desse alívio: ele é curto de propósito. A visão não foi embora — ela voltou para o fim da fila.`,
     ],
   },
   {
@@ -89,9 +89,9 @@ export const SECOES_DAS_REGRAS = Object.freeze([
     id: 'mesa',
     titulo: 'A noite em si',
     corpo: [
-      'O Mural é onde a mesa junta o que descobriu. Qualquer pessoa prega e liga cartões; cada uma mexe no que ela mesma pregou.',
-      'As Aparições são do Mestre: itens, páginas, cenários e criaturas que ele revela quando a cena chega. O que não foi revelado não existe para a mesa.',
-      'Não há iniciativa nem turno. Quando a ordem importa, o Mestre pergunta o que cada um está fazendo e resolve na ordem que fizer sentido.',
+      'O Mural é onde vocês juntam o que foi sobrando. Qualquer um prega e amarra cartões; cada um mexe no que ele mesmo pregou. O que o Mestre pregar lá, fica.',
+      'As Aparições são dele: itens, páginas, cômodos e o que mora neles. Ele revela quando a cena chega, e pode recolher. O que não foi revelado não existe para vocês — nem para discutir.',
+      'Não há iniciativa, nem turno, nem ordem combinada. Quando o tempo importa, o Mestre pergunta o que cada um está fazendo e resolve na ordem que a cena pedir. Quem hesitar em voz alta, hesitou.',
     ],
   },
 ]);

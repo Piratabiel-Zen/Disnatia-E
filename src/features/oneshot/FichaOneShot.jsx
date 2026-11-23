@@ -4,6 +4,7 @@ import {
   competenciasDaFicha, marcar, aliviar, pontosRestantes, pvMaximoDaFicha,
   responderAVisao, normalizar,
 } from './fichaOneShot.mjs';
+import { comprimirParaDocumento } from '../../core/media';
 import './ficha-one-shot.css';
 
 /**
@@ -23,9 +24,9 @@ import './ficha-one-shot.css';
  * três caixas vazias de seis, sim.
  */
 
-function Medidor({ rotulo, valor, maximo, aoMarcar, aoAliviar, podeEditar, perigo }) {
+function Medidor({ rotulo, valor, maximo, aoMarcar, aoAliviar, podeEditar, perigo, cor = 'osso' }) {
   return (
-    <div className="osf-medidor" data-perigo={perigo ? 'sim' : 'nao'}>
+    <div className="osf-medidor" data-perigo={perigo ? 'sim' : 'nao'} data-cor={cor}>
       <div className="osf-medidor-topo">
         <span>{rotulo}</span>
         <b>{valor}/{maximo}</b>
@@ -92,6 +93,38 @@ export default function FichaOneShot({ ficha: bruta, aoMudar, podeEditar = false
 
       <section className="osf-bloco">
         <h4>Quem é</h4>
+        <div className="osf-quem">
+          {/* O RETRATO 3x4.
+              Pequeno e com proporção de documento de propósito: é foto de
+              arquivo, não ilustração de herói. Numa mesa de terror a foto 3x4
+              já começa com cara de ficha de desaparecido — o que ajuda. */}
+          <div className="osf-retrato">
+            {ficha.retrato
+              ? <img src={ficha.retrato} alt="" />
+              : <span className="osf-retrato-vazio">sem<br />retrato</span>}
+            {podeEditar && (
+              <label className="osf-retrato-trocar">
+                {ficha.retrato ? 'trocar' : 'anexar'}
+                <input
+                  type="file" accept="image/*"
+                  onChange={async e => {
+                    const arquivo = e.target.files?.[0];
+                    if (!arquivo) return;
+                    const cru = await new Promise(resolver => {
+                      const leitor = new FileReader();
+                      leitor.onload = () => resolver(String(leitor.result || ''));
+                      leitor.readAsDataURL(arquivo);
+                    });
+                    // 3x4 pequeno não precisa de muito: 900px de lado já
+                    // imprime bem, e o documento do Firestore para em 400 KiB.
+                    salvar({ retrato: await comprimirParaDocumento(cru, { largura: 900, altura: 1200, limite: 150 * 1024 }) });
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
+          <div className="osf-quem-campos">
         <div className="osf-identidade">
           {campo('nome', 'Nome')}
           {campo('idade', 'Idade', { inputMode: 'numeric', placeholder: 'anos' })}
@@ -107,6 +140,8 @@ export default function FichaOneShot({ ficha: bruta, aoMudar, podeEditar = false
         </label>
         {/* O aviso da idade é regra, não enfeite: a mesa precisa saber disso
             ANTES de pôr uma criança na história. */}
+          </div>
+        </div>
         {pvMaximo < 5 && (
           <p className="osf-aviso">
             Entre 6 e 18 anos: {pvMaximo} de vida em vez de 5.
@@ -127,13 +162,13 @@ export default function FichaOneShot({ ficha: bruta, aoMudar, podeEditar = false
             aoAliviar={n => salvar({ pv: Math.max(0, ficha.pv - n) })}
           />
           <Medidor
-            rotulo="Pavor" valor={ficha.pavor} maximo={PAVOR_MAXIMO}
+            rotulo="Pavor" valor={ficha.pavor} maximo={PAVOR_MAXIMO} cor="roxo"
             perigo={ficha.pavor >= PAVOR_MAXIMO - 1} podeEditar={podeEditar}
             aoMarcar={n => aoMudar?.(marcar(ficha, 'pavor', n))}
             aoAliviar={n => aoMudar?.(aliviar(ficha, 'pavor', n))}
           />
           <Medidor
-            rotulo="Sanidade" valor={ficha.sanidade} maximo={SANIDADE_MAXIMA}
+            rotulo="Sanidade" valor={ficha.sanidade} maximo={SANIDADE_MAXIMA} cor="sangue"
             perigo={ficha.sanidade >= SANIDADE_MAXIMA - 1} podeEditar={podeEditar}
             aoMarcar={n => aoMudar?.(marcar(ficha, 'sanidade', n))}
             aoAliviar={n => aoMudar?.(aliviar(ficha, 'sanidade', n))}

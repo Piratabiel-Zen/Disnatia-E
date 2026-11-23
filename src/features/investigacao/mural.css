@@ -35,8 +35,14 @@
   /* Um terço mais alto do que os 520px originais: o mural cresceu porque os
      barbantes precisam de espaço vertical para sair reto de um alfinete e
      chegar ao outro — num quadro baixo demais eles viram quase horizontais e
-     a teia deixa de se ler. */
-  height:100%;min-height:693px;
+     a teia deixa de se ler.
+
+     Mas 693px FIXOS cobriam a tela em notebook: a aba tem cabeçalho em cima,
+     então o espaço real é menos que a janela, e o mural pedia mais do que
+     cabia e transbordava por cima do que viesse depois. Agora 693px é o
+     desejo, não a exigência — em tela alta ele ganha os 693, em tela baixa
+     ele cede e para dentro da aba. */
+  height:100%;min-height:min(693px,calc(100vh - 168px));
   background:
     radial-gradient(120% 90% at 50% 0%,rgba(169,128,69,.07),transparent 62%),
     repeating-linear-gradient(94deg,rgba(0,0,0,.14) 0 2px,transparent 2px 5px),

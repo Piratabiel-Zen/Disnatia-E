@@ -1,0 +1,90 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   O MURAL NUMA MESA DE UMA NOITE
+
+   O mural nasceu para uma delegacia veneziana: couro escuro, latão, barbante
+   vermelho, papel creme. Numa casa abandonada isso parece bem cuidado demais.
+
+   Aqui ele vira outra coisa, sem virar outra tela: a mesma teia de alfinetes
+   e barbantes, repintada como tabuleiro de ouija velho. Madeira quase preta,
+   verniz gasto, letra queimada a fogo. O barbante deixa o vermelho e fica
+   cinza-osso, como linha de costura antiga.
+
+   Repinta por variável, não por regra nova: o mural inteiro já lê as suas
+   cores de `.mural`, então trocar as variáveis repinta tudo de uma vez e
+   nenhuma mesa que não seja de uma noite é tocada.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-tema-mesa="mortalha"] .mural{
+  /* Madeira escura e envernizada, não couro. */
+  --quadro:#0D0C0B;
+  --couro:#16130F;
+  /* Linha de costura, não barbante de delegacia: o vermelho chamava atenção
+     para a teia, e aqui a teia tem que parecer antiga, não recente. */
+  --barbante:#6E675B;
+  --barbante-claro:#9A9284;
+  /* Letra queimada a fogo no verniz, que é o que dá o ar de tabuleiro. */
+  --latao:#8B7A52;
+  /* O papel continua claro — é o que faz o cartão ser objeto e não caixa —
+     mas amarelado e sujo, como papel que ficou guardado em casa úmida. */
+  --papel:#D9CFB6;
+  --papel-sombra:#B5A98C;
+  --tinta:#211C14;
+  --tinta-fraca:#5E543F;
+}
+
+/* O verniz gasto: manchas moles e irregulares por cima da madeira, mais
+   claras no meio, como tabuleiro manuseado por décadas. */
+html[data-tema-mesa="mortalha"] .mural-quadro{
+  background:
+    radial-gradient(130% 95% at 50% 8%,rgba(180,168,130,.055),transparent 58%),
+    radial-gradient(60% 45% at 26% 72%,rgba(150,138,106,.045),transparent 70%),
+    radial-gradient(48% 38% at 78% 36%,rgba(140,128,98,.04),transparent 72%),
+    /* O grão da madeira, mais apertado que as ripas do original. */
+    repeating-linear-gradient(91deg,rgba(0,0,0,.2) 0 1px,transparent 1px 4px),
+    linear-gradient(168deg,var(--couro),var(--quadro) 74%);
+  border-color:#1C1813;
+  box-shadow:inset 0 0 70px rgba(0,0,0,.72);
+}
+
+/* As marcas do tabuleiro: o arco de letras no alto e o SIM e NÃO nos cantos.
+   Desenhado com pseudoelementos, bem apagado — tem que se notar na segunda
+   olhada, não na primeira. Se competir com os cartões, vira papel de parede.
+
+   `pointer-events:none` é obrigatório: isto cobre o quadro inteiro e sem ele
+   nenhum cartão poderia ser arrastado. */
+html[data-tema-mesa="mortalha"] .mural-quadro::before{
+  content:'A B C D E F G H I J K L M';
+  position:absolute;top:30px;left:0;right:0;z-index:0;pointer-events:none;
+  text-align:center;
+  font-family:'Cinzel',Georgia,serif;font-size:19px;letter-spacing:.52em;
+  color:rgba(139,122,82,.11);
+  text-shadow:0 1px 0 rgba(0,0,0,.5);
+}
+html[data-tema-mesa="mortalha"] .mural-quadro::after{
+  content:'SIM                                                            NÃO';
+  position:absolute;top:70px;left:0;right:0;z-index:0;pointer-events:none;
+  text-align:center;white-space:pre;
+  font-family:'Cinzel',Georgia,serif;font-size:15px;letter-spacing:.4em;
+  color:rgba(139,122,82,.1);
+}
+
+/* O alfinete deixa de ser latão polido: vira prego velho, escuro e fosco. */
+html[data-tema-mesa="mortalha"] .mural-alfinete{
+  background:radial-gradient(circle at 34% 30%,#6E675B,#2A2621 70%);
+  box-shadow:0 2px 4px rgba(0,0,0,.7);
+}
+
+/* O papel do cartão ganha mancha de umidade. Uma só, grande e no canto —
+   mancha repetida em todo cartão vira textura, e textura não assusta.
+
+   O PAPEL VEM JUNTO, de propósito. O cartão pinta o papel dele com
+   `background:` (atalho), e atalho escreve `background-image` também. Então
+   declarar só a mancha aqui APAGAVA o papel: o cartão ficava transparente, a
+   madeira quase preta aparecia por baixo, e a tinta escura do cartão ficava
+   preta no preto — 1.2 de contraste, título ilegível. A mancha tem que vir
+   por cima do papel, nunca no lugar dele. */
+html[data-tema-mesa="mortalha"] .mural-cartao{
+  background-image:
+    radial-gradient(ellipse 62% 44% at 108% 112%,rgba(120,96,58,.22),transparent 68%),
+    linear-gradient(176deg,var(--papel),var(--papel-sombra));
+  box-shadow:0 14px 30px rgba(0,0,0,.6);
+}

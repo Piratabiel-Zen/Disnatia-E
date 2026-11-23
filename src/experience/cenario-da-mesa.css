@@ -152,3 +152,64 @@ html[data-away="true"] .cenario-mesa-chuva i{animation-play-state:paused}
   .cenario-chuva-fundo{display:none}
   .cenario-mesa-chuva{opacity:.7}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   A NÉVOA
+
+   Espessa mas discreta, como a mesa pediu: ela precisa fechar a profundidade
+   da imagem sem apagar o casarão nem competir com o texto por cima.
+
+   Três planos em sentidos quase opostos e velocidades diferentes. Névoa que
+   anda toda para o mesmo lado lê como cortina passando; é o descompasso que
+   faz parecer ar parado se movendo sozinho.
+
+   Mora DENTRO do cenário por um motivo concreto: a casca da sessão tem fundo
+   opaco, e qualquer camada desenhada fora dela nasce atrás desse fundo. Foi
+   o que fez a primeira versão da chave de névoa não ter efeito nenhum.
+   ═══════════════════════════════════════════════════════════════════════ */
+.cenario-mesa-nevoa{position:absolute;inset:0;display:block;pointer-events:none}
+.cenario-mesa-nevoa i{
+  position:absolute;top:-25%;left:-55%;width:210%;height:150%;
+  display:block;will-change:transform;
+}
+/* Manchas grandes e moles. Nuvem fechada vira fumaça de palco. */
+.cenario-nevoa-fundo{
+  background-image:
+    radial-gradient(ellipse 40% 28% at 18% 62%,rgba(198,200,206,.17),transparent 70%),
+    radial-gradient(ellipse 32% 24% at 58% 74%,rgba(186,188,196,.14),transparent 72%),
+    radial-gradient(ellipse 46% 22% at 88% 58%,rgba(206,208,214,.12),transparent 70%);
+  animation:cenario-nevoa-a 78s linear infinite;
+}
+.cenario-nevoa-meio{
+  background-image:
+    radial-gradient(ellipse 36% 20% at 34% 82%,rgba(170,172,180,.16),transparent 72%),
+    radial-gradient(ellipse 28% 26% at 76% 68%,rgba(200,202,208,.11),transparent 70%);
+  animation:cenario-nevoa-b 112s linear infinite;
+}
+/* O véu: baixa o contraste do conjunto inteiro. É ele que dá o "espessa",
+   mais do que as manchas — e é o que mantém o "sútil", porque não tem borda. */
+.cenario-nevoa-frente{
+  background-image:radial-gradient(ellipse 75% 46% at 50% 78%,rgba(214,216,220,.1),transparent 76%);
+  animation:cenario-nevoa-respira 34s ease-in-out infinite;
+}
+
+@keyframes cenario-nevoa-a{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(13%,-2%,0)}
+}
+@keyframes cenario-nevoa-b{
+  from{transform:translate3d(9%,1%,0)}
+  to{transform:translate3d(-7%,-3%,0)}
+}
+@keyframes cenario-nevoa-respira{
+  0%,100%{opacity:.6}
+  50%{opacity:1}
+}
+
+/* Fora do modo imersivo a névoa sai inteira: quem escolheu "Leve" está
+   pedindo menos coisa na tela, e ela é a primeira a sair. */
+html[data-quality="light"] .cenario-mesa-nevoa{display:none}
+/* Movimento reduzido mantém a névoa, parada: ela faz parte do que a mesa
+   está vendo, e tirá-la mudaria a cena, não só o conforto. */
+html[data-motion="reduced"] .cenario-mesa-nevoa i{animation:none}
+html[data-motion="reduced"] .cenario-nevoa-frente{opacity:.85}

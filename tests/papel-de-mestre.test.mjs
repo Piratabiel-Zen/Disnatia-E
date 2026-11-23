@@ -18,6 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { semComentarios } from './ajuda/semComentarios.mjs';
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -35,8 +36,7 @@ test('ninguém volta a comparar primary com false ou true', () => {
   const culpados = arquivosDeCodigo(raiz).filter(caminho => {
     const fonte = readFileSync(caminho, 'utf8');
     // Dentro de comentário é o relato do erro, não o erro.
-    const semComentarios = fonte.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
-    return /\.primary\s*===\s*(false|true)/.test(semComentarios);
+    return /\.primary\s*===\s*(false|true)/.test(semComentarios(fonte));
   });
   assert.deepEqual(
     culpados.map(c => c.slice(raiz.length)),
