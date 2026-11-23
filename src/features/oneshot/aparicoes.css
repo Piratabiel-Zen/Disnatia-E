@@ -168,3 +168,39 @@
   font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
   letter-spacing:.12em;text-transform:uppercase;color:#4A4843;
 }
+
+/* ---- Examinar ----
+   A imagem da galeria é um botão, porque examinar é o gesto principal e
+   escondê-lo atrás de um ícone de lupa faria metade da mesa nunca descobrir
+   que dá para aproximar. Nada aqui avisa que o objeto esconde coisa. */
+.apa-examinar{
+  display:block;width:100%;padding:0;border:0;background:transparent;cursor:zoom-in;
+}
+.apa-examinar img{display:block;width:100%;transition:filter .2s ease}
+.apa-examinar:hover img{filter:brightness(1.1)}
+.apa-examinar:focus-visible{outline:1px solid #8B7A52;outline-offset:2px}
+
+/* ---- O que o Mestre esconde ---- */
+.apa-escondido{
+  margin:0;padding:11px 13px 12px;border:1px solid #2E251C;border-radius:3px;
+  display:grid;gap:10px;background:rgba(10,8,9,.5);
+}
+.apa-escondido legend{
+  padding:0 6px;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#8B7A52;
+}
+.apa-escondido label{display:grid;gap:4px}
+.apa-escondido span{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:#6E6C6A;
+}
+.apa-escondido textarea{
+  width:100%;box-sizing:border-box;padding:7px 9px;border-radius:3px;
+  background:#0C0C0D;border:1px solid #242427;color:#C8C6C2;
+  font-family:'Crimson Text',Georgia,serif;font-size:14.5px;resize:vertical;
+}
+.apa-escondido textarea:focus{outline:none;border-color:#35353A}
+.apa-escondido em{
+  font-style:normal;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:9px;line-height:1.5;color:#4A4845;
+}

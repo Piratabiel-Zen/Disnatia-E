@@ -6,6 +6,8 @@ import { ehMestre } from '../../core/acesso.mjs';
 import { comprimirParaDocumento } from '../../core/media';
 import { useMembro } from '../acesso/useMembro';
 import { observarLiberados } from '../acesso/observarLiberados';
+import InspetorDeObjeto from './InspetorDeObjeto.jsx';
+import { ZOOM_QUE_REVELA } from './inspecao.mjs';
 import {
   TIPOS_DE_APARICAO, alternarPessoa, aparicaoNova, cartaoDeAparicao, estaRevelada,
   jaNoMural, quemVe, revelarParaTodos, tipoDaAparicao,
@@ -27,6 +29,8 @@ import './aparicoes.css';
 export default function AparicoesPage() {
   const { membro, carregando, campanha } = useMembro();
   const [aparicoes, setAparicoes] = useState([]);
+  // Qual objeto está na mão de quem olha. Null é ninguém examinando.
+  const [examinando, setExaminando] = useState(null);
   const [fichas, setFichas] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
   const [filtro, setFiltro] = useState('');
@@ -127,8 +131,21 @@ export default function AparicoesPage() {
             {reveladas.map(a => (
               <li key={a.id}>
                 <figure>
+                  {/* A imagem vira botão: examinar é o gesto principal da
+                      galeria, e esconder isso atrás de um ícone de lupa faria
+                      metade da mesa nunca descobrir que dá para aproximar.
+                      Nada aqui avisa que o objeto esconde coisa — quem
+                      examina, acha. */}
                   {a.imagem
-                    ? <img src={a.imagem} alt={a.titulo || ''} />
+                    ? (
+                      <button
+                        type="button" className="apa-examinar"
+                        onClick={() => setExaminando(a)}
+                        title="Examinar de perto"
+                      >
+                        <img src={a.imagem} alt={a.titulo || ''} />
+                      </button>
+                    )
                     : <div className="apa-sem-imagem">{tipoDaAparicao(a.tipo).icone}</div>}
                   <figcaption>
                     <b>{a.titulo || tipoDaAparicao(a.tipo).nome}</b>
@@ -242,6 +259,32 @@ export default function AparicoesPage() {
             />
           </label>
 
+          {/* O QUE SÓ APARECE PARA QUEM PROCURA.
+              Os dois campos são opcionais e o que ficar em branco não existe:
+              objeto sem detalhe e sem verso ainda amplia e gira, e ampliar
+              uma foto velha já é metade da cena. */}
+          <fieldset className="apa-escondido">
+            <legend>O que está escondido</legend>
+            <label>
+              <span>Ao aproximar</span>
+              <textarea
+                rows={2} value={aberta.detalheDePerto || ''}
+                placeholder="Tem alguém na janela do fundo. Só se vê de perto."
+                onChange={e => salvar({ ...aberta, detalheDePerto: e.target.value })}
+              />
+              <em>Aparece quando o jogador passa de {Math.round(ZOOM_QUE_REVELA * 100)}% de zoom. Some ao afastar.</em>
+            </label>
+            <label>
+              <span>No verso</span>
+              <textarea
+                rows={2} value={aberta.versoTexto || ''}
+                placeholder="A data escrita a lápis. O bilhete atrás do retrato."
+                onChange={e => salvar({ ...aberta, versoTexto: e.target.value })}
+              />
+              <em>Preenchido, a mesa ganha o botão de virar o objeto.</em>
+            </label>
+          </fieldset>
+
           <div className="apa-imagem">
             {aberta.imagem && <img src={aberta.imagem} alt="" />}
             <div className="apa-imagem-acoes">
@@ -272,6 +315,14 @@ export default function AparicoesPage() {
             </div>
           )}
         </section>
+      )}
+
+      {/* O objeto na mão. Fica por último porque abre por cima de tudo. */}
+      {examinando && (
+        <InspetorDeObjeto
+          objeto={examinando}
+          aoFechar={() => setExaminando(null)}
+        />
       )}
     </div>
   );

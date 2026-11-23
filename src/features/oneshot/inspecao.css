@@ -1,0 +1,120 @@
+/* O OBJETO NA MÃO
+   Tela cheia e escura: examinar uma coisa é parar de olhar o resto, e esse
+   recorte é metade do efeito. O objeto fica no meio, grande, e a interface
+   em volta é a menor possível. */
+
+.insp{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:18px}
+.insp-fundo{
+  position:absolute;inset:0;border:0;padding:0;cursor:zoom-out;
+  background:rgba(4,3,5,.93);
+  backdrop-filter:blur(3px);
+}
+
+.insp-caixa{
+  position:relative;z-index:1;
+  width:min(940px,100%);max-height:100%;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;
+  border:1px solid #3A2E22;border-radius:4px;
+  background:linear-gradient(168deg,#1B1612,#110D0A 76%);
+  box-shadow:0 30px 70px rgba(0,0,0,.7);
+}
+
+.insp-barra{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 13px;border-bottom:1px solid #2E251C;
+}
+.insp-barra h3{
+  margin:0;font-family:Cinzel,serif;font-size:13px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:#C0A86E;
+}
+.insp-botoes{display:flex;align-items:center;gap:5px}
+.insp-botoes button{
+  min-width:30px;padding:5px 9px;border-radius:2px;cursor:pointer;
+  background:transparent;border:1px solid #3A2E22;color:#D7CDBA;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;
+}
+.insp-botoes button:hover:not(:disabled){border-color:#8B7A52;color:#C0A86E}
+.insp-botoes button:disabled{opacity:.3;cursor:default}
+.insp-botoes button[data-virado]{border-color:#8B7A52;color:#C0A86E}
+.insp-zoom{
+  min-width:44px;text-align:center;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;color:#8A7C68;
+}
+.insp-fechar{margin-left:4px}
+
+/* O palco. `overflow:hidden` é o que faz a imagem ampliada ser percorrida
+   em vez de empurrar a caixa inteira para fora da tela. */
+.insp-palco{
+  position:relative;overflow:hidden;
+  display:grid;place-items:center;
+  min-height:min(58vh,440px);
+  background:
+    radial-gradient(70% 70% at 50% 45%,rgba(192,168,110,.05),transparent 70%),
+    #0B0809;
+  touch-action:none;
+}
+.insp-palco[data-arrastavel]{cursor:grab}
+.insp-palco[data-arrastavel]:active{cursor:grabbing}
+.insp-palco img{
+  max-width:100%;max-height:min(58vh,440px);
+  display:block;user-select:none;
+  /* Só a transformação anima: animar `max-height` junto faria a imagem
+     tremer a cada passo de zoom. */
+  transition:transform .22s ease-out;
+  transform-origin:center;
+}
+
+.insp-sem-imagem{
+  margin:0;padding:30px;text-align:center;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;color:#6E6C6A;
+}
+
+/* O verso só de texto: papel claro, letra manuscrita, por cima do palco. */
+.insp-verso-texto{
+  position:absolute;inset:14%;display:grid;place-items:center;padding:18px;
+  background:linear-gradient(170deg,#D9CFB6,#B5A98C);
+  border:1px solid #8B7A52;box-shadow:0 14px 34px rgba(0,0,0,.6);
+  transform:rotate(-.6deg);
+}
+.insp-verso-texto p{
+  margin:0;font-family:'Crimson Text',Georgia,serif;font-size:16px;line-height:1.6;
+  color:#241C14;text-align:center;
+}
+
+/* O achado. Entra por baixo e some ao afastar: achado preso na tela vira
+   legenda, e legenda não assusta. */
+.insp-achado{
+  margin:0;padding:11px 14px;
+  border-top:1px solid #4A2129;
+  background:linear-gradient(180deg,rgba(142,31,43,.14),transparent);
+  font-family:'Crimson Text',Georgia,serif;font-size:15px;line-height:1.55;
+  color:#E0D6C4;
+  animation:inspAchado .5s ease-out both;
+}
+@keyframes inspAchado{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+.insp-pe{padding:10px 13px 12px;border-top:1px solid #2E251C;display:grid;gap:5px}
+.insp-descricao{
+  margin:0;font-family:'Crimson Text',Georgia,serif;font-size:14.5px;
+  line-height:1.55;color:#B8AE9C;
+}
+.insp-ajuda{
+  margin:0;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:9px;letter-spacing:.05em;color:#5E5A54;
+}
+
+/* Quem pediu menos movimento não ganha o deslize do zoom nem a entrada do
+   achado. Sem media query: `movimento.mjs` já escreve `data-motion`, e
+   repetir aqui passaria por cima da escolha da pessoa. */
+html[data-motion="reduced"] .insp-palco img{transition:none}
+html[data-motion="reduced"] .insp-achado{animation:none}
+
+@media (max-width:720px){
+  .insp{padding:0}
+  .insp-caixa{width:100%;height:100%;max-height:100%;border:0;border-radius:0}
+  .insp-palco{min-height:0}
+  .insp-palco img{max-height:none}
+  .insp-barra h3{font-size:11px}
+  /* No celular a ajuda de teclado não serve para nada. */
+  .insp-ajuda{display:none}
+}
