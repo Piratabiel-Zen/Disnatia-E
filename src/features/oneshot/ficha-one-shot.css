@@ -305,3 +305,190 @@
 .osf-chave input{margin:1px 0 0;accent-color:#8B5FAF;cursor:pointer}
 .osf-chave span{display:grid;gap:2px}
 .osf-chave em{font-style:normal;font-size:9px;color:#4A4845}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O GRIMÓRIO
+
+   A ficha deixa de ser uma pilha de painéis e vira um caderno aberto: duas
+   páginas, vinco no meio, couro em volta e papel envelhecido dentro.
+
+   Esta camada vem DEPOIS e só repinta — o miolo de cada bloco continua o
+   mesmo, e por isso as camadas de sangue, pavor e sanidade, que se penduram
+   na raiz, continuam valendo sem uma linha de mudança.
+
+   A paleta esquenta: o cinza puro de antes era de ficha de laboratório, e
+   caderno de couro não tem cinza. Entram castanho queimado, papel amarelado
+   e latão. O vermelho continua sendo só do que fere.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.osf{
+  /* Papel velho, não tela preta. Continua escuro para o texto claro ler. */
+  --osf-papel:#15110E;
+  --osf-painel:#1B1612;
+  --osf-linha:#2E251C;
+  --osf-linha-forte:#4A3B29;
+  --osf-tinta:#D7CDBA;
+  --osf-tinta-fraca:#8A7C68;
+  --osf-latao:#8B7A52;
+  --osf-latao-claro:#C0A86E;
+
+  /* As duas páginas, lado a lado. `start` e não `stretch`: página que se
+     estica até a altura da outra deixa um vão vazio enorme embaixo da mais
+     curta, e caderno não tem vão. */
+  grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+  align-items:start;
+  gap:0;
+  padding:18px;
+  border:1px solid #3A2E22;
+  border-radius:5px;
+  background:
+    radial-gradient(120% 80% at 50% -10%,rgba(192,168,110,.05),transparent 60%),
+    repeating-linear-gradient(94deg,rgba(0,0,0,.14) 0 2px,transparent 2px 6px),
+    linear-gradient(168deg,#241C15,#120E0B 72%);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.6),0 18px 44px rgba(0,0,0,.5);
+}
+
+.osf-pagina{display:grid;gap:12px;align-content:start;min-width:0}
+.osf-pagina-esquerda{padding-right:20px}
+.osf-pagina-direita{padding-left:20px}
+
+/* O vinco: sombra para dentro dos dois lados, como papel que dobra. */
+.osf-vinco{
+  grid-column:1 / -1;grid-row:1 / -1;
+  justify-self:center;align-self:stretch;
+  width:26px;pointer-events:none;z-index:1;
+  background:linear-gradient(90deg,
+    transparent,rgba(0,0,0,.5) 36%,rgba(0,0,0,.72) 50%,rgba(0,0,0,.5) 64%,transparent);
+}
+/* A visão ocupa as duas páginas: quando ela está aberta, nada mais importa. */
+.osf-visao{grid-column:1 / -1}
+
+/* Os blocos viram recortes de papel, não caixas. */
+.osf-bloco{
+  background:
+    radial-gradient(90% 60% at 50% 0%,rgba(192,168,110,.035),transparent 62%),
+    linear-gradient(172deg,#1E1813,#17120E);
+  border:1px solid var(--osf-linha);
+  border-radius:3px;
+  position:relative;
+}
+/* O filete de latão no alto do bloco, que é o que dá o ar de impresso. */
+.osf-bloco::before{
+  content:'';position:absolute;left:14px;right:14px;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,122,82,.5),transparent);
+}
+.osf-bloco h4{color:var(--osf-latao-claro)}
+
+/* ---- Os ícones ---- */
+.osf-icone{flex:0 0 auto;color:var(--osf-latao);opacity:.9}
+
+/* ---- Atributos em escudo ---- */
+.osf-atributos{
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,86px),1fr));
+  gap:7px;
+}
+.osf-atributos li{
+  flex-direction:column;align-items:center;gap:3px;
+  padding:9px 5px 7px;
+  background:linear-gradient(170deg,#241C15,#17120E);
+  border:1px solid var(--osf-linha-forte);
+  /* O escudo: canto de baixo chanfrado dos dois lados. */
+  clip-path:polygon(0 0,100% 0,100% 72%,50% 100%,0 72%);
+  text-align:center;
+}
+.osf-atributos li .osf-icone{font-size:16px;margin-bottom:1px}
+.osf-atributos li>span{
+  font-family:Cinzel,serif;font-size:8.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--osf-tinta-fraca);
+}
+.osf-atributos li b,.osf-atributos li select{
+  font-family:Cinzel,serif;font-size:17px;color:var(--osf-tinta);
+  background:transparent;border:0;text-align:center;
+}
+.osf-atributos li select{cursor:pointer;padding:0;appearance:none;text-align-last:center}
+.osf-atributos li select:focus{outline:1px solid var(--osf-latao);outline-offset:2px}
+
+/* ---- Competências em duas colunas, com ícone ---- */
+.osf-competencias{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:4px 14px}
+.osf-competencias li{
+  align-items:center;gap:7px;padding:3px 4px;border-radius:2px;
+}
+.osf-competencias li:hover{background:rgba(139,122,82,.07)}
+.osf-competencias li .osf-icone{font-size:14px}
+.osf-competencias b{
+  order:2;width:auto;min-width:26px;
+  font-family:Cinzel,serif;font-size:14px;color:var(--osf-latao-claro);
+}
+.osf-competencias span{order:1;flex:1}
+.osf-competencias b[data-negativo]{color:#9B5560}
+
+/* ---- O retrato pregado, com lacre ---- */
+.osf-retrato{
+  border:1px solid #3A2E22;
+  background:#0E0B09;
+  box-shadow:0 6px 16px rgba(0,0,0,.6);
+  transform:rotate(-1.1deg);
+}
+/* O lacre de cera no canto de baixo. Desenhado, não imagem: é um círculo
+   irregular com um brilho fora do centro, e a esta altura ninguém olha de
+   perto o bastante para pedir mais. */
+.osf-retrato::before{
+  content:'';position:absolute;z-index:2;
+  left:-9px;bottom:-7px;width:24px;height:24px;border-radius:48% 52% 46% 54%;
+  background:radial-gradient(circle at 36% 32%,#9E2B33,#5E1319 68%,#3A0C10);
+  box-shadow:0 2px 5px rgba(0,0,0,.7);
+}
+
+/* ---- Condição ---- */
+.osf-medidor-topo span{display:flex;align-items:center;gap:5px}
+.osf-medidor-topo .osf-icone{font-size:13px}
+.osf-condicoes{gap:11px}
+
+/* ---- O talento, que é a peça em destaque da página da direita ---- */
+.osf-talento-carta{
+  border-color:#4A2129;border-left-color:#8E1F2B;
+  background:
+    radial-gradient(80% 60% at 50% 0%,rgba(142,31,43,.1),transparent 64%),
+    linear-gradient(170deg,#1E1411,#17100E);
+}
+.osf-talento-resumo{color:var(--osf-latao-claro)}
+
+/* ---- Uma página só quando a tela não dá para duas ----
+   O limite é a LEGIBILIDADE da coluna, não o tamanho do aparelho: duas
+   colunas abaixo disto espremem a competência até o nome quebrar em três
+   linhas, e aí o caderno fica bonito e inútil. */
+@media (max-width:900px){
+  .osf{grid-template-columns:1fr;gap:12px;padding:13px}
+  .osf-pagina-esquerda,.osf-pagina-direita{padding:0}
+  .osf-vinco{display:none}
+  .osf-atributos{grid-template-columns:repeat(auto-fit,minmax(min(100%,76px),1fr))}
+}
+
+/* ---- Correções vistas só no navegador ----
+   Três coisas que o build não mostra e a tela mostrou na primeira olhada. */
+
+/* 1. "Ocupação" cabia em três colunas na ficha larga de antes; na página da
+      esquerda do caderno, que é metade disso, ela virava "enferm…". Nome em
+      cima sozinho, idade e ocupação dividindo a linha de baixo. */
+.osf-identidade{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.osf-identidade>:first-child{grid-column:1 / -1}
+.osf-identidade>:nth-child(2){grid-template-columns:none}
+
+/* 2. O `appearance:none` tira a seta do seletor no Chrome, mas o Firefox
+      ainda desenha a dela, e dentro do escudo ela aparecia como um risco
+      solto embaixo do número. */
+.osf-atributos li select{
+  background-image:none;
+  -moz-appearance:none;
+  text-indent:.01px;
+  text-overflow:'';
+}
+.osf-atributos li select::-ms-expand{display:none}
+
+/* 3. A condição ocupava altura demais e desequilibrava as duas páginas: as
+      caixinhas eram grandes e empilhavam três medidores altos. Encolhendo
+      elas, o caderno fecha com as páginas quase do mesmo tamanho. */
+.osf-condicoes{gap:8px}
+.osf-medidor-topo{margin-bottom:4px}
+.osf-caixas{gap:5px}
+.osf-caixas button{width:19px;height:19px}

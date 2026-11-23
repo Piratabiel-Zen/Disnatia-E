@@ -8,6 +8,7 @@ import {
 import {
   TALENTOS, TALENTOS_POR_PERSONAGEM, talentoPorId, talentosTomados,
 } from './talentosOneShot.mjs';
+import Icone from './IconesOneShot.jsx';
 import { comprimirParaDocumento } from '../../core/media';
 import './paginas-one-shot.css';
 import './ficha-one-shot.css';
@@ -30,11 +31,11 @@ import './ficha-viva.css';
  * três caixas vazias de seis, sim.
  */
 
-function Medidor({ rotulo, valor, maximo, aoMarcar, aoAliviar, podeEditar, perigo, cor = 'osso' }) {
+function Medidor({ rotulo, valor, maximo, aoMarcar, aoAliviar, podeEditar, perigo, cor = 'osso', icone }) {
   return (
     <div className="osf-medidor" data-perigo={perigo ? 'sim' : 'nao'} data-cor={cor}>
       <div className="osf-medidor-topo">
-        <span>{rotulo}</span>
+        <span><Icone nome={icone} />{rotulo}</span>
         <b>{valor}/{maximo}</b>
       </div>
       <div className="osf-caixas">
@@ -98,6 +99,11 @@ export default function FichaOneShot({
         <i className="osf-riscos" /><i className="osf-sombras" />
       </span>
 
+      {/* O VINCO do meio: é o que faz as duas colunas lerem como um caderno
+          aberto e não como duas caixas lado a lado. Some junto com a segunda
+          coluna quando a tela é estreita. */}
+      <span className="osf-vinco" aria-hidden="true" />
+
       {/* A VISÃO vem primeiro, acima de tudo: quando ela está pendente, a mesa
           está esperando uma resposta e nada mais na ficha importa agora. */}
       {ficha.visaoPendente && (
@@ -123,6 +129,10 @@ export default function FichaOneShot({
           )}
         </section>
       )}
+
+      {/* PÁGINA DA ESQUERDA: quem a pessoa é e em que estado ela está.
+          É o lado que o jogador olha o tempo todo durante a cena. */}
+      <div className="osf-pagina osf-pagina-esquerda">
 
       <section className="osf-bloco">
         <h4>Quem é</h4>
@@ -191,19 +201,19 @@ export default function FichaOneShot({
         </h4>
         <div className="osf-condicoes">
           <Medidor
-            rotulo="Vida" valor={ficha.pv} maximo={pvMaximo} perigo={ficha.pv <= 1}
+            icone="vida" rotulo="Vida" valor={ficha.pv} maximo={pvMaximo} perigo={ficha.pv <= 1}
             podeEditar={podeEditar}
             aoMarcar={n => salvar({ pv: Math.min(pvMaximo, ficha.pv + n) })}
             aoAliviar={n => salvar({ pv: Math.max(0, ficha.pv - n) })}
           />
           <Medidor
-            rotulo="Pavor" valor={ficha.pavor} maximo={PAVOR_MAXIMO} cor="roxo"
+            icone="pavor" rotulo="Pavor" valor={ficha.pavor} maximo={PAVOR_MAXIMO} cor="roxo"
             perigo={ficha.pavor >= PAVOR_MAXIMO - 1} podeEditar={podeEditar}
             aoMarcar={n => aoMudar?.(marcar(ficha, 'pavor', n))}
             aoAliviar={n => aoMudar?.(aliviar(ficha, 'pavor', n))}
           />
           <Medidor
-            rotulo="Sanidade" valor={ficha.sanidade} maximo={SANIDADE_MAXIMA} cor="sangue"
+            icone="sanidade" rotulo="Sanidade" valor={ficha.sanidade} maximo={SANIDADE_MAXIMA} cor="sangue"
             perigo={ficha.sanidade >= SANIDADE_MAXIMA - 1} podeEditar={podeEditar}
             aoMarcar={n => aoMudar?.(marcar(ficha, 'sanidade', n))}
             aoAliviar={n => aoMudar?.(aliviar(ficha, 'sanidade', n))}
@@ -249,6 +259,7 @@ export default function FichaOneShot({
         <ul className="osf-atributos">
           {ATRIBUTOS.map(a => (
             <li key={a.id} title={a.resumo}>
+              <Icone nome={a.id} />
               <span>{a.nome}</span>
               {podeEditar ? (
                 <select
@@ -266,6 +277,12 @@ export default function FichaOneShot({
         </ul>
       </section>
 
+      </div>
+
+      {/* PÁGINA DA DIREITA: o que a pessoa sabe fazer. É o lado que ela
+          consulta na hora de rolar, e por isso fica inteiro visível. */}
+      <div className="osf-pagina osf-pagina-direita">
+
       <section className="osf-bloco">
         <h4>
           Competências
@@ -281,6 +298,7 @@ export default function FichaOneShot({
                 {competencias[c.id] > 0 && '+'}
                 {competencias[c.id] < 0 ? `−${Math.abs(competencias[c.id])}` : competencias[c.id]}
               </b>
+              <Icone nome={c.id} />
               <span>
                 {c.nome}
                 {/* De onde vem o número, em cima do cursor. Sem isto a
@@ -374,6 +392,8 @@ export default function FichaOneShot({
           </>
         )}
       </section>
+
+      </div>
 
       <p className="osf-regua">
         d20 + competência contra: {DIFICULDADES.map(d => `${d.nome.toLowerCase()} ${d.alvo}`).join(' · ')}.
