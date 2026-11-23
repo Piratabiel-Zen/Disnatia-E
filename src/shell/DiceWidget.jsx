@@ -11,7 +11,9 @@ import "../experience/mesa-de-dados.css";
 // O dado flutuante usa three.js; só baixa quando a mesa de dados é aberta.
 const FloatingDie = lazy(() => import("../experience/FloatingDie"));
 import { activeCampaign, docIn } from '../core/campaign';
-import { dadosDoSistema } from '../core/sistemas/index.mjs';
+import { dadosDoSistema, sistemaDe, colecaoDeFichas } from '../core/sistemas/index.mjs';
+import { opcoesDeRolagem, climaDaCompetencia } from '../features/oneshot/rolagemOneShot.mjs';
+import '../features/oneshot/rolagem-one-shot.css';
 export function DiceTrayVisual({ sides, finalValue, rollTs, color, onSettled }) {
   const [display, setDisplay] = useState(finalValue);
   const [phase, setPhase] = useState('idle');
@@ -74,6 +76,16 @@ function DiceWidget({ access }) {
   const [dice, setDice] = useState(faceInicial);
   const [count, setCount] = useState(1);
   const [bonus, setBonus] = useState(0);
+  // A AÇÃO ESCOLHIDA, só nas mesas de uma noite.
+  //
+  // Numa one-shot ninguém decora a ficha: a mesa dura uma sessão e metade
+  // das pessoas nunca jogou o sistema. Pedir "some sua competência" é pedir
+  // conta errada, e conta errada num teste de Pavor custa a cena. Então o
+  // dado pergunta a ação e faz a conta sozinho.
+  const [acao, setAcao] = useState('');
+  const [fichaDaNoite, setFichaDaNoite] = useState(null);
+  const climaRef = useRef(0);
+  const ehNoite = sistemaDe(activeCampaign())?.id === 'oneshot';
   const [result, setResult] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [physicalRolling, setPhysicalRolling] = useState(false);
@@ -84,6 +96,19 @@ function DiceWidget({ access }) {
     classId: access?.classId || '',
     className: access?.className || '',
   });
+
+  // A ficha da noite mora em coleção própria (`fichas_oneshot`), não em
+  // `sheets`: por isso esta busca é separada da do perfil, que lê a ficha
+  // da Dinastia E.
+  useEffect(() => {
+    if (!ehNoite || !access?.sheetId) { setFichaDaNoite(null); return undefined; }
+    const unsub = onSnapshot(
+      docIn(colecaoDeFichas(activeCampaign()), String(access.sheetId)),
+      snap => setFichaDaNoite(snap.exists() ? (snap.data() || {}) : null),
+      () => setFichaDaNoite(null),
+    );
+    return () => unsub();
+  }, [ehNoite, access?.sheetId]);
 
   useEffect(() => {
     if (access?.role !== 'player' || !access?.sheetId) {
@@ -155,6 +180,25 @@ function DiceWidget({ access }) {
     };
     setResult(res);
     setRevealed(false);
+
+    /* O CLIMA DA AÇÃO. Investigar acende uma lupa, esconder-se apaga a luz,
+       resistir ao medo treme a tela. Vive num atributo da raiz e sai sozinho
+       depois de alguns segundos — efeito que fica preso vira cenário, e aí
+       deixa de marcar a ação que o causou.
+
+       Só três climas, e de propósito: a terceira vez que a tela treme,
+       ninguém olha mais. Competência sem clima rola sem efeito nenhum. */
+    if (ehNoite) {
+      const clima = isFail ? 'tremor' : climaDaCompetencia(acao);
+      if (clima) {
+        const raiz = document.documentElement;
+        raiz.dataset.climaDaAcao = clima;
+        window.clearTimeout(climaRef.current);
+        climaRef.current = window.setTimeout(() => {
+          delete raiz.dataset.climaDaAcao;
+        }, 2600);
+      }
+    }
     // O autor vê o crítico sem esperar o percurso de rede; o rollId evita duplicar
     // o efeito quando o mesmo evento retorna pelo Firebase.
     window.dispatchEvent(new CustomEvent('dinastia:dice-live', { detail: res }));
@@ -211,10 +255,44 @@ function DiceWidget({ access }) {
               {quantidadesPossiveis.map(n => <button key={n} onClick={()=>{if(!physicalRolling){setCount(n);setResult(null);}}} style={{width:31,height:28,borderRadius:7,border:`1px solid ${count===n?'rgba(168,85,247,.65)':'rgba(255,255,255,.1)'}`,background:count===n?'rgba(168,85,247,.2)':'rgba(255,255,255,.03)',color:count===n?'#fff':'#8A7A92',fontFamily:'Cinzel,serif',cursor:'pointer'}}>{n}</button>)}
             </div>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16}}>
-            <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Bônus</label>
-            <input type="number" value={bonus} onChange={e=>setBonus(Number(e.target.value))} style={{flex:1, textAlign:'center', padding:'4px', fontSize:14}} />
-          </div>
+          {/* Na mesa de uma noite o bônus não se digita: escolhe-se a AÇÃO e
+              a ficha faz a conta. Sem ficha (Mestre, visitante) cai no campo
+              de sempre, porque o Mestre rola por criatura e não tem
+              competência nenhuma para consultar. */}
+          {ehNoite && fichaDaNoite ? (
+            <div className="rol-acao">
+              <label htmlFor="rol-acao-sel">O que você está fazendo?</label>
+              <select
+                id="rol-acao-sel"
+                value={acao}
+                onChange={e => {
+                  const id = e.target.value;
+                  setAcao(id);
+                  const escolhida = opcoesDeRolagem(fichaDaNoite).find(o => o.id === id);
+                  setBonus(escolhida ? escolhida.bonus : 0);
+                  setResult(null);
+                }}
+              >
+                <option value="">— nada em especial (sem bônus) —</option>
+                {opcoesDeRolagem(fichaDaNoite).map(o => (
+                  <option key={o.id} value={o.id}>
+                    {o.nome} {o.bonus < 0 ? '−' : '+'}{Math.abs(o.bonus)}
+                    {o.reforcado ? ' (reforçado)' : ''}
+                  </option>
+                ))}
+              </select>
+              <em>
+                {acao
+                  ? `Entra ${bonus < 0 ? '−' : '+'}${Math.abs(bonus)} no resultado, direto da sua ficha.`
+                  : 'Escolha a ação e o bônus da sua ficha entra sozinho no total.'}
+              </em>
+            </div>
+          ) : (
+            <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16}}>
+              <label style={{fontSize:11, color:'#7B6D8A', fontFamily:'Cinzel,serif'}}>Bônus</label>
+              <input type="number" value={bonus} onChange={e=>setBonus(Number(e.target.value))} style={{flex:1, textAlign:'center', padding:'4px', fontSize:14}} />
+            </div>
+          )}
           <PhysicalDiceTray
             className={'dice-mesa'+(holding?' is-holding':'')+(physicalRolling?' is-rolling':'')+(rearmed&&revealed?' is-rearmed':'')}
             sides={result?.sides || dice}

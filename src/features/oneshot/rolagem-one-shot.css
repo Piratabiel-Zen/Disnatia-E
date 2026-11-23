@@ -1,0 +1,83 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A ROLAGEM DA NOITE
+
+   Duas coisas: o seletor de ação dentro do widget de dados, e o clima que a
+   ação deixa na tela por alguns segundos.
+
+   O clima vive em `html[data-clima-da-acao]` e some sozinho. Preso, viraria
+   cenário — e cenário não marca a ação que o causou. São três e só três,
+   porque a terceira vez que a tela treme ninguém olha mais.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ---- O seletor de ação ---- */
+.rol-acao{display:grid;gap:5px;margin-bottom:16px}
+.rol-acao label{
+  font-family:Cinzel,serif;font-size:11px;letter-spacing:.06em;color:#9A8A7A;
+}
+.rol-acao select{
+  width:100%;box-sizing:border-box;padding:7px 9px;border-radius:5px;
+  background:#15110E;border:1px solid #3A2E22;color:#D7CDBA;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;cursor:pointer;
+}
+.rol-acao select:focus{outline:none;border-color:#8B7A52}
+.rol-acao em{
+  font-style:normal;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:9px;line-height:1.5;color:#6E6C6A;
+}
+
+/* ---- O clima ----
+   Camada única em `body::after`: uma só por tela, sem pegar clique, e que
+   não existe quando não há clima — nada é desenhado fora da ação. */
+html[data-clima-da-acao] body::after{
+  content:'';position:fixed;inset:0;z-index:390;pointer-events:none;
+  animation:rolClima 2.6s ease-out both;
+}
+
+/* LUPA: um círculo de luz fecha sobre o meio da tela e abre de novo, como
+   quem aproxima o olho de uma coisa. */
+html[data-clima-da-acao="lupa"] body::after{
+  background:radial-gradient(circle at 50% 46%,transparent 0 16%,rgba(3,2,4,.62) 42%);
+  animation-name:rolLupa;
+}
+@keyframes rolLupa{
+  0%{opacity:0;transform:scale(1.5)}
+  28%{opacity:1;transform:scale(1)}
+  72%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.35)}
+}
+
+/* ESCURO: a luz da sala cai. Quem se esconde apaga o que está em volta. */
+html[data-clima-da-acao="escuro"] body::after{
+  background:rgba(2,2,4,.74);
+  animation-name:rolEscuro;
+}
+@keyframes rolEscuro{
+  0%{opacity:0}
+  22%{opacity:1}
+  70%{opacity:1}
+  100%{opacity:0}
+}
+
+/* TREMOR: a tela inteira estremece. Vai no `html` e não na camada, senão
+   tremeria só o véu e não o que a pessoa está lendo. */
+html[data-clima-da-acao="tremor"]{animation:rolTremor .5s ease-in-out 3}
+@keyframes rolTremor{
+  0%,100%{transform:none}
+  20%{transform:translate(1.4px,-1px) rotate(.06deg)}
+  45%{transform:translate(-1.6px,.8px) rotate(-.07deg)}
+  70%{transform:translate(1px,1.2px) rotate(.04deg)}
+}
+html[data-clima-da-acao="tremor"] body::after{
+  background:radial-gradient(130% 90% at 50% 50%,transparent 44%,rgba(70,8,16,.4));
+  animation-name:rolEscuro;
+}
+
+/* Quem pediu menos movimento fica sem nenhum deles — e o tremor é o
+   primeiro a sair, porque é o que mais incomoda quem tem sensibilidade a
+   movimento. Sem media query: `movimento.mjs` escreve `data-motion`, e
+   repetir aqui passaria por cima de quem religou o movimento na mesa. */
+html[data-motion="reduced"][data-clima-da-acao]{animation:none!important}
+html[data-motion="reduced"][data-clima-da-acao] body::after{display:none}
+/* No modo leve some junto com o resto da decoração contínua. */
+html[data-quality="light"][data-clima-da-acao]{animation:none!important}
+html[data-quality="light"][data-clima-da-acao] body::after{display:none}
