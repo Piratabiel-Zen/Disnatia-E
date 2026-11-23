@@ -8,6 +8,7 @@ import { verComoJogador } from '../acesso/previaDeJogador.mjs';
 import FichaOneShot from './FichaOneShot.jsx';
 import SeloDeAcessoRestrito from '../cain/SeloDeAcessoRestrito.jsx';
 import { fichaNova, pvMaximoDaFicha } from './fichaOneShot.mjs';
+import './paginas-one-shot.css';
 import './fichas-one-shot.css';
 
 const TETO_DE_FICHAS = 8;
@@ -145,6 +146,11 @@ export default function FichasOneShotPage({ playerSheetId = '' }) {
           <FichaOneShot
             ficha={aberta} aoMudar={ficha => salvar({ ...ficha, id: aberta.id })}
             podeEditar={podeEditar} mestre={mestre}
+            // Para o seletor avisar que um talento já está com outra pessoa.
+            // O jogador comum só enxerga a ficha dele, então para ele a lista
+            // chega vazia e o aviso simplesmente não aparece — quem precisa
+            // dessa visão é o Mestre, que vê a mesa toda.
+            fichasDaMesa={fichas}
           />
         </section>
       )}

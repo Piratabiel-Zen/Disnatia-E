@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SECOES_DAS_REGRAS, buscarNasRegras } from './regrasOneShot.mjs';
+import './paginas-one-shot.css';
 import './regras-one-shot.css';
 
 /**

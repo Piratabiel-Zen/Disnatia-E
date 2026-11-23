@@ -1,0 +1,68 @@
+/* Os talentos, na mesma gramática das Regras: preto, cinza, Cinzel no título
+   e Crimson no corpo. O único acento é o latão apagado do "quando", porque é
+   a linha que decide discussão na mesa e precisa se achar sozinha.
+
+   Duas colunas em tela larga: são dez cartas e o jogador escolhe COMPARANDO.
+   Numa coluna só ele rola a página e esquece a primeira. */
+.ost{display:grid;gap:14px;color:#C8C6C2}
+
+.ost-barra{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.ost-barra h2{
+  margin:0;font-family:Cinzel,serif;font-size:19px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:#9A9793;
+}
+.ost-barra p{margin:4px 0 0;font-size:13px;color:#6E6C6A;max-width:62ch;line-height:1.5}
+.ost-barra input{
+  padding:7px 11px;border-radius:3px;background:#0C0C0D;
+  border:1px solid #242427;color:#C8C6C2;font-size:13px;min-width:210px;
+}
+.ost-barra input:focus{outline:none;border-color:#35353A}
+
+.ost-lista{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:12px;
+  grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+}
+
+.ost-carta{
+  padding:14px 16px 15px;border:1px solid #242427;border-left:3px solid #35353A;
+  border-radius:3px;background:#121214;
+  display:flex;flex-direction:column;gap:7px;
+}
+.ost-carta header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ost-carta h3{
+  margin:0;font-family:Cinzel,serif;font-size:13px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#9A9793;
+}
+.ost-limite{
+  flex:0 0 auto;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#585654;
+}
+.ost-resumo{
+  margin:0;font-family:Cinzel,serif;font-size:12px;letter-spacing:.04em;
+  color:#8B7A52;
+}
+.ost-efeito{
+  margin:0;font-family:'Crimson Text',Georgia,serif;
+  font-size:15px;line-height:1.6;color:#C8C6C2;
+}
+.ost-quando{
+  margin:auto 0 0;padding-top:7px;border-top:1px solid #1C1C1F;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:10px;line-height:1.55;color:#6E6C6A;letter-spacing:.03em;
+}
+.ost-quando span{color:#8B7A52;text-transform:uppercase;letter-spacing:.12em;margin-right:6px}
+
+.ost-nada,.ost-pe{
+  margin:0;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:10px;line-height:1.6;color:#585654;letter-spacing:.04em;
+}
+.ost-nada{padding:16px;text-align:center;border:1px dashed #242427;border-radius:3px}
+.ost-pe{max-width:70ch}
+
+@media(max-width:720px){
+  .ost-lista{grid-template-columns:1fr}
+  .ost-carta{padding:13px 13px 14px}
+  .ost-efeito{font-size:14.5px}
+  .ost-barra input{font-size:16px}
+}

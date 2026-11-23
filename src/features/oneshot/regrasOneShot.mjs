@@ -13,7 +13,9 @@ import {
   DIFICULDADES, PAVOR_MAXIMO, SANIDADE_MAXIMA, PONTOS_DE_SORTE, PV_ADULTO, PV_JOVEM,
   IDADE_JOVEM_MIN, IDADE_JOVEM_MAX, PONTOS_DE_ATRIBUTO, ATRIBUTO_MAXIMO_NA_CRIACAO,
   RECUO_AO_RESISTIR, TALENTOS_POR_PERSONAGEM, ATRIBUTO_MINIMO, ATRIBUTO_MAXIMO,
+  COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA, REFORCO_A_PARTIR_DE, REFORCO_BONUS,
 } from './fichaOneShot.mjs';
+import { TALENTOS } from './talentosOneShot.mjs';
 
 const regua = DIFICULDADES.map(d => `${d.nome} ${d.alvo}`).join(', ');
 
@@ -41,8 +43,8 @@ export const SECOES_DAS_REGRAS = Object.freeze([
     id: 'atributos',
     titulo: 'Os oito atributos',
     corpo: [
-      `Força, Agilidade, Precisão, Inteligência, Percepção, Carisma, Vontade e Sorte. Todos começam em ${ATRIBUTO_MINIMO} e a pessoa distribui ${PONTOS_DE_ATRIBUTO} pontos entre eles.`,
-      `No começo da noite nada passa de ${ATRIBUTO_MAXIMO_NA_CRIACAO}; o teto do sistema é ${ATRIBUTO_MAXIMO}, reservado para o que a história conceder.`,
+      `Força, Agilidade, Precisão, Inteligência, Percepção, Carisma, Vontade e Sorte. Todos começam em ${ATRIBUTO_MINIMO} e a pessoa distribui ${PONTOS_DE_ATRIBUTO} pontos entre eles, até ${ATRIBUTO_MAXIMO} em cada.`,
+      `Deixar um atributo em ${ATRIBUTO_MINIMO} é permitido, e é uma decisão de verdade: as competências dele ficam em ${COMPETENCIA_MINIMA} pela noite toda, e nada as tira dali. Ninguém é bom em tudo às três da manhã.`,
       'A lista é fixa e igual para todos. Quem a pessoa é aparece nos números, na ocupação e no histórico — não em escolher atributos diferentes dos outros.',
     ],
   },
@@ -50,9 +52,12 @@ export const SECOES_DAS_REGRAS = Object.freeze([
     id: 'competencias',
     titulo: 'As doze competências',
     corpo: [
-      'Competência não se compra: ela escala do atributo. Uma competência vale o atributo que a sustenta menos um.',
-      'Carisma 3 dá Persuasão 2. Quando duas coisas sustentam a mesma competência, vale a maior das duas — quem é forte ou ágil corre bem, e não precisa ser as duas.',
-      'Por isso a ficha não tem onde marcar competência: ela se recalcula sozinha quando o atributo muda.',
+      `Competência não se compra: ela escala do atributo que a sustenta, menos dois. Atributo 3 dá +1; atributo ${ATRIBUTO_MAXIMO} dá ${COMPETENCIA_MAXIMA}, que é o teto.`,
+      `Atributo com um ponto só dá ${COMPETENCIA_MINIMA + 1}. Atributo sem ponto nenhum dá ${COMPETENCIA_MINIMA}, sempre — essa é a única competência que nenhum reforço alcança.`,
+      'Quando duas coisas sustentam a mesma competência, vale a maior das duas: quem é forte ou ágil corre bem, e não precisa ser as duas.',
+      `E toda competência tem um segundo atributo, de apoio. A partir de ${REFORCO_A_PARTIR_DE} nesse atributo, a competência ganha +${REFORCO_BONUS}. Sobrevivência escala de Percepção, mas quem aguenta a mata é quem tem Vontade; Enganação escala de Carisma, mas mentir bem também é Sorte.`,
+      'O apoio é o que tira Vontade e Sorte do papel de enfeite — antes ninguém os comprava, porque não levantavam nada.',
+      'Por isso a ficha não tem onde marcar competência: ela se recalcula sozinha quando o atributo muda, e mostra ao lado de cada uma de onde vem o reforço e se ele já está pago.',
     ],
   },
   {
@@ -81,8 +86,10 @@ export const SECOES_DAS_REGRAS = Object.freeze([
     corpo: [
       `${PONTOS_DE_SORTE} pontos de sorte na noite inteira. Cada um rola de novo um teste e fica com o segundo resultado, mesmo que seja pior. Não voltam.`,
       'Sorte, o atributo, é outra coisa: é o que o Mestre pede quando nada do que a pessoa é tem a ver com o que está acontecendo.',
-      `${TALENTOS_POR_PERSONAGEM} talento especial por personagem: uma coisa só que essa pessoa sabe fazer e as outras não. Vem da ocupação e do histórico, e quem aprova é o Mestre.`,
-      'Talento não é poder. É "sou enfermeira, reconheço esse cheiro" ou "cresci nesta rua, sei onde o muro é baixo".',
+      `${TALENTOS_POR_PERSONAGEM} talento especial por personagem, escolhido entre os ${TALENTOS.length} da aba de Talentos. É a única coisa que diferencia duas fichas de gente comum, então dois personagens da mesma mesa não deveriam repetir.`,
+      'Talento não é poder nem número a mais: é permissão para quebrar uma regra, quase sempre uma vez só na noite. Quem guarda o talento até a hora certa costuma tomar a melhor decisão da mesa.',
+      'Quase todos precisam ser declarados ANTES de o dado sair da mão. Dado na mesa cancela o talento — é o que evita a discussão no susto.',
+      'Se nada na lista servir para o personagem que a pessoa escreveu, o Mestre pode inventar um: a ficha aceita talento de texto livre.',
     ],
   },
   {

@@ -10,6 +10,7 @@ import {
   TIPOS_DE_APARICAO, alternarPessoa, aparicaoNova, cartaoDeAparicao, estaRevelada,
   jaNoMural, quemVe, revelarParaTodos, tipoDaAparicao,
 } from './aparicoes.mjs';
+import './paginas-one-shot.css';
 import './aparicoes.css';
 
 /**

@@ -1,10 +1,14 @@
 import {
   ATRIBUTOS, ATRIBUTO_MAXIMO_NA_CRIACAO, ATRIBUTO_MINIMO, COMPETENCIAS,
   DIFICULDADES, PAVOR_MAXIMO, PONTOS_DE_SORTE, SANIDADE_MAXIMA,
-  competenciasDaFicha, marcar, aliviar, pontosRestantes, pvMaximoDaFicha,
-  responderAVisao, normalizar,
+  REFORCO_A_PARTIR_DE, competenciasDaFicha, marcar, aliviar, pontosRestantes,
+  pvMaximoDaFicha, reforcoAtivo, responderAVisao, normalizar,
 } from './fichaOneShot.mjs';
+import {
+  TALENTOS, TALENTOS_POR_PERSONAGEM, talentoPorId, talentosTomados,
+} from './talentosOneShot.mjs';
 import { comprimirParaDocumento } from '../../core/media';
+import './paginas-one-shot.css';
 import './ficha-one-shot.css';
 
 /**
@@ -45,12 +49,23 @@ function Medidor({ rotulo, valor, maximo, aoMarcar, aoAliviar, podeEditar, perig
   );
 }
 
-export default function FichaOneShot({ ficha: bruta, aoMudar, podeEditar = false, mestre = false }) {
+/* Para a competência dizer "+1 com 3 de Vontade" em vez de "+1 com vontade". */
+const NOME_DO_ATRIBUTO = Object.fromEntries(ATRIBUTOS.map(a => [a.id, a.nome]));
+
+export default function FichaOneShot({
+  ficha: bruta, aoMudar, podeEditar = false, mestre = false,
+  // As outras fichas da mesa, só para avisar que um talento já está com
+  // alguém. Opcional de propósito: a ficha abre sozinha em vários lugares e
+  // não pode depender de a lista chegar.
+  fichasDaMesa = [],
+}) {
   const ficha = normalizar(bruta);
   const competencias = competenciasDaFicha(ficha);
   const pvMaximo = pvMaximoDaFicha(ficha);
   const restantes = pontosRestantes(ficha);
   const salvar = patch => aoMudar?.({ ...ficha, ...patch });
+  const escolhido = talentoPorId(ficha.talento);
+  const tomados = talentosTomados(fichasDaMesa, ficha.id);
 
   const campo = (id, rotulo, extra = {}) => (
     <label className="osf-campo">
@@ -216,15 +231,30 @@ export default function FichaOneShot({ ficha: bruta, aoMudar, podeEditar = false
       <section className="osf-bloco">
         <h4>
           Competências
-          <em>atributo − 1; não se marca aqui</em>
+          <em>atributo − 2, de −2 a +3; não se marca aqui</em>
         </h4>
         <ul className="osf-competencias">
           {COMPETENCIAS.map(c => (
             <li key={c.id}>
-              <b>+{competencias[c.id]}</b>
+              {/* O sinal vem do número, não da marca fixa: desde que atributo
+                  zerado trava a competência em −2, um "+" cravado aqui
+                  escrevia "+-2" na ficha. */}
+              <b data-negativo={competencias[c.id] < 0 ? '' : undefined}>
+                {competencias[c.id] > 0 && '+'}
+                {competencias[c.id] < 0 ? `−${Math.abs(competencias[c.id])}` : competencias[c.id]}
+              </b>
               <span>
                 {c.nome}
                 <em>{c.resumo}</em>
+                {/* O reforço aparece quando está pago: sem isto o jogador vê o
+                    número subir e não sabe por quê, e o atributo de apoio
+                    volta a parecer inútil. */}
+                {c.reforco && (
+                  <i className="osf-reforco" data-pago={reforcoAtivo(ficha, c.id) ? '' : undefined}>
+                    {reforcoAtivo(ficha, c.id) ? '+1 por ' : `+1 com ${REFORCO_A_PARTIR_DE} de `}
+                    {NOME_DO_ATRIBUTO[c.reforco]}
+                  </i>
+                )}
               </span>
             </li>
           ))}
@@ -234,17 +264,60 @@ export default function FichaOneShot({ ficha: bruta, aoMudar, podeEditar = false
       <section className="osf-bloco">
         <h4>
           Talento especial
-          <em>um por personagem</em>
+          <em>{TALENTOS_POR_PERSONAGEM === 1 ? 'um por personagem' : `${TALENTOS_POR_PERSONAGEM} por personagem`}</em>
         </h4>
-        {campo('talento', 'Qual é', { placeholder: 'Sou enfermeira, reconheço esse cheiro' })}
         <label className="osf-campo">
-          <span>O que ele permite</span>
-          <textarea
-            value={ficha.talentoResumo || ''} disabled={!podeEditar} rows={2}
-            placeholder="Uma coisa só que esta pessoa sabe fazer e as outras não."
-            onChange={e => salvar({ talentoResumo: e.target.value })}
-          />
+          <span>Qual é</span>
+          <select
+            className="osf-talento-escolha"
+            value={escolhido ? ficha.talento : (ficha.talento ? '__livre' : '')}
+            disabled={!podeEditar}
+            onChange={e => salvar({ talento: e.target.value === '__livre' ? ' ' : e.target.value })}
+          >
+            <option value="">— sem talento —</option>
+            {TALENTOS.map(t => {
+              const donos = tomados.get(t.id);
+              return (
+                <option key={t.id} value={t.id}>
+                  {t.nome}{donos ? ` (já com ${donos.join(', ')})` : ''}
+                </option>
+              );
+            })}
+            <option value="__livre">Outro, inventado pelo Mestre…</option>
+          </select>
         </label>
+
+        {/* Talento do catálogo mostra a regra inteira e não deixa editar: o
+            texto é o mesmo da aba de Talentos, e duas versões do mesmo
+            talento na mesma mesa é como a discussão começa. */}
+        {escolhido && (
+          <div className="osf-talento-carta">
+            <p className="osf-talento-resumo">{escolhido.resumo}</p>
+            <p className="osf-talento-efeito">{escolhido.efeito}</p>
+            <p className="osf-talento-quando"><span>Quando</span> {escolhido.quando} · {escolhido.limite}</p>
+            {tomados.get(escolhido.id) && (
+              <p className="osf-talento-repetido">
+                Este talento já está com {tomados.get(escolhido.id).join(', ')}. Dois personagens
+                com o mesmo talento perdem a única coisa que os diferencia — mas quem decide é o Mestre.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Só aparece quando o Mestre escolheu inventar um. */}
+        {!escolhido && ficha.talento !== '' && (
+          <>
+            {campo('talento', 'Nome do talento', { placeholder: 'Sou enfermeira, reconheço esse cheiro' })}
+            <label className="osf-campo">
+              <span>O que ele permite</span>
+              <textarea
+                value={ficha.talentoResumo || ''} disabled={!podeEditar} rows={2}
+                placeholder="Uma coisa só que esta pessoa sabe fazer e as outras não."
+                onChange={e => salvar({ talentoResumo: e.target.value })}
+              />
+            </label>
+          </>
+        )}
       </section>
 
       <p className="osf-regua">

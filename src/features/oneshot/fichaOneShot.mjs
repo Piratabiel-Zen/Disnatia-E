@@ -11,7 +11,8 @@
  *
  * O que vem da mesa (decidido com o Mestre):
  *  - rolagem: d20 + competência contra uma dificuldade que o Mestre diz
- *  - competência NÃO é comprada: ela escala do atributo, atributo − 1
+ *  - competência NÃO é comprada: ela escala do atributo, atributo − 2, com
+ *    reforço condicional de um segundo atributo a partir de 3
  *  - PV 5, ou 3 para quem tem de 6 a 18 anos
  *  - Pavor e Sanidade ENCHEM conforme a pessoa se quebra
  *  - no limite vem uma visão; ceder custa dano, resistir recua o medidor
@@ -43,14 +44,31 @@ export const SANIDADE_MAXIMA = 6;
 export const RECUO_AO_RESISTIR = 2;
 
 export const PONTOS_DE_SORTE = 2;
-export const TALENTOS_POR_PERSONAGEM = 1;
+/* O limite e o catálogo de talentos moram em `talentosOneShot.mjs`, junto dos
+   dez talentos. Reexportado aqui porque as regras e a ficha já liam daqui. */
+export { TALENTOS_POR_PERSONAGEM } from './talentosOneShot.mjs';
 
-/** Atributos vão de 1 a 5; na criação, nada passa de 4. */
-export const ATRIBUTO_MINIMO = 1;
+/**
+ * Atributos vão de 0 a 5.
+ *
+ * ZERO É PERMITIDO, e é a mudança que dá peso à distribuição: atributo sem
+ * ponto nenhum trava as competências dele em −2, para sempre. Antes o piso
+ * era 1 e a competência nunca descia de zero, então deixar um atributo de
+ * lado não custava nada — a ficha só tinha vantagens e nenhuma renúncia.
+ *
+ * A soma continua a mesma de antes (oito atributos partindo de 1 mais doze
+ * pontos davam vinte), então nenhuma ficha já preenchida mudou de total: o
+ * que mudou é que agora dá para descer abaixo de 1 e subir até 5 na criação.
+ */
+export const ATRIBUTO_MINIMO = 0;
 export const ATRIBUTO_MAXIMO = 5;
-export const ATRIBUTO_MAXIMO_NA_CRIACAO = 4;
-/** Todos começam em 1 e a pessoa distribui estes pontos entre os oito. */
-export const PONTOS_DE_ATRIBUTO = 12;
+export const ATRIBUTO_MAXIMO_NA_CRIACAO = 5;
+/** Todos começam em 0 e a pessoa distribui estes pontos entre os oito. */
+export const PONTOS_DE_ATRIBUTO = 20;
+
+/** A competência vai de −2 (atributo zerado) a +3 (atributo em cinco). */
+export const COMPETENCIA_MINIMA = -2;
+export const COMPETENCIA_MAXIMA = 3;
 
 /* ─── Os oito atributos ─────────────────────────────────────────────── */
 
@@ -73,23 +91,56 @@ export const ATRIBUTOS = Object.freeze([
  * `de` lista os atributos que a sustentam; com mais de um, vale O MAIOR —
  * quem é forte OU ágil corre bem, e exigir as duas coisas puniria duas vezes
  * a mesma escolha.
+ *
+ * `reforco` é a segunda pergunta que a competência faz. Ele existe porque a
+ * tabela antiga concentrava demais: Inteligência sozinha levantava seis
+ * competências, então uma ficha de 4 de Inteligência era boa em investigar,
+ * tratar ferida, mexer em máquina, ler símbolo, rastrear e operar sistema —
+ * e Vontade e Sorte não levantavam NADA, eram dois atributos que a pessoa
+ * comprava por educação.
+ *
+ * Então três competências perderam o segundo atributo principal
+ * (Sobrevivência, Mecânica e Pilotagem escalavam de dois e agora escalam de
+ * um) e toda competência ganhou um reforço condicional. O reforço dá +1 a
+ * partir de 3 no atributo de apoio: não é mais uma soma automática, é uma
+ * escolha que se paga. Quem investe em Vontade aguenta a noite; quem investe
+ * em Sorte mente melhor e acerta o tiro que não devia acertar.
  */
+
+/** A partir de quanto o atributo de apoio começa a valer. */
+export const REFORCO_A_PARTIR_DE = 3;
+export const REFORCO_BONUS = 1;
+
 export const COMPETENCIAS = Object.freeze([
-  { id: 'atletismo', nome: 'Atletismo', de: ['forca', 'agilidade'], resumo: 'Correr, nadar, saltar.' },
-  { id: 'furtividade', nome: 'Furtividade', de: ['agilidade'], resumo: 'Esconder-se e caminhar sem ruído.' },
-  { id: 'investigacao', nome: 'Investigação', de: ['inteligencia'], resumo: 'Analisar evidências e documentos.' },
-  { id: 'sobrevivencia', nome: 'Sobrevivência', de: ['percepcao', 'inteligencia'], resumo: 'Rastrear, orientar-se, encontrar abrigo.' },
-  { id: 'persuasao', nome: 'Persuasão', de: ['carisma'], resumo: 'Convencer e negociar.' },
-  { id: 'enganacao', nome: 'Enganação', de: ['carisma'], resumo: 'Mentir, blefar, disfarçar intenções.' },
-  { id: 'medicina', nome: 'Medicina', de: ['inteligencia'], resumo: 'Primeiros socorros e tratamentos.' },
-  { id: 'tecnologia', nome: 'Tecnologia', de: ['inteligencia'], resumo: 'Computadores, eletrônicos e outros sistemas.' },
-  // A escala desta não veio junto com as outras onze. Precisão pela mão e
-  // Inteligência pelo entendimento do mecanismo — é o par que o resto da
-  // tabela sugere para consertar, forçar e operar máquina.
-  { id: 'mecanica', nome: 'Mecânica', de: ['precisao', 'inteligencia'], resumo: 'Consertar, forçar e operar máquinas.' },
-  { id: 'ocultismo', nome: 'Ocultismo', de: ['inteligencia'], resumo: 'Reconhecer símbolos e tradições sobrenaturais.' },
-  { id: 'pilotagem', nome: 'Pilotagem', de: ['precisao', 'agilidade'], resumo: 'Conduzir veículos.' },
-  { id: 'combate', nome: 'Combate', de: ['forca', 'precisao'], resumo: 'Armas e técnicas de luta.' },
+  { id: 'atletismo', nome: 'Atletismo', de: ['forca', 'agilidade'], reforco: 'vontade',
+    resumo: 'Correr, nadar, saltar.' },
+  { id: 'furtividade', nome: 'Furtividade', de: ['agilidade'], reforco: 'percepcao',
+    resumo: 'Esconder-se e caminhar sem ruído.' },
+  { id: 'investigacao', nome: 'Investigação', de: ['inteligencia'], reforco: 'percepcao',
+    resumo: 'Analisar evidências e documentos.' },
+  // Escalava de Percepção E Inteligência. Agora é Percepção, e quem aguenta a
+  // mata é quem tem Vontade — foi o exemplo que a mesa deu.
+  { id: 'sobrevivencia', nome: 'Sobrevivência', de: ['percepcao'], reforco: 'vontade',
+    resumo: 'Rastrear, orientar-se, encontrar abrigo.' },
+  { id: 'persuasao', nome: 'Persuasão', de: ['carisma'], reforco: 'inteligencia',
+    resumo: 'Convencer e negociar.' },
+  { id: 'enganacao', nome: 'Enganação', de: ['carisma'], reforco: 'sorte',
+    resumo: 'Mentir, blefar, disfarçar intenções.' },
+  { id: 'medicina', nome: 'Medicina', de: ['inteligencia'], reforco: 'precisao',
+    resumo: 'Primeiros socorros e tratamentos.' },
+  { id: 'tecnologia', nome: 'Tecnologia', de: ['inteligencia'], reforco: 'precisao',
+    resumo: 'Computadores, eletrônicos e outros sistemas.' },
+  // Escalava de Precisão E Inteligência. Agora é a mão, e a força entra como
+  // apoio: o que não se desenrosca, se arrebenta.
+  { id: 'mecanica', nome: 'Mecânica', de: ['precisao'], reforco: 'forca',
+    resumo: 'Consertar, forçar e operar máquinas.' },
+  { id: 'ocultismo', nome: 'Ocultismo', de: ['inteligencia'], reforco: 'vontade',
+    resumo: 'Reconhecer símbolos e tradições sobrenaturais.' },
+  // Escalava de Precisão E Agilidade. Agora é Precisão, e Agilidade reforça.
+  { id: 'pilotagem', nome: 'Pilotagem', de: ['precisao'], reforco: 'agilidade',
+    resumo: 'Conduzir veículos.' },
+  { id: 'combate', nome: 'Combate', de: ['forca', 'precisao'], reforco: 'sorte',
+    resumo: 'Armas e técnicas de luta.' },
 ]);
 
 /* ─── Contas ────────────────────────────────────────────────────────── */
@@ -114,18 +165,38 @@ export const valorDoAtributo = (ficha, id) =>
   limitar(ficha?.atributos?.[id], ATRIBUTO_MINIMO, ATRIBUTO_MAXIMO);
 
 /**
- * A competência derivada: atributo − 1, nunca abaixo de zero.
+ * A competência derivada: atributo − 2, de −2 a +3.
  *
- * Com mais de um atributo de origem, vale o maior. É o bônus que entra na
- * rolagem; o atributo em si não entra de novo, senão a mesma escolha contaria
- * duas vezes no mesmo teste.
+ * Atributo sem ponto nenhum dá −2, e dá −2 SEMPRE: nem reforço tira a ficha
+ * dali. É o que faz escolher onde não investir custar alguma coisa — antes o
+ * piso era zero e não havia diferença real entre ignorar um atributo e pôr
+ * um ponto nele.
+ *
+ * Com ponto, vai de −1 (um ponto) a +3 (cinco). Com mais de um atributo de
+ * origem, vale o maior. O reforço entra depois, e só a partir de 3 no
+ * atributo de apoio.
+ *
+ * É o bônus que entra na rolagem; o atributo em si não entra de novo, senão a
+ * mesma escolha contaria duas vezes no mesmo teste.
  */
 export function valorDaCompetencia(ficha, idDaCompetencia) {
   const competencia = COMPETENCIAS.find(c => c.id === idDaCompetencia);
   if (!competencia) return 0;
   const maior = Math.max(...competencia.de.map(id => valorDoAtributo(ficha, id)));
-  return Math.max(0, maior - 1);
+  // Sem ponto é sem ponto: o reforço não salva quem não investiu no principal.
+  if (maior <= ATRIBUTO_MINIMO) return COMPETENCIA_MINIMA;
+  const apoio = competencia.reforco ? valorDoAtributo(ficha, competencia.reforco) : 0;
+  const reforco = apoio >= REFORCO_A_PARTIR_DE ? REFORCO_BONUS : 0;
+  return limitar(maior - 2 + reforco, COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA);
 }
+
+/** O reforço está pago nesta ficha? A tela mostra isso ao lado do número. */
+export const reforcoAtivo = (ficha, idDaCompetencia) => {
+  const competencia = COMPETENCIAS.find(c => c.id === idDaCompetencia);
+  if (!competencia?.reforco) return false;
+  if (Math.max(...competencia.de.map(id => valorDoAtributo(ficha, id))) <= ATRIBUTO_MINIMO) return false;
+  return valorDoAtributo(ficha, competencia.reforco) >= REFORCO_A_PARTIR_DE;
+};
 
 /** Todas as competências de uma vez, para a tela não recalcular uma a uma. */
 export const competenciasDaFicha = ficha => Object.fromEntries(

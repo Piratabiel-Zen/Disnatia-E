@@ -9,8 +9,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ATRIBUTOS, COMPETENCIAS, PAVOR_MAXIMO, SANIDADE_MAXIMA, PONTOS_DE_SORTE,
+  COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA, REFORCO_A_PARTIR_DE,
   aliviar, competenciasDaFicha, estaMorto, fichaNova, marcar, normalizar,
-  pontosRestantes, pvDaIdade, responderAVisao, rolarTeste, valorDaCompetencia,
+  pontosRestantes, pvDaIdade, reforcoAtivo, responderAVisao, rolarTeste,
+  valorDaCompetencia,
 } from '../src/features/oneshot/fichaOneShot.mjs';
 
 test('são oito atributos e doze competências', () => {
@@ -28,27 +30,78 @@ test('toda competência escala de atributos que existem', () => {
   }
 });
 
-test('competência é o atributo menos um', () => {
-  // A regra que a mesa deu: 3 de carisma dá 2 de persuasão.
-  const ficha = { atributos: { carisma: 3 } };
-  assert.equal(valorDaCompetencia(ficha, 'persuasao'), 2);
-  assert.equal(valorDaCompetencia({ atributos: { carisma: 1 } }, 'persuasao'), 0);
-  assert.equal(valorDaCompetencia({ atributos: { carisma: 5 } }, 'persuasao'), 4);
+test('competência é o atributo menos dois, de -1 a +3 com ponto', () => {
+  // A régua nova da mesa: atributo COM ponto escala de -1 (um ponto) a +3
+  // (cinco). Persuasão escala de Carisma e reforça com Inteligência, então
+  // as fichas abaixo mantêm Inteligência em zero para medir só o principal.
+  const comCarisma = n => ({ atributos: { carisma: n, inteligencia: 0 } });
+  assert.equal(valorDaCompetencia(comCarisma(1), 'persuasao'), -1);
+  assert.equal(valorDaCompetencia(comCarisma(2), 'persuasao'), 0);
+  assert.equal(valorDaCompetencia(comCarisma(3), 'persuasao'), 1);
+  assert.equal(valorDaCompetencia(comCarisma(5), 'persuasao'), 3);
+});
+
+test('atributo sem ponto nenhum trava a competência em -2, e o reforço não salva', () => {
+  // "Atributos sem pontos contam com a competência em -2 SEMPRE": o sempre é
+  // o que faz renunciar a um atributo custar alguma coisa. Antes o piso era
+  // zero e ignorar um atributo não tinha preço.
+  assert.equal(valorDaCompetencia({ atributos: { carisma: 0 } }, 'persuasao'), -2);
+  // Inteligência em 5 reforça Persuasão — mas não com o principal zerado.
+  assert.equal(
+    valorDaCompetencia({ atributos: { carisma: 0, inteligencia: 5 } }, 'persuasao'),
+    -2,
+  );
+});
+
+test('o reforço dá +1 a partir de 3 no atributo de apoio', () => {
+  // Era o buraco da tabela antiga: Vontade e Sorte não levantavam nada, e
+  // Inteligência sozinha levantava seis competências.
+  const semVontade = { atributos: { percepcao: 3, vontade: 2 } };
+  const comVontade = { atributos: { percepcao: 3, vontade: 3 } };
+  assert.equal(valorDaCompetencia(semVontade, 'sobrevivencia'), 1);
+  assert.equal(valorDaCompetencia(comVontade, 'sobrevivencia'), 2);
+  assert.equal(reforcoAtivo(semVontade, 'sobrevivencia'), false);
+  assert.equal(reforcoAtivo(comVontade, 'sobrevivencia'), true);
+});
+
+test('o reforço não estoura o teto de +3', () => {
+  const maximo = { atributos: { percepcao: 5, vontade: 5 } };
+  assert.equal(valorDaCompetencia(maximo, 'sobrevivencia'), COMPETENCIA_MAXIMA);
+  assert.equal(COMPETENCIA_MAXIMA, 3);
+});
+
+test('toda competência tem reforço, e nenhuma reforça do próprio principal', () => {
+  // Reforçar do mesmo atributo que já é principal contaria a mesma escolha
+  // duas vezes no mesmo teste.
+  for (const c of COMPETENCIAS) {
+    assert.ok(c.reforco, `${c.nome} ficou sem reforço`);
+    assert.ok(!c.de.includes(c.reforco),
+      `${c.nome} reforça de ${c.reforco}, que já é principal dela`);
+  }
+});
+
+test('Vontade e Sorte deixaram de ser enfeite', () => {
+  const apoios = COMPETENCIAS.map(c => c.reforco);
+  for (const atributo of ['vontade', 'sorte']) {
+    assert.ok(apoios.includes(atributo), `${atributo} continua não servindo para nada`);
+  }
 });
 
 test('competência de dois atributos vale o maior', () => {
   // Exigir os dois puniria duas vezes a mesma escolha: quem é forte OU ágil
-  // corre bem.
-  const forte = { atributos: { forca: 4, agilidade: 1 } };
-  const agil = { atributos: { forca: 1, agilidade: 4 } };
-  assert.equal(valorDaCompetencia(forte, 'atletismo'), 3);
-  assert.equal(valorDaCompetencia(agil, 'atletismo'), 3);
+  // corre bem. Vontade em zero para o reforço não entrar na conta.
+  const forte = { atributos: { forca: 4, agilidade: 1, vontade: 0 } };
+  const agil = { atributos: { forca: 1, agilidade: 4, vontade: 0 } };
+  assert.equal(valorDaCompetencia(forte, 'atletismo'), 2);
+  assert.equal(valorDaCompetencia(agil, 'atletismo'), 2);
 });
 
-test('nenhuma competência fica negativa', () => {
+test('a ficha em branco tem tudo em -2, e são doze competências', () => {
+  // Ficha nova nasce com os oito atributos em zero: é a pessoa antes de
+  // qualquer escolha, e nenhuma competência dela passa de -2.
   const vazia = fichaNova();
   for (const c of COMPETENCIAS) {
-    assert.ok(valorDaCompetencia(vazia, c.id) >= 0, c.nome);
+    assert.equal(valorDaCompetencia(vazia, c.id), COMPETENCIA_MINIMA, c.nome);
   }
   assert.equal(Object.keys(competenciasDaFicha(vazia)).length, 12);
 });
@@ -129,9 +182,11 @@ test('nada passa dos limites, nem por fora', () => {
 
 test('a ficha nova começa com os pontos todos por gastar', () => {
   const nova = fichaNova();
-  assert.equal(pontosRestantes(nova), 12);
+  // Vinte, não doze: os oito atributos agora partem de zero, e a soma que a
+  // ficha alcança no fim é a mesma de antes (8 x 1 + 12).
+  assert.equal(pontosRestantes(nova), 20);
   const gastou = { ...nova, atributos: { ...nova.atributos, carisma: 4, percepcao: 3 } };
-  assert.equal(pontosRestantes(gastou), 12 - 3 - 2);
+  assert.equal(pontosRestantes(gastou), 20 - 4 - 3);
 });
 
 test('vida zerada é morte', () => {

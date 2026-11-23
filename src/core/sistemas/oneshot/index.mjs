@@ -69,7 +69,7 @@ const SISTEMA = Object.freeze({
   // competiria com a cena que o Mestre está descrevendo.
   nevoa: true,
 
-  abas: Object.freeze(['investigacao', 'regras', 'aparicoes', 'mapabatalha']),
+  abas: Object.freeze(['investigacao', 'regras', 'talentos', 'aparicoes', 'mapabatalha']),
 
   navegacao: Object.freeze([
     { id: 'session', label: 'A noite', icon: '✦', items: [
@@ -85,6 +85,9 @@ const SISTEMA = Object.freeze({
       { id: 'investigacao', label: 'Mural', icon: '🧵' },
       { id: 'aparicoes', label: 'Aparições', icon: '☾' },
       { id: 'regras', label: 'Regras', icon: '§' },
+      // Os talentos ficam ao lado das Regras porque são a mesma coisa para
+      // quem está na mesa: texto que se consulta, não tela que se opera.
+      { id: 'talentos', label: 'Talentos', icon: '✸' },
     ] },
   ]),
 });

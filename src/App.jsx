@@ -47,7 +47,7 @@ const TAB_LABELS = {
   visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
   manual:'Manual de Campo', agendas:'Agendas e Blasfêmias', tiposdepecado:'Tipos de Inimigo',
   investigacao:'Mural', documentos:'Documentos', pecados:'Pecados',
-  aparicoes:'Aparições',
+  aparicoes:'Aparições', talentos:'Talentos Especiais',
 };
 
 
@@ -75,6 +75,7 @@ const pageLoaders = {
   tiposdepecado:() => import("./features/cain/TiposDePecadoPage"),
   // Aba do sistema One Shot Terror.
   aparicoes:    () => import("./features/oneshot/AparicoesPage"),
+  talentos:     () => import("./features/oneshot/TalentosOneShotPage"),
   legal:        () => import("./features/legal/LegalPage"),
 };
 
@@ -134,7 +135,13 @@ export default function App(){
     const nomes = ['--accent', '--accent-soft', '--bronze', '--ink-mesa',
                    '--contraste-mesa', '--contraste-claro-mesa',
                    '--superficie-mesa', '--linha-mesa', '--fundo-mesa'];
-    if (!campaign || campaign.primary !== false) {
+    // `primary !== false` era o MESMO engano de sempre, e este foi o último a
+    // sobrar: mesa nenhuma guarda o campo `primary`, então `!== false` dava
+    // verdadeiro em toda mesa e esta linha APAGAVA o tema em vez de aplicá-lo.
+    // Por isso a mesa de uma noite continuava roxa da Dinastia E e o mural
+    // continuava sendo o de couro: `data-tema-mesa` nunca chegava na raiz, e
+    // é ele que a repintura de ouija inteira escuta.
+    if (!campaign || campaign.primary) {
       for (const nome of nomes) raiz.style.removeProperty(nome);
       raiz.removeAttribute('data-tema-mesa');
       return;

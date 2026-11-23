@@ -38,7 +38,7 @@ test('as abas são as da noite, mais as estruturais', () => {
   // O mapa entrou depois, como "Cenário do Horror": a noite ganhou tabuleiro
   // porque a mesa pediu a casa desenhada, com os tokens andando pelos quartos.
   assert.deepEqual([...SISTEMAS.oneshot.abas],
-    ['investigacao', 'regras', 'aparicoes', 'mapabatalha']);
+    ['investigacao', 'regras', 'talentos', 'aparicoes', 'mapabatalha']);
   const abas = navegacaoDoSistema(mesa, []).flatMap(g => g.items.map(i => i.id));
   for (const alheia of ['livro', 'classes', 'bestiario', 'pecados', 'documentos', 'manual', 'agendas']) {
     assert.ok(!abas.includes(alheia), `"${alheia}" é de outro sistema e entrou na navegação da noite`);

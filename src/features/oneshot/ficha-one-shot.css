@@ -192,6 +192,18 @@
   color:var(--osf-tinta-fraca);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+/* Competência travada em -2 não some da ficha: ela fica apagada, porque o
+   jogador precisa VER o que abriu mão de saber fazer. */
+.osf-competencias b[data-negativo]{color:#6E4A52}
+/* O reforço: apagado enquanto não está pago, latão quando está. Sem isto o
+   número sobe e ninguém sabe por quê, e o atributo de apoio volta a parecer
+   enfeite — que era exatamente o problema que o reforço veio resolver. */
+.osf-reforco{
+  font-family:var(--osf-mono);font-size:8.5px;font-style:normal;
+  letter-spacing:.06em;color:#4A4845;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.osf-reforco[data-pago]{color:#8B7A52}
 
 /* ---- A visão ----
    Fica acima de tudo porque, enquanto ela está pendente, a mesa está
@@ -229,4 +241,37 @@
   /* 16px: abaixo disso o iOS dá zoom ao focar e desalinha a página. */
   .osf-campo input,.osf-campo textarea{font-size:16px}
   .osf-caixas button{width:26px;height:30px}
+}
+
+/* ---- O talento escolhido ----
+   A regra do talento aparece inteira na ficha e NÃO é editável: o texto é o
+   mesmo da aba de Talentos, e duas versões do mesmo talento na mesma mesa é
+   como a discussão começa no meio da cena. */
+.osf-talento-escolha{
+  width:100%;box-sizing:border-box;padding:7px 9px;border-radius:3px;
+  background:var(--osf-papel);border:1px solid var(--osf-linha);
+  color:var(--osf-tinta);font-size:13px;
+}
+.osf-talento-escolha:focus{outline:none;border-color:var(--osf-linha-forte)}
+.osf-talento-carta{
+  margin-top:9px;padding:11px 13px;border-radius:3px;
+  border:1px solid var(--osf-linha);border-left:3px solid #8B7A52;
+  background:var(--osf-papel);display:grid;gap:6px;
+}
+.osf-talento-resumo{
+  margin:0;font-family:Cinzel,serif;font-size:11.5px;letter-spacing:.05em;color:#8B7A52;
+}
+.osf-talento-efeito{
+  margin:0;font-family:'Crimson Text',Georgia,serif;font-size:14.5px;
+  line-height:1.58;color:var(--osf-tinta);
+}
+.osf-talento-quando{
+  margin:0;padding-top:6px;border-top:1px solid var(--osf-linha);
+  font-family:var(--osf-mono);font-size:9.5px;line-height:1.5;
+  color:var(--osf-tinta-fraca);letter-spacing:.03em;
+}
+.osf-talento-quando span{color:#8B7A52;text-transform:uppercase;letter-spacing:.12em;margin-right:5px}
+.osf-talento-repetido{
+  margin:0;padding-top:6px;border-top:1px solid var(--osf-linha);
+  font-family:var(--osf-mono);font-size:9.5px;line-height:1.55;color:#A8606C;
 }

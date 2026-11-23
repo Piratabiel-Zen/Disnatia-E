@@ -109,6 +109,56 @@ test('o mural repintado é carregado pela página de investigação', () => {
   assert.match(fonte('src/features/investigacao/InvestigacaoPage.jsx'), /mural-ouija\.css/);
 });
 
+test('o tema da mesa chega na raiz, senão a repintura inteira não acontece', () => {
+  /* Este é o bug que fez o mural continuar de couro mesmo com a repintura
+     publicada: o efeito que escreve `data-tema-mesa` começava com
+     `campaign.primary !== false`, e mesa nenhuma guarda o campo `primary`.
+     Então `!== false` dava verdadeiro em TODA mesa, o efeito saía pelo
+     `return` e ainda APAGAVA o atributo no caminho. A mesa de uma noite
+     ficava roxa da Dinastia E, e tudo que escuta `html[data-tema-mesa]`
+     — a ouija inteira — nunca ligava.
+
+     É o quarto lugar com o mesmo engano. O teste de `papel-de-mestre` já
+     proíbe `=== false` contra `.primary`; aqui o que se guarda é o efeito
+     certo escrevendo o atributo. */
+  const app = semComentarios(fonte('src/App.jsx'));
+  assert.match(app, /raiz\.dataset\.temaMesa\s*=\s*temaDaMesa\(campaign\)/,
+    'o tema da mesa deixou de ser escrito na raiz');
+  const guarda = app.match(/if\s*\(!campaign\s*\|\|[^)]*\)\s*\{[\s\S]{0,220}?removeAttribute\('data-tema-mesa'\)/);
+  assert.ok(guarda, 'não achei a guarda que apaga o tema da raiz');
+  assert.ok(!/primary\s*!==\s*false/.test(guarda[0]),
+    'a guarda voltou a usar `primary !== false`, que é verdadeiro em toda mesa '
+    + 'e apaga o tema em vez de aplicá-lo');
+});
+
+test('as páginas da noite têm margem para não entrarem embaixo do trilho', () => {
+  // O trilho da esquerda é `fixed` e não empurra nada: só a aba da Sessão
+  // ganha margem na casca, e toda outra página precisa trazer a dela. Sem
+  // isso o título encostava no trilho e era comido por ele.
+  const css = semComentarios(fonte('src/features/oneshot/paginas-one-shot.css'));
+  const regra = css.match(/\.osf\{[^}]*\}/)[0];
+  assert.match(regra, /padding:[^;]*\d+px/, 'as páginas da noite ficaram sem margem');
+  for (const raiz of ['.osr', '.apa', '.osl', '.ost', '.osf']) {
+    assert.ok(css.includes(raiz), `a página ${raiz} ficou de fora da margem`);
+  }
+  // E cada página precisa carregar o arquivo, senão a regra não chega nela.
+  for (const pagina of ['RegrasOneShotPage', 'AparicoesPage', 'FichasOneShotPage',
+    'FichaOneShot', 'TalentosOneShotPage']) {
+    assert.match(fonte(`src/features/oneshot/${pagina}.jsx`), /paginas-one-shot\.css/,
+      `${pagina} não carrega a margem das páginas da noite`);
+  }
+});
+
+test('a ficha mostra o sinal da competência, e não um "+" cravado', () => {
+  // Desde que atributo zerado trava a competência em -2, um "+" fixo na tela
+  // escrevia "+-2" na ficha.
+  const ficha = semComentarios(fonte('src/features/oneshot/FichaOneShot.jsx'));
+  assert.ok(!/>\+\{competencias\[/.test(ficha),
+    'o "+" voltou a ser cravado antes do número da competência');
+  assert.match(ficha, /competencias\[c\.id\]\s*<\s*0\s*\?/,
+    'a ficha não escolhe mais o sinal pelo valor');
+});
+
 test('a mancha de umidade não apaga o papel do cartão', () => {
   /* A armadilha, que já aconteceu: o cartão pinta o papel com `background:`
      (atalho), e o atalho escreve `background-image` junto. Uma regra de tema

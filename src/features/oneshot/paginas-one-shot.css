@@ -1,0 +1,32 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A MARGEM DAS PÁGINAS DA NOITE
+
+   O trilho da esquerda tem 76px e é `position:fixed`, então ele não empurra
+   nada: a casca abre espaço com `margin-left` no palco, e daí para dentro
+   cada página se vira sozinha. A aba da Sessão ganha margem própria na
+   `adventure.css`; TODA outra aba precisa trazer a dela.
+
+   As páginas desta mesa nasceram sem nenhuma, e o resultado foi o título
+   encostando no trilho e sendo comido por ele — "REGRAS", "APARIÇÕES" e
+   "FICHAS" todas cortadas no R, no A e no F. Como são quatro páginas (cinco
+   com a dos Talentos), a margem mora aqui, uma vez só: página nova desta
+   mesa entra nesta lista e já nasce com respiro.
+
+   Não vale pôr isso na `.immersive-content`: ela é a casca de TODAS as
+   mesas, e as páginas da Dinastia E e do CAIN já trazem a margem delas —
+   mexer ali daria margem dobrada nelas e tiraria o mapa da borda.
+   ═══════════════════════════════════════════════════════════════════════ */
+.osr,  /* regras */
+.apa,  /* aparições */
+.osl,  /* lista de fichas */
+.ost,  /* talentos */
+.osf{  /* a ficha aberta */
+  padding:2px 22px 10px;
+  box-sizing:border-box;
+}
+
+/* No celular o trilho some, então a margem larga só rouba texto de uma tela
+   que já é estreita. */
+@media (max-width:860px){
+  .osr,.apa,.osl,.ost,.osf{padding:2px 13px 10px}
+}
