@@ -1,0 +1,54 @@
+/* A ASSOMBRAÇÃO
+   Por cima de tudo, inclusive do inspetor e do mapa: quando ela acontece,
+   nada mais está acontecendo.
+
+   NADA AQUI PEGA CLIQUE. O jogador continua podendo rolar, escrever e
+   clicar enquanto a coisa está na tela — ele só não enxerga direito, que é
+   o efeito pretendido. Uma camada que bloqueia a tela de todo mundo por
+   nove segundos é a diferença entre clima e sessão travada. */
+.asb{
+  position:fixed;inset:0;z-index:600;
+  pointer-events:none;
+  display:grid;place-items:center;
+  overflow:hidden;
+}
+
+.asb-escuro{
+  position:absolute;inset:0;
+  background:#030204;
+  opacity:var(--asb-veu,.9);
+}
+
+/* A coisa. `object-fit:contain` para a imagem não ser cortada no meio da
+   cara, que é o único lugar onde ela não pode ser cortada. */
+.asb-coisa{
+  position:relative;z-index:1;
+  max-width:min(86vw,900px);max-height:84vh;
+  object-fit:contain;
+  /* O contraste alto e a saturação baixa fazem a foto virar aparição: cor
+     cheia num fundo preto parece pôster, não assombração. */
+  filter:grayscale(.42) contrast(1.28) brightness(.9);
+  will-change:opacity,transform;
+}
+
+/* Sem imagem, o nome. O escuro e o som sozinhos já valem a cena. */
+.asb-nome{
+  position:relative;z-index:1;margin:0;padding:0 24px;text-align:center;
+  font-family:Cinzel,serif;font-size:clamp(22px,5vw,54px);
+  letter-spacing:.2em;text-transform:uppercase;color:#8E1F2B;
+  text-shadow:0 0 40px rgba(142,31,43,.5);
+}
+
+/* "Encarar" ganha um pulsar lento, e só ela: é a intensidade que o Mestre
+   usa uma vez por noite. Nas outras duas, imagem parada assusta mais. */
+.asb[data-intensidade="encarar"] .asb-coisa{animation:asbEncarar 3.4s ease-in-out infinite}
+@keyframes asbEncarar{
+  0%,100%{filter:grayscale(.42) contrast(1.28) brightness(.9)}
+  50%{filter:grayscale(.3) contrast(1.42) brightness(1)}
+}
+
+/* Movimento reduzido tira o pulsar; o escurecer e o aparecer ficam, porque
+   são a feature e não decoração. Sem media query: `movimento.mjs` já
+   escreve `data-motion`, e repetir aqui passaria por cima de quem religou
+   o movimento na mesa. */
+html[data-motion="reduced"] .asb-coisa{animation:none!important}

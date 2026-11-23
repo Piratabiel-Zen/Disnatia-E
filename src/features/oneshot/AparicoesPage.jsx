@@ -9,6 +9,11 @@ import { observarLiberados } from '../acesso/observarLiberados';
 import InspetorDeObjeto from './InspetorDeObjeto.jsx';
 import { ZOOM_QUE_REVELA } from './inspecao.mjs';
 import {
+  INTENSIDADES, DURACOES, INTENSIDADE_PADRAO, DURACAO_PADRAO,
+  avisoDeAssombracao, intensidadePorId, duracaoPorId,
+} from './assombracao.mjs';
+import { publicarAssombracao } from '../../core/liveChannel';
+import {
   TIPOS_DE_APARICAO, alternarPessoa, aparicaoNova, cartaoDeAparicao, estaRevelada,
   jaNoMural, quemVe, revelarParaTodos, tipoDaAparicao,
 } from './aparicoes.mjs';
@@ -31,6 +36,10 @@ export default function AparicoesPage() {
   const [aparicoes, setAparicoes] = useState([]);
   // Qual objeto está na mão de quem olha. Null é ninguém examinando.
   const [examinando, setExaminando] = useState(null);
+  // O tom da assombração vale para todas: o Mestre acerta uma vez e depois
+  // é só apertar, sem gastar dois cliques no meio da cena.
+  const [intensidade, setIntensidade] = useState(INTENSIDADE_PADRAO);
+  const [duracao, setDuracao] = useState(DURACAO_PADRAO);
   const [fichas, setFichas] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
   const [filtro, setFiltro] = useState('');
@@ -81,6 +90,28 @@ export default function AparicoesPage() {
     setAparicoes(atuais => atuais.map(a => (String(a.id) === String(id) ? aparicao : a)));
     await setDoc(docIn('aparicoes', String(id)), dados, { merge: true });
   }, []);
+
+  /**
+   * Assombrar a mesa com esta aparição.
+   *
+   * Vem DEPOIS de `salvar` de propósito: ele está na lista de dependências
+   * daqui, e lista que lê um `const` declarado mais abaixo estoura em
+   * tempo de RENDERIZAÇÃO — build limpo, teste limpo, tela preta na mesa.
+   * Já aconteceu uma vez neste projeto e tem teste guardando.
+   *
+   * Revela ANTES de assombrar, e de propósito: depois do susto a mesa vai
+   * querer olhar a coisa de perto, e aparição que escureceu a tela e sumiu
+   * sem deixar nada para examinar frustra em vez de assustar.
+   */
+  const assombrar = useCallback(async aparicao => {
+    if (!aparicao?.liberadoParaTodos) {
+      await salvar({ ...revelarParaTodos(aparicao, true), id: aparicao.id });
+    }
+    await publicarAssombracao(avisoDeAssombracao({
+      aparicao, intensidade, duracao,
+    }));
+  }, [intensidade, duracao, salvar]);
+
 
   const criar = async tipo => {
     const id = `a${Date.now().toString(36)}`;
@@ -195,6 +226,28 @@ export default function AparicoesPage() {
         </div>
       )}
 
+      {/* Os dois controles da assombração ficam FORA de cada aparição, e
+          valem para todas: o Mestre acerta o tom uma vez e depois é só
+          apertar. Escolher duração e intensidade dentro de cada linha
+          custaria dois cliques no meio da cena, que é exatamente quando
+          ele não tem dois cliques sobrando. */}
+      {mestre && (
+        <div className="apa-tom">
+          <label>
+            <span>Intensidade</span>
+            <select value={intensidade} onChange={e => setIntensidade(e.target.value)}>
+              {INTENSIDADES.map(i => <option key={i.id} value={i.id}>{i.nome} — {i.resumo}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Duração</span>
+            <select value={duracao} onChange={e => setDuracao(e.target.value)}>
+              {DURACOES.map(d => <option key={d.id} value={d.id}>{d.nome} — {d.resumo}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+
       <ul className="apa-lista">
         {lista.map(a => (
           <li key={a.id} data-revelada={estaRevelada(a) ? 'sim' : 'nao'} data-aberta={String(a.id) === abertaId ? 'sim' : 'nao'}>
@@ -225,6 +278,16 @@ export default function AparicoesPage() {
               onClick={() => salvar({ ...revelarParaTodos(a, !a.liberadoParaTodos), id: a.id })}
               title={a.liberadoParaTodos ? 'Recolher' : 'Revelar à mesa'}
             >{a.liberadoParaTodos ? 'Recolher' : 'Revelar'}</button>
+            {/* ASSOMBRAR é diferente de revelar: revelar põe a aparição à
+                vista para a mesa consultar; assombrar escurece a tela de
+                todo mundo AGORA, onde quer que a pessoa esteja. Fica ao
+                lado porque é decisão da mesma hora, mas é a mais pesada
+                das três e por isso tem cor própria. */}
+            <button
+              type="button" className="apa-assombrar"
+              onClick={() => assombrar(a)}
+              title={`Escurece a tela da mesa: ${intensidadePorId(intensidade).nome}, ${duracaoPorId(duracao).nome.toLowerCase()}`}
+            >Assombrar</button>
           </li>
         ))}
         {aparicoes.length === 0 && (

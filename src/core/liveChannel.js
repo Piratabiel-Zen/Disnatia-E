@@ -133,6 +133,39 @@ export function subscribePing(cb) {
   return () => { cancelled = true; if (stop) stop(); };
 }
 
+/**
+ * A ASSOMBRAÇÃO, para a tela de todo mundo ao mesmo tempo.
+ *
+ * Mesmo desenho do ping: um nó só, sobrescrito, e o valor que já existia ao
+ * assinar é ignorado — quem chega depois não leva o susto que a mesa já
+ * levou. O payload carrega a imagem porque a sobreposição precisa aparecer
+ * em QUALQUER aba, inclusive em quem não está na página de aparições, e
+ * buscar o documento ali daria uma leitura a mais e um modo de falhar a
+ * mais (negada por regra, aparição ainda não liberada) bem no meio da cena.
+ */
+export async function publicarAssombracao(aviso) {
+  const sdk = await loadSdk();
+  if (!sdk || !connected) return false;
+  await sdk.set(sdk.ref(database, 'live/assombracao'), { ...aviso, publishedAt: sdk.serverTimestamp() });
+  return true;
+}
+
+/** Última assombração da mesa. cb(aviso). */
+export function assinarAssombracao(cb) {
+  let stop = null;
+  let cancelled = false;
+  loadSdk().then(sdk => {
+    if (!sdk || cancelled) return;
+    let primed = false;
+    stop = sdk.onValue(sdk.ref(database, 'live/assombracao'), snap => {
+      const value = snap.val();
+      if (primed && value) cb(value);
+      primed = true;
+    }, error => console.warn('Canal vivo de assombrações indisponível:', error));
+  });
+  return () => { cancelled = true; if (stop) stop(); };
+}
+
 /** Somente para testes: troca o carregador do SDK e zera o estado do módulo. */
 export function __resetLiveChannelForTests(loader) {
   sdkLoader = loader || defaultLoader;

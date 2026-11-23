@@ -9,6 +9,7 @@ import LiveStatus from './shell/LiveStatus';
 import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import BarraDePrevia from './features/acesso/BarraDePrevia.jsx';
 import ChaveDaNoite from './features/oneshot/ChaveDaNoite.jsx';
+import Assombracao from './features/oneshot/Assombracao.jsx';
 import { sistemaDe, termo } from './core/sistemas/index.mjs';
 import { useMembro } from './features/acesso/useMembro';
 import DiceWidget from './shell/DiceWidget';
@@ -56,6 +57,10 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
     <ExperienceProvider key={`${access.role}:${playerSheetId || access.visitorId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId} access={access}>
       <BarraDePrevia previa={previa} />
       {temNevoa && <ChaveDaNoite />}
+      {/* A assombração mora na casca e não numa aba: a tela tem que escurecer
+          esteja a pessoa onde estiver — a graça é pegar quem estava mexendo
+          na ficha. Só nas mesas que têm névoa, que são as de uma noite. */}
+      {temNevoa && <Assombracao />}
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
             existe: duas paisagens sobrepostas não é clima, é sujeira. */}
