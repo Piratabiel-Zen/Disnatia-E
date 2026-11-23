@@ -47,6 +47,7 @@ export const PONTOS_DE_SORTE = 2;
 /* O limite e o catálogo de talentos moram em `talentosOneShot.mjs`, junto dos
    dez talentos. Reexportado aqui porque as regras e a ficha já liam daqui. */
 export { TALENTOS_POR_PERSONAGEM } from './talentosOneShot.mjs';
+import { COR_PADRAO } from './fichaRapida.mjs';
 
 /**
  * Atributos vão de 0 a 5.
@@ -304,6 +305,9 @@ export function fichaNova(nome = '') {
     talento: '',
     talentoResumo: '',
     retrato: '',
+    // A cor da ficha rápida do mapa. É do jogador, não do Mestre: numa mesa
+    // de cinco primos parecidos, é o jeito mais rápido de se achar.
+    corDaFichaRapida: COR_PADRAO,
     // Ligado por padrão; o Mestre desliga por ficha na Condição.
     retratoPerturbador: true,
     visaoPendente: '',

@@ -30,6 +30,7 @@ import { mapasProntosDe } from './mapasProntos.mjs';
 import AtmosferaDaCasa from '../oneshot/AtmosferaDaCasa.jsx';
 import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
+import FichaRapida from '../oneshot/FichaRapida.jsx';
 import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
 import { DURACOES as DURACOES_DO_VULTO, TAMANHOS as TAMANHOS_DO_VULTO, vultoNovo } from '../oneshot/vultoNoMapa.mjs';
 import { publicarVulto } from '../../core/liveChannel';
@@ -296,6 +297,23 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [modoVulto, setModoVulto] = useState(false);
   const [duracaoDoVulto, setDuracaoDoVulto] = useState('instante');
   const [tamanhoDoVulto, setTamanhoDoVulto] = useState('pessoa');
+  /* A FICHA RÁPIDA é a do PRÓPRIO jogador, e só dele: na cena, cada um
+     precisa saber quanto lhe resta e quanto soma na competência que vai
+     usar. Abrir outra aba para isso custa a vez dele. O Mestre não ganha
+     este painel — ele já tem o do token, e dois painéis no mesmo mapa
+     disputam o mesmo canto. */
+  const minhaFichaDaNoite = ehNoite && playerSheetId
+    ? sheets.find(f => String(f.id) === String(playerSheetId)) || null
+    : null;
+  const guardarCorDaFicha = (cor) => {
+    if (!minhaFichaDaNoite) return;
+    setDoc(
+      docIn(colecaoDasFichas, String(minhaFichaDaNoite.id)),
+      { corDaFichaRapida: String(cor) },
+      { merge: true },
+    ).catch(e => console.error('Erro ao guardar a cor da ficha:', e));
+  };
+
   const [fogByMap, setFogByMap] = useState({});
   const [fogMode, setFogMode] = useState('off'); // off | add | erase
   const [fogBrush, setFogBrush] = useState(12);
@@ -2433,6 +2451,13 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                 </div>
               </div>
             </div>
+          )}
+
+          {/* A FICHA RÁPIDA DO JOGADOR — canto de baixo à esquerda.
+              O alto é do Mestre e a direita é do painel de token; embaixo
+              sobra o canto que nenhuma das duas mãos usa durante a cena. */}
+          {minhaFichaDaNoite && (
+            <FichaRapida ficha={minhaFichaDaNoite} aoMudarCor={guardarCorDaFicha} />
           )}
 
           {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}
