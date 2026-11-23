@@ -47,6 +47,7 @@ const TAB_LABELS = {
   visitantes:'Visitantes', livro:'Livro da Mandíbula', cronicas:'Crônicas', mapamundi:'Mapa Múndi', mapabatalha:'Mapa de Batalha',
   manual:'Manual de Campo', agendas:'Agendas e Blasfêmias', tiposdepecado:'Tipos de Inimigo',
   investigacao:'Mural', documentos:'Documentos', pecados:'Pecados',
+  aparicoes:'Aparições',
 };
 
 
@@ -59,6 +60,7 @@ const pageLoaders = {
   personagens:  () => import("./features/personagens/PersonagensPage"),
   inimigos:     () => import("./features/inimigos/InimigosPage"),
   bestiario:    () => import("./features/bestiario/BestiarioPage"),
+  // A aba Regras bifurca por sistema: ver features/regras/RegrasPage.
   regras:       () => import("./features/regras/RegrasPage"),
   livro:        () => import("./features/livro/LivroPage"),
   cronicas:     () => import("./features/cronicas/CronicasPage"),
@@ -71,6 +73,8 @@ const pageLoaders = {
   manual:       () => import("./features/cain/ManualCainPage"),
   agendas:      () => import("./features/cain/BlasfemiasPage"),
   tiposdepecado:() => import("./features/cain/TiposDePecadoPage"),
+  // Aba do sistema One Shot Terror.
+  aparicoes:    () => import("./features/oneshot/AparicoesPage"),
   legal:        () => import("./features/legal/LegalPage"),
 };
 

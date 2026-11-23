@@ -16,6 +16,8 @@
 // acrescentar uma linha.
 
 /** Tira acento, caixa e espaço de sobra, para "ESTRELA DE ABSINTO " casar. */
+import { sistemaDe } from './sistemas/index.mjs';
+
 const chave = nome => String(nome || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .trim().toLowerCase().replace(/\s+/g, ' ');
@@ -34,7 +36,13 @@ export const ATMOSFERAS_POR_MESA = Object.freeze({
  */
 export function temaDaMesa(campanha) {
   const própria = ATMOSFERAS_POR_MESA[chave(campanha?.name)];
-  return própria || campanha?.theme || 'sombrio';
+  if (própria) return própria;
+  // Depois do nome vem o SISTEMA. Alguns sistemas trazem a paleta junto, do
+  // mesmo jeito que trazem a marca e os dados: uma mesa de One Shot Terror é
+  // preto e cinza porque o sistema é isso, não porque alguém escolheu no
+  // formulário. Só a seguir vale a escolha feita na criação.
+  const doSistema = sistemaDe(campanha)?.tema;
+  return doSistema || campanha?.theme || 'sombrio';
 }
 
 /** Esta mesa tem clima próprio, definido pelo nome? */

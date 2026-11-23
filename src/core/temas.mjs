@@ -87,6 +87,30 @@ export const CAMPAIGN_THEMES = {
   // O azul faz dois trabalhos: é o fundo (que puxa para a noite em vez do
   // preto morto) e é a cor que quebra a paleta, viva o bastante para marcar
   // o que importa sem disputar com o vermelho.
+  // MORTALHA — One Shot Terror.
+  //
+  // Preto e cinza, e nada mais. As outras paletas têm uma cor que quebra —
+  // o roxo de Cosmum, o vermelho de Veneza — porque têm um mundo com cor
+  // própria. Esta mesa não tem mundo: tem uma casa, uma noite e pessoas.
+  //
+  // O acento é osso, não vermelho. Vermelho fica reservado ao dano e à visão,
+  // e aparecer em botão de interface gastaria o único sinal que a mesa tem de
+  // que alguma coisa está muito errada.
+  mortalha: {
+    label: 'Mortalha',
+    sigil: '☾',
+    accent: '#C9C2B4',
+    accentSoft: '#E2DCCE',
+    bronze: '#8B8477',
+    contraste: '#8B8477',
+    contrasteSoft: '#C9C2B4',
+    bg: '#09090A',
+    superficie: '#121214',
+    linha: '#242427',
+    ink: '#C8C6C2',
+    display: "'Cinzel', Georgia, serif",
+  },
+
   veneziano: {
     label: 'Vitoriano sombrio',
     sigil: '⚜',

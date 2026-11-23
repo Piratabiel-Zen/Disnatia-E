@@ -1,0 +1,18 @@
+/* A chave do som da noite. Fica ao lado da chave da névoa, no mesmo canto e
+   no mesmo tamanho: são as duas alavancas de ambiente desta mesa, e separá-las
+   faria procurar em dois lugares. */
+.noite-chave{
+  position:fixed;z-index:44;right:16px;bottom:calc(192px + env(safe-area-inset-bottom,0px));
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 12px;border-radius:20px;cursor:pointer;
+  background:rgba(12,12,13,.92);border:1px solid #2E2E33;color:#6E6C6A;
+  font-family:Cinzel,serif;font-size:10px;letter-spacing:.1em;
+  backdrop-filter:blur(3px);
+}
+.noite-chave span{font-size:12px}
+.noite-chave:hover{border-color:#8B8477;color:#C8C6C2}
+.noite-chave[data-ligado="sim"]{border-color:#8B8477;color:#C9C2B4}
+
+@media(max-width:720px){
+  .noite-chave{right:12px;bottom:calc(178px + env(safe-area-inset-bottom,0px));font-size:9px}
+}

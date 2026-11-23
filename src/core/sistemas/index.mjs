@@ -15,10 +15,12 @@
 
 import cain from './cain/index.mjs';
 import dinastiaE from './dinastiaE.mjs';
+import oneShot from './oneshot/index.mjs';
 
 export const SISTEMAS = Object.freeze({
   [dinastiaE.id]: dinastiaE,
   [cain.id]: cain,
+  [oneShot.id]: oneShot,
 });
 
 export const SISTEMA_PADRAO = dinastiaE.id;

@@ -1,5 +1,6 @@
 import BookMark3D from './BookMark3D';
 import CrossMark3D from './CrossMark3D';
+import SkullMark3D from './SkullMark3D';
 import { sistemaDe } from '../core/sistemas/index.mjs';
 
 /**
@@ -16,6 +17,7 @@ import { sistemaDe } from '../core/sistemas/index.mjs';
  */
 const MARCAS = {
   cain: CrossMark3D,
+  oneshot: SkullMark3D,
 };
 
 export default function MarcaDaMesa({ campaign }) {

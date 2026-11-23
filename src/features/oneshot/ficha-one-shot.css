@@ -1,0 +1,191 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   ONE SHOT TERROR — A FICHA
+
+   Preto e cinza, sem cor de campanha: esta mesa não tem instituição, brasão
+   nem paleta própria. O único acento é o vermelho do dano, e ele aparece só
+   quando falta pouco — se tudo for vermelho, nada é.
+
+   Letra de máquina de escrever no que é dado frio (medidor, número) e serifa
+   no que é humano (nome, histórico). É a diferença entre o relatório e a
+   pessoa de quem o relatório fala.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.osf{
+  --osf-papel:#0C0C0D;
+  --osf-painel:#121214;
+  --osf-linha:#242427;
+  --osf-linha-forte:#35353A;
+  --osf-tinta:#C8C6C2;
+  --osf-tinta-fraca:#6E6C6A;
+  --osf-perigo:#8E1F2B;
+  --osf-perigo-claro:#C4414F;
+  --osf-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --osf-serif:'Crimson Text',Georgia,serif;
+  display:grid;gap:12px;color:var(--osf-tinta);
+}
+
+.osf-bloco{
+  padding:15px 16px 16px;border:1px solid var(--osf-linha);border-radius:4px;
+  background:var(--osf-painel);
+}
+.osf-bloco h4{
+  margin:0 0 12px;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;
+  font-family:Cinzel,serif;font-size:12px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:#9A9793;
+}
+.osf-bloco h4 em{
+  font-family:var(--osf-mono);font-size:9px;font-style:normal;
+  letter-spacing:.14em;text-transform:none;color:var(--osf-tinta-fraca);
+}
+
+/* ---- Campos ---- */
+.osf-campo{display:grid;gap:4px;min-width:0}
+.osf-campo>span{
+  font-family:var(--osf-mono);font-size:8.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--osf-tinta-fraca);
+}
+.osf-campo input,.osf-campo textarea{
+  width:100%;box-sizing:border-box;padding:7px 9px;border-radius:3px;
+  background:var(--osf-papel);border:1px solid var(--osf-linha);
+  color:var(--osf-tinta);font-family:var(--osf-serif);font-size:15px;
+  resize:vertical;
+}
+.osf-campo input:focus,.osf-campo textarea:focus{
+  outline:none;border-color:var(--osf-linha-forte);
+}
+.osf-campo input:disabled,.osf-campo textarea:disabled{
+  opacity:1;color:var(--osf-tinta);border-color:transparent;background:transparent;
+  padding-left:0;
+}
+.osf-identidade{
+  display:grid;gap:10px;grid-template-columns:minmax(0,2fr) minmax(0,.7fr) minmax(0,1.3fr);
+  margin-bottom:10px;
+}
+.osf-historico{margin-top:0}
+.osf-aviso{
+  margin:10px 0 0;padding:7px 10px;border-left:2px solid var(--osf-perigo);
+  font-family:var(--osf-mono);font-size:10px;letter-spacing:.06em;color:var(--osf-perigo-claro);
+}
+
+/* ---- Medidores ----
+   Caixas e não números: a mesa precisa ver de relance quanto falta para a
+   visão, e um número subindo não dá esse susto. */
+/* Os três medidores lado a lado colavam: o "4/5" de um encostava no rótulo
+   do seguinte e lia-se "4/5 PAVOR". Divisória e folga maior separam. */
+.osf-condicoes{
+  display:grid;gap:0;grid-template-columns:repeat(auto-fit,minmax(min(100%,164px),1fr));
+}
+.osf-medidor{padding:0 16px}
+.osf-medidor:first-child{padding-left:0}
+.osf-medidor + .osf-medidor{border-left:1px solid var(--osf-linha)}
+.osf-medidor-topo{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px;
+}
+.osf-medidor-topo span{
+  font-family:var(--osf-mono);font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--osf-tinta-fraca);
+}
+.osf-medidor-topo b{font-family:var(--osf-mono);font-size:12px;color:var(--osf-tinta)}
+.osf-medidor[data-perigo="sim"] .osf-medidor-topo b{color:var(--osf-perigo-claro)}
+
+.osf-caixas{display:flex;gap:5px;flex-wrap:wrap}
+.osf-caixas button{
+  width:22px;height:26px;padding:0;cursor:pointer;border-radius:2px;
+  background:var(--osf-papel);border:1px solid var(--osf-linha-forte);
+  transition:background .12s ease,border-color .12s ease;
+}
+.osf-caixas button:disabled{cursor:default}
+.osf-caixas button[data-cheia="sim"]{
+  background:var(--osf-tinta);border-color:var(--osf-tinta);
+}
+.osf-medidor[data-perigo="sim"] .osf-caixas button[data-cheia="sim"]{
+  background:var(--osf-perigo);border-color:var(--osf-perigo-claro);
+}
+.osf-caixas button:not(:disabled):hover{border-color:var(--osf-tinta)}
+
+.osf-sorte{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.osf-sorte>span{
+  font-family:var(--osf-mono);font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--osf-tinta-fraca);
+}
+.osf-sorte button{
+  width:24px;height:24px;padding:0;cursor:pointer;border-radius:50%;
+  background:transparent;border:1px solid var(--osf-linha-forte);
+  color:var(--osf-tinta);font-size:10px;
+}
+.osf-sorte button[data-gasto="sim"]{color:#3A3A3E;border-color:var(--osf-linha)}
+.osf-sorte em{
+  font-family:var(--osf-mono);font-size:9px;font-style:normal;color:var(--osf-tinta-fraca);
+}
+
+/* ---- Atributos e competências ---- */
+.osf-atributos{
+  list-style:none;margin:0;padding:0;display:grid;gap:7px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,124px),1fr));
+}
+.osf-atributos li{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:6px 9px;border:1px solid var(--osf-linha);border-radius:3px;
+  background:var(--osf-papel);
+}
+.osf-atributos span{font-family:Cinzel,serif;font-size:11px;letter-spacing:.07em}
+.osf-atributos b{font-family:var(--osf-mono);font-size:15px}
+.osf-atributos select{
+  padding:3px 5px;border-radius:3px;cursor:pointer;
+  background:var(--osf-painel);border:1px solid var(--osf-linha-forte);
+  color:var(--osf-tinta);font-family:var(--osf-mono);font-size:13px;
+}
+
+.osf-competencias{
+  list-style:none;margin:0;padding:0;display:grid;gap:5px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));
+}
+.osf-competencias li{display:flex;align-items:baseline;gap:9px;min-width:0}
+.osf-competencias b{
+  flex:0 0 auto;width:26px;text-align:right;
+  font-family:var(--osf-mono);font-size:13px;color:var(--osf-tinta);
+}
+.osf-competencias span{display:grid;gap:0;min-width:0}
+.osf-competencias span{font-family:Cinzel,serif;font-size:11px;letter-spacing:.06em}
+.osf-competencias em{
+  font-family:system-ui,sans-serif;font-size:10px;font-style:normal;
+  color:var(--osf-tinta-fraca);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ---- A visão ----
+   Fica acima de tudo porque, enquanto ela está pendente, a mesa está
+   esperando uma resposta e nada mais na ficha importa. */
+.osf-visao{
+  padding:16px 18px;border:1px solid var(--osf-perigo);border-radius:4px;
+  background:linear-gradient(160deg,rgba(32,8,12,.96),rgba(12,12,13,.98));
+  box-shadow:inset 0 0 40px rgba(142,31,43,.16);
+}
+.osf-visao h4{
+  margin:0 0 8px;font-family:Cinzel,serif;font-size:15px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--osf-perigo-claro);
+}
+.osf-visao p{margin:0 0 8px;font-family:var(--osf-serif);font-size:15px;line-height:1.55;max-width:56ch}
+.osf-visao-nota{font-family:var(--osf-mono)!important;font-size:10px!important;color:var(--osf-tinta-fraca)}
+.osf-visao-botoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.osf-visao-botoes button{
+  padding:8px 14px;border-radius:3px;cursor:pointer;background:transparent;
+  border:1px solid var(--osf-linha-forte);color:var(--osf-tinta);
+  font-family:Cinzel,serif;font-size:11px;letter-spacing:.1em;
+}
+.osf-visao-botoes .ceder{border-color:var(--osf-perigo);color:var(--osf-perigo-claro)}
+.osf-visao-botoes button:hover{border-color:var(--osf-tinta)}
+
+.osf-regua{
+  margin:0;padding:10px 12px;border:1px dashed var(--osf-linha);border-radius:3px;
+  font-family:var(--osf-mono);font-size:10px;line-height:1.6;color:var(--osf-tinta-fraca);
+}
+
+@media(max-width:720px){
+  .osf-identidade{grid-template-columns:1fr 1fr}
+  .osf-identidade>label:first-child{grid-column:1 / -1}
+  .osf-bloco{padding:13px 12px 14px}
+  /* 16px: abaixo disso o iOS dá zoom ao focar e desalinha a página. */
+  .osf-campo input,.osf-campo textarea{font-size:16px}
+  .osf-caixas button{width:26px;height:30px}
+}

@@ -16,6 +16,7 @@ import { sistemaDe } from '../../core/sistemas/index.mjs';
  */
 const POR_SISTEMA = {
   cain: lazy(() => import('../cain/FichasCainPage')),
+  oneshot: lazy(() => import('../oneshot/FichasOneShotPage')),
   'dinastia-e': lazy(() => import('../sheets/SheetsPage')),
 };
 

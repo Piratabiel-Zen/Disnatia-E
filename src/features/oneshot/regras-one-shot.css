@@ -1,0 +1,40 @@
+/* As regras da noite. Coluna estreita e serifa: é texto para ler, não
+   formulário. Preto e cinza como o resto do sistema. */
+.osr{display:grid;gap:14px;color:#C8C6C2;max-width:76ch}
+.osr-barra{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.osr-barra h2{
+  margin:0;font-family:Cinzel,serif;font-size:19px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:#9A9793;
+}
+.osr-barra p{margin:4px 0 0;font-size:13px;color:#6E6C6A;max-width:52ch}
+.osr-barra input{
+  padding:7px 10px;border-radius:3px;min-width:min(100%,230px);
+  background:#0C0C0D;border:1px solid #242427;color:#C8C6C2;font-size:13px;
+}
+.osr-barra input:focus{outline:none;border-color:#35353A}
+
+.osr-secao{
+  padding:15px 17px 16px;border:1px solid #242427;border-left:3px solid #35353A;
+  border-radius:3px;background:#121214;
+}
+.osr-secao h3{
+  margin:0 0 9px;font-family:Cinzel,serif;font-size:13px;font-weight:600;
+  letter-spacing:.17em;text-transform:uppercase;color:#9A9793;
+}
+.osr-secao p{
+  margin:0 0 9px;font-family:'Crimson Text',Georgia,serif;
+  font-size:15.5px;line-height:1.62;max-width:64ch;
+}
+.osr-secao p:last-child{margin-bottom:0}
+
+.osr-nada,.osr-pe{
+  margin:0;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:10px;line-height:1.6;color:#585654;letter-spacing:.04em;
+}
+.osr-nada{padding:16px;text-align:center;border:1px dashed #242427;border-radius:3px}
+
+@media(max-width:720px){
+  .osr-secao{padding:13px 13px 14px}
+  .osr-secao p{font-size:15px}
+  .osr-barra input{font-size:16px}
+}

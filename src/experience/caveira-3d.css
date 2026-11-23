@@ -1,0 +1,89 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A CAVEIRA QUE GIRA
+
+   Disco de duas faces em vez de sólido empilhado: caveira montada com caixas
+   vira dado com buracos. A volta mostra o crânio, o perfil fino e a nuca.
+
+   Osso velho, não branco de plástico: um bege acinzentado que num fundo
+   preto lê como coisa que ficou guardada muito tempo.
+   ═══════════════════════════════════════════════════════════════════════ */
+.caveira3d{
+  --osso:#C9C2B4;
+  --osso-sombra:#8B8477;
+  --osso-fundo:#3A3630;
+  position:relative;display:inline-grid;place-items:center;
+  width:44px;height:44px;flex:0 0 auto;
+}
+
+.caveira3d-aura{
+  position:absolute;inset:-6px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,194,180,.14) 0%,transparent 68%);
+  pointer-events:none;
+}
+
+.caveira3d-palco{
+  width:100%;height:100%;display:grid;place-items:center;
+  perspective:220px;
+}
+.caveira3d-corpo{
+  position:relative;width:28px;height:34px;
+  transform-style:preserve-3d;
+  animation:caveira-gira 9s linear infinite;
+}
+@keyframes caveira-gira{to{transform:rotateY(360deg)}}
+html[data-motion="reduced"] .caveira3d-corpo{animation:none}
+
+.caveira3d-face{
+  position:absolute;inset:0;display:grid;place-items:center;
+  backface-visibility:hidden;
+}
+.caveira3d-face.tras{transform:rotateY(180deg)}
+
+/* O crânio: calota arredondada em cima, maxilar mais estreito embaixo. */
+.caveira3d-cranio{
+  position:relative;width:28px;height:34px;
+  background:linear-gradient(160deg,var(--osso) 0%,var(--osso-sombra) 100%);
+  border-radius:48% 48% 42% 42% / 56% 56% 44% 44%;
+  box-shadow:inset -2px -2px 5px rgba(0,0,0,.4),0 0 10px rgba(201,194,180,.2);
+}
+
+/* Órbitas: o que faz uma forma redonda virar caveira é a profundidade delas,
+   e profundidade aqui é sombra interna, não um buraco preto chapado. */
+.caveira3d-orbita{
+  position:absolute;top:9px;width:9px;height:9.5px;border-radius:50% 50% 45% 45%;
+  background:radial-gradient(ellipse at 38% 30%,#0A0A0B 55%,#1C1A18 100%);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.9),0 1px 0 rgba(201,194,180,.25);
+}
+.caveira3d-orbita.esquerda{left:2.5px}
+.caveira3d-orbita.direita{right:2.5px}
+
+.caveira3d-nariz{
+  position:absolute;top:19.5px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:2.6px solid transparent;border-right:2.6px solid transparent;
+  border-bottom:5.5px solid #121110;
+}
+
+/* Maxilar: cinco filetes, que a esta escala lê como dentadura sem virar
+   grade. Mais dentes aqui viram listra. */
+.caveira3d-maxilar{
+  position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  display:flex;gap:1.2px;align-items:flex-end;
+}
+.caveira3d-maxilar b{
+  width:2.6px;height:5px;border-radius:0 0 1px 1px;
+  background:linear-gradient(180deg,#E2DCCE,#9A9386);
+  box-shadow:0 0 1px rgba(0,0,0,.6);
+}
+.caveira3d-maxilar b:nth-child(1),.caveira3d-maxilar b:nth-child(5){height:4px}
+
+/* A nuca: lisa, com a sutura atravessando. É o que dá sentido à volta — sem
+   ela, girar pareceria a mesma face piscando. */
+.caveira3d-sutura{
+  position:absolute;top:0;bottom:0;left:50%;width:1.4px;transform:translateX(-50%);
+  background:linear-gradient(180deg,transparent,rgba(58,54,48,.85) 22%,rgba(58,54,48,.85) 78%,transparent);
+}
+.caveira3d-sigilo{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:Cinzel,serif;font-size:11px;color:var(--osso-fundo);
+}

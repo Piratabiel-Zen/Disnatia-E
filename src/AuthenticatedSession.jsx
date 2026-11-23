@@ -8,6 +8,9 @@ import CampaignPasswordButton from './shell/CampaignPasswordButton';
 import LiveStatus from './shell/LiveStatus';
 import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import BarraDePrevia from './features/acesso/BarraDePrevia.jsx';
+import Mortalha from './features/oneshot/Mortalha.jsx';
+import ChaveDaNoite from './features/oneshot/ChaveDaNoite.jsx';
+import { sistemaDe } from './core/sistemas/index.mjs';
 import { useMembro } from './features/acesso/useMembro';
 import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
@@ -41,11 +44,16 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
   // aqui e não numa aba: quem esquece que está em prévia conclui que o site
   // escondeu dele um documento que ele mesmo criou.
   const { previa } = useMembro();
+  // Névoa e som da noite são do One Shot Terror. Montá-los em toda mesa
+  // penduraria duas alavancas de ambiente em campanhas que não as pediram.
+  const temNevoa = Boolean(sistemaDe(campaign)?.nevoa);
   const headerRef=useRef(null);
   useHeaderClearance(headerRef);
   return(
     <ExperienceProvider key={`${access.role}:${playerSheetId || access.visitorId || 'master'}`} tab={tab} masterMode={masterMode} playerSheetId={playerSheetId} access={access}>
       <BarraDePrevia previa={previa} />
+      {temNevoa && <Mortalha mestre={masterMode} />}
+      {temNevoa && <ChaveDaNoite />}
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
             existe: duas paisagens sobrepostas não é clima, é sujeira. */}

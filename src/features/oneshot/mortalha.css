@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A NÉVOA
+
+   Três planos de gradiente radial, em sentidos quase opostos e velocidades
+   diferentes. Névoa que anda toda para o mesmo lado lê como cortina; é o
+   descompasso entre as camadas que faz parecer ar.
+
+   ATENÇÃO: nada aqui pode posicionar irmão nenhum. Uma regra de irmão
+   (`.mortalha ~ *`) foi o que derrubou o layout da Estrela de Absinto, porque
+   ganhou da posição fixa da navegação e jogou a barra para dentro do fluxo.
+   ═══════════════════════════════════════════════════════════════════════ */
+.mortalha{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  contain:layout paint;
+}
+.mortalha-camada{
+  position:absolute;top:-30%;left:-60%;width:220%;height:160%;
+  background-repeat:repeat;
+  will-change:transform;
+}
+/* Manchas moles e grandes: nuvem fechada vira fumaça de palco. */
+.mortalha-camada.um{
+  background-image:
+    radial-gradient(ellipse 38% 30% at 20% 40%,rgba(188,188,192,.09),transparent 70%),
+    radial-gradient(ellipse 30% 26% at 62% 28%,rgba(170,170,176,.07),transparent 72%),
+    radial-gradient(ellipse 44% 24% at 85% 62%,rgba(200,200,205,.06),transparent 70%);
+  animation:mortalha-anda-a 64s linear infinite;
+}
+.mortalha-camada.dois{
+  background-image:
+    radial-gradient(ellipse 34% 22% at 35% 70%,rgba(150,150,158,.08),transparent 72%),
+    radial-gradient(ellipse 26% 30% at 75% 44%,rgba(190,190,196,.055),transparent 70%);
+  animation:mortalha-anda-b 92s linear infinite;
+}
+/* A terceira é quase só um véu: tira o contraste do fundo inteiro e é o que
+   dá a sensação de ar carregado, mais do que as manchas. */
+.mortalha-camada.tres{
+  background-image:radial-gradient(ellipse 70% 50% at 50% 55%,rgba(210,210,214,.045),transparent 78%);
+  animation:mortalha-respira 26s ease-in-out infinite;
+}
+
+@keyframes mortalha-anda-a{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(14%,-3%,0)}
+}
+@keyframes mortalha-anda-b{
+  from{transform:translate3d(10%,2%,0)}
+  to{transform:translate3d(-8%,-4%,0)}
+}
+@keyframes mortalha-respira{
+  0%,100%{opacity:.55}
+  50%{opacity:1}
+}
+
+/* Quem pediu menos movimento continua com a névoa, parada: ela faz parte do
+   que a mesa está vendo, e sumir mudaria a cena, não só o conforto. */
+html[data-motion="reduced"] .mortalha-camada{animation:none}
+html[data-motion="reduced"] .mortalha-camada.tres{opacity:.8}
+
+/* A chave do Mestre. Discreta: ele aperta uma vez por cena, no máximo. */
+.mortalha-chave{
+  position:fixed;z-index:44;right:16px;bottom:calc(150px + env(safe-area-inset-bottom,0px));
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 12px;border-radius:20px;cursor:pointer;
+  background:rgba(12,12,13,.92);border:1px solid #2E2E33;color:#6E6C6A;
+  font-family:Cinzel,serif;font-size:10px;letter-spacing:.1em;
+  backdrop-filter:blur(3px);
+}
+.mortalha-chave span{font-size:13px}
+.mortalha-chave:hover{border-color:#8B8477;color:#C8C6C2}
+.mortalha-chave[data-ligada="sim"]{border-color:#8B8477;color:#C9C2B4}
+
+@media(max-width:720px){
+  .mortalha-chave{right:12px;bottom:calc(138px + env(safe-area-inset-bottom,0px));font-size:9px}
+}
