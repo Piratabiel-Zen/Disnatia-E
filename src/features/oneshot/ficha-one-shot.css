@@ -275,3 +275,33 @@
   margin:0;padding-top:6px;border-top:1px solid var(--osf-linha);
   font-family:var(--osf-mono);font-size:9.5px;line-height:1.55;color:#A8606C;
 }
+
+/* ---- A dica da competência ----
+   Aparece em cima do cursor e some do fluxo: ocupar linha fixa para cada uma
+   das doze empurraria a ficha para fora da tela. */
+.osf-competencias li{position:relative}
+.osf-dica{
+  position:absolute;left:34px;right:0;top:calc(100% - 2px);z-index:6;
+  display:none;padding:7px 9px;border-radius:3px;
+  background:#0A0A0B;border:1px solid var(--osf-linha-forte);
+  box-shadow:0 10px 24px rgba(0,0,0,.72);
+  font-family:var(--osf-mono);font-size:9.5px;line-height:1.55;
+  font-weight:400;letter-spacing:.02em;color:var(--osf-tinta);
+  white-space:normal;text-align:left;
+}
+.osf-competencias li:hover .osf-dica,
+.osf-competencias li:focus-within .osf-dica{display:block}
+/* Em telas de toque não existe cursor parado em cima: a dica viraria um
+   quadro preto que abre ao encostar e tapa a competência de baixo. */
+@media (hover:none){.osf-competencias li:hover .osf-dica{display:none}}
+
+/* ---- A chave do Mestre ---- */
+.osf-chave{
+  display:flex;align-items:flex-start;gap:9px;margin-top:11px;
+  padding-top:11px;border-top:1px solid var(--osf-linha);
+  font-family:var(--osf-mono);font-size:10px;line-height:1.5;
+  color:var(--osf-tinta-fraca);cursor:pointer;
+}
+.osf-chave input{margin:1px 0 0;accent-color:#8B5FAF;cursor:pointer}
+.osf-chave span{display:grid;gap:2px}
+.osf-chave em{font-style:normal;font-size:9px;color:#4A4845}

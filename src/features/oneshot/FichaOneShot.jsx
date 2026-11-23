@@ -1,8 +1,9 @@
 import {
   ATRIBUTOS, ATRIBUTO_MAXIMO_NA_CRIACAO, ATRIBUTO_MINIMO, COMPETENCIAS,
   DIFICULDADES, PAVOR_MAXIMO, PONTOS_DE_SORTE, SANIDADE_MAXIMA,
-  REFORCO_A_PARTIR_DE, competenciasDaFicha, marcar, aliviar, pontosRestantes,
-  pvMaximoDaFicha, reforcoAtivo, responderAVisao, normalizar,
+  REFORCO_A_PARTIR_DE, REFORCO_BONUS, competenciasDaFicha, deterioracao, marcar,
+  aliviar, pontosRestantes, pvMaximoDaFicha, reforcoAtivo, responderAVisao,
+  retratoPerturbado, valorDoAtributo, normalizar,
 } from './fichaOneShot.mjs';
 import {
   TALENTOS, TALENTOS_POR_PERSONAGEM, talentoPorId, talentosTomados,
@@ -10,6 +11,7 @@ import {
 import { comprimirParaDocumento } from '../../core/media';
 import './paginas-one-shot.css';
 import './ficha-one-shot.css';
+import './ficha-viva.css';
 
 /**
  * A FICHA DE UMA NOITE
@@ -66,6 +68,7 @@ export default function FichaOneShot({
   const salvar = patch => aoMudar?.({ ...ficha, ...patch });
   const escolhido = talentoPorId(ficha.talento);
   const tomados = talentosTomados(fichasDaMesa, ficha.id);
+  const estado = deterioracao(ficha);
 
   const campo = (id, rotulo, extra = {}) => (
     <label className="osf-campo">
@@ -79,7 +82,22 @@ export default function FichaOneShot({
   );
 
   return (
-    <div className="osf">
+    <div
+      className="osf"
+      data-ferida={estado.ferida || undefined}
+      data-pavor={estado.pavor || undefined}
+      data-sanidade={estado.sanidade || undefined}
+    >
+      {/* O papel envelhece junto com a pessoa. Fica atrás de tudo e sem pegar
+          clique: ficha bonita que não deixa clicar no campo é ficha quebrada.
+          As camadas leem só os três níveis da raiz, nunca o valor cru — quem
+          sabe que Vida cai e os medidores enchem é `deterioracao()`. */}
+      <span className="osf-vivo" aria-hidden="true">
+        <i className="osf-sangue" /><i className="osf-gotas" />
+        <i className="osf-pavor" />
+        <i className="osf-riscos" /><i className="osf-sombras" />
+      </span>
+
       {/* A VISÃO vem primeiro, acima de tudo: quando ela está pendente, a mesa
           está esperando uma resposta e nada mais na ficha importa agora. */}
       {ficha.visaoPendente && (
@@ -113,7 +131,9 @@ export default function FichaOneShot({
               Pequeno e com proporção de documento de propósito: é foto de
               arquivo, não ilustração de herói. Numa mesa de terror a foto 3x4
               já começa com cara de ficha de desaparecido — o que ajuda. */}
-          <div className="osf-retrato">
+          {/* Só se perturba quando há retrato de verdade: o quadrado vazio
+              com olhos escurecendo não é susto, é defeito. */}
+          <div className="osf-retrato" data-perturbado={ficha.retrato && retratoPerturbado(ficha) ? '' : undefined}>
             {ficha.retrato
               ? <img src={ficha.retrato} alt="" />
               : <span className="osf-retrato-vazio">sem<br />retrato</span>}
@@ -201,6 +221,24 @@ export default function FichaOneShot({
           ))}
           <em>cada um rola de novo, valendo o segundo resultado</em>
         </div>
+
+        {/* A chave do retrato é do MESTRE porque mexer na cara do personagem
+            de alguém sem avisar cai mal com quem não pediu. Fica ligada por
+            padrão e aqui, junto da condição, que é o que a dispara. */}
+        {mestre && (
+          <label className="osf-chave">
+            <input
+              type="checkbox"
+              checked={ficha.retratoPerturbador !== false}
+              disabled={!podeEditar}
+              onChange={e => salvar({ retratoPerturbador: e.target.checked })}
+            />
+            <span>
+              Deixar o retrato se alterar com a sanidade no fim
+              <em>olhos escurecendo e uma silhueta atrás. Desligue para quem não quiser.</em>
+            </span>
+          </label>
+        )}
       </section>
 
       <section className="osf-bloco">
@@ -245,6 +283,23 @@ export default function FichaOneShot({
               </b>
               <span>
                 {c.nome}
+                {/* De onde vem o número, em cima do cursor. Sem isto a
+                    competência parece decidida por mágica, e o jogador que
+                    quer melhorar uma não sabe onde pôr o ponto. */}
+                <b className="osf-dica" aria-hidden="true">
+                  {c.de.map(id => `${NOME_DO_ATRIBUTO[id]} ${valorDoAtributo(ficha, id)}`)
+                    .join(c.de.length > 1 ? ' ou ' : '')}
+                  {c.de.length > 1 && ' (vale o maior)'}
+                  {' → '}{competencias[c.id] < 0 ? '−' : '+'}{Math.abs(competencias[c.id])}
+                  {c.reforco && (
+                    reforcoAtivo(ficha, c.id)
+                      ? `, com +${REFORCO_BONUS} de ${NOME_DO_ATRIBUTO[c.reforco]}`
+                      : `. ${NOME_DO_ATRIBUTO[c.reforco]} ${valorDoAtributo(ficha, c.reforco)}: a partir de ${REFORCO_A_PARTIR_DE} daria +${REFORCO_BONUS}`
+                  )}
+                  {valorDoAtributo(ficha, c.de[0]) <= ATRIBUTO_MINIMO && c.de.every(
+                    id => valorDoAtributo(ficha, id) <= ATRIBUTO_MINIMO,
+                  ) && '. Sem ponto no atributo, nada tira daqui'}
+                </b>
                 <em>{c.resumo}</em>
                 {/* O reforço aparece quando está pago: sem isto o jogador vê o
                     número subir e não sabe por quê, e o atributo de apoio

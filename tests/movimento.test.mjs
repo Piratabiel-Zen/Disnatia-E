@@ -12,6 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { semComentarios } from './ajuda/semComentarios.mjs';
 import {
   MOTION_LABELS, MOTION_VALUES, normalizeMotion, resolveMotion,
 } from '../src/adventure/movimento.mjs';
@@ -27,7 +28,11 @@ const css = [];
 })(raiz);
 
 test('nenhum CSS volta a obedecer o sistema operacional sozinho', () => {
-  const culpados = css.filter(([, texto]) => /prefers-reduced-motion/.test(texto)).map(([nome]) => nome);
+  // Comentário não é regra: o texto que EXPLICA por que a media query é
+  // proibida precisa citá-la, e sem tirar comentário o aviso vira o erro.
+  const culpados = css
+    .filter(([, texto]) => /prefers-reduced-motion/.test(semComentarios(texto)))
+    .map(([nome]) => nome);
   assert.deepEqual(
     culpados, [],
     `voltou a media query em: ${culpados.join(', ')}.\n` +
@@ -46,7 +51,7 @@ test('o JS também não consulta o sistema por conta própria', () => {
   })(raiz);
   const culpados = js
     .filter(([nome]) => nome !== 'adventure/movimento.mjs')
-    .filter(([, texto]) => /prefers-reduced-motion/.test(texto))
+    .filter(([, texto]) => /prefers-reduced-motion/.test(semComentarios(texto)))
     .map(([nome]) => nome);
   assert.deepEqual(culpados, [], `consulta direta ao sistema em: ${culpados.join(', ')}. Use motionIsReduced().`);
 });

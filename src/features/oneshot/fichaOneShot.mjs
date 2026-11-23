@@ -304,6 +304,8 @@ export function fichaNova(nome = '') {
     talento: '',
     talentoResumo: '',
     retrato: '',
+    // Ligado por padrão; o Mestre desliga por ficha na Condição.
+    retratoPerturbador: true,
     visaoPendente: '',
     dono: '',
     criadoEm: Date.now(),
@@ -336,3 +338,53 @@ export function normalizar(ficha) {
 
 export const pvMaximoDaFicha = ficha => pvDaIdade(ficha?.idade);
 export const estaMorto = ficha => limitar(ficha?.pv, 0, PV_ADULTO) <= 0;
+
+/* ─── O quanto a noite já cobrou ────────────────────────────────────────
+ *
+ * A ficha reage ao estado do personagem — sangue nas bordas, pulsação,
+ * riscos no papel — e quem decide a intensidade é esta função, sozinha.
+ *
+ * Ela existe para a DIREÇÃO morar num lugar só. Vida CAI e os dois medidores
+ * ENCHEM, então "pior" é número baixo num caso e alto nos outros, e espalhar
+ * essa inversão por dezenas de regras de CSS é como se escreve um bug que
+ * ninguém acha: bastaria um `>` trocado para a ficha ficar sangrenta quando o
+ * personagem está ótimo.
+ *
+ * Devolve 0 a 3 para cada coisa, onde 0 é inteiro e 3 é o fim da linha. O CSS
+ * só olha esses números e nunca os valores crus.
+ */
+export function deterioracao(ficha) {
+  const f = normalizar(ficha);
+  const pvMaximo = pvMaximoDaFicha(f);
+
+  // Vida cai: a fração que SOBROU é o que importa, porque 2 de 3 e 2 de 5 são
+  // situações bem diferentes na mesa.
+  const sobra = pvMaximo > 0 ? f.pv / pvMaximo : 0;
+  const ferida = f.pv <= 0 ? 3 : sobra <= 0.34 ? 3 : sobra <= 0.6 ? 2 : sobra < 1 ? 1 : 0;
+
+  // Pavor e Sanidade enchem: cheio é o pior, e o passo antes do cheio já
+  // precisa aparecer, senão o aviso chega junto com a visão e não avisa nada.
+  const escala = (valor, maximo) => {
+    if (maximo <= 0) return 0;
+    const parte = valor / maximo;
+    return parte >= 1 ? 3 : parte >= 0.66 ? 2 : parte > 0 ? 1 : 0;
+  };
+
+  return Object.freeze({
+    ferida,
+    pavor: escala(f.pavor, PAVOR_MAXIMO),
+    sanidade: escala(f.sanidade, SANIDADE_MAXIMA),
+  });
+}
+
+/**
+ * O retrato se altera quando a sanidade está no fim.
+ *
+ * Fica atrás de uma chave do Mestre porque nem toda mesa quer isto: mexer na
+ * cara do personagem de alguém sem avisar é o tipo de susto que cai mal com
+ * quem não pediu. `retratoPerturbador: false` na ficha desliga para ela.
+ */
+export const RETRATO_PERTURBA_A_PARTIR_DE = 3;
+export const retratoPerturbado = ficha =>
+  ficha?.retratoPerturbador !== false
+  && deterioracao(ficha).sanidade >= RETRATO_PERTURBA_A_PARTIR_DE;

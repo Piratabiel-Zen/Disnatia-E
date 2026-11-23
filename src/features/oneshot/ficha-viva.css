@@ -1,0 +1,162 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A FICHA QUE REAGE
+
+   O papel envelhece junto com a pessoa. Três coisas acontecem com ele:
+   sangue nas bordas conforme a vida cai, pulsação e escurecimento conforme o
+   Pavor enche, e riscos e sombras conforme a Sanidade se gasta.
+
+   TUDO AQUI É CAMADA SOBRE A RAIZ, nunca regra no miolo da ficha. Dois
+   motivos: a ficha vai ser redesenhada no estilo do grimório, e efeito preso
+   ao markup interno morre junto com o markup; e camada de raiz é uma só por
+   ficha, enquanto regra no miolo multiplica por campo e fica cara numa tela
+   que já tem mapa, tokens e mural.
+
+   Os níveis vêm de `deterioracao()`, que é quem sabe que Vida CAI e os dois
+   medidores ENCHEM. Aqui ninguém olha valor cru: só `data-ferida`,
+   `data-pavor` e `data-sanidade`, de 0 a 3. Trocar a direção é mexer lá, não
+   em trinta seletores aqui.
+
+   Nada disto pode atrapalhar o uso: todas as camadas são `pointer-events:
+   none` e ficam atrás do conteúdo. Uma ficha bonita que não deixa clicar no
+   campo é uma ficha quebrada.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.osf{position:relative;isolation:isolate}
+
+.osf-vivo{
+  position:absolute;inset:0;z-index:0;
+  pointer-events:none;
+  border-radius:inherit;
+  overflow:hidden;
+}
+.osf-vivo i{position:absolute;inset:0;display:block;opacity:0;transition:opacity 1.4s ease}
+
+/* ---- Vida: sangue vindo das bordas ----
+   Vem das BORDAS para dentro, nunca do meio: mancha no meio do papel tapa
+   texto e parece sujeira de scanner. Da borda, parece que a ficha encostou
+   em alguma coisa. */
+.osf-sangue{
+  background:
+    radial-gradient(130% 62% at 50% -14%,rgba(120,18,24,.5),transparent 56%),
+    radial-gradient(118% 56% at 50% 114%,rgba(104,14,20,.46),transparent 58%),
+    radial-gradient(52% 120% at -12% 50%,rgba(96,12,18,.4),transparent 60%),
+    radial-gradient(52% 120% at 112% 50%,rgba(96,12,18,.4),transparent 60%);
+}
+.osf[data-ferida="1"] .osf-sangue{opacity:.3}
+.osf[data-ferida="2"] .osf-sangue{opacity:.62}
+.osf[data-ferida="3"] .osf-sangue{opacity:1}
+
+/* As gotas: poucas, grandes e irregulares. Mancha repetida vira textura, e
+   textura não assusta — assusta o que parece ter acontecido ali. */
+.osf-gotas{
+  background:
+    radial-gradient(ellipse 13% 4% at 17% 2%,rgba(128,16,22,.62),transparent 70%),
+    radial-gradient(ellipse 8% 3% at 73% 1%,rgba(112,14,20,.54),transparent 72%),
+    radial-gradient(ellipse 10% 3.4% at 41% 99%,rgba(120,16,22,.5),transparent 72%),
+    radial-gradient(ellipse 6% 5% at 2% 68%,rgba(104,12,18,.46),transparent 74%);
+}
+.osf[data-ferida="2"] .osf-gotas{opacity:.7}
+.osf[data-ferida="3"] .osf-gotas{opacity:1}
+
+/* ---- Pavor: a luz oscila e o papel escurece nas bordas ----
+   O escurecimento é vinheta, não filtro na ficha inteira: filtro apaga o
+   texto junto e a pessoa para de conseguir ler a própria ficha na hora em
+   que mais precisa dela. */
+.osf-pavor{
+  background:radial-gradient(118% 92% at 50% 48%,transparent 36%,rgba(4,3,6,.82) 100%);
+}
+.osf[data-pavor="1"] .osf-pavor{opacity:.34}
+.osf[data-pavor="2"] .osf-pavor{opacity:.68}
+.osf[data-pavor="3"] .osf-pavor{opacity:1}
+
+/* A oscilação da luz. Lenta e pequena de propósito: piscar rápido cansa a
+   vista em dez minutos e a mesa dura horas. */
+@keyframes osfRespira{
+  0%,100%{opacity:var(--osf-pulso,.5)}
+  44%{opacity:calc(var(--osf-pulso,.5) * .62)}
+  61%{opacity:calc(var(--osf-pulso,.5) * .92)}
+}
+.osf[data-pavor="2"] .osf-pavor{--osf-pulso:.68;animation:osfRespira 7.5s ease-in-out infinite}
+.osf[data-pavor="3"] .osf-pavor{--osf-pulso:1;animation:osfRespira 4.2s ease-in-out infinite}
+
+/* O vermelho do Pavor cheio: só no limite, e só nos cantos. */
+.osf[data-pavor="3"] .osf-pavor{
+  background:
+    radial-gradient(76% 52% at 50% 112%,rgba(104,12,30,.3),transparent 62%),
+    radial-gradient(118% 92% at 50% 48%,transparent 34%,rgba(4,3,6,.86) 100%);
+}
+
+/* ---- Sanidade: riscos e sombras no papel ----
+   Riscos finos e tortos, como quem rabiscou por cima sem querer. Ficam bem
+   apagados: têm que se notar na segunda olhada, não competir com o que está
+   escrito. */
+.osf-riscos{
+  background-image:
+    repeating-linear-gradient(97deg,rgba(214,206,190,.07) 0 1px,transparent 1px 38px),
+    repeating-linear-gradient(-83deg,rgba(214,206,190,.05) 0 1px,transparent 1px 61px),
+    repeating-linear-gradient(13deg,rgba(0,0,0,.2) 0 1px,transparent 1px 47px);
+}
+.osf[data-sanidade="1"] .osf-riscos{opacity:.3}
+.osf[data-sanidade="2"] .osf-riscos{opacity:.66}
+.osf[data-sanidade="3"] .osf-riscos{opacity:1}
+
+/* As sombras moles: vultos que não chegam a ser forma nenhuma. */
+.osf-sombras{
+  background:
+    radial-gradient(38% 30% at 82% 22%,rgba(0,0,0,.62),transparent 70%),
+    radial-gradient(30% 36% at 12% 74%,rgba(0,0,0,.56),transparent 72%),
+    radial-gradient(26% 22% at 58% 91%,rgba(0,0,0,.5),transparent 74%);
+}
+.osf[data-sanidade="2"] .osf-sombras{opacity:.5}
+.osf[data-sanidade="3"] .osf-sombras{opacity:.84}
+
+/* No fim da sanidade o papel inteiro desencontra um fio. Meio grau é o
+   limite: mais que isso vira efeito de festa e a ficha fica ilegível. */
+.osf[data-sanidade="3"]{animation:osfTorto 11s ease-in-out infinite}
+@keyframes osfTorto{
+  0%,100%{transform:none}
+  50%{transform:rotate(.12deg) translateY(.6px)}
+}
+
+/* ---- O retrato que se altera ----
+   Só com a sanidade no fim, e só se o Mestre deixar. Olhos escurecendo e uma
+   silhueta atrás — nada que mexa na cara da pessoa de forma caricata: o que
+   assusta é a foto parecer a MESMA e estar diferente. */
+.osf-retrato[data-perturbado]{position:relative}
+.osf-retrato[data-perturbado] img{
+  filter:grayscale(.3) contrast(1.14) brightness(.82);
+  transition:filter 2s ease;
+}
+.osf-retrato[data-perturbado]::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    /* a silhueta, no ombro, sem forma definida */
+    radial-gradient(26% 20% at 76% 30%,rgba(0,0,0,.72),transparent 72%),
+    radial-gradient(20% 26% at 79% 46%,rgba(0,0,0,.5),transparent 76%),
+    /* os olhos escurecendo */
+    radial-gradient(9% 5% at 38% 37%,rgba(0,0,0,.66),transparent 68%),
+    radial-gradient(9% 5% at 62% 37%,rgba(0,0,0,.66),transparent 68%);
+  animation:osfRetrato 9s ease-in-out infinite;
+}
+@keyframes osfRetrato{
+  0%,100%{opacity:.52}
+  50%{opacity:.92}
+}
+
+/* ---- Os freios ----
+   Modo leve tira tudo que anima e deixa só o que é estado parado: quem
+   escolheu "Leve" tem máquina fraca ou não quer movimento na tela, e as duas
+   razões pedem a mesma coisa. */
+html[data-quality="light"] .osf-vivo i,
+html[data-quality="light"] .osf-retrato[data-perturbado]::after{animation:none!important}
+html[data-quality="light"] .osf[data-sanidade="3"]{animation:none!important}
+
+/* E quem pediu menos movimento não ganha nenhum.
+   SEM `prefers-reduced-motion` aqui, de propósito: `movimento.mjs` já lê o
+   sistema operacional e escreve `data-motion` na raiz, e a pessoa pode
+   trocar isso na mesa. Repetir a media query no CSS passaria por cima da
+   escolha dela — o Windows voltaria a mandar mesmo depois de ela religar o
+   movimento. A regra vale para o projeto inteiro e tem teste guardando. */
+html[data-motion="reduced"] .osf-vivo i,
+html[data-motion="reduced"] .osf-retrato[data-perturbado]::after,
+html[data-motion="reduced"] .osf[data-sanidade="3"]{animation:none!important}
