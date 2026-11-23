@@ -27,6 +27,12 @@ import CosmicSelectionRing from '../../experience/CosmicSelectionRing';
 import MapAtmosphere from './MapAtmosphere';
 import { listaDeAtmosferas } from './atmosferas.mjs';
 import { mapasProntosDe } from './mapasProntos.mjs';
+import AtmosferaDaCasa from '../oneshot/AtmosferaDaCasa.jsx';
+import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
+import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
+import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
+import { DURACOES as DURACOES_DO_VULTO, TAMANHOS as TAMANHOS_DO_VULTO, vultoNovo } from '../oneshot/vultoNoMapa.mjs';
+import { publicarVulto } from '../../core/liveChannel';
 import { activeCampaign } from '../../core/campaign';
 import { colecaoDeFichas, sistemaDe } from '../../core/sistemas/index.mjs';
 import { caixasDoTalisma, resumoDoTalisma, talismaDoToken } from './talismaDeToken.mjs';
@@ -279,6 +285,17 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [mapTokens, setMapTokens] = useState({});
   const [, setTokenSyncRevision] = useState(0);
   useEffect(() => tokenOutbox.subscribe(() => setTokenSyncRevision(value => value + 1)), []); // { [mapId]: tokens[] }
+  /* A MESA DE UMA NOITE INVERTE O SENTIDO DA NÉVOA.
+     No mapa de batalha o Mestre PINTA escuridão por cima do mapa. Numa noite
+     de terror é o contrário: a casa inteira nasce escura e o que ele pinta é
+     o que a mesa já descobriu. O armazenamento, o pincel e a sincronização
+     são os mesmos — muda só o que a tinta significa na tela, e é por isso
+     que isto é uma leitura diferente e não um segundo sistema de névoa. */
+  const ehNoite = sistemaDe(activeCampaign())?.id === 'oneshot';
+  const [faseDaNoite, setFaseDaNoite] = useState(FASE_PADRAO);
+  const [modoVulto, setModoVulto] = useState(false);
+  const [duracaoDoVulto, setDuracaoDoVulto] = useState('instante');
+  const [tamanhoDoVulto, setTamanhoDoVulto] = useState('pessoa');
   const [fogByMap, setFogByMap] = useState({});
   const [fogMode, setFogMode] = useState('off'); // off | add | erase
   const [fogBrush, setFogBrush] = useState(12);
@@ -1880,7 +1897,33 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
     }
   };
 
-  const startFogDraw = (e) => { if (fogMode === 'off') return; fogDrawingRef.current = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} editFogAtPointer(e); };
+  /**
+   * Põe o vulto no cômodo onde o Mestre clicou.
+   *
+   * Passa pela MESMA camada que pinta a névoa, e não por um modo novo de
+   * clique no mapa: essa camada já resolve captura de ponteiro, zoom e
+   * deslocamento, e um segundo caminho de clique daria coordenada diferente
+   * da do pincel no mesmo mapa.
+   */
+  const porVultoNoPonto = (e) => {
+    if (!masterMode || !ehNoite || !modoVulto || !currentMap || !mapRef.current) return;
+    e.preventDefault(); e.stopPropagation();
+    const rect = mapRef.current.getBoundingClientRect();
+    publicarVulto(vultoNovo({
+      mapa: String(currentMap.id),
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height,
+      duracao: duracaoDoVulto,
+      tamanho: tamanhoDoVulto,
+    }));
+    // Um vulto por clique: deixar o modo ligado faria o Mestre soltar um
+    // vulto sem querer no próximo clique do mapa.
+    setModoVulto(false);
+  };
+
+  const startFogDraw = (e) => {
+    if (modoVulto) { porVultoNoPonto(e); return; }
+    if (fogMode === 'off') return; fogDrawingRef.current = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} editFogAtPointer(e); };
   const moveFogDraw = (e) => { if (fogDrawingRef.current) editFogAtPointer(e); };
   const endFogDraw = () => { fogDrawingRef.current = false; };
 
@@ -1988,12 +2031,48 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   <button onClick={() => setShowTokenLibrary(v=>!v)} style={{ padding:'5px 9px',borderRadius:7,border:'1px solid rgba(168,85,247,.38)',background:showTokenLibrary?'rgba(168,85,247,.2)':'rgba(4,6,15,.7)',color:'#C8A8E8',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>◇ Biblioteca</button>
                   <button onClick={() => {setPingMode(false);setRulerMode(v=>!v);setFogMode('off');setRuler(null);}} style={{ padding:'5px 9px',borderRadius:7,border:`1px solid ${rulerMode?'rgba(30,200,255,.65)':'rgba(30,200,255,.25)'}`,background:rulerMode?'rgba(30,200,255,.18)':'rgba(4,6,15,.7)',color:'#58D9FF',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>⌁ Medir</button>
                   <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 6px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#8A7A9A',fontFamily:'Cinzel,serif'}}>1m=<input type='number' min='10' max='300' value={pixelsPerMeter} onChange={e=>setPixelsPerMeter(Math.max(10,Number(e.target.value)||70))} style={{width:45,fontSize:10,padding:'2px 4px'}}/>px</label>
-                  <button onClick={() => setFogMode(m => m === 'add' ? 'off' : 'add')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='add'?'rgba(180,108,232,.7)':'rgba(180,108,232,.3)'}`, background: fogMode==='add'?'rgba(180,108,232,.22)':'rgba(4,6,15,.7)', color:'#D7B6F2', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'none' }}>◌ Névoa</button>
+                  <button onClick={() => setFogMode(m => m === 'add' ? 'off' : 'add')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='add'?'rgba(180,108,232,.7)':'rgba(180,108,232,.3)'}`, background: fogMode==='add'?'rgba(180,108,232,.22)':'rgba(4,6,15,.7)', color:'#D7B6F2', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'none' }}>{ehNoite ? '✦ Revelar' : '◌ Névoa'}</button>
                   
                   
                   
-                  <button onClick={() => setFogMode(m => m === 'erase' ? 'off' : 'erase')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='erase'?'rgba(74,222,128,.65)':'rgba(74,222,128,.25)'}`, background: fogMode==='erase'?'rgba(74,222,128,.18)':'rgba(4,6,15,.7)', color:'#8CF0AC', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'none' }}>✧ Revelar</button>
+                  <button onClick={() => setFogMode(m => m === 'erase' ? 'off' : 'erase')} style={{ padding: '5px 9px', borderRadius: 7, border: `1px solid ${fogMode==='erase'?'rgba(74,222,128,.65)':'rgba(74,222,128,.25)'}`, background: fogMode==='erase'?'rgba(74,222,128,.18)':'rgba(4,6,15,.7)', color:'#8CF0AC', cursor:'pointer', fontFamily:'Cinzel,serif', fontSize:10, backdropFilter:'none' }}>{ehNoite ? '◌ Esconder' : '✧ Revelar'}</button>
                   <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 6px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#8A7A9A',fontFamily:'Cinzel,serif'}}>Pincel <input type="range" min="5" max="30" value={fogBrush} onChange={e=>setFogBrush(Number(e.target.value))} style={{width:70}}/></label>
+                  {/* OS CONTROLES DA NOITE.
+                      Ficam na mesma barra do pincel porque é tudo da mesma
+                      mão: o Mestre revela um pedaço, vira a hora e põe o
+                      vulto sem sair do mapa. */}
+                  {ehNoite && (
+                    <>
+                      <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 7px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#C0A86E',fontFamily:'Cinzel,serif'}}>
+                        Hora
+                        <select
+                          value={faseDaNoite}
+                          onChange={e => setFaseDaNoite(e.target.value)}
+                          style={{background:'#15110E',color:'#D7CDBA',border:'1px solid #3A2E22',borderRadius:4,fontSize:9,padding:'2px 4px'}}
+                        >
+                          {FASES.map(f => <option key={f.id} value={f.id}>{f.nome} · {f.horas}</option>)}
+                        </select>
+                      </label>
+                      <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 7px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#C4414F',fontFamily:'Cinzel,serif'}}>
+                        Vulto
+                        <select value={duracaoDoVulto} onChange={e => setDuracaoDoVulto(e.target.value)}
+                          style={{background:'#15110E',color:'#D7CDBA',border:'1px solid #3A2E22',borderRadius:4,fontSize:9,padding:'2px 4px'}}>
+                          {DURACOES_DO_VULTO.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                        </select>
+                        <select value={tamanhoDoVulto} onChange={e => setTamanhoDoVulto(e.target.value)}
+                          style={{background:'#15110E',color:'#D7CDBA',border:'1px solid #3A2E22',borderRadius:4,fontSize:9,padding:'2px 4px'}}>
+                          {TAMANHOS_DO_VULTO.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                        </select>
+                      </label>
+                      <button
+                        onClick={() => { setModoVulto(v => !v); setFogMode('off'); }}
+                        title="Clique no mapa para pôr o vulto no cômodo"
+                        style={{padding:'5px 9px',borderRadius:7,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,
+                          border:`1px solid ${modoVulto?'rgba(196,65,79,.75)':'rgba(196,65,79,.3)'}`,
+                          background:modoVulto?'rgba(142,31,43,.3)':'rgba(4,6,15,.7)',color:'#E0707C'}}
+                      >☾ {modoVulto ? 'clique no cômodo' : 'Pôr vulto'}</button>
+                    </>
+                  )}
                   <button onClick={() => { if (confirm('Remover toda a névoa deste mapa?')) saveFog(String(currentMap.id), []); }} style={{ padding:'5px 8px',borderRadius:7,border:'1px solid rgba(232,160,32,.28)',background:'rgba(4,6,15,.7)',color:'#E8A020',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>☀ Limpar névoa</button>
                   {String(activeId) === String(currentMap.id)
                     ? <button onClick={deactivateMap} style={{ padding: '5px 9px', borderRadius: 7, border: '1px solid rgba(232,160,32,0.35)', background: 'rgba(232,160,32,0.12)', color: '#E8A020', cursor: 'pointer', fontFamily: 'Cinzel,serif', fontSize: 10, backdropFilter:'none' }}>🙈 Ocultar</button>
@@ -2128,6 +2207,14 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               >
                 <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
                 <MapAtmosphere atmosfera={currentMap.atmosfera} img={currentMap.img} />
+                {/* A atmosfera da casa só entra quando o mapa aberto É um dos
+                    sete: mapa que o Mestre subiu por conta própria não tem
+                    camadas declaradas, e inventar luzes para ele daria uma
+                    névoa genérica por cima de uma arte que não pediu nada. */}
+                {ehNoite && mapaPorId(String(currentMap.id)) && (
+                  <AtmosferaDaCasa mapa={String(currentMap.id)} fase={faseDaNoite} />
+                )}
+                {ehNoite && <VultoNoMapa mapa={String(currentMap.id)} />}
                 {marquee && <div aria-hidden="true" style={{position:'absolute',left:`${Math.min(marquee.left,marquee.right)}%`,top:`${Math.min(marquee.top,marquee.bottom)}%`,width:`${Math.abs(marquee.right-marquee.left)}%`,height:`${Math.abs(marquee.bottom-marquee.top)}%`,border:'1px solid rgba(113,196,255,.95)',background:'rgba(65,145,255,.18)',boxShadow:'0 0 14px rgba(65,145,255,.28)',pointerEvents:'none',zIndex:90}}/>}
                 {ruler && (()=>{const dx=(ruler.end.x-ruler.start.x)/100*(baseSize.w||1)*zoom;const dy=(ruler.end.y-ruler.start.y)/100*(baseSize.h||1)*zoom;const meters=Math.sqrt(dx*dx+dy*dy)/(pixelsPerMeter*tokenScale);return <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:24,overflow:'visible'}}><line x1={`${ruler.start.x}%`} y1={`${ruler.start.y}%`} x2={`${ruler.end.x}%`} y2={`${ruler.end.y}%`} stroke='#58D9FF' strokeWidth={2*zoom} strokeDasharray={`${7*zoom} ${5*zoom}`}/><circle cx={`${ruler.start.x}%`} cy={`${ruler.start.y}%`} r={4*zoom} fill='#58D9FF'/><circle cx={`${ruler.end.x}%`} cy={`${ruler.end.y}%`} r={4*zoom} fill='#58D9FF'/><text x={`${(ruler.start.x+ruler.end.x)/2}%`} y={`${(ruler.start.y+ruler.end.y)/2}%`} fill='#D7F7FF' fontSize={12*zoom} textAnchor='middle' style={{paintOrder:'stroke',stroke:'#02040A',strokeWidth:4*zoom,fontFamily:'Cinzel,serif'}}>{meters.toFixed(1)} m</text></svg>;})()}
                 {(currentMap.tokens || []).map(token => {
@@ -2321,9 +2408,26 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   onPointerMove={moveFogDraw}
                   onPointerUp={endFogDraw}
                   onPointerCancel={endFogDraw}
-                  style={{position:'absolute',inset:0,zIndex:30,pointerEvents:masterMode&&fogMode!=='off'?'auto':'none',cursor:fogMode==='erase'?'cell':'crosshair',touchAction:'none'}}
+                  style={{position:'absolute',inset:0,zIndex:30,pointerEvents:masterMode&&(fogMode!=='off'||modoVulto)?'auto':'none',cursor:modoVulto?'copy':(fogMode==='erase'?'cell':'crosshair'),touchAction:'none'}}
                 >
-                  {(fogByMap[String(currentMap.id)] || []).map(p => (
+                  {/* NA NOITE, O QUE O MESTRE PINTA É O QUE SE VÊ.
+                      As mesmas manchas, lidas ao contrário: a casa nasce
+                      escura e cada pincelada abre um pedaço. As coordenadas
+                      do pincel são 0–100 e a clareira usa 0–1, e o raio é
+                      metade da largura da mancha, que é desenhada redonda. */}
+                  {ehNoite ? (
+                    <NevoaDeExploracao
+                      mestre={masterMode}
+                      clareiras={(fogByMap[String(currentMap.id)] || []).map(p => ({
+                        id: p.id, x: p.x / 100, y: p.y / 100, r: (p.size || 12) / 200,
+                      }))}
+                      tokens={(currentMap.tokens || [])
+                        .filter(t => tokenControllers[String(t.id)])
+                        .map(t => ({ dono: tokenControllers[String(t.id)], x: t.x / 100, y: t.y / 100 }))}
+                      dono={access?.sheetId ? String(access.sheetId) : ''}
+                      aspecto={baseSize.w && baseSize.h ? baseSize.w / baseSize.h : 2}
+                    />
+                  ) : (fogByMap[String(currentMap.id)] || []).map(p => (
                     <div key={p.id} style={{position:'absolute',left:`${p.x}%`,top:`${p.y}%`,width:`${p.size}%`,aspectRatio:'1',transform:'translate(-50%,-50%)',borderRadius:'50%',background:'radial-gradient(circle,rgba(0,0,0,.995) 0%,rgba(0,0,0,.995) 68%,rgba(0,0,0,.92) 82%,rgba(0,0,0,0) 100%)',filter:'blur(1px)',pointerEvents:'none'}}/>
                   ))}
                 </div>
