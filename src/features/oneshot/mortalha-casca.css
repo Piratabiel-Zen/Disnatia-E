@@ -1,0 +1,384 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A CASCA DO GRIMÓRIO
+
+   Tudo aqui está preso a `html[data-tema-mesa="mortalha"]`. É o mesmo
+   caminho da repintura do mural de ouija, e pelo mesmo motivo: a Dinastia E
+   e o CAIN continuam exatamente como estão, e uma mesa de uma noite ganha
+   outra pele sem que nenhum componente saiba disso.
+
+   A MUDANÇA ESTRUTURAL: o trilho da esquerda vira uma FITA no topo. É a
+   única coisa aqui que não é só cor — e ela é feita por CSS, re-dispondo os
+   mesmos elementos que o trilho já desenha. Nenhum componente foi tocado,
+   então nada disso pode quebrar as outras duas mesas, nem o celular, que
+   continua com a barra de baixo de sempre.
+
+   A régua: 64px de barra do topo + 46px de fita = 110px até o conteúdo.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-tema-mesa="mortalha"]{
+  --mor-pergaminho:#C9B48C;
+  --mor-pergaminho-escuro:#A8926B;
+  --mor-couro:#1A130F;
+  --mor-couro-claro:#2A1E16;
+  --mor-latao:#B08A42;
+  --mor-latao-claro:#E3C782;
+  --mor-sangue:#8E1F2B;
+  --mor-sangue-claro:#C4414F;
+  --mor-tinta:#E8DCC2;
+  --mor-fita:48px;
+  --mor-topo:64px;
+}
+
+/* ───────── A BARRA DO TOPO ───────── */
+
+html[data-tema-mesa="mortalha"] .immersive-topbar{
+  background:
+    linear-gradient(180deg,rgba(26,19,15,.97),rgba(12,9,7,.98)) !important;
+  border-bottom:1px solid var(--mor-latao) !important;
+  box-shadow:0 1px 0 rgba(227,199,130,.18),0 10px 26px rgba(0,0,0,.5);
+}
+html[data-tema-mesa="mortalha"] .brand-line b,
+html[data-tema-mesa="mortalha"] .brand-line strong{
+  font-family:Cinzel,Georgia,serif !important;
+  letter-spacing:.12em;color:var(--mor-tinta) !important;
+  text-shadow:0 2px 10px rgba(0,0,0,.7);
+}
+/* O título e a linha de baixo precisam de respiro: encostados, viram uma
+   palavra só ("Relatos do MacabroTERRA"). */
+html[data-tema-mesa="mortalha"] .brand-line{
+  display:flex !important;flex-direction:column !important;
+  align-items:flex-start !important;gap:3px !important;
+}
+html[data-tema-mesa="mortalha"] .brand-line small{
+  font-family:'IBM Plex Mono',ui-monospace,monospace !important;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--mor-latao) !important;font-size:8.5px !important;
+}
+
+/* Os botões da direita viram pastilhas de latão, como na referência. */
+html[data-tema-mesa="mortalha"] .top-actions button,
+html[data-tema-mesa="mortalha"] .top-actions .ad-quality{
+  border:1px solid var(--mor-latao) !important;
+  background:linear-gradient(180deg,rgba(42,30,22,.9),rgba(20,14,11,.95)) !important;
+  color:var(--mor-latao-claro) !important;
+  border-radius:2px !important;
+  font-family:Cinzel,Georgia,serif !important;
+  letter-spacing:.12em;text-transform:uppercase;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .12s ease;
+}
+html[data-tema-mesa="mortalha"] .top-actions button:hover{
+  border-color:var(--mor-latao-claro) !important;
+  box-shadow:0 0 0 1px rgba(227,199,130,.25),0 4px 14px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(0)}
+
+/* ───────── O TRILHO VIRA FITA ───────── */
+
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .grim-nav{
+    position:fixed !important;
+    top:var(--mor-topo) !important;
+    left:0 !important;right:0 !important;
+    width:auto !important;height:var(--mor-fita) !important;
+    display:flex !important;flex-direction:row !important;
+    align-items:stretch !important;
+    padding:0 12px !important;
+    gap:0 !important;
+    overflow:visible !important;
+    background:
+      linear-gradient(180deg,rgba(84,20,26,.96),rgba(44,11,15,.97)) !important;
+    border-right:0 !important;
+    border-top:1px solid rgba(227,199,130,.4) !important;
+    border-bottom:1px solid var(--mor-latao) !important;
+    box-shadow:0 8px 22px rgba(0,0,0,.5);
+    z-index:300 !important;
+  }
+
+  /* A marca já está escrita na barra de cima; repeti-la na fita só rouba
+     espaço dos itens, que é o que a fita existe para mostrar. */
+  html[data-tema-mesa="mortalha"] .grim-nav .grim-brand,
+  html[data-tema-mesa="mortalha"] .grim-nav .grim-player-mini{display:none !important}
+
+  html[data-tema-mesa="mortalha"] .grim-groups{
+    display:flex !important;flex-direction:row !important;
+    align-items:stretch !important;
+    gap:0 !important;flex:1 !important;
+    overflow:visible !important;padding:0 !important;
+  }
+  html[data-tema-mesa="mortalha"] .grim-group{
+    display:flex !important;flex-direction:row !important;
+    align-items:stretch !important;gap:0 !important;
+    border:0 !important;padding:0 !important;margin:0 !important;
+  }
+  /* O título do grupo é vocabulário de menu lateral; na fita, cada item já
+     diz o que é. */
+  html[data-tema-mesa="mortalha"] .grim-group-title{display:none !important}
+
+  html[data-tema-mesa="mortalha"] .grim-link{
+    display:flex !important;flex-direction:row !important;
+    align-items:center !important;gap:8px !important;
+    width:auto !important;height:auto !important;
+    padding:0 16px !important;margin:0 !important;
+    border:0 !important;border-radius:0 !important;
+    border-right:1px solid rgba(227,199,130,.22) !important;
+    background:transparent !important;
+    color:var(--mor-tinta) !important;
+    font-family:Cinzel,Georgia,serif !important;
+    font-size:11.5px !important;letter-spacing:.14em !important;
+    text-transform:uppercase !important;
+    position:relative;
+    transition:color .18s ease,background .18s ease;
+  }
+  /* Na fita o rótulo APARECE: o trilho mostrava só ícone porque tinha 76px,
+     e aqui a largura sobra. Ícone sozinho numa fita horizontal obriga a
+     decorar símbolo, que é o contrário do que a referência pede. */
+  html[data-tema-mesa="mortalha"] .grim-link .grim-label{
+    display:inline !important;position:static !important;
+    opacity:1 !important;transform:none !important;
+    background:transparent !important;border:0 !important;
+    box-shadow:none !important;padding:0 !important;
+    font:inherit !important;color:inherit !important;white-space:nowrap;
+  }
+  html[data-tema-mesa="mortalha"] .grim-link .grim-icon{
+    font-size:14px !important;color:var(--mor-latao-claro) !important;
+    width:auto !important;height:auto !important;background:none !important;
+    border:0 !important;
+  }
+  html[data-tema-mesa="mortalha"] .grim-link:hover{
+    background:rgba(227,199,130,.08) !important;
+    color:#FFF3DA !important;
+  }
+  html[data-tema-mesa="mortalha"] .grim-link.active{
+    background:linear-gradient(180deg,rgba(142,31,43,.5),rgba(84,20,26,.3)) !important;
+    color:#FFF3DA !important;
+  }
+  /* O fio de latão embaixo do item aberto: é o que marca onde a pessoa está
+     sem precisar de cor de fundo forte, que numa fita vermelha vira mancha. */
+  html[data-tema-mesa="mortalha"] .grim-link.active::after{
+    content:'';position:absolute;left:10px;right:10px;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--mor-latao-claro),transparent);
+  }
+
+  html[data-tema-mesa="mortalha"] .grim-switch-table{
+    margin-left:auto !important;align-self:center !important;
+    width:auto !important;padding:5px 12px !important;
+    border:1px solid rgba(227,199,130,.4) !important;border-radius:2px !important;
+    background:transparent !important;color:var(--mor-latao-claro) !important;
+    font-family:Cinzel,Georgia,serif !important;font-size:10px !important;
+    letter-spacing:.12em;text-transform:uppercase;
+  }
+  html[data-tema-mesa="mortalha"] .grim-switch-table .grim-label{
+    display:inline !important;position:static !important;opacity:1 !important;
+    background:none !important;border:0 !important;box-shadow:none !important;
+    font:inherit !important;color:inherit !important;
+  }
+
+  /* O palco perde a margem da esquerda e ganha o espaço da fita. */
+  html[data-tema-mesa="mortalha"] .immersive-stage{margin-left:0 !important}
+  html[data-tema-mesa="mortalha"] .immersive-content{
+    padding-top:calc(var(--mor-topo) + var(--mor-fita) + 14px) !important;
+  }
+  html[data-tema-mesa="mortalha"]
+    .adventure-shell:has(.page-stage-session) .immersive-content{
+    padding:calc(var(--mor-topo) + var(--mor-fita) + 14px) 28px 106px 28px !important;
+  }
+}
+
+/* No celular nada disto vale: a barra de baixo já resolve, e o trilho já
+   está escondido. Repintar a fita aqui só criaria uma segunda navegação. */
+@media (max-width:900px){
+  html[data-tema-mesa="mortalha"] .grim-nav{display:none !important}
+}
+
+/* ───────── A PÁGINA INICIAL ───────── */
+
+/* Pergaminho à esquerda, lugar à direita — o corte da referência. O cartão
+   de texto deixa de flutuar sobre a arte e passa a ser uma coluna própria:
+   texto por cima de imagem precisa de véu, e véu apaga a imagem que a cena
+   quer mostrar. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .ad-scene{
+    display:grid !important;
+    grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr) !important;
+    align-items:stretch !important;
+    border:1px solid var(--mor-latao) !important;
+    background:var(--mor-couro) !important;
+    box-shadow:inset 0 0 0 1px rgba(227,199,130,.14),0 18px 44px rgba(0,0,0,.55) !important;
+  }
+  html[data-tema-mesa="mortalha"] .ad-scene-art{
+    position:relative !important;inset:auto !important;
+    opacity:1 !important;grid-column:2;
+    border-left:1px solid rgba(227,199,130,.3);
+  }
+  html[data-tema-mesa="mortalha"] .ad-scene-copy{
+    grid-column:1;grid-row:1;max-width:none !important;
+    /* 70px em cima: o lacre e o cordel ocupam os primeiros 46px, e texto
+       passando por baixo deles fica ilegível. */
+    padding:70px 34px 34px !important;
+  }
+}
+
+/* O pergaminho: papel claro sobre o couro, com borda rasgada e lacre. */
+html[data-tema-mesa="mortalha"] .ad-scene-copy{
+  position:relative;
+  background:
+    radial-gradient(90% 60% at 50% 0%,rgba(255,244,214,.1),transparent 60%),
+    linear-gradient(170deg,var(--mor-pergaminho),var(--mor-pergaminho-escuro)) !important;
+  color:#2A1F14 !important;
+  /* O rasgo das bordas: recorte irregular, sem imagem nenhuma. */
+  clip-path:polygon(
+    0 1%,3% 0,22% 1.2%,48% .3%,71% 1.4%,97% .4%,100% 2%,
+    99.2% 26%,100% 51%,98.8% 77%,100% 98%,96% 100%,
+    73% 98.8%,49% 100%,24% 98.6%,4% 100%,0 97%,
+    1.1% 72%,0 49%,1.3% 24%);
+}
+html[data-tema-mesa="mortalha"] .ad-scene-copy h2{
+  font-family:Cinzel,Georgia,serif !important;
+  color:#2A1F14 !important;text-shadow:none !important;
+}
+/* A segunda linha do título em vermelho, como na referência. O `::first-line`
+   não serve porque o corte depende da largura; então quem decide é o próprio
+   texto, com uma quebra. */
+html[data-tema-mesa="mortalha"] .ad-scene-copy h2 em,
+html[data-tema-mesa="mortalha"] .ad-scene-copy h2 b{
+  color:var(--mor-sangue) !important;font-style:normal;font-weight:inherit;
+}
+html[data-tema-mesa="mortalha"] .ad-scene-copy>p{
+  color:#4A3A26 !important;
+  font-family:'Crimson Text',Georgia,serif !important;font-style:italic;
+}
+html[data-tema-mesa="mortalha"] .ad-scene-copy .ad-eyebrow{
+  color:#6B5636 !important;letter-spacing:.3em !important;
+  font-family:'IBM Plex Mono',ui-monospace,monospace !important;
+}
+
+/* O LACRE DE CERA no alto do pergaminho. Desenhado, não imagem.
+   DENTRO da área recortada, e não por cima da borda: o `clip-path` que faz
+   o rasgo do papel corta os pseudoelementos junto, então um lacre em
+   `top:-14px` aparecia pela metade, como se estivesse quebrado. */
+html[data-tema-mesa="mortalha"] .ad-scene-copy::before{
+  content:'';position:absolute;z-index:3;
+  top:13px;left:50%;transform:translateX(-50%);
+  width:46px;height:46px;border-radius:46% 54% 50% 50%;
+  background:
+    radial-gradient(circle at 38% 32%,#B8343E,#7A1821 62%,#4A0E14);
+  box-shadow:0 4px 12px rgba(0,0,0,.66),inset 0 -2px 6px rgba(0,0,0,.4);
+}
+/* O cordel que prende o lacre. */
+html[data-tema-mesa="mortalha"] .ad-scene-copy::after{
+  content:'';position:absolute;z-index:2;top:35px;left:11%;right:11%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(74,58,38,.5),transparent);
+}
+
+/* Os cantos de latão da cena somem: o pergaminho já tem moldura própria. */
+html[data-tema-mesa="mortalha"] .ad-scene::before,
+html[data-tema-mesa="mortalha"] .ad-scene::after{border-color:rgba(227,199,130,.35) !important}
+
+/* ───────── PAINÉIS E AÇÕES, EM TODAS AS ABAS ───────── */
+
+html[data-tema-mesa="mortalha"] .ad-panel,
+html[data-tema-mesa="mortalha"] .ad-action-dock{
+  background:linear-gradient(168deg,var(--mor-couro-claro),var(--mor-couro)) !important;
+  border-color:var(--mor-latao) !important;
+}
+html[data-tema-mesa="mortalha"] .ad-action-dock>button{
+  border-right-color:rgba(227,199,130,.22) !important;
+  color:var(--mor-tinta) !important;
+  transition:background .2s ease,transform .14s ease;
+}
+html[data-tema-mesa="mortalha"] .ad-action-dock strong{
+  font-family:Cinzel,Georgia,serif !important;letter-spacing:.1em;
+}
+html[data-tema-mesa="mortalha"] .ad-action-icon{color:var(--mor-latao-claro) !important}
+
+/* ───────── PERFUMARIA ─────────
+   Animação de botão que não atrapalha: tudo em `transform` e `opacity`,
+   que o compositor resolve na GPU, e nada que mexa em layout — animar
+   `padding` ou `width` num botão faz o texto ao lado pular, e numa mesa com
+   mapa e tokens isso custa quadro.
+
+   Nenhuma delas dura mais que 220ms: o jogador vai clicar nesses botões
+   centenas de vezes numa noite, e brinde que demora vira atraso. */
+
+html[data-tema-mesa="mortalha"] .ad-action-dock>button,
+html[data-tema-mesa="mortalha"] .apa-revelar,
+html[data-tema-mesa="mortalha"] .apa-pregar,
+html[data-tema-mesa="mortalha"] .apa-assombrar,
+html[data-tema-mesa="mortalha"] .osl-novo,
+html[data-tema-mesa="mortalha"] .insp-botoes button{
+  position:relative;overflow:hidden;
+  transition:transform .14s cubic-bezier(.2,.8,.2,1),
+             box-shadow .18s ease,border-color .18s ease,background .18s ease;
+}
+html[data-tema-mesa="mortalha"] .ad-action-dock>button:hover,
+html[data-tema-mesa="mortalha"] .apa-revelar:hover,
+html[data-tema-mesa="mortalha"] .apa-pregar:hover,
+html[data-tema-mesa="mortalha"] .osl-novo:hover{
+  transform:translateY(-1.5px);
+  box-shadow:0 6px 18px rgba(0,0,0,.5);
+}
+html[data-tema-mesa="mortalha"] .ad-action-dock>button:active,
+html[data-tema-mesa="mortalha"] .apa-revelar:active,
+html[data-tema-mesa="mortalha"] .apa-pregar:active,
+html[data-tema-mesa="mortalha"] .apa-assombrar:active,
+html[data-tema-mesa="mortalha"] .osl-novo:active{transform:translateY(0) scale(.985)}
+
+/* O LUSTRO: uma faixa de luz atravessa o botão ao passar o cursor, como
+   latão pegando a luz da vela. Só nos botões grandes — em botão pequeno o
+   brilho cobre o rótulo inteiro e vira piscada. */
+html[data-tema-mesa="mortalha"] .ad-action-dock>button::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,240,205,.16) 50%,transparent 62%);
+  transform:translateX(-120%);
+}
+html[data-tema-mesa="mortalha"] .ad-action-dock>button:hover::after{
+  transform:translateX(120%);
+  transition:transform .62s cubic-bezier(.2,.7,.2,1);
+}
+
+/* A aba que está aberta respira uma vez quando a pessoa chega nela. Uma vez
+   só, e não em laço: item de menu piscando sem parar é o tipo de coisa que
+   a mesa pede para tirar na segunda sessão. */
+html[data-tema-mesa="mortalha"] .grim-link.active .grim-icon{
+  animation:morChegou .5s ease-out 1;
+}
+@keyframes morChegou{
+  0%{transform:scale(.82);opacity:.5}
+  60%{transform:scale(1.12);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+
+/* O lacre do pergaminho assenta quando a página abre, como quem acabou de
+   carimbar. Também uma vez só. */
+html[data-tema-mesa="mortalha"] .ad-scene-copy::before{
+  animation:morLacre .62s cubic-bezier(.2,1.4,.4,1) 1;
+}
+@keyframes morLacre{
+  0%{transform:translateX(-50%) scale(1.9) rotate(-14deg);opacity:0}
+  55%{opacity:1}
+  100%{transform:translateX(-50%) scale(1) rotate(0);opacity:1}
+}
+
+/* Foco visível, sempre: a perfumaria não pode custar o teclado. */
+html[data-tema-mesa="mortalha"] .grim-link:focus-visible,
+html[data-tema-mesa="mortalha"] .ad-action-dock>button:focus-visible,
+html[data-tema-mesa="mortalha"] .top-actions button:focus-visible{
+  outline:2px solid var(--mor-latao-claro) !important;
+  outline-offset:2px;
+}
+
+/* Quem pediu menos movimento fica sem brinde nenhum — e continua com tudo
+   funcionando, porque nada aqui é a feature, tudo é enfeite. Sem media
+   query: `movimento.mjs` já escreve `data-motion`, e repetir aqui passaria
+   por cima de quem religou o movimento na mesa. */
+html[data-motion="reduced"][data-tema-mesa="mortalha"] .grim-link.active .grim-icon,
+html[data-motion="reduced"][data-tema-mesa="mortalha"] .ad-scene-copy::before,
+html[data-motion="reduced"][data-tema-mesa="mortalha"] .ad-action-dock>button::after{
+  animation:none !important;transform:translateX(-50%) !important;
+}
+html[data-motion="reduced"][data-tema-mesa="mortalha"] .grim-link.active .grim-icon{transform:none !important}
+html[data-motion="reduced"][data-tema-mesa="mortalha"] *:hover{transform:none !important}
+
+/* No modo leve some o lustro, que é o único que anima continuamente. */
+html[data-quality="light"][data-tema-mesa="mortalha"] .ad-action-dock>button::after{display:none}

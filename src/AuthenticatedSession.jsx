@@ -10,6 +10,9 @@ import AmbientSoundPlayer from './shell/AmbientSoundPlayer';
 import BarraDePrevia from './features/acesso/BarraDePrevia.jsx';
 import ChaveDaNoite from './features/oneshot/ChaveDaNoite.jsx';
 import Assombracao from './features/oneshot/Assombracao.jsx';
+// A pele do grimório. Presa a html[data-tema-mesa="mortalha"], então carregar
+// aqui não toca na Dinastia E nem no CAIN.
+import './features/oneshot/mortalha-casca.css';
 import { sistemaDe, termo } from './core/sistemas/index.mjs';
 import { useMembro } from './features/acesso/useMembro';
 import DiceWidget from './shell/DiceWidget';
