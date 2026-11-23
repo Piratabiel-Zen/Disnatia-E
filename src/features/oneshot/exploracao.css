@@ -1,0 +1,36 @@
+/* O ESCURO DA EXPLORAÇÃO
+   Preto quase total por cima do mapa, com buracos onde a mesa já esteve.
+   Não é opaco de verdade (.94 e não 1) de propósito: um resto de contorno
+   deixa o jogador perceber que HÁ casa ali fora, o que é mais inquietante
+   do que um vazio liso — e ajuda o Mestre a explicar para onde ir.
+
+   Não pega clique: os tokens são arrastados por baixo, inclusive sobre o
+   escuro, e a visão de cada criança abre o caminho conforme ela anda. */
+.nev{
+  position:absolute;inset:0;z-index:3;
+  pointer-events:none;
+  background:#030205;
+  opacity:.94;
+  /* A troca de máscara acompanha o token sem saltar. Curta: se demorar, a
+     luz fica atrás da criança e parece atraso de rede. */
+  transition:mask-image .18s linear,-webkit-mask-image .18s linear;
+}
+
+/* O VULTO. Fica por cima do escuro de propósito: a coisa não precisa de
+   lanterna para ser vista — é ela que escolhe aparecer. */
+.vul{
+  position:absolute;z-index:4;pointer-events:none;
+  transform:translate(-50%,-85%);
+  transform-origin:50% 100%;
+}
+.vul img,.vul span{
+  display:block;width:100%;height:100%;
+  filter:grayscale(1) contrast(1.5) brightness(.28);
+}
+/* Sem imagem, uma silhueta desenhada: ombros e cabeça, nada reconhecível.
+   É o bastante — o que assusta é a forma de gente onde não devia ter. */
+.vul span{
+  background:
+    radial-gradient(42% 26% at 50% 15%,#000 68%,transparent 72%),
+    radial-gradient(70% 62% at 50% 76%,#000 64%,transparent 70%);
+}

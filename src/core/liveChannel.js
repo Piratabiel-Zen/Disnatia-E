@@ -166,6 +166,37 @@ export function assinarAssombracao(cb) {
   return () => { cancelled = true; if (stop) stop(); };
 }
 
+/**
+ * A APARIÇÃO TEMPORÁRIA NO MAPA.
+ *
+ * O Mestre põe um vulto num cômodo, ele fica alguns segundos e some. Mesmo
+ * desenho do ping e da assombração: um nó só, sobrescrito, e o valor que já
+ * estava lá é ignorado ao assinar — vulto não se repete para quem chegou
+ * depois, porque ele já passou.
+ */
+export async function publicarVulto(vulto) {
+  const sdk = await loadSdk();
+  if (!sdk || !connected) return false;
+  await sdk.set(sdk.ref(database, 'live/vulto'), { ...vulto, publishedAt: sdk.serverTimestamp() });
+  return true;
+}
+
+/** Último vulto posto no mapa. cb(vulto). */
+export function assinarVulto(cb) {
+  let stop = null;
+  let cancelled = false;
+  loadSdk().then(sdk => {
+    if (!sdk || cancelled) return;
+    let primed = false;
+    stop = sdk.onValue(sdk.ref(database, 'live/vulto'), snap => {
+      const value = snap.val();
+      if (primed && value) cb(value);
+      primed = true;
+    }, error => console.warn('Canal vivo de vultos indisponível:', error));
+  });
+  return () => { cancelled = true; if (stop) stop(); };
+}
+
 /** Somente para testes: troca o carregador do SDK e zera o estado do módulo. */
 export function __resetLiveChannelForTests(loader) {
   sdkLoader = loader || defaultLoader;
