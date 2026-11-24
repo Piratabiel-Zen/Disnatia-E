@@ -1,0 +1,206 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   DENTRO DO ARMÁRIO
+
+   A única tela do sistema que bloqueia de propósito, e pelo motivo oposto
+   ao de sempre: quem se escondeu NÃO ESTÁ VENDO A CASA. A fresta entre as
+   portas é tudo o que sobra, e é por ela que a sombra passa.
+
+   Os três segundos e meio de espera são o recurso inteiro. Nenhum efeito
+   aqui pode encurtá-los ou distrair deles.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.esc{
+  position:fixed;inset:0;z-index:130;
+  display:grid;place-items:center;
+  background:#050507;
+  overflow:hidden;
+  font-family:'IM Fell English',Georgia,serif;
+}
+
+/* ───────── AS PORTAS ─────────
+   Fecham de fora para dentro e param antes de encostar. A fresta que sobra
+   é estreita de propósito: é o campo de visão de quem está com medo. */
+.esc-porta{
+  position:absolute;top:0;bottom:0;width:50%;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.6),transparent 30%,rgba(0,0,0,.5)),
+    repeating-linear-gradient(90deg,#1E1711 0 7px,#191309 7px 14px),
+    #1A1410;
+  box-shadow:0 0 40px rgba(0,0,0,.9);
+  z-index:2;
+}
+.esc-porta-e{left:0;transform:translateX(-100%);animation:escFechaE .72s cubic-bezier(.3,.9,.3,1) both}
+.esc-porta-d{right:0;transform:translateX(100%);animation:escFechaD .72s cubic-bezier(.3,.9,.3,1) both}
+@keyframes escFechaE{to{transform:translateX(calc(-4px))}}
+@keyframes escFechaD{to{transform:translateX(calc(4px))}}
+
+/* Pego: as portas abrem de uma vez, e rápido — é o oposto do fechar. */
+.esc[data-fase="pego"] .esc-porta-e{animation:escAbreE .34s cubic-bezier(.5,0,.75,0) both}
+.esc[data-fase="pego"] .esc-porta-d{animation:escAbreD .34s cubic-bezier(.5,0,.75,0) both}
+@keyframes escAbreE{from{transform:translateX(-4px)}to{transform:translateX(-86%)}}
+@keyframes escAbreD{from{transform:translateX(4px)}to{transform:translateX(86%)}}
+
+/* ───────── A FRESTA ───────── */
+
+.esc-fresta{
+  position:absolute;top:0;bottom:0;left:50%;
+  width:8px;margin-left:-4px;z-index:3;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(60,54,46,.5),rgba(28,24,20,.72) 50%,rgba(60,54,46,.4));
+  box-shadow:0 0 18px rgba(0,0,0,.95) inset;
+}
+.esc[data-fase="pego"] .esc-fresta{opacity:0;transition:opacity .2s ease}
+
+/* A sombra atravessa a fresta devagar. Não é escura: é um bloqueio da
+   pouca luz que havia, que é como se vê alguém passar por uma fresta. */
+.esc-sombra{
+  position:absolute;left:-14px;top:0;bottom:0;width:36px;
+  background:#000;
+  opacity:0;
+}
+.esc[data-fase="esperando"] .esc-sombra{
+  animation:escPassa 2.1s cubic-bezier(.4,0,.6,1) .5s both;
+}
+@keyframes escPassa{
+  0%{transform:translateX(-30px);opacity:0}
+  18%{opacity:1}
+  82%{opacity:1}
+  100%{transform:translateX(44px);opacity:0}
+}
+/* A sombra que vai pegar hesita no meio. É o único aviso que a pessoa
+   recebe, e ela só entende depois — na segunda vez que se esconder. */
+.esc[data-fase="esperando"] .esc-sombra[data-para]{
+  animation:escPara 2.6s cubic-bezier(.3,0,.5,1) .5s both;
+}
+@keyframes escPara{
+  0%{transform:translateX(-30px);opacity:0}
+  16%{opacity:1}
+  44%{transform:translateX(4px);opacity:1}
+  58%{transform:translateX(2px);opacity:1}
+  100%{transform:translateX(2px);opacity:1}
+}
+
+/* ───────── O FÔLEGO ─────────
+   Um clarão fraquíssimo no ritmo de prender o ar e soltar devagar. Único
+   movimento durante a espera, e quase invisível: se der para notar
+   conscientemente, está forte demais. */
+.esc-folego{
+  position:absolute;inset:0;z-index:1;
+  background:radial-gradient(60% 50% at 50% 50%,rgba(120,110,100,.1),transparent 70%);
+  opacity:0;
+}
+.esc[data-fase="esperando"] .esc-folego{animation:escFolego 3.6s ease-in-out infinite}
+@keyframes escFolego{0%,100%{opacity:.25}42%{opacity:.75}52%{opacity:.7}}
+
+/* ───────── O QUADRO DO SUSTO ─────────
+   As portas abriam e revelavam preto. Abrir para o nada é o oposto de um
+   susto: é um anticlímax com som de porta. O que entra agora é a coisa,
+   vindo de longe e chegando perto depressa — e o clarão vermelho de um
+   quadro só por cima, que é o que o olho registra como pancada. */
+.esc-coisa{
+  position:absolute;inset:0;z-index:3;
+  display:grid;place-items:end center;
+  pointer-events:none;
+  animation:escChega .42s cubic-bezier(.3,0,.2,1) both;
+}
+.esc-coisa svg,.esc-coisa img{
+  display:block;height:88%;width:auto;max-width:72vw;
+  object-fit:contain;
+  filter:drop-shadow(0 0 40px rgba(0,0,0,.95));
+}
+@keyframes escChega{
+  from{transform:scale(.42) translateY(14%);opacity:0}
+  60%{opacity:1}
+  to{transform:scale(1) translateY(0);opacity:1}
+}
+
+/* Um quadro de vermelho, e some. Mais que isso vira filtro de festa. */
+.esc-clarao{
+  position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 50%,rgba(176,24,34,.5),rgba(90,6,12,.92));
+  mix-blend-mode:screen;
+  animation:escClarao .5s ease-out both;
+}
+@keyframes escClarao{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+
+html[data-motion="reduced"] .esc-coisa,
+html[data-motion="reduced"] .esc-clarao{animation:none;opacity:1}
+html[data-motion="reduced"] .esc-clarao{opacity:.3}
+
+/* ───────── O TEXTO ───────── */
+
+.esc-texto{
+  position:relative;z-index:6;
+  display:grid;justify-items:center;gap:14px;
+  width:min(86vw,440px);text-align:center;
+}
+.esc-texto p{
+  margin:0;color:#8E8578;
+  font-size:clamp(13px,3.4vw,16px);line-height:1.6;font-style:italic;
+  text-shadow:0 2px 12px #000;
+}
+.esc-quieto{
+  animation:escQuieto 2.4s ease-in-out infinite;
+  letter-spacing:.14em;
+}
+@keyframes escQuieto{0%,100%{opacity:.34}50%{opacity:.72}}
+
+/* Sobre a coisa, o texto precisa de fundo: letra clara direto em cima de
+   uma silhueta preta desaparece nas bordas. */
+/* No "pego" o texto desce para o rodapé: no meio da tela ele cai bem em
+   cima do rosto da coisa, e tapar o susto com uma legenda é desperdiçar o
+   único quadro que a cena inteira estava construindo. */
+.esc[data-fase="pego"] .esc-texto{
+  align-self:end;margin-bottom:5vh;
+  background:rgba(4,4,6,.86);
+  padding:14px 18px;border-radius:3px;
+  backdrop-filter:blur(2px);
+}
+.esc-fim{
+  color:#C5B8A4 !important;font-style:normal !important;
+  animation:escFim .7s ease both;
+}
+.esc-fim[data-pego]{color:#D98A8A !important}
+@keyframes escFim{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.esc-texto button{
+  padding:9px 20px;border-radius:2px;cursor:pointer;
+  background:rgba(20,14,11,.9);border:1px solid rgba(176,138,66,.42);
+  color:#C9B48C;
+  font-family:'IM Fell English SC',Cinzel,Georgia,serif;
+  font-size:11px;letter-spacing:.14em;
+  animation:escFim .6s ease .25s both;
+}
+.esc-texto button:hover{border-color:#E3C782;color:#E3C782}
+.esc[data-fase="pego"] .esc-texto button{border-color:rgba(200,48,60,.6);color:#E0B9B9}
+.esc[data-fase="pego"] .esc-texto button:hover{border-color:#C8303C;color:#F2DCDC}
+
+/* ───────── SEM MOVIMENTO ─────────
+   A espera continua — ela É a mecânica, e encurtá-la seria entregar o
+   resultado. O que para é a encenação em volta. */
+html[data-motion="reduced"] .esc-porta,
+html[data-motion="reduced"] .esc-sombra,
+html[data-motion="reduced"] .esc-folego,
+html[data-motion="reduced"] .esc-quieto,
+html[data-motion="reduced"] .esc-fim,
+html[data-motion="reduced"] .esc-texto button{animation:none}
+html[data-motion="reduced"] .esc-porta-e{transform:translateX(-4px)}
+html[data-motion="reduced"] .esc-porta-d{transform:translateX(4px)}
+html[data-motion="reduced"] .esc[data-fase="pego"] .esc-porta-e{transform:translateX(-86%)}
+html[data-motion="reduced"] .esc[data-fase="pego"] .esc-porta-d{transform:translateX(86%)}
+html[data-motion="reduced"] .esc-folego{opacity:.4}
+html[data-motion="reduced"] .esc-fim,
+html[data-motion="reduced"] .esc-texto button{opacity:1}
+
+/* O botão de entrar. Fica longe dos controles do Mestre e perto da ficha
+   rápida, que é onde a mão do jogador já está. */
+.esc-entrar{
+  position:absolute;left:12px;bottom:52px;z-index:45;
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+  background:rgba(20,14,11,.88);border:1px solid rgba(176,138,66,.4);
+  color:#9C8A68;
+  font-family:'IM Fell English SC',Cinzel,Georgia,serif;
+  font-size:10.5px;letter-spacing:.12em;
+  transition:color .2s ease,border-color .2s ease;
+}
+.esc-entrar:hover{color:#E3C782;border-color:rgba(227,199,130,.7)}

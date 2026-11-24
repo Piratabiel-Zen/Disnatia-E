@@ -33,6 +33,9 @@ import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
 import BilheteSecreto from '../oneshot/BilheteSecreto.jsx';
 import Cacada from '../oneshot/Cacada.jsx';
+import Esconderijo from '../oneshot/Esconderijo.jsx';
+import { registroDoEsconderijo } from '../oneshot/esconderijo.mjs';
+import { estadoDaCacada } from '../oneshot/cacada.mjs';
 import ComecarCacada from '../oneshot/ComecarCacada.jsx';
 import { cacadaParaComecar } from '../oneshot/cacada.mjs';
 import EntregarBilhete from '../oneshot/EntregarBilhete.jsx';
@@ -347,6 +350,25 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       () => setCacadaDaMesa(null));
     return () => un();
   }, [ehNoite]);
+
+  /* O ESCONDERIJO.
+     Quem se esconde é o jogador, na tela dele, e o resultado é sorteado
+     uma vez só, na hora. A mesa fica sabendo depois — o Mestre precisa
+     disso para narrar, e os outros primos precisam ouvir dele, não da
+     interface. */
+  const [escondido, setEscondido] = useState(null);
+  const esconderMe = () => {
+    if (escondido) return;
+    setEscondido(estadoDaCacada(cacadaDaMesa, {
+      agora: Date.now(), mapaAtual: currentMap ? String(currentMap.id) : '',
+    }));
+  };
+  const contarEsconderijo = resultado => {
+    const registro = registroDoEsconderijo({ quem: playerSheetId, resultado });
+    if (!registro) return;
+    addDoc(col('esconderijos'), registro)
+      .catch(e => console.error('Erro ao registrar o esconderijo:', e));
+  };
 
   const comecarCacada = ({ oQue, segundos, modo }) => {
     setDoc(docIn('config', 'cacada'), cacadaParaComecar({
@@ -2632,6 +2654,22 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               era por aqui que o painel da Dinastia E voltava. Em vez dele,
               o caminho curto para ligar a ficha do primo — que é o que o
               Mestre queria ver quando clicou. */}
+          {/* Dentro do armário: só na tela de quem entrou. */}
+          {ehNoite && escondido && (
+            <Esconderijo
+              cacada={escondido}
+              imagem={imagemDoVulto !== VULTO_DESENHADO ? imagemDoVulto : ''}
+              aoTerminar={contarEsconderijo}
+              aoFechar={() => setEscondido(null)}
+            />
+          )}
+          {/* E o botão para entrar, só para quem tem ficha na mesa. */}
+          {ehNoite && !masterMode && playerSheetId && !escondido && (
+            <button type="button" className="esc-entrar" onClick={esconderMe}>
+              ⌂ Esconder
+            </button>
+          )}
+
           {/* O relógio: na tela de todos, sem bloquear nada. */}
           {ehNoite && (
             <Cacada
