@@ -25,9 +25,15 @@
   position:relative;z-index:1;
   max-width:min(86vw,900px);max-height:84vh;
   object-fit:contain;
-  /* O contraste alto e a saturação baixa fazem a foto virar aparição: cor
-     cheia num fundo preto parece pôster, não assombração. */
-  filter:grayscale(.42) contrast(1.28) brightness(.9);
+  /* A IMAGEM VEM COMO O MESTRE A ANEXOU.
+     Havia aqui um `grayscale(.42) contrast(1.28) brightness(.9)` para
+     "fazer a foto virar aparição". A ideia tinha lógica e o efeito era
+     errado: quem escolhe a imagem é quem narra, e imagem que chega na mesa
+     dessaturada não é a que foi escolhida — PNG sem fundo, colorido ou já
+     em preto e branco, chega exatamente como saiu.
+
+     O que faz a aparição é o resto da cena, que continua inteiro: a tela
+     escurecendo, o véu por cima do mapa, o tempo curto e o som. */
   will-change:opacity,transform;
 }
 
@@ -41,10 +47,13 @@
 
 /* "Encarar" ganha um pulsar lento, e só ela: é a intensidade que o Mestre
    usa uma vez por noite. Nas outras duas, imagem parada assusta mais. */
+/* O pulsar do "Encarar" passou a ser de PRESENÇA e não de cor: a coisa
+   respira para a frente e recua, em vez de mudar de tonalidade. Mesma
+   batida, e sem tocar na imagem. */
 .asb[data-intensidade="encarar"] .asb-coisa{animation:asbEncarar 3.4s ease-in-out infinite}
 @keyframes asbEncarar{
-  0%,100%{filter:grayscale(.42) contrast(1.28) brightness(.9)}
-  50%{filter:grayscale(.3) contrast(1.42) brightness(1)}
+  0%,100%{opacity:.88;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.022)}
 }
 
 /* Movimento reduzido tira o pulsar; o escurecer e o aparecer ficam, porque

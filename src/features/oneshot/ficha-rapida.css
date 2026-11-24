@@ -213,3 +213,15 @@
 
 html[data-motion="reduced"] .fr-paleta button{transition:none}
 html[data-motion="reduced"] .fr-paleta button:hover{transform:none}
+
+/* O atalho para os controles do token. Pequeno e no fim: é saída do Mestre,
+   não um segundo painel. Herda a cor da ficha em que está. */
+.fr-ir-token{
+  width:100%;margin-top:10px;padding:6px;cursor:pointer;
+  background:rgba(0,0,0,.3);border:1px solid var(--fr-borda);border-radius:2px;
+  color:var(--fr-fraca);
+  font-family:Cinzel,Georgia,serif;font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;
+  transition:color .2s ease,border-color .2s ease;
+}
+.fr-ir-token:hover{color:var(--fr-realce);border-color:var(--fr-realce)}

@@ -324,6 +324,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const minhaFichaDaNoite = ehNoite && playerSheetId
     ? sheets.find(f => String(f.id) === String(playerSheetId)) || null
     : null;
+  /* Os controles do token não sumiram: ficam a um botão. O efeito que
+     fecha o painel ao trocar de token mora lá embaixo, junto da declaração
+     de `selectedToken` — lista de dependências que lê um const declarado
+     adiante estoura no RENDER, e é exatamente a tela preta de novembro. */
+  const [painelDoToken, setPainelDoToken] = useState(false);
   /* A HORA QUE VALE: a do relógio quando ele está ligado, senão a que o
      Mestre marcou na mão. Virar na mão reinicia a contagem a partir dali —
      automatismo que tira o controle de quem narra é automatismo errado. */
@@ -1832,6 +1837,24 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
 
   const selectedToken = (currentMap?.tokens || []).find(t => t.id === selectedId);
 
+  /* E O MESTRE VÊ A MESMA FICHA, pelo token.
+     Ele estava caindo no painel de token da Dinastia E — mão esquerda, mão
+     direita, Vigor Cósmico, Envenenado, Queimando — que é vocabulário de
+     outro sistema e não existe nesta mesa. Clicar no primo tem de mostrar
+     o primo: retrato, vida, pavor, sanidade, talento e competências.
+     O painel antigo continua para token sem ficha ligada, que é quando o
+     Mestre precisa justamente dele para ligar uma.
+
+     ISTO MORA AQUI, e não lá em cima com o resto do estado da noite,
+     porque lê `selectedToken` — ler um const declarado mais abaixo estoura
+     no render e dá tela preta. */
+  const fichaDoTokenEscolhido = ehNoite && masterMode && selectedToken?.sheetId
+    ? sheets.find(f => String(f.id) === String(selectedToken.sheetId)) || null
+    : null;
+  // Trocar de token fecha os controles: o Mestre clica no primo para VER o
+  // primo, e abrir os controles a cada clique seria o problema ao contrário.
+  useEffect(() => { setPainelDoToken(false); }, [selectedToken?.id]);
+
   const saveSheet = sheet => {
     clearTimeout(saveTimeout.current['sheet_' + sheet.id]);
     saveTimeout.current['sheet_' + sheet.id] = setTimeout(async () => {
@@ -2564,6 +2587,13 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
           {minhaFichaDaNoite && (
             <FichaRapida ficha={minhaFichaDaNoite} aoMudarCor={guardarCorDaFicha} />
           )}
+          {/* Sem `aoMudarCor`: a cor é escolha de quem joga a ficha. */}
+          {!minhaFichaDaNoite && fichaDoTokenEscolhido && !painelDoToken && (
+            <FichaRapida
+              ficha={fichaDoTokenEscolhido}
+              aoAbrirToken={() => setPainelDoToken(true)}
+            />
+          )}
           {/* A casa soando. Cada andar tem o som dele, e trocar de mapa
               troca o ambiente sozinho depois do primeiro clique. */}
           {ehNoite && currentMap && (
@@ -2586,7 +2616,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
           )}
 
           {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}
-          {selectedToken && masterMode && (
+          {selectedToken && masterMode && (!fichaDoTokenEscolhido || painelDoToken) && (
             <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 'calc(84px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 41, width: 'min(280px, calc(100vw - 28px))', maxHeight: 'calc(100% - 108px)', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>

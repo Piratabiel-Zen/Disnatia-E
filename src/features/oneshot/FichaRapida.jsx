@@ -23,7 +23,7 @@ import './ficha-rapida.css';
  * pessoa não quer ler o que Furtividade significa, quer saber se soma ou
  * subtrai.
  */
-export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
+export default function FichaRapida({ ficha: bruta, aoMudarCor, aoAbrirToken }) {
   const [aberta, setAberta] = useState(false);
   const [escolhendoCor, setEscolhendoCor] = useState(false);
   if (!bruta) return null;
@@ -115,6 +115,11 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
             ))}
           </ul>
 
+          {/* A COR É DE QUEM JOGA. Quando o Mestre abre a ficha de um primo
+              pelo token, ele vê tudo e não troca a cor: ela serve para a
+              pessoa se achar no meio de cinco parecidos, e quem escolhe
+              como se achar é ela. Sem `aoMudarCor`, nem aparece. */}
+          {aoMudarCor && (
           <div className="fr-cores">
             <button
               type="button" className="fr-cor-atual"
@@ -137,6 +142,16 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
               </div>
             )}
           </div>
+          )}
+
+          {/* A saída para os controles do token, quando é o Mestre olhando
+              o primo pelo mapa. Mora DENTRO da ficha para herdar a cor
+              dela: botão solto do lado ficaria sem paleta nenhuma. */}
+          {aoAbrirToken && (
+            <button type="button" className="fr-ir-token" onClick={aoAbrirToken}>
+              ⚙ Controles do token
+            </button>
+          )}
         </div>
       )}
     </div>

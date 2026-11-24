@@ -9,15 +9,43 @@
 /* A prévia do Mestre: o mesmo escuro, fraco o bastante para ele ler o mapa
    por baixo e ainda saber o que a mesa não viu. */
 .nev[data-previa]{opacity:.5}
+
+/* ───────── A NÉVOA ─────────
+   Era um preto quase chapado, e preto chapado o olho lê como "a imagem
+   acabou aqui" — some da cena em vez de pesar nela. Névoa é outra coisa:
+   é CINZA, é OPACA e se MEXE. O cinza é o que a faz parecer matéria no ar;
+   a opacidade total é o que tira a tentação de apertar os olhos para ver o
+   que tem atrás; e o movimento lento é o que impede o olho de tratá-la
+   como moldura e parar de vê-la.
+
+   As vagas correm por `background-position` e não por `transform`: a
+   máscara que abre as clareiras é do elemento, e transformar o elemento
+   arrastaria os buracos junto com a bruma. Assim a névoa corre POR DENTRO
+   do que já foi aberto, que é como neblina de verdade se comporta. */
 .nev{
   position:absolute;inset:0;z-index:3;
   pointer-events:none;
-  background:#030205;
-  opacity:.94;
+  opacity:1;
+  background:
+    radial-gradient(58% 42% at 16% 26%,rgba(198,202,208,.55),transparent 63%),
+    radial-gradient(50% 38% at 74% 60%,rgba(166,172,180,.5),transparent 61%),
+    radial-gradient(44% 34% at 42% 86%,rgba(210,213,218,.42),transparent 65%),
+    radial-gradient(64% 48% at 88% 14%,rgba(142,148,156,.46),transparent 66%),
+    linear-gradient(176deg,#4E535A,#41464C 46%,#33383E);
+  background-size:190% 190%,170% 170%,210% 210%,180% 180%,100% 100%;
+  background-position:0% 42%,100% 58%,28% 0%,70% 100%,0 0;
+  animation:nevVaga 52s ease-in-out infinite alternate;
   /* A troca de máscara acompanha o token sem saltar. Curta: se demorar, a
      luz fica atrás da criança e parece atraso de rede. */
   transition:mask-image .18s linear,-webkit-mask-image .18s linear;
 }
+@keyframes nevVaga{
+  to{background-position:34% 60%,66% 40%,62% 34%,30% 70%,0 0}
+}
+/* Quem desligou movimento fica com a névoa parada — ela continua tapando
+   tudo, que é a função. Sem media query: `movimento.mjs` escreve
+   `data-motion`, e repetir aqui passaria por cima de quem religou. */
+html[data-motion="reduced"] .nev{animation:none}
 
 /* O VULTO. Fica por cima do escuro de propósito: a coisa não precisa de
    lanterna para ser vista — é ela que escolhe aparecer. */
@@ -26,9 +54,22 @@
   transform:translate(-50%,-85%);
   transform-origin:50% 100%;
 }
-.vul img,.vul span{
+/* A IMAGEM DO VULTO VEM COMO ELA É.
+   Havia um `grayscale(1) contrast(1.5) brightness(.28)` aqui que esmagava
+   tudo em silhueta preta. A intenção era boa e o resultado, errado: o
+   Mestre escolhe a imagem, e escolher uma imagem que chega na mesa virada
+   em outra coisa é não escolher nada. PNG sem fundo continua sem fundo,
+   colorido continua colorido, e preto e branco só se a imagem já for. */
+.vul img{
   display:block;width:100%;height:100%;
-  filter:grayscale(1) contrast(1.5) brightness(.28);
+  object-fit:contain;
+  background:transparent;
+}
+/* A sombra no chão fica POR BAIXO e separada, para não tocar na imagem:
+   é ela que prende o vulto ao piso sem repintar nada. */
+.vul img{filter:drop-shadow(0 10px 18px rgba(0,0,0,.6))}
+.vul span{
+  display:block;width:100%;height:100%;
 }
 /* Sem imagem, uma silhueta desenhada: ombros e cabeça, nada reconhecível.
    É o bastante — o que assusta é a forma de gente onde não devia ter. */

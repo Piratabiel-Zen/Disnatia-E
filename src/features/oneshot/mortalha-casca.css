@@ -76,6 +76,25 @@ html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(
 /* ───────── O TRILHO VIRA FITA ───────── */
 
 @media (min-width:901px){
+  /* A BARRA TEM DE TER EXATAMENTE A ALTURA QUE A FITA ASSUME.
+     Outra folha força 58px na barra enquanto a fita é fixada em 64px:
+     sobrava uma tira de fundo de 6px entre as duas, visível em toda a
+     largura da tela. Isto vale em qualquer desktop, e não só onde o
+     título fica centralizado. */
+  html[data-tema-mesa="mortalha"] .immersive-topbar{
+    height:var(--mor-topo) !important;
+    min-height:var(--mor-topo) !important;
+  }
+  /* E o bloco da marca cabe dentro dela. Nome e subtítulo com entrelinha
+     larga davam 68px numa barra de 64: a linha de baixo saía cortada pela
+     fita, que foi parte do "tudo uma coisa em cima da outra". */
+  html[data-tema-mesa="mortalha"] .brand-line{
+    max-height:var(--mor-topo);overflow:hidden;
+  }
+  html[data-tema-mesa="mortalha"] .brand-line h1{
+    margin:0 !important;line-height:1.1 !important;
+  }
+  html[data-tema-mesa="mortalha"] .brand-line small{line-height:1.1 !important}
   html[data-tema-mesa="mortalha"] .grim-nav{
     position:fixed !important;
     top:var(--mor-topo) !important;
@@ -331,14 +350,59 @@ html[data-tema-mesa="mortalha"] .battlemap-heading{padding:2px 4px !important;ga
 /* ───────── O TÍTULO DA MESA, MAIS ALTO E AO CENTRO ─────────
    Numa mesa de terror o nome é parte da ambientação, não um rótulo de
    canto: centralizado e solto, ele abre a tela como abertura de filme.
-   Vale para qualquer nome que a pessoa der à mesa. */
-@media (min-width:901px){
+   Vale para qualquer nome que a pessoa der à mesa.
+
+   DE 1700px PARA CIMA, e só. Abaixo disso o Mestre tem sete pastilhas na
+   direita e não sobra meio da barra para ninguém: insistir no centro faz
+   os botões transbordarem o trilho deles e voltarem a pisar no nome, que é
+   exatamente o defeito que esta seção existe para corrigir. Em tela menor
+   o nome vai para a esquerda, como em qualquer mesa — continua em Cinzel e
+   em latão, só não é mais abertura de filme. */
+@media (min-width:1700px){
+  /* O TÍTULO NO MEIO, SEM PISAR EM NINGUÉM.
+     Estava `position:absolute` no centro enquanto a barra centralizava os
+     botões com `justify-content:center` — ou seja, os dois disputavam
+     exatamente o mesmo ponto da tela, e o nome da mesa saía por baixo das
+     pastilhas de latão.
+
+     Grade de três trilhos resolve na estrutura e não na sorte: o nome mora
+     no trilho do meio e os botões no da direita, então sobreposição deixa
+     de ser possível. O trilho da esquerda fica vazio de propósito — é ele
+     que mantém o nome no centro da BARRA, e não no centro do espaço que
+     sobrou. */
   html[data-tema-mesa="mortalha"] .immersive-topbar{
-    justify-content:center !important;
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    align-items:center;
+    column-gap:14px;
+    justify-content:initial !important;
   }
   html[data-tema-mesa="mortalha"] .brand-line{
-    position:absolute;left:50%;top:6px;transform:translateX(-50%);
+    position:relative;left:auto;top:auto;transform:none;
+    grid-column:2;justify-self:center;
     align-items:center !important;text-align:center;
+  }
+  html[data-tema-mesa="mortalha"] .top-actions{
+    grid-column:3;justify-self:end;
+    flex-wrap:nowrap !important;min-width:0;
+  }
+  /* A marca ✦ some no layout centralizado: empilhada acima do nome ela
+     empurrava a linha de baixo para fora dos 64px da barra, e o subtítulo
+     saía cortado pela fita. O nome já é a marca. */
+  html[data-tema-mesa="mortalha"] .brand-line .brand-mark{display:none !important}
+  html[data-tema-mesa="mortalha"] .brand-line h1{
+    margin:0 !important;line-height:1.08 !important;
+  }
+  html[data-tema-mesa="mortalha"] .brand-line small{line-height:1 !important}
+
+  /* Pastilha de duas linhas vira um bloco alto que briga com a barra. Uma
+     linha só, menor: são atalhos do Mestre, não o assunto da tela. */
+  html[data-tema-mesa="mortalha"] .top-actions button,
+  html[data-tema-mesa="mortalha"] .top-actions .ad-quality{
+    white-space:nowrap !important;
+    padding:6px 10px !important;
+    font-size:9.5px !important;letter-spacing:.1em !important;
+    line-height:1.1 !important;
   }
   html[data-tema-mesa="mortalha"] .brand-line b,
   html[data-tema-mesa="mortalha"] .brand-line strong{
@@ -557,4 +621,32 @@ html[data-tema-mesa="mortalha"] .sessao-local-texto b,
 html[data-tema-mesa="mortalha"] .sessao-local-texto strong{
   font-family:Cinzel,Georgia,serif !important;color:var(--mor-latao-claro) !important;
   letter-spacing:.1em;
+}
+
+
+/* ───────── TELA CHEIA DO MAPA ─────────
+   `map-fullscreen.css` já manda esconder a barra e a fita, mas esta folha
+   repõe `display:flex` na fita com `!important` e com um seletor mais
+   específico (atributo + classe), então ganhava a disputa e a faixa de
+   navegação continuava aparecendo por cima do mapa em tela cheia.
+
+   A classe `dinastia-map-fullscreen` vai no próprio <html>, o mesmo
+   elemento que carrega `data-tema-mesa` — daí os dois juntos, sem espaço.
+   Isto precisa existir para cada coisa que o tema repinta com `!important`:
+   esconder é decisão da tela cheia, e tema nenhum passa por cima dela. */
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .grim-nav,
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .immersive-topbar,
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .grim-sidebar,
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .mobile-dock,
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .mobile-nav{
+  display:none !important;
+}
+/* E o conteúdo recupera o espaço que a barra e a fita ocupavam: sem isto o
+   mapa em tela cheia começa 110px abaixo do topo, com uma tira preta. */
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .immersive-content,
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .page-stage-mapabatalha{
+  padding-top:0 !important;
+}
+html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .immersive-stage{
+  margin-left:0 !important;
 }
