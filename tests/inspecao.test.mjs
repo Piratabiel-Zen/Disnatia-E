@@ -142,7 +142,12 @@ test('Esc fecha e a roda do mouse aproxima', () => {
   const insp = semComentarios(fonte('src/features/oneshot/InspetorDeObjeto.jsx'));
   assert.match(insp, /'Escape'/);
   assert.match(insp, /onWheel=\{rolar\}/);
-  // Arrastar só com a imagem ampliada: senão o objeto escorrega para fora da
-  // tela ao primeiro toque e não tem como ser trazido de volta.
-  assert.match(insp, /if \(zoom <= ZOOM_MINIMO\) return;/);
+  // PERCORRER só com a imagem ampliada: senão o objeto escorrega para fora
+  // da tela ao primeiro toque e não tem como ser trazido de volta. (No
+  // tamanho natural o mesmo arrasto gira o objeto desenhado — ver
+  // objeto-em-tres-dimensoes.test.mjs.)
+  const pegar = insp.slice(insp.indexOf('const pegar'), insp.indexOf('const puxar'));
+  assert.match(pegar, /if \(zoom <= ZOOM_MINIMO\)/);
+  assert.ok(pegar.indexOf('puxando.current =') > pegar.indexOf('zoom <= ZOOM_MINIMO'),
+    'o arrasto de percorrer tem de ficar depois da guarda de zoom');
 });

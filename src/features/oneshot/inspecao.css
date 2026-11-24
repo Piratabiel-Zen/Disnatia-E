@@ -118,3 +118,100 @@ html[data-motion="reduced"] .insp-achado{animation:none}
   /* No celular a ajuda de teclado não serve para nada. */
   .insp-ajuda{display:none}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O OBJETO NA MÃO, COM ESPESSURA
+
+   Virar deixa de ser uma troca de imagem e passa a ser um GIRO: o objeto
+   tem frente, verso e uma borda entre as duas. É o que faz a fotografia
+   parecer um papel que se segura em vez de um slide que troca.
+
+   `preserve-3d` no palco e `backface-visibility` nas faces: a de trás só
+   aparece depois dos noventa graus, sozinha, sem nenhuma conta de ângulo
+   em JavaScript. O navegador resolve na GPU e o giro acompanha o dedo sem
+   perder quadro.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.insp-palco[data-tridimensional]{perspective:1400px;perspective-origin:50% 45%}
+
+.insp-objeto{
+  position:relative;transform-style:preserve-3d;
+  width:min(74%,420px);aspect-ratio:3/4;
+  transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  will-change:transform;
+}
+/* Durante o arrasto não há transição: a transição é para o botão de virar,
+   e aplicada ao dedo faria o objeto chegar atrasado em relação à mão. */
+.insp-objeto[data-puxando]{transition:none}
+
+.insp-face{
+  position:absolute;inset:0;
+  backface-visibility:hidden;
+  border-radius:3px;overflow:hidden;
+  display:grid;place-items:center;
+  box-shadow:0 18px 40px rgba(0,0,0,.6);
+}
+.insp-face-verso{transform:rotateY(180deg)}
+
+/* A BORDA: quatro faces finas que dão a espessura. Sem elas o objeto é uma
+   folha de zero milímetro e o giro revela que não há nada no meio. */
+.insp-borda{
+  position:absolute;background:linear-gradient(180deg,#3A2E22,#1B1510);
+  pointer-events:none;
+}
+.insp-borda-e{left:0;top:0;bottom:0;width:7px;transform:rotateY(-90deg);transform-origin:left}
+.insp-borda-d{right:0;top:0;bottom:0;width:7px;transform:rotateY(90deg);transform-origin:right}
+.insp-borda-c{left:0;right:0;top:0;height:7px;transform:rotateX(90deg);transform-origin:top}
+.insp-borda-b{left:0;right:0;bottom:0;height:7px;transform:rotateX(-90deg);transform-origin:bottom}
+
+/* O BRILHO que atravessa conforme o ângulo: é ele que faz o papel parecer
+   ter superfície. Anda com o giro, não com o tempo. */
+.insp-face::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(
+    calc(100deg + var(--insp-giro,0) * 1deg),
+    transparent 36%,rgba(255,240,205,.14) 50%,transparent 64%);
+}
+
+/* A SOMBRA NO CHÃO acompanha o giro: encolhe quando o objeto fica de perfil,
+   que é quando ele mostra menos superfície para a luz. */
+.insp-sombra{
+  position:absolute;left:50%;bottom:6%;translate:-50% 0;
+  width:min(64%,360px);height:22px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,0,0,.62),transparent 72%);
+  transform:scaleX(var(--insp-chao,1));
+  transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  pointer-events:none;
+}
+
+html[data-motion="reduced"] .insp-objeto,
+html[data-motion="reduced"] .insp-sombra{transition:none}
+
+/* O QUE ESTÁ ESCRITO ATRÁS. Fica sobre o papel desenhado, dentro da face, e
+   não numa placa por cima do objeto: virar a foto e encontrar um cartão
+   flutuando na frente desfaz a ilusão de estar com a coisa na mão.
+
+   `position:absolute` porque a face é um grid centralizado e o SVG já ocupa
+   a célula; o texto tem de sobrepor o papel, não dividir espaço com ele. */
+.insp-escrito{
+  position:absolute;inset:14% 13%;margin:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Crimson Text',Georgia,serif;
+  font-size:clamp(15px,5cqw,22px);line-height:1.65;
+  text-align:center;text-wrap:balance;
+  color:#3A2E20;
+  /* Leve inclinação e sombra de grafite: escrita à mão, não composição. */
+  transform:rotate(-1.1deg);
+  text-shadow:0 1px 0 rgba(255,250,235,.3);
+  pointer-events:none;
+}
+.insp-face{container-type:inline-size}
+
+/* NO DEDO os botões do inspetor precisam de alvo de dedo. Com 25px de altura
+   errar o "virar" e fechar o objeto sem querer é questão de tempo, e aí a
+   pessoa perde o lugar da cena. A regra é por tipo de ponteiro e não por
+   largura de tela: tablet largo com dedo tem o mesmo problema. */
+@media (pointer:coarse){
+  .insp-botoes{gap:7px}
+  .insp-botoes button{min-height:40px;min-width:40px;padding:0 11px}
+}

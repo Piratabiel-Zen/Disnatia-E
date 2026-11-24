@@ -31,7 +31,11 @@ import AtmosferaDaCasa from '../oneshot/AtmosferaDaCasa.jsx';
 import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
-import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
+import AmbienteDaCasa from '../oneshot/AmbienteDaCasa.jsx';
+import AchadosDaCasa from '../oneshot/AchadosDaCasa.jsx';
+import { registroDeAchado } from '../oneshot/achadosDaCasa.mjs';
+import '../oneshot/ambiente.css';
+import { mapaPorId, fasePorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
 import {
   MINUTOS_POR_FASE, faseDoRelogio, minutosAteVirar, pressaoDaMesa,
 } from '../oneshot/pressaoDaNoite.mjs';
@@ -348,6 +352,30 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       () => setAparicoesDaMesa([]));
     return () => un();
   }, [ehNoite]);
+
+  /* OS ACHADOS. Ficam na mesa, e não em cada ficha: na história os primos
+     andam juntos e o caderno passa de mão em mão. Guardar por jogador daria
+     discussão de inventário no meio do terror. */
+  const [achadosDaMesa, setAchadosDaMesa] = useState([]);
+  useEffect(() => {
+    if (!ehNoite) { setAchadosDaMesa([]); return undefined; }
+    const un = onSnapshot(col('achados'),
+      snap => setAchadosDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      () => setAchadosDaMesa([]));
+    return () => un();
+  }, [ehNoite]);
+
+  const entregarAchado = idDoItem => {
+    const registro = registroDeAchado(idDoItem);
+    if (!registro) return;
+    // O id do documento é o id do item: entregar duas vezes não cria dois.
+    setDoc(docIn('achados', registro.item), registro)
+      .catch(e => console.error('Erro ao entregar o item:', e));
+  };
+  const devolverAchado = idDoItem => {
+    deleteDoc(docIn('achados', String(idDoItem)))
+      .catch(e => console.error('Erro ao tirar o item:', e));
+  };
 
   useEffect(() => {
     if (!ehNoite || !noiteComecouEm) return undefined;
@@ -2535,6 +2563,26 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               sobra o canto que nenhuma das duas mãos usa durante a cena. */}
           {minhaFichaDaNoite && (
             <FichaRapida ficha={minhaFichaDaNoite} aoMudarCor={guardarCorDaFicha} />
+          )}
+          {/* A casa soando. Cada andar tem o som dele, e trocar de mapa
+              troca o ambiente sozinho depois do primeiro clique. */}
+          {ehNoite && currentMap && (
+            <AmbienteDaCasa
+              mapa={String(currentMap.id)}
+              pressao={pressaoDaNoite}
+              instabilidade={fasePorId(horaDaNoite).instabilidade}
+            />
+          )}
+
+          {/* A bolsa do que a casa já deu. */}
+          {ehNoite && (
+            <AchadosDaCasa
+              achados={achadosDaMesa}
+              mestre={masterMode}
+              idDoMapa={currentMap ? String(currentMap.id) : ''}
+              aoEntregar={entregarAchado}
+              aoDevolver={devolverAchado}
+            />
           )}
 
           {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}

@@ -1,0 +1,114 @@
+/* A BOLSA. Mesmo canto do interruptor de som, uma fileira acima: os dois são
+   controles pequenos do mapa e ficam juntos em vez de espalhados pelas
+   bordas, que é onde os olhos param de procurar. */
+.ach{
+  position:absolute;right:10px;bottom:48px;z-index:43;
+  display:flex;flex-direction:column;align-items:flex-end;gap:6px;
+  font-family:Cinzel,Georgia,serif;
+  /* A bolsa cresce PARA CIMA a partir da borda de baixo, então o teto é a
+     altura do mapa menos o espaço que ela já ocupa embaixo. Sem isto, num
+     mapa curto ela passava por cima do cabeçalho e tapava a cena. */
+  max-height:calc(100% - 58px);
+}
+
+.ach-puxador{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 11px;border-radius:3px;cursor:pointer;
+  background:rgba(20,14,11,.86);border:1px solid rgba(176,138,66,.34);
+  color:#8A7C68;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  transition:color .2s ease,border-color .2s ease;
+}
+.ach-puxador:hover{color:#C9B48C;border-color:rgba(176,138,66,.6)}
+.ach[data-aberta] .ach-puxador{color:#E3C782;border-color:rgba(227,199,130,.5)}
+.ach-selo{font-size:11px}
+.ach-conta{
+  min-width:16px;padding:1px 4px;border-radius:2px;
+  background:rgba(176,138,66,.2);color:#E3C782;
+  font-size:9px;text-align:center;
+}
+
+.ach-painel{
+  /* `min-height:0` é o que deixa o painel encolher dentro do teto da bolsa:
+     sem isso o conteúdo de um flex item manda na altura e o teto não vale. */
+  width:min(84vw,300px);
+  flex:0 1 auto;min-height:0;max-height:min(52vh,330px);
+  overflow-y:auto;
+  padding:12px;border-radius:3px;
+  background:rgba(14,10,8,.95);border:1px solid rgba(176,138,66,.3);
+  box-shadow:0 20px 48px rgba(0,0,0,.72);
+}
+
+.ach-amuletos{
+  margin:0 0 10px;padding-bottom:9px;
+  border-bottom:1px solid rgba(176,138,66,.2);
+  color:#8A7C68;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+}
+/* Cinco de cinco é a única coisa nesta tela que tem direito a brilhar. */
+.ach-amuletos[data-completo]{color:#E3C782}
+
+.ach-vazio{margin:0;color:#6B6054;font-size:11px;font-style:italic;letter-spacing:.02em}
+
+.ach-grade{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
+  gap:8px;margin:0;padding:0;list-style:none;
+}
+.ach-grade li{position:relative}
+
+.ach-item{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  width:100%;padding:7px 4px;cursor:pointer;
+  background:rgba(32,24,18,.7);border:1px solid rgba(176,138,66,.22);
+  border-radius:2px;color:#C9B48C;
+  transition:border-color .2s ease,transform .2s ease;
+}
+.ach-item:hover{border-color:rgba(227,199,130,.56);transform:translateY(-2px)}
+.ach-desenho{display:block;width:44px;height:56px}
+.ach-nome{
+  font-size:9px;line-height:1.25;letter-spacing:.04em;text-align:center;
+  font-family:Georgia,serif;
+}
+
+.ach-tirar{
+  position:absolute;top:-5px;right:-5px;
+  width:17px;height:17px;border-radius:50%;cursor:pointer;
+  background:rgba(14,10,8,.95);border:1px solid rgba(154,58,58,.6);
+  color:#C06A6A;font-size:9px;line-height:1;
+}
+.ach-tirar:hover{border-color:#C06A6A;color:#E08A8A}
+
+.ach-mestre{margin-top:11px;padding-top:10px;border-top:1px solid rgba(176,138,66,.2)}
+
+.ach-abrir-lista{
+  width:100%;padding:6px;cursor:pointer;
+  background:transparent;border:1px solid rgba(176,138,66,.34);
+  border-radius:2px;color:#8A7C68;
+  font-family:Cinzel,Georgia,serif;font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.ach-abrir-lista:hover{color:#C9B48C;border-color:rgba(176,138,66,.6)}
+
+.ach-lista{
+  margin:8px 0 0;padding:0;list-style:none;display:grid;gap:4px;
+  /* A lista rola dentro de si: dezesseis nomes empurrariam a bolsa inteira
+     para fora do mapa, e aí o mestre perde a cena de vista para entregar. */
+  max-height:168px;overflow-y:auto;
+}
+.ach-lista button{
+  display:flex;flex-direction:column;gap:2px;
+  width:100%;padding:6px 8px;cursor:pointer;text-align:left;
+  background:rgba(32,24,18,.6);border:1px solid rgba(176,138,66,.16);
+  border-radius:2px;
+}
+.ach-lista button:hover{border-color:rgba(227,199,130,.5)}
+.ach-lista strong{color:#C9B48C;font-family:Georgia,serif;font-size:11px;font-weight:400}
+.ach-lista em{color:#6B6054;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-style:normal}
+/* O item deste mapa vem marcado: o mestre entrega no meio da cena e não tem
+   tempo de ler dezesseis nomes. */
+.ach-lista button[data-aqui]{border-left:2px solid rgba(227,199,130,.6)}
+.ach-lista button[data-aqui] em{color:#9C8A68}
+
+.ach-nota{margin:9px 0 0;color:#6B6054;font-size:9px;line-height:1.45;font-family:Georgia,serif}
+
+@media (max-width:720px){
+  .ach-painel{width:min(90vw,270px)}
+}

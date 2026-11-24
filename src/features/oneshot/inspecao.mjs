@@ -41,6 +41,26 @@ export const limitarZoom = valor => {
   return Math.min(ZOOM_MAXIMO, Math.max(ZOOM_MINIMO, n));
 };
 
+/**
+ * O ÂNGULO DO GIRO, e de que lado o objeto está.
+ *
+ * Virar deixou de ser trocar de imagem e passou a ser um giro de verdade,
+ * com espessura. Então o estado não é mais "virado sim ou não": é um
+ * ÂNGULO, e o lado que se vê sai dele.
+ *
+ * Entre 90 e 270 graus é o verso. O limite em 90 e não em 180 porque é aos
+ * noventa que a face da frente some de vista — depois disso o que está na
+ * tela já é o outro lado, e esperar até 180 deixaria meio giro mostrando a
+ * face errada.
+ */
+export const estaNoVerso = graus => {
+  const a = ((Number(graus) || 0) % 360 + 360) % 360;
+  return a > 90 && a < 270;
+};
+
+/** O quanto o objeto mostra de superfície, de 0 (perfil) a 1 (de frente). */
+export const faceAoSol = graus => Math.abs(Math.cos((Number(graus) || 0) * Math.PI / 180));
+
 /** Giro em passos de 90°, sempre entre 0 e 270. */
 export const girar = (graus, passo = 90) => {
   const n = Number(graus);
@@ -63,11 +83,19 @@ export const objetoInspecionavel = (fonte = {}) => ({
   // O outro lado. Pode ser imagem, texto, ou os dois.
   versoImagem: String(fonte.versoImagem || ''),
   versoTexto: String(fonte.versoTexto || ''),
+  // Objetos desenhados (os itens da casa) trazem uma forma em vez de imagem:
+  // é ela que diz qual desenho usar, e é ela que liga o palco de três
+  // dimensões, porque só desenho tem frente e verso vetoriais para girar.
+  forma: String(fonte.forma || ''),
+  selo: String(fonte.selo || ''),
 });
+
+/** Desenhado em vetor, e não uma foto: ganha espessura e giro. */
+export const ehDesenhado = objeto => Boolean(objeto?.forma);
 
 /** O objeto esconde alguma coisa? Decide se a tela oferece virar e avisar. */
 export const temVerso = objeto =>
-  Boolean(objeto?.versoImagem || objeto?.versoTexto);
+  Boolean(objeto?.versoImagem || objeto?.versoTexto || objeto?.forma);
 export const temDetalheDePerto = objeto => Boolean(objeto?.detalheDePerto);
 export const escondeAlgo = objeto => temVerso(objeto) || temDetalheDePerto(objeto);
 
