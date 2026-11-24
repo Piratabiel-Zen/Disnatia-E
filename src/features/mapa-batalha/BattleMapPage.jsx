@@ -31,11 +31,8 @@ import AtmosferaDaCasa from '../oneshot/AtmosferaDaCasa.jsx';
 import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
-import AmbienteDaCasa from '../oneshot/AmbienteDaCasa.jsx';
-import AchadosDaCasa from '../oneshot/AchadosDaCasa.jsx';
-import { registroDeAchado } from '../oneshot/achadosDaCasa.mjs';
-import '../oneshot/ambiente.css';
-import { mapaPorId, fasePorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
+import '../oneshot/token-sem-ficha.css';
+import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
 import {
   MINUTOS_POR_FASE, faseDoRelogio, minutosAteVirar, pressaoDaMesa,
 } from '../oneshot/pressaoDaNoite.mjs';
@@ -310,6 +307,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // Qual silhueta. As opções são as aparições que o Mestre já preparou —
   // reusá-las evita um segundo acervo de imagens dizendo a mesma coisa.
   const [imagemDoVulto, setImagemDoVulto] = useState(VULTO_DESENHADO);
+  // Espiar por baixo da névoa: do Mestre, e momentâneo.
+  const [espiandoNevoa, setEspiandoNevoa] = useState(false);
   const [aparicoesDaMesa, setAparicoesDaMesa] = useState([]);
   // O relógio da noite: ligado, a hora anda sozinha. O Mestre conduz a cena
   // e virar a hora no meio de uma perseguição é o que mais se esquece de
@@ -324,11 +323,6 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const minhaFichaDaNoite = ehNoite && playerSheetId
     ? sheets.find(f => String(f.id) === String(playerSheetId)) || null
     : null;
-  /* Os controles do token não sumiram: ficam a um botão. O efeito que
-     fecha o painel ao trocar de token mora lá embaixo, junto da declaração
-     de `selectedToken` — lista de dependências que lê um const declarado
-     adiante estoura no RENDER, e é exatamente a tela preta de novembro. */
-  const [painelDoToken, setPainelDoToken] = useState(false);
   /* A HORA QUE VALE: a do relógio quando ele está ligado, senão a que o
      Mestre marcou na mão. Virar na mão reinicia a contagem a partir dali —
      automatismo que tira o controle de quem narra é automatismo errado. */
@@ -357,30 +351,6 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       () => setAparicoesDaMesa([]));
     return () => un();
   }, [ehNoite]);
-
-  /* OS ACHADOS. Ficam na mesa, e não em cada ficha: na história os primos
-     andam juntos e o caderno passa de mão em mão. Guardar por jogador daria
-     discussão de inventário no meio do terror. */
-  const [achadosDaMesa, setAchadosDaMesa] = useState([]);
-  useEffect(() => {
-    if (!ehNoite) { setAchadosDaMesa([]); return undefined; }
-    const un = onSnapshot(col('achados'),
-      snap => setAchadosDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-      () => setAchadosDaMesa([]));
-    return () => un();
-  }, [ehNoite]);
-
-  const entregarAchado = idDoItem => {
-    const registro = registroDeAchado(idDoItem);
-    if (!registro) return;
-    // O id do documento é o id do item: entregar duas vezes não cria dois.
-    setDoc(docIn('achados', registro.item), registro)
-      .catch(e => console.error('Erro ao entregar o item:', e));
-  };
-  const devolverAchado = idDoItem => {
-    deleteDoc(docIn('achados', String(idDoItem)))
-      .catch(e => console.error('Erro ao tirar o item:', e));
-  };
 
   useEffect(() => {
     if (!ehNoite || !noiteComecouEm) return undefined;
@@ -1851,9 +1821,6 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
   const fichaDoTokenEscolhido = ehNoite && masterMode && selectedToken?.sheetId
     ? sheets.find(f => String(f.id) === String(selectedToken.sheetId)) || null
     : null;
-  // Trocar de token fecha os controles: o Mestre clica no primo para VER o
-  // primo, e abrir os controles a cada clique seria o problema ao contrário.
-  useEffect(() => { setPainelDoToken(false); }, [selectedToken?.id]);
 
   const saveSheet = sheet => {
     clearTimeout(saveTimeout.current['sheet_' + sheet.id]);
@@ -2215,6 +2182,20 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                           border:`1px solid ${modoVulto?'rgba(196,65,79,.75)':'rgba(196,65,79,.3)'}`,
                           background:modoVulto?'rgba(142,31,43,.3)':'rgba(4,6,15,.7)',color:'#E0707C'}}
                       >☾ {modoVulto ? 'clique no cômodo' : 'Pôr vulto'}</button>
+                      {/* ESPIAR POR BAIXO. Segurando, a névoa clareia só
+                          para o Mestre; solto, ele volta a ver o mesmo que
+                          a mesa — que é a única referência honesta para
+                          julgar se a névoa está tapando. */}
+                      <button
+                        onPointerDown={() => setEspiandoNevoa(true)}
+                        onPointerUp={() => setEspiandoNevoa(false)}
+                        onPointerLeave={() => setEspiandoNevoa(false)}
+                        onBlur={() => setEspiandoNevoa(false)}
+                        title="Segure para ver o mapa por baixo da névoa. A mesa continua sem ver."
+                        style={{padding:'5px 9px',borderRadius:7,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10,
+                          border:`1px solid ${espiandoNevoa?'rgba(227,199,130,.75)':'rgba(176,138,66,.3)'}`,
+                          background:espiandoNevoa?'rgba(176,138,66,.25)':'rgba(4,6,15,.7)',color:'#C9B48C'}}
+                      >◉ {espiandoNevoa ? 'espiando' : 'Espiar'}</button>
                     </>
                   )}
                   <button onClick={() => { if (confirm('Remover toda a névoa deste mapa?')) saveFog(String(currentMap.id), []); }} style={{ padding:'5px 8px',borderRadius:7,border:'1px solid rgba(232,160,32,.28)',background:'rgba(4,6,15,.7)',color:'#E8A020',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:10 }}>☀ Limpar névoa</button>
@@ -2572,6 +2553,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                         .map(t => ({ dono: tokenControllers[String(t.id)], x: t.x / 100, y: t.y / 100 }))}
                       dono={access?.sheetId ? String(access.sheetId) : ''}
                       aspecto={baseSize.w && baseSize.h ? baseSize.w / baseSize.h : 2}
+                      espiando={espiandoNevoa}
                     />
                   ) : (fogByMap[String(currentMap.id)] || []).map(p => (
                     <div key={p.id} style={{position:'absolute',left:`${p.x}%`,top:`${p.y}%`,width:`${p.size}%`,aspectRatio:'1',transform:'translate(-50%,-50%)',borderRadius:'50%',background:'radial-gradient(circle,rgba(0,0,0,.995) 0%,rgba(0,0,0,.995) 68%,rgba(0,0,0,.92) 82%,rgba(0,0,0,0) 100%)',filter:'blur(1px)',pointerEvents:'none'}}/>
@@ -2588,35 +2570,40 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             <FichaRapida ficha={minhaFichaDaNoite} aoMudarCor={guardarCorDaFicha} />
           )}
           {/* Sem `aoMudarCor`: a cor é escolha de quem joga a ficha. */}
-          {!minhaFichaDaNoite && fichaDoTokenEscolhido && !painelDoToken && (
-            <FichaRapida
-              ficha={fichaDoTokenEscolhido}
-              aoAbrirToken={() => setPainelDoToken(true)}
-            />
+          {!minhaFichaDaNoite && fichaDoTokenEscolhido && (
+            <FichaRapida ficha={fichaDoTokenEscolhido} />
           )}
-          {/* A casa soando. Cada andar tem o som dele, e trocar de mapa
-              troca o ambiente sozinho depois do primeiro clique. */}
-          {ehNoite && currentMap && (
-            <AmbienteDaCasa
-              mapa={String(currentMap.id)}
-              pressao={pressaoDaNoite}
-              instabilidade={fasePorId(horaDaNoite).instabilidade}
-            />
+          {/* TOKEN SEM FICHA LIGADA. Acontece com todo token feito à mão, e
+              era por aqui que o painel da Dinastia E voltava. Em vez dele,
+              o caminho curto para ligar a ficha do primo — que é o que o
+              Mestre queria ver quando clicou. */}
+          {ehNoite && masterMode && selectedToken && !fichaDoTokenEscolhido && (
+            <div className="tk-ligar">
+              <strong>{selectedToken.nome || 'Token'}</strong>
+              <p>Este token ainda não está ligado a uma ficha.</p>
+              <select
+                value=""
+                onChange={e => {
+                  if (!e.target.value) return;
+                  updateToken(selectedToken.id, { sheetId: String(e.target.value) });
+                }}
+              >
+                <option value="">Ligar à ficha de…</option>
+                {sheets.map(f => (
+                  <option key={f.id} value={f.id}>{f.nome || 'sem nome'}</option>
+                ))}
+              </select>
+              <button type="button" onClick={() => setSelectedId(null)}>Fechar</button>
+            </div>
           )}
 
-          {/* A bolsa do que a casa já deu. */}
-          {ehNoite && (
-            <AchadosDaCasa
-              achados={achadosDaMesa}
-              mestre={masterMode}
-              idDoMapa={currentMap ? String(currentMap.id) : ''}
-              aoEntregar={entregarAchado}
-              aoDevolver={devolverAchado}
-            />
-          )}
 
           {/* PAINEL DO TOKEN SELECIONADO — flutuante, canto superior direito */}
-          {selectedToken && masterMode && (!fichaDoTokenEscolhido || painelDoToken) && (
+          {/* O painel abaixo é da Dinastia E — mão esquerda, mão direita,
+              Vigor Cósmico, Envenenado, Queimando. Na mesa de terror ele
+              não aparece em hipótese nenhuma: nada disso existe neste
+              sistema, e ver a ficha errada é pior do que não ver ficha. */}
+          {selectedToken && masterMode && !ehNoite && (
             <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 'calc(84px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 41, width: 'min(280px, calc(100vw - 28px))', maxHeight: 'calc(100% - 108px)', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>

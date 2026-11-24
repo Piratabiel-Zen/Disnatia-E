@@ -28,7 +28,7 @@ import { fasePorId } from './mapasDaCasa.mjs';
 
 /** Quanto a pressão pode somar, no limite. */
 export const PESO_DA_PRESSAO = Object.freeze({
-  escuridao: 0.18,
+  escuridao: 0.26,
   nevoa: 0.1,
   sombras: 0.12,
   instabilidade: 0.7,
@@ -71,10 +71,19 @@ export function atmosferaComPressao(idDaFase, pressao = 0) {
   return Object.freeze({
     fase: fase.id,
     pressao: p,
-    escuridao: entre(fase.escuridao + PESO_DA_PRESSAO.escuridao * p, 0, 0.88),
+    escuridao: entre(fase.escuridao + PESO_DA_PRESSAO.escuridao * p, 0, 0.95),
     nevoa: entre(fase.nevoa + PESO_DA_PRESSAO.nevoa * p, 0, 0.42),
     sombras: entre(fase.sombras + PESO_DA_PRESSAO.sombras * p, 0, 0.4),
     instabilidade: entre(fase.instabilidade + PESO_DA_PRESSAO.instabilidade * p, 0.2, 3),
+    /* QUANTO AS LUZES BRILHAM E QUANTO ELAS FALHAM.
+       Os dois crescem juntos com a noite, e crescem porque a casa escurece:
+       numa sala quase preta a mesma lâmpada precisa queimar mais forte para
+       continuar sendo lâmpada, e cada falha dela pesa muito mais do que
+       pesava no começo, quando ainda havia luz em volta. É por isso que a
+       última hora é a que mais pisca — não porque o gerador piorou, mas
+       porque agora é só aquilo que existe. */
+    brilho: 1 + fase.escuridao * 1.5 + p * 0.55,
+    tremor: entre(fase.escuridao * 0.72 + p * 0.3, 0, 0.9),
   });
 }
 

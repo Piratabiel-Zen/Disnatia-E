@@ -107,20 +107,26 @@ test('jogador sem token não fica cego', () => {
   assert.ok(v.mascara, 'o jogador sem token perdeu até as clareiras');
 });
 
-test('o Mestre vê uma prévia esmaecida, e não o nada', () => {
-  /* Esconder do narrador seria esconder de quem conduz — mas não mostrar
-     NADA foi pior: ele pintava às cegas, clicava para revelar, nada mudava
-     na tela dele, e a conclusão óbvia era que revelar não funcionava.
-     Agora ele vê o mesmo escuro, fraco o bastante para ler o mapa por
-     baixo e ainda saber o que a mesa não viu. */
-  const v = visaoDaMesa({
-    mestre: true, clareiras: [clareiraNova(0.3, 0.3)], tokens: [], dono: 'm',
-  });
-  assert.equal(v.previa, true);
-  assert.ok(v.mascara, 'o Mestre voltou a não ver névoa nenhuma');
-  const css = semComentarios(fonte('src/features/oneshot/exploracao.css'));
-  assert.match(css, /\.nev\[data-previa\]\{opacity:\.\d+\}/,
-    'a prévia do Mestre perdeu a opacidade menor');
+test('o Mestre vê a mesma névoa que a mesa, e espia por fora dela', () => {
+  /* Esta parte já errou nas duas direções. Primeiro o Mestre não recebia
+     névoa nenhuma e pintava às cegas. Depois passou a recebê-la a 50% — e
+     aí ENXERGAVA o mapa por baixo, e concluiu, com razão, que a névoa não
+     tapava nada: na tela dele realmente não tapava.
+
+     O acerto é a névoa cheia por padrão. O que ele vê é o que a mesa vê,
+     que é a única referência honesta para julgar se está boa; e um botão
+     clareia enquanto ele segura, para narrar o que tem lá. */
+  const css = semComentarios(readFileSync(
+    new URL('../src/features/oneshot/exploracao.css', import.meta.url), 'utf8'));
+  assert.ok(!/\.nev\[data-previa\]\{opacity/.test(css),
+    'ser Mestre não pode, sozinho, clarear a névoa');
+  assert.match(css, /\.nev\[data-espiando\]\{opacity:\.\d+\}/,
+    'o que clareia é ele PEDIR, e só enquanto pede');
+
+  const jsx = semComentarios(readFileSync(
+    new URL('../src/features/oneshot/NevoaDeExploracao.jsx', import.meta.url), 'utf8'));
+  assert.match(jsx, /data-espiando=\{previa && espiando \? '' : undefined\}/,
+    'espiar é do Mestre: jogador que mande `espiando` não pode clarear nada');
 });
 
 test('a prévia do Mestre mostra a visão de todas as crianças', () => {

@@ -71,10 +71,13 @@ test('a tela cheia esconde a barra e a fita, mesmo com o tema por cima', () => {
 test('o mestre vê a ficha do primo, não o painel da Dinastia E', () => {
   const jsx = semComentarios(fonte('src/features/mapa-batalha/BattleMapPage.jsx'));
   assert.match(jsx, /const fichaDoTokenEscolhido = ehNoite && masterMode && selectedToken\?\.sheetId/);
-  // O painel antigo some quando há ficha ligada — mas continua para token
-  // sem ficha, que é justamente quando o Mestre precisa dele para ligar uma.
-  assert.match(jsx, /selectedToken && masterMode && \(!fichaDoTokenEscolhido \|\| painelDoToken\)/);
-  assert.match(jsx, /<FichaRapida\s+ficha=\{fichaDoTokenEscolhido\}/);
+  // E o painel da Dinastia E não aparece nesta mesa em hipótese nenhuma:
+  // ele voltava pelo token feito à mão, que não tem ficha ligada. No lugar
+  // dele, o caminho curto para ligar a ficha do primo.
+  assert.match(jsx, /selectedToken && masterMode && !ehNoite &&/);
+  assert.match(jsx, /<FichaRapida ficha=\{fichaDoTokenEscolhido\} \/>/);
+  assert.match(jsx, /ehNoite && masterMode && selectedToken && !fichaDoTokenEscolhido/);
+  assert.match(jsx, /updateToken\(selectedToken\.id, \{ sheetId: String\(e\.target\.value\) \}\)/);
 });
 
 test('a ficha do token é declarada depois do token', () => {
@@ -92,7 +95,7 @@ test('o mestre não troca a cor da ficha alheia', () => {
   assert.match(jsx, /\{aoMudarCor && \(/);
   const mapa = semComentarios(fonte('src/features/mapa-batalha/BattleMapPage.jsx'));
   const uso = mapa.slice(mapa.indexOf('ficha={fichaDoTokenEscolhido}'));
-  assert.ok(!uso.slice(0, 200).includes('aoMudarCor'));
+  assert.ok(!uso.slice(0, 160).includes('aoMudarCor'));
 });
 
 /* ─── 4. A NÉVOA ─── */
@@ -156,4 +159,81 @@ test('a assombração em tela cheia também mostra a imagem escolhida', () => {
   const bloco = css.slice(css.indexOf('.asb-coisa{'), css.indexOf('.asb-nome{'));
   assert.ok(!/grayscale|sepia|saturate\(0/.test(bloco),
     'a mesma regra vale aqui: a imagem é a escolha do Mestre');
+});
+
+/* ─── A SEGUNDA RODADA DE AJUSTES ─── */
+
+test('imagem com fundo vazado é gravada em PNG, não em JPEG', () => {
+  const js = semComentarios(fonte('src/core/media.js'));
+  // ESTA É A RAIZ DO VULTO COM TAPA-SEXO PRETO. Não estava em CSS nenhum:
+  // toda imagem ia para JPEG, que não tem canal alfa, e o que era vazado
+  // virava preto NA HORA DE SALVAR. A imagem já chegava errada no banco.
+  assert.match(js, /function temTransparencia/);
+  assert.match(js, /'image\/png'/, 'sem PNG não há como guardar transparência');
+  const corpo = js.slice(js.indexOf('export async function comprimirParaDocumento'));
+  assert.match(corpo, /if \(vazada\) \{/, 'o formato tem de ser decidido pela imagem');
+  assert.ok(corpo.indexOf("'image/png'") < corpo.indexOf("'image/jpeg'"),
+    'o caminho do PNG tem de vir antes do JPEG');
+});
+
+test('a dúvida sobre transparência resolve a favor do PNG', () => {
+  const js = semComentarios(fonte('src/core/media.js'));
+  // Canvas sujo por imagem de outra origem proíbe a leitura dos pixels.
+  // Aí não dá para saber, e o palpite seguro é PNG: pesa mais e não
+  // destrói nada; JPEG destruiria a transparência para sempre.
+  const prova = js.slice(js.indexOf('function temTransparencia'), js.indexOf('export function imagemTemTransparencia'));
+  assert.match(prova, /catch \{\s*return true;/s);
+  assert.match(prova, /dados\[i\] < 250/, 'borda com alfa quase cheio ainda é borda vazada');
+});
+
+test('a luz e a escuridão andam juntas, e só para um lado', () => {
+  const jsx = semComentarios(fonte('src/features/oneshot/AtmosferaDaCasa.jsx'));
+  // A vinheta sozinha escurecia a moldura e deixava o miolo da casa aceso:
+  // a hora passava e a sala continuava a mesma.
+  assert.match(jsx, /<i className="atm-noite" \/>/, 'falta a camada chapada');
+  assert.match(jsx, /'--atm-noite': atm\.escuridao/);
+  assert.match(jsx, /'--atm-brilho': atm\.brilho/);
+  assert.match(jsx, /<i className="atm-piscada" \/>/);
+  // Só as luzes recebem o brilho da hora. Clarear névoa e sombra junto
+  // deixaria a casa mais VISÍVEL conforme a noite avança.
+  assert.match(jsx, /LUZES\.has\(c\) \? `\$\{c\} atm-luz` : c/);
+  for (const naoEhLuz of ['atm-nevoa', 'atm-sombras', 'atm-poeira', 'atm-chuva']) {
+    assert.ok(!new RegExp(`LUZES[\\s\\S]{0,400}'${naoEhLuz}'`).test(jsx),
+      `${naoEhLuz} não é fonte de luz`);
+  }
+});
+
+test('a casa chapada apaga sem lavar a cor do mapa', () => {
+  const css = semComentarios(fonte('src/features/oneshot/atmosfera-da-casa.css'));
+  const bloco = css.slice(css.indexOf('.atm-noite{'), css.indexOf('.atm-noite{') + 200);
+  // Preto em opacidade normal deixa tudo cinza, e casa cinza não é casa
+  // escura: é casa desbotada.
+  assert.match(bloco, /mix-blend-mode:multiply/);
+  assert.match(css, /html\[data-motion="reduced"\] \.atm-piscada\{animation:none/);
+});
+
+test('a letra da mortalha é de impressão antiga, e só na mortalha', () => {
+  const css = semComentarios(fonte('src/features/oneshot/mortalha-casca.css'));
+  assert.match(css, /--mor-letra: 'IM Fell English SC'/);
+  // Toda regra de letra passa pelo tema: Dinastia E e Estrela de Absinto
+  // continuam com a letra delas.
+  const linhas = css.split('\n').filter(l => l.includes('--mor-letra') || l.includes('--mor-corpo'));
+  assert.ok(linhas.length >= 4, 'a letra precisa alcançar títulos e texto corrido');
+  const indice = css.indexOf('--mor-letra:');
+  const antes = css.slice(Math.max(0, indice - 200), indice);
+  assert.match(antes, /html\[data-tema-mesa="mortalha"\]/);
+  // E o navegador precisa ter de onde baixar.
+  assert.match(fonte('index.html'), /IM\+Fell\+English\+SC/);
+});
+
+test('ficha que ninguém abriu não conta como integrante do grupo', () => {
+  const jsx = semComentarios(fonte('src/adventure/SessionHome.jsx'));
+  assert.match(jsx, /const naMesa = \(sheets \|\| \[\]\)\.filter/);
+  assert.match(jsx, /splitParty\(naMesa, groups\)/);
+  // Ficha com dono, com retrato ou com nome próprio É alguém — some só a
+  // que ficou exatamente como nasceu.
+  assert.match(jsx, /f\.dono \|\| f\.ownerId \|\| f\.visitorId \|\| f\.playerId/);
+  assert.match(jsx, /if \(f\.foto\) return true;/);
+  // E nada é apagado: a ficha continua no banco e na aba de fichas.
+  assert.ok(!/deleteDoc|remove\(/.test(jsx), 'o quadro do grupo não apaga ficha de ninguém');
 });

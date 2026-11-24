@@ -72,12 +72,41 @@ test('a hora continua mandando na estrutura da noite', () => {
   assert.ok(cacadaCalma.escuridao > estranhezaApavorada.escuridao);
 });
 
-test('a casa nunca fica impossível de ler', () => {
-  /* Mapa que não se lê não assusta: irrita, que é outra coisa. */
-  const pior = atmosferaComPressao('cacada', 1);
-  assert.ok(pior.escuridao <= 0.88, `escuridão ${pior.escuridao}`);
-  assert.ok(pior.nevoa <= 0.42);
+test('a noite escurece de verdade, hora após hora', () => {
+  // O pedido foi "muito mais escuro conforme vai passando". O que torna
+  // isso verificável não é o número de uma camada, é a DISTÂNCIA entre a
+  // primeira hora e a última: se a casa termina parecida com o começo, a
+  // passagem do tempo não está sendo sentida.
+  const cedo = atmosferaComPressao('estranheza', 0);
+  const tarde = atmosferaComPressao('cacada', 1);
+  assert.ok(tarde.escuridao - cedo.escuridao > 0.4,
+    `a noite mal escureceu: ${cedo.escuridao} para ${tarde.escuridao}`);
   assert.ok(PESO_DA_PRESSAO.escuridao > 0);
+});
+
+test('e as luzes queimam mais forte à medida que a casa afunda', () => {
+  // Escurecer sozinho faz mapa ilegível, que irrita em vez de assustar. O
+  // que salva a leitura é a luz restante ganhar força junto — lâmpada acesa
+  // dentro de quarto escuro, e não quarto escuro e mais nada.
+  let anterior = 0;
+  for (const fase of ORDEM_DAS_FASES) {
+    const atm = atmosferaComPressao(fase, 0);
+    assert.ok(atm.brilho > anterior, `${fase} não ficou mais brilhante`);
+    anterior = atm.brilho;
+  }
+  const pior = atmosferaComPressao('cacada', 1);
+  assert.ok(pior.brilho >= 2, `luz fraca demais para vencer o escuro: ${pior.brilho}`);
+  assert.ok(pior.nevoa <= 0.42);
+});
+
+test('o tremor das luzes cresce com a noite e tem teto', () => {
+  // Piscar é o que ele pediu; piscar sem teto é estroboscópio, e isso passa
+  // de assustador para fisicamente ruim de olhar.
+  const cedo = atmosferaComPressao('estranheza', 0);
+  const tarde = atmosferaComPressao('cacada', 1);
+  assert.ok(tarde.tremor > cedo.tremor * 1.8, 'a última hora tinha de piscar bem mais');
+  assert.ok(tarde.tremor <= 0.9, `tremor ${tarde.tremor} apaga a casa inteira`);
+  assert.ok(cedo.tremor < 0.35, 'a primeira hora não é para piscar muito');
 });
 
 /* ─── O relógio ───────────────────────────────────────────────────────── */

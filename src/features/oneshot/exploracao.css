@@ -8,7 +8,10 @@
    escuro, e a visão de cada criança abre o caminho conforme ela anda. */
 /* A prévia do Mestre: o mesmo escuro, fraco o bastante para ele ler o mapa
    por baixo e ainda saber o que a mesa não viu. */
-.nev[data-previa]{opacity:.5}
+/* O Mestre vê a névoa cheia, como a mesa. Só clareia enquanto ele segura o
+   botão de espiar — e aí fica claro o bastante para narrar e opaco o
+   bastante para ele não esquecer que a mesa não está vendo aquilo. */
+.nev[data-espiando]{opacity:.34}
 
 /* ───────── A NÉVOA ─────────
    Era um preto quase chapado, e preto chapado o olho lê como "a imagem

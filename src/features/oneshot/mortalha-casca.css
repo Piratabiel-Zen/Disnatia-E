@@ -650,3 +650,84 @@ html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .page-stage-mapabatalha{
 html[data-tema-mesa="mortalha"].dinastia-map-fullscreen .immersive-stage{
   margin-left:0 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   A LETRA DA CASA
+
+   Cinzel é romana limpa: ela diz "épico", "clássico", "capítulo de livro de
+   aventura". Diz tudo menos medo. Esta mesa é uma história de assombração
+   numa casa velha, e o que combina com isso é LETRA DE IMPRESSÃO ANTIGA —
+   a que tem tinta demais em umas partes, de menos em outras, e borda que
+   não fecha direito. IM Fell é uma digitalização de tipos de chumbo do
+   século XVII, feita a partir de impressões reais: as irregularidades são
+   de verdade e não de filtro.
+
+   Deliberadamente NÃO é letra gótica alemã, que é o reflexo automático em
+   terror e puxa para vampiro e castelo — a casa do avô Hiroshi não é isso.
+
+   E vale só na mortalha. Dinastia E e Estrela de Absinto continuam com a
+   letra delas.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-tema-mesa="mortalha"]{
+  --mor-letra: 'IM Fell English SC', 'Cinzel', Georgia, serif;
+  --mor-corpo: 'IM Fell English', 'Crimson Text', Georgia, serif;
+}
+
+/* O NOME DA MESA. Maior, com a tinta pesando: duas sombras curtas e
+   deslocadas, uma quente e uma fria, imitam o registro fora de esquadro de
+   impressão em chumbo — a letra parece ter sido PRESSIONADA no papel. */
+html[data-tema-mesa="mortalha"] .brand-line h1{
+  font-family:var(--mor-letra) !important;
+  font-size:clamp(17px,1.5vw,25px) !important;
+  letter-spacing:.055em !important;
+  font-weight:400 !important;
+  text-shadow:
+    .5px 0 0 rgba(138,31,43,.5),
+    -.5px .5px 0 rgba(12,10,14,.8),
+    0 0 14px rgba(176,138,66,.22);
+}
+html[data-tema-mesa="mortalha"] .brand-line small{
+  font-family:var(--mor-corpo) !important;
+  letter-spacing:.2em !important;
+  text-transform:lowercase !important;
+  font-style:italic;
+}
+
+/* E TODAS AS ESCRITAS. Títulos, abas, botões e rótulos passam para a mesma
+   letra; o texto corrido fica no IM Fell de caixa alta e baixa, que é o
+   mesmo tipo e continua legível em parágrafo. */
+html[data-tema-mesa="mortalha"] .grim-link,
+html[data-tema-mesa="mortalha"] .sessao-titulo h2,
+html[data-tema-mesa="mortalha"] .sessao-local-texto strong,
+html[data-tema-mesa="mortalha"] .sessao-acoes button,
+html[data-tema-mesa="mortalha"] .fr-nome,
+html[data-tema-mesa="mortalha"] .insp-caixa h3,
+html[data-tema-mesa="mortalha"] .pagina-one-shot h1,
+html[data-tema-mesa="mortalha"] .pagina-one-shot h2,
+html[data-tema-mesa="mortalha"] .pagina-one-shot h3,
+html[data-tema-mesa="mortalha"] .lr-capitulo h2,
+html[data-tema-mesa="mortalha"] .lr-regra h3,
+html[data-tema-mesa="mortalha"] .tal-nome,
+html[data-tema-mesa="mortalha"] .tk-ligar strong{
+  font-family:var(--mor-letra) !important;
+}
+html[data-tema-mesa="mortalha"] .pagina-one-shot p,
+html[data-tema-mesa="mortalha"] .pagina-one-shot li,
+html[data-tema-mesa="mortalha"] .lr-regra p,
+html[data-tema-mesa="mortalha"] .sessao-capitulo p,
+html[data-tema-mesa="mortalha"] .tal-texto,
+html[data-tema-mesa="mortalha"] .insp-descricao{
+  font-family:var(--mor-corpo) !important;
+  font-size:1.03em;
+}
+
+/* ───────── O QUADRO DO LUGAR ─────────
+   As fichas do grupo nasciam com 52px de recuo, para alinharem com o TEXTO
+   do cabeçalho e não com a borda do quadro. Numa coluna estreita isso lê
+   como desalinho, porque o olho compara com a borda do painel, que está
+   bem ali do lado. Aqui tudo começa na mesma linha vertical. */
+html[data-tema-mesa="mortalha"] .sessao-frente .ad-party-viewport{
+  padding-left:0 !important;
+}
+html[data-tema-mesa="mortalha"] .sessao-local{gap:10px}

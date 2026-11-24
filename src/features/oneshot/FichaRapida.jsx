@@ -23,7 +23,7 @@ import './ficha-rapida.css';
  * pessoa não quer ler o que Furtividade significa, quer saber se soma ou
  * subtrai.
  */
-export default function FichaRapida({ ficha: bruta, aoMudarCor, aoAbrirToken }) {
+export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
   const [aberta, setAberta] = useState(false);
   const [escolhendoCor, setEscolhendoCor] = useState(false);
   if (!bruta) return null;
@@ -144,14 +144,6 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor, aoAbrirToken }) 
           </div>
           )}
 
-          {/* A saída para os controles do token, quando é o Mestre olhando
-              o primo pelo mapa. Mora DENTRO da ficha para herdar a cor
-              dela: botão solto do lado ficaria sem paleta nenhuma. */}
-          {aoAbrirToken && (
-            <button type="button" className="fr-ir-token" onClick={aoAbrirToken}>
-              ⚙ Controles do token
-            </button>
-          )}
         </div>
       )}
     </div>

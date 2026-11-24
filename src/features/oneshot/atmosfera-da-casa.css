@@ -29,6 +29,17 @@
   opacity:var(--atm-escuridao,.45);
 }
 
+/* A noite chapada. A vinheta acima dá forma; esta dá PESO, e é ela que
+   responde à hora. `multiply` para apagar sem lavar a cor do mapa: uma
+   camada preta em opacidade normal deixa tudo cinza, e casa cinza não é
+   casa escura — é casa desbotada. */
+.atm-noite{
+  background:#05060A;
+  mix-blend-mode:multiply;
+  opacity:var(--atm-noite,.3);
+  transition:opacity 2.4s ease;
+}
+
 /* ───────── 3. LUZES ───────── */
 
 /* Luar azul-acinzentado. Fraco e frio, por cima de tudo. */
@@ -342,3 +353,35 @@ html[data-quality="light"] .atm,
 html[data-motion="reduced"] .atm{animation:none !important}
 html[data-quality="light"] .atm .atm-escuridao,
 html[data-motion="reduced"] .atm .atm-escuridao{animation:none !important}
+
+/* ───────── A LUZ DA HORA ─────────
+   Conforme a noite anda, a casa escurece e o que restou de luz queima mais
+   forte. O brilho é filtro sobre as camadas de luz, e não cor nova em cada
+   gradiente: assim uma lâmpada nova entra na pilha e já nasce obedecendo à
+   hora, sem ninguém lembrar de ajustá-la. */
+.atm-luz{
+  filter:brightness(var(--atm-brilho,1)) saturate(calc(.85 + var(--atm-brilho,1) * .18));
+}
+
+/* A FALHA GERAL. A casa toda vacila: um corte curto, outro mais curto, e o
+   intervalo entre eles encurta com a instabilidade. A profundidade vem de
+   `--atm-tremor`, então no começo da noite é quase nada e na última hora é
+   a casa apagando na cara da mesa. */
+.atm-piscada{
+  background:#040506;
+  opacity:0;
+  mix-blend-mode:multiply;
+  animation:atmPiscada calc(11s / var(--atm-pulso,1)) steps(1,end) infinite;
+}
+@keyframes atmPiscada{
+  0%,41%{opacity:0}
+  42%{opacity:var(--atm-tremor,0)}
+  43%{opacity:0}
+  44%{opacity:calc(var(--atm-tremor,0) * .72)}
+  45%,73%{opacity:0}
+  74%{opacity:calc(var(--atm-tremor,0) * .9)}
+  76%{opacity:0}
+  77%{opacity:calc(var(--atm-tremor,0) * .5)}
+  78%,100%{opacity:0}
+}
+html[data-motion="reduced"] .atm-piscada{animation:none;opacity:0}

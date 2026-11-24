@@ -53,12 +53,79 @@ export function compressImageSmall(dataUrl){return compressImage(dataUrl,700,700
    não o tamanho do arquivo original nem o do JPEG decodificado. */
 export const bytesDaDataUrl = dataUrl => String(dataUrl || '').length;
 
+/* ───────── A IMAGEM TEM FUNDO VAZADO? ─────────
+
+   Esta pergunta existe por um defeito que chegou à mesa: o vulto do Mestre
+   aparecia dentro de um retângulo PRETO, mesmo sendo um PNG recortado.
+
+   A causa não estava em nenhum CSS. Estava aqui: TODA imagem era gravada em
+   JPEG, e JPEG não tem canal alfa. O que era transparente na tela do Mestre
+   virava preto no momento de salvar — a tela do canvas nasce transparente, e
+   `toDataURL('image/jpeg')` achata isso contra preto. A imagem já chegava
+   errada no banco, e nada depois dela poderia consertar.
+
+   Então a decisão de formato passa a ser da IMAGEM e não do código: tem
+   pixel vazado, grava em PNG; não tem, continua em JPEG, que é muito menor.
+   Ler os pixels custa um passe de canvas e paga por si — um recorte entregue
+   com tapa-sexo preto é imagem perdida. */
+function temTransparencia(image) {
+  try {
+    // Uma amostra pequena basta: recorte tem borda vazada em toda a volta, e
+    // 64 por 64 já pega qualquer canto. Imagem grande inteira seria lenta à
+    // toa num passo que roda a cada anexo.
+    const lado = 64;
+    const prova = document.createElement('canvas');
+    prova.width = Math.min(lado, image.naturalWidth || lado);
+    prova.height = Math.min(lado, image.naturalHeight || lado);
+    const ctx = prova.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return false;
+    ctx.drawImage(image, 0, 0, prova.width, prova.height);
+    const dados = ctx.getImageData(0, 0, prova.width, prova.height).data;
+    // Margem de 250 e não 255: PNG salvo por editor costuma ter borda com
+    // alfa quase cheio, e exigir o 255 exato perderia esses recortes.
+    for (let i = 3; i < dados.length; i += 4) if (dados[i] < 250) return true;
+    return false;
+  } catch {
+    // Imagem de outra origem suja o canvas e a leitura é proibida. Nesse
+    // caso não dá para saber, e o palpite seguro é PNG: pesa mais, e não
+    // destrói nada.
+    return true;
+  }
+}
+
+export function imagemTemTransparencia(dataUrl) {
+  return new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => resolve(temTransparencia(image));
+    image.onerror = () => resolve(false);
+    image.src = dataUrl;
+  });
+}
+
 export async function comprimirParaDocumento(dataUrl, {
   largura = 1600,
   altura = 1600,
   limite = 230 * 1024,
+  preservarTransparencia = 'auto',
 } = {}) {
+  const vazada = preservarTransparencia === 'auto'
+    ? await imagemTemTransparencia(dataUrl)
+    : Boolean(preservarTransparencia);
   const menor = f => [Math.round(largura * f), Math.round(altura * f)];
+
+  if (vazada) {
+    /* PNG não tem qualidade para ceder: o que cede é o TAMANHO. E cede mais
+       depressa, porque PNG de foto pesa muito mais que o JPEG equivalente —
+       começar nos 1600px do outro caminho estouraria o limite sempre. */
+    const passos = [1024, 820, 660, 520, 400, 320, 240];
+    let resultado = dataUrl;
+    for (const lado of passos) {
+      resultado = await encodeImage(dataUrl, lado, lado, 1, 'image/png');
+      if (bytesDaDataUrl(resultado) <= limite) return resultado;
+    }
+    return resultado;
+  }
+
   const tentativas = [
     [largura, altura, 0.92],
     [largura, altura, 0.84],

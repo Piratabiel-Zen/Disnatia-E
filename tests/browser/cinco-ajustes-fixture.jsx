@@ -8,6 +8,11 @@ import '../../src/features/oneshot/exploracao.css';
 // fundo nem filtro — se algo repintar, o pixel transparente deixa de ser.
 const PNG_COM_BURACO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAHUlEQVR4nGP8z8DwnwEJMDEgAVwcJgYsYNhIAgCDpwIB9ZZPMQAAAABJRU5ErkJggg==';
 
+// A mesma imagem passada pelo caminho de gravação: é aqui que o fundo
+// vazado virava um retângulo preto, e não em nenhum CSS.
+import { comprimirParaDocumento } from '../../src/core/media.js';
+window.salvarComoOSiteSalva = url => comprimirParaDocumento(url, { limite: 230 * 1024 });
+
 const m=mapaPorId('patio');
 function Demo(){
   const mascara=mascaraDaExploracao({

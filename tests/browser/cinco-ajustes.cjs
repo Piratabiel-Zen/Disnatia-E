@@ -96,6 +96,27 @@ const BASE = process.env.BASE || 'http://localhost:5173/tests/browser';
   const alfas = [3, 7, 11, 15].map(i => corNaTela.pixels[i]);
   assert.ok(alfas.some(a => a === 0), 'o pixel transparente do PNG deixou de ser transparente');
 
+  /* ─── A RAIZ DO FUNDO PRETO: o caminho de GRAVAÇÃO ───
+     O teste acima prova que a tela desenha a imagem como ela é. Este prova
+     que ela CHEGA assim — a imagem era achatada contra preto ao ser salva,
+     muito antes de qualquer CSS tocar nela. */
+  const salvo = await p.evaluate(async url => {
+    const r = await window.salvarComoOSiteSalva(url);
+    const img = new Image();
+    await new Promise(ok => { img.onload = ok; img.src = r; });
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    let vazados = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] < 250) vazados += 1;
+    return { formato: r.slice(0, 20), vazados };
+  }, await p.evaluate(() => document.querySelector('#vulto-img').src));
+  assert.match(salvo.formato, /^data:image\/png/,
+    `imagem vazada gravada como ${salvo.formato}: JPEG não tem canal alfa`);
+  assert.ok(salvo.vazados > 0, 'a transparência não sobreviveu à gravação');
+
   await navegador.close();
   console.log('cinco-ajustes: tudo certo');
 })().catch(e => { console.error(e.message); process.exit(1); });

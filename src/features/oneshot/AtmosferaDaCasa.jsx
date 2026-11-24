@@ -53,6 +53,16 @@ const CAMADA_DO_EFEITO = {
 
 export const camadaDoEfeito = nome => CAMADA_DO_EFEITO[nome] ?? null;
 
+/* QUAIS CAMADAS SÃO LUZ.
+   Só elas ganham o brilho da hora. Névoa, sombra, poeira e chuva não são
+   fonte de luz, e clarear isso junto deixaria a casa mais VISÍVEL conforme
+   a noite avança, que é o contrário do que a noite faz. */
+export const LUZES = new Set([
+  'atm-luar', 'atm-feixe', 'atm-lampiao', 'atm-lustre', 'atm-velas',
+  'atm-lareira', 'atm-caldeira', 'atm-instavel', 'atm-altar',
+  'atm-balanca', 'atm-faisca',
+]);
+
 export default function AtmosferaDaCasa({
   mapa: idDoMapa, fase, apagao = false,
   // O quanto a mesa está mal, de 0 a 1. Soma à hora e nunca clareia.
@@ -84,12 +94,32 @@ export default function AtmosferaDaCasa({
         '--atm-sombras': atm.sombras,
         '--atm-pulso': atm.instabilidade,
         '--atm-pressao': atm.pressao * 0.58,
+        '--atm-noite': atm.escuridao * 0.86,
+        '--atm-brilho': atm.brilho,
+        '--atm-tremor': atm.tremor,
       }}
     >
       {/* A escuridão vem primeiro e por baixo das luzes: luz desenhada
-          embaixo do véu não ilumina nada. */}
+          embaixo do véu não ilumina nada.
+
+          São DUAS camadas, e a segunda existe por um erro: a primeira é
+          vinheta — escura nas bordas, transparente no meio — então subir a
+          escuridão da hora escurecia a moldura e deixava o miolo da casa
+          aceso. A hora passava e a sala continuava a mesma. `atm-noite` é
+          chapada: cobre tudo por igual, e é ela que faz a casa afundar. Fica
+          por baixo das luzes, que compõem em `screen` e por isso continuam
+          cortando o escuro — lâmpada acesa dentro de quarto escuro, que é o
+          que se quer ver. */}
       <i className="atm-escuridao" />
-      {camadas.map(c => <i key={c} className={c} />)}
+      <i className="atm-noite" />
+      {camadas.map(c => (
+        <i key={c} className={LUZES.has(c) ? `${c} atm-luz` : c} />
+      ))}
+      {/* A FALHA GERAL. Não é uma lâmpada piscando: é a casa inteira
+          vacilando por um instante, que é o que se vê quando a rede cai e
+          não quando um bulbo oscila. Fica por cima das luzes de propósito —
+          engolir a luz é o efeito. */}
+      <i className="atm-piscada" />
       {/* O que QUEBRA a constância: a sombra que atravessa de muito em muito
           tempo, e a marca da pressão da mesa. Atmosfera constante vira papel
           de parede em dois minutos, por mais bem feita que seja. */}
