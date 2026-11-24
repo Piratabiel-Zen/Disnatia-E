@@ -179,3 +179,103 @@
   .osr-emblema{font-size:46px}
   .osr-passos button{font-size:10px;max-width:44%}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O LIVRO QUE SE MEXE
+
+   Animação em livro de regras tem um limite curto: quem está lendo quer
+   ler, e movimento embaixo do texto atrapalha. Então tudo aqui acontece na
+   TROCA de capítulo e para — nada fica se mexendo enquanto a pessoa lê.
+
+   A única exceção é a gravura, que respira muito devagar: ela está no alto
+   da página, fora da linha de leitura, e é o que dá vida à abertura.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* A VIRADA DE PÁGINA. O capítulo entra deslizando de baixo, com o papel
+   clareando — como folha que assenta. A `key` do React troca a cada
+   capítulo, então a animação roda de novo a cada virada sem precisar de
+   estado nenhum. */
+.osr-capitulo{animation:osrVira .42s cubic-bezier(.2,.8,.2,1) both}
+@keyframes osrVira{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:none}
+}
+
+/* A GRAVURA chega depois do papel e se assenta, como carimbo. */
+.osr-capitulo-topo .osr-emblema{
+  animation:osrGravura .72s cubic-bezier(.2,1.3,.35,1) both .1s;
+}
+@keyframes osrGravura{
+  from{opacity:0;transform:scale(.72) rotate(-7deg)}
+  to{opacity:.92;transform:none}
+}
+/* E respira: dois por cento num ciclo de nove segundos, no alto da página,
+   fora da linha de leitura. */
+.osr-capitulo-topo .osr-emblema{
+  animation:osrGravura .72s cubic-bezier(.2,1.3,.35,1) both .1s,
+            osrGravuraRespira 9s ease-in-out 1.2s infinite;
+}
+@keyframes osrGravuraRespira{
+  0%,100%{opacity:.92}
+  50%{opacity:1}
+}
+
+/* O FIO DE LATÃO embaixo do título se abre do meio para os lados. */
+.osr-capitulo-topo::after{animation:osrFio .55s ease-out both .18s}
+@keyframes osrFio{from{width:0}to{width:120px}}
+
+/* O CORPO entra em cascata, parágrafo a parágrafo. Cinco no máximo: a
+   partir daí o atraso somado faria o último parágrafo demorar quase um
+   segundo para aparecer, e aí vira espera. */
+.osr-corpo p{animation:osrLinha .4s ease-out both}
+.osr-corpo p:nth-child(1){animation-delay:.16s}
+.osr-corpo p:nth-child(2){animation-delay:.22s}
+.osr-corpo p:nth-child(3){animation-delay:.28s}
+.osr-corpo p:nth-child(4){animation-delay:.34s}
+.osr-corpo p:nth-child(n+5){animation-delay:.4s}
+@keyframes osrLinha{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:none}
+}
+
+/* A CAPITULAR acende em latão depois que o parágrafo assentou. */
+.osr-corpo p:first-child::first-letter{
+  animation:osrCapitular .9s ease-out both .36s;
+}
+@keyframes osrCapitular{
+  from{color:#4A3B29}
+  to{color:#B08A42}
+}
+
+/* O ÍNDICE: o capítulo aberto empurra a marca de latão para dentro. */
+.osr-indice button[data-atual]{animation:osrMarca .32s ease-out both}
+@keyframes osrMarca{
+  from{border-left-width:0;padding-left:11px}
+  to{border-left-width:2px;padding-left:9px}
+}
+
+/* OS ACHADOS da busca entram em cascata também, para a lista não aparecer
+   de bloco e o olho achar o primeiro. */
+.osr-achados .osr-secao{animation:osrLinha .34s ease-out both}
+.osr-achados .osr-secao:nth-child(1){animation-delay:.04s}
+.osr-achados .osr-secao:nth-child(2){animation-delay:.1s}
+.osr-achados .osr-secao:nth-child(n+3){animation-delay:.16s}
+
+/* Quem pediu menos movimento lê o livro parado, e lê tudo: nada aqui é a
+   feature, tudo é a chegada dela. Sem media query — `movimento.mjs` já
+   escreve `data-motion`, e repetir passaria por cima de quem religou. */
+html[data-motion="reduced"] .osr-capitulo,
+html[data-motion="reduced"] .osr-capitulo-topo .osr-emblema,
+html[data-motion="reduced"] .osr-capitulo-topo::after,
+html[data-motion="reduced"] .osr-corpo p,
+html[data-motion="reduced"] .osr-corpo p:first-child::first-letter,
+html[data-motion="reduced"] .osr-indice button[data-atual],
+html[data-motion="reduced"] .osr-achados .osr-secao{
+  animation:none !important;opacity:1 !important;transform:none !important;
+}
+html[data-motion="reduced"] .osr-capitulo-topo::after{width:120px !important}
+html[data-motion="reduced"] .osr-corpo p:first-child::first-letter{color:#B08A42 !important}
+
+html[data-quality="light"] .osr-capitulo-topo .osr-emblema{
+  animation:osrGravura .72s cubic-bezier(.2,1.3,.35,1) both .1s;
+}

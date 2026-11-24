@@ -69,16 +69,39 @@ test('o rótulo aparece na fita', () => {
   assert.match(css, /\.grim-link \.grim-label\{[^}]*display:inline !important/);
 });
 
-test('o lacre cabe dentro do recorte do pergaminho', () => {
-  /* O `clip-path` que faz o rasgo do papel corta os pseudoelementos junto:
-     um lacre com `top` negativo aparecia pela metade, como se estivesse
-     quebrado. */
+test('a página inicial estiliza as classes que existem de verdade', () => {
+  /* O erro que isto guarda: eu tinha escrito a inicial inteira para
+     `.ad-scene`, que não existe em JSX nenhum. Estilizei uma classe
+     fantasma e a tela não mudou um pixel — e só descobri quando a mesa
+     disse que a inicial continuava igual.
+
+     O que a sessão desenha é `.sessao-titulo`, `.sessao-acoes` e
+     `.sessao-frentes`. */
   const css = casca();
-  const lacre = css.match(/\.ad-scene-copy::before\{[^}]*\}/)[0];
-  const top = lacre.match(/top:(-?[\d.]+)px/);
-  assert.ok(top, 'o lacre perdeu a posição');
-  assert.ok(Number(top[1]) >= 0,
-    `o lacre está em ${top[1]}px e vai ser cortado pelo recorte do papel`);
+  assert.ok(!/\.ad-scene/.test(css), 'voltou a classe fantasma `.ad-scene`');
+  for (const classe of ['.sessao-titulo', '.sessao-acoes', '.sessao-frentes']) {
+    assert.ok(css.includes(classe), `a inicial não estiliza ${classe}`);
+  }
+  // E as três existem mesmo no componente.
+  const jsx = semComentarios(
+    readFileSync(new URL('../src/adventure/SessionHome.jsx', import.meta.url), 'utf8'),
+  );
+  for (const classe of ['sessao-titulo', 'sessao-acoes', 'sessao-frentes']) {
+    assert.ok(jsx.includes(`className="${classe}`) || jsx.includes(`\`${classe}`),
+      `${classe} não é desenhada pelo SessionHome`);
+  }
+});
+
+test('o lacre do pergaminho não é cortado pelo recorte do papel', () => {
+  /* O `clip-path` que faz o rasgo corta os pseudoelementos junto: um lacre
+     pendurado para fora aparecia pela metade, como se estivesse quebrado.
+     O lacre vive no `::after` da própria grade, dentro da área visível. */
+  const css = casca();
+  const lacre = css.match(/\.sessao-home::after\{[^}]*\}/)[0];
+  assert.match(lacre, /align-self:start/);
+  const margem = lacre.match(/margin-top:([\d.]+)px/);
+  assert.ok(margem && Number(margem[1]) > 0,
+    'o lacre precisa de margem para não encostar na borda rasgada');
 });
 
 test('a perfumaria anima só transform e opacity', () => {
