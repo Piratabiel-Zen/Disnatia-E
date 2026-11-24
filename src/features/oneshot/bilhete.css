@@ -1,0 +1,277 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   O BILHETE
+
+   A regra de ouro desta folha: NADA aqui pode parecer interface. O papel é
+   papel, o lacre é cera, e a única coisa que se move é o que se moveria se
+   alguém estivesse segurando aquilo. Botão com cantinho arredondado e
+   sombrinha azul mataria o efeito em meio segundo.
+
+   O movimento é em três tempos, e cada tempo tem uma razão:
+     subir dobrado   — o papel chega, e chegar é diferente de estar lá;
+     quebrar o lacre — custa um gesto, e o gesto é o que cria a hesitação;
+     desdobrar       — o texto não é entregue, é descoberto.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.blt{
+  position:fixed;inset:0;z-index:120;
+  display:grid;place-items:center;
+  background:radial-gradient(60% 60% at 50% 55%,rgba(8,6,10,.72),rgba(4,3,6,.94));
+  backdrop-filter:blur(2px);
+  animation:bltEntra .5s ease both;
+}
+@keyframes bltEntra{from{opacity:0}to{opacity:1}}
+
+.blt-palco{
+  display:grid;justify-items:center;gap:14px;
+  perspective:1200px;
+}
+
+/* ───────── O PAPEL ───────── */
+
+.blt-papel{
+  position:relative;
+  width:min(86vw,440px);
+  padding:0;border:0;background:none;
+  cursor:pointer;
+  transform-style:preserve-3d;
+  /* Sobe de baixo, com um resto de balanço: papel não entra em linha reta. */
+  animation:bltSobe 1.1s cubic-bezier(.16,1,.3,1) both;
+}
+.blt-papel:disabled{cursor:default}
+@keyframes bltSobe{
+  from{transform:translateY(62vh) rotate(-7deg) scale(.86);opacity:0}
+  70%{opacity:1}
+  to{transform:translateY(0) rotate(-1.2deg) scale(1);opacity:1}
+}
+
+/* Cada dobra é uma faixa de papel. A de cima e a de baixo nascem viradas
+   para dentro — é esse rotateX que faz o papel parecer dobrado em três e
+   não apenas cortado em três. */
+.blt-dobra{
+  display:block;position:relative;
+  /* Papel VELHO: manchas fora de centro, fibra puxando para o marrom nas
+     bordas e um amarelado que não é uniforme. Gradiente limpo lê como
+     cartão de visita; estas quatro manchas custam nada e tiram isso. */
+  background:
+    radial-gradient(38% 60% at 12% 22%,rgba(146,112,62,.2),transparent 70%),
+    radial-gradient(30% 48% at 86% 74%,rgba(132,98,54,.22),transparent 72%),
+    radial-gradient(22% 34% at 64% 18%,rgba(108,78,42,.16),transparent 76%),
+    linear-gradient(103deg,rgba(255,252,240,.07),transparent 42%),
+    linear-gradient(176deg,#D6C7A4,#C4B188 48%,#B6A179);
+  box-shadow:inset 0 0 26px rgba(90,70,40,.3);
+  transform-origin:bottom center;
+  backface-visibility:hidden;
+}
+.blt-dobra-cima{
+  height:46px;border-radius:2px 2px 0 0;
+  transform-origin:bottom center;
+  transform:rotateX(76deg);
+  filter:brightness(.74);
+}
+.blt-dobra-meio{
+  min-height:92px;
+  display:grid;align-items:center;
+  padding:20px 26px;
+  /* A vinca: duas linhas finas onde o papel estava dobrado. Some junto com
+     o resto se a pessoa desligou movimento, porque aí não houve dobra. */
+  box-shadow:
+    inset 0 1px 0 rgba(120,96,56,.5),
+    inset 0 -1px 0 rgba(120,96,56,.5),
+    inset 0 0 30px rgba(90,70,40,.22);
+}
+.blt-dobra-baixo{
+  height:52px;border-radius:0 0 2px 2px;
+  transform-origin:top center;
+  transform:rotateX(-80deg);
+  filter:brightness(.66);
+}
+
+/* Aberto: as abas caem e o papel fica plano. A transição é lenta de
+   propósito — desdobrar devagar é o que dá tempo de a pessoa pensar. */
+.blt[data-fase="abrindo"] .blt-dobra-cima,
+.blt[data-fase="aberto"] .blt-dobra-cima,
+.blt[data-fase="guardando"] .blt-dobra-cima{
+  transform:rotateX(0);filter:brightness(.96);
+  transition:transform .62s cubic-bezier(.2,.9,.25,1) .04s,filter .62s ease;
+}
+.blt[data-fase="abrindo"] .blt-dobra-baixo,
+.blt[data-fase="aberto"] .blt-dobra-baixo,
+.blt[data-fase="guardando"] .blt-dobra-baixo{
+  transform:rotateX(0);filter:brightness(.92);
+  transition:transform .62s cubic-bezier(.2,.9,.25,1) .16s,filter .62s ease;
+}
+
+/* ───────── O TEXTO ───────── */
+
+.blt-texto{
+  display:block;
+  font-family:'IM Fell English','Crimson Text',Georgia,serif;
+  font-size:clamp(14px,3.6vw,18px);line-height:1.62;
+  color:#2A1F14;
+  text-align:left;text-wrap:pretty;
+  opacity:0;
+}
+.blt[data-fase="aberto"] .blt-texto{opacity:1}
+/* Frase a frase, no passo de quem lê — e não tudo de uma vez, que é o
+   passo de quem recebe uma notificação. */
+.blt[data-fase="aberto"] .blt-texto span{
+  display:inline;
+  animation:bltLinha .5s ease both;
+  animation-delay:calc(var(--n) * .42s);
+}
+@keyframes bltLinha{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:blur(0)}}
+
+/* ───────── O LACRE ───────── */
+
+.blt-lacre{
+  position:absolute;left:50%;top:38px;
+  width:52px;height:52px;margin-left:-26px;
+  z-index:3;pointer-events:none;
+}
+/* CERA, E NÃO PASTILHA.
+   Cera pingada espalha torto: a borda não é um círculo, é um círculo que
+   escorreu. Os raios desiguais em cada metade fazem isso, e a sombra
+   interna clara em cima com a escura embaixo dá o relevo de algo que foi
+   PRESSIONADO enquanto ainda estava mole. Sem isso o lacre vira um botão
+   vermelho, e botão ninguém hesita em apertar. */
+.blt-lacre-a,.blt-lacre-b{
+  position:absolute;top:0;width:26px;height:52px;
+  background:
+    radial-gradient(70% 55% at 38% 28%,rgba(255,170,170,.22),transparent 62%),
+    radial-gradient(90% 80% at 40% 34%,#A8303A,#6E161F 62%,#4A0D14);
+  box-shadow:
+    0 3px 10px rgba(0,0,0,.62),
+    inset 0 2px 3px rgba(255,190,190,.2),
+    inset 0 -3px 5px rgba(40,4,8,.55);
+}
+.blt-lacre-a{
+  left:0;transform-origin:right center;
+  border-radius:60% 0 0 55% / 52% 0 0 48%;
+}
+.blt-lacre-b{
+  right:0;transform-origin:left center;
+  border-radius:0 52% 62% 0 / 0 46% 54% 0;
+}
+/* A marca do carimbo: um risco fundo no meio da cera, como anel apertado
+   contra ela. Fica partido entre as duas metades, então quebra junto. */
+.blt-lacre-a::after,.blt-lacre-b::after{
+  content:'';position:absolute;top:16px;width:14px;height:20px;
+  border:1.5px solid rgba(58,10,16,.72);
+  box-shadow:0 1px 0 rgba(226,150,150,.18);
+}
+.blt-lacre-a::after{right:-7px;border-right:0;border-radius:11px 0 0 11px}
+.blt-lacre-b::after{left:-7px;border-left:0;border-radius:0 11px 11px 0}
+
+/* Parado, o lacre respira. É o único movimento na tela enquanto o papel
+   espera, então é ele que diz onde tocar sem precisar de seta nem de rótulo. */
+.blt[data-fase="dobrado"] .blt-lacre{animation:bltPulsa 2.4s ease-in-out infinite}
+@keyframes bltPulsa{
+  0%,100%{filter:drop-shadow(0 0 3px rgba(168,48,58,.34))}
+  50%{filter:drop-shadow(0 0 13px rgba(200,70,80,.6))}
+}
+
+/* A quebra: as metades giram para fora e caem. */
+.blt[data-fase="quebrando"] .blt-lacre-a,
+.blt[data-fase="abrindo"] .blt-lacre-a,
+.blt[data-fase="aberto"] .blt-lacre-a,
+.blt[data-fase="guardando"] .blt-lacre-a{
+  transform:translate(-20px,13px) rotate(-38deg);opacity:0;
+  transition:transform .6s cubic-bezier(.3,1.4,.5,1),opacity .6s ease .12s;
+}
+.blt[data-fase="quebrando"] .blt-lacre-b,
+.blt[data-fase="abrindo"] .blt-lacre-b,
+.blt[data-fase="aberto"] .blt-lacre-b,
+.blt[data-fase="guardando"] .blt-lacre-b{
+  transform:translate(20px,15px) rotate(42deg);opacity:0;
+  transition:transform .6s cubic-bezier(.3,1.4,.5,1),opacity .6s ease .12s;
+}
+
+/* As lascas. Seis, em leque, com tempos ligeiramente diferentes: cera
+   quebrando não produz estilhaço simétrico. */
+.blt-lasca{
+  position:absolute;left:50%;top:50%;
+  width:5px;height:5px;margin:-2.5px 0 0 -2.5px;
+  background:#7E1C25;border-radius:1px;opacity:0;
+}
+.blt[data-fase="quebrando"] .blt-lasca,
+.blt[data-fase="abrindo"] .blt-lasca{
+  animation:bltLasca .66s ease-out both;
+  animation-delay:calc(var(--l) * .018s);
+}
+@keyframes bltLasca{
+  0%{opacity:1;transform:translate(0,0) rotate(0)}
+  100%{
+    opacity:0;
+    transform:
+      translate(calc((var(--l) - 2.5) * 17px),calc(16px + var(--l) * 6px))
+      rotate(calc(var(--l) * 72deg));
+  }
+}
+
+/* ───────── EM VOLTA ───────── */
+
+.blt-aviso{
+  margin:0;color:#B3A186;
+  font-family:'IM Fell English',Georgia,serif;font-style:italic;
+  font-size:13px;letter-spacing:.05em;
+  animation:bltAviso .6s ease 1s both;
+}
+@keyframes bltAviso{from{opacity:0}to{opacity:1}}
+
+.blt-pe button{
+  padding:8px 18px;border-radius:2px;cursor:pointer;
+  background:rgba(20,14,11,.86);border:1px solid rgba(176,138,66,.4);
+  color:#C9B48C;
+  font-family:'IM Fell English SC',Cinzel,Georgia,serif;
+  font-size:11px;letter-spacing:.14em;
+  animation:bltAviso .5s ease .9s both;
+}
+.blt-pe button:hover{border-color:rgba(227,199,130,.75);color:#E3C782}
+
+.blt[data-fase="guardando"] .blt-papel{
+  animation:bltGuarda .42s ease-in both;
+}
+@keyframes bltGuarda{
+  to{transform:translateY(40vh) rotate(5deg) scale(.8);opacity:0}
+}
+
+/* ───────── O BOLSO ───────── */
+
+.blt-bolso{
+  position:absolute;left:12px;bottom:14px;z-index:44;
+  font-family:'IM Fell English SC',Cinzel,Georgia,serif;
+}
+.blt-bolso > button{
+  padding:5px 10px;border-radius:2px;cursor:pointer;
+  background:rgba(20,14,11,.88);border:1px solid rgba(176,138,66,.34);
+  color:#8A7C68;font-size:10px;letter-spacing:.1em;
+}
+.blt-bolso > button:hover{color:#C9B48C;border-color:rgba(176,138,66,.62)}
+.blt-bolso ul{
+  margin:6px 0 0;padding:0;list-style:none;
+  display:grid;gap:4px;width:min(72vw,230px);
+}
+.blt-bolso li button{
+  width:100%;padding:6px 8px;cursor:pointer;text-align:left;
+  background:rgba(14,10,8,.94);border:1px solid rgba(176,138,66,.2);
+  border-radius:2px;color:#9C8A68;
+  font-family:'IM Fell English',Georgia,serif;font-size:10.5px;line-height:1.4;
+}
+.blt-bolso li button:hover{border-color:rgba(227,199,130,.5);color:#C9B48C}
+
+/* ───────── SEM MOVIMENTO ─────────
+   Quem desligou animação recebe o bilhete aberto e legível. O efeito se
+   perde, e tudo bem: a informação é o que não pode faltar. */
+html[data-motion="reduced"] .blt,
+html[data-motion="reduced"] .blt-papel,
+html[data-motion="reduced"] .blt-lacre,
+html[data-motion="reduced"] .blt-texto span,
+html[data-motion="reduced"] .blt-lasca,
+html[data-motion="reduced"] .blt-aviso,
+html[data-motion="reduced"] .blt-pe button{animation:none}
+html[data-motion="reduced"] .blt-dobra-cima,
+html[data-motion="reduced"] .blt-dobra-baixo{transform:none;filter:none}
+html[data-motion="reduced"] .blt-papel{transform:none;opacity:1}
+html[data-motion="reduced"] .blt-texto{opacity:1}
+html[data-motion="reduced"] .blt-aviso,
+html[data-motion="reduced"] .blt-pe button{opacity:1}

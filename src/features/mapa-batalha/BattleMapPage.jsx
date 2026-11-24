@@ -5,7 +5,7 @@ import { canControlToken } from '../../adventure/tokenAccess.mjs';
 import { tokenChanges, resolveTokenRoster, tokenOutbox } from '../../adventure/tokenPersistence.mjs';
 import { onSnapshot, onSnapshot as liveSnapshot } from '../../adventure/sharedSnapshot';
 import { useEffect,useRef,useState } from "react";
-import { collection,deleteDoc,doc,getDocFromServer,getDocs,runTransaction,query,serverTimestamp,setDoc,where } from "firebase/firestore";
+import { addDoc,collection,deleteDoc,doc,getDocFromServer,getDocs,runTransaction,query,serverTimestamp,setDoc,where } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import './tokens-vivos.css';
 import './talisma.css';
@@ -31,6 +31,9 @@ import AtmosferaDaCasa from '../oneshot/AtmosferaDaCasa.jsx';
 import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
+import BilheteSecreto from '../oneshot/BilheteSecreto.jsx';
+import EntregarBilhete from '../oneshot/EntregarBilhete.jsx';
+import { bilheteParaEntregar } from '../oneshot/bilhete.mjs';
 import '../oneshot/token-sem-ficha.css';
 import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
 import {
@@ -307,6 +310,32 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // Qual silhueta. As opções são as aparições que o Mestre já preparou —
   // reusá-las evita um segundo acervo de imagens dizendo a mesma coisa.
   const [imagemDoVulto, setImagemDoVulto] = useState(VULTO_DESENHADO);
+
+  /* OS BILHETES DA MESA.
+     Ficam numa coleção da mesa e não na ficha de cada um porque o Mestre
+     precisa ver o conjunto — quem já recebeu o quê — e porque a ficha é
+     do jogador: escrever nela por fora seria atravessar o dono dela. */
+  const [bilhetesDaMesa, setBilhetesDaMesa] = useState([]);
+  useEffect(() => {
+    if (!ehNoite) { setBilhetesDaMesa([]); return undefined; }
+    const un = onSnapshot(col('bilhetes'),
+      snap => setBilhetesDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      () => setBilhetesDaMesa([]));
+    return () => un();
+  }, [ehNoite]);
+
+  const entregarBilhete = (para, texto) => {
+    const novo = bilheteParaEntregar({ para, texto });
+    if (!novo) return;
+    // `addDoc` e não `setDoc` com id fixo: o mesmo primo pode receber
+    // vários bilhetes na noite, e o segundo não substitui o primeiro.
+    addDoc(col('bilhetes'), novo)
+      .catch(e => console.error('Erro ao entregar o bilhete:', e));
+  };
+  const marcarBilheteAberto = id => {
+    setDoc(docIn('bilhetes', String(id)), { aberto: true }, { merge: true })
+      .catch(e => console.error('Erro ao marcar o bilhete:', e));
+  };
   // Espiar por baixo da névoa: do Mestre, e momentâneo.
   const [espiandoNevoa, setEspiandoNevoa] = useState(false);
   const [aparicoesDaMesa, setAparicoesDaMesa] = useState([]);
@@ -2577,6 +2606,21 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               era por aqui que o painel da Dinastia E voltava. Em vez dele,
               o caminho curto para ligar a ficha do primo — que é o que o
               Mestre queria ver quando clicou. */}
+          {ehNoite && masterMode && (
+            <EntregarBilhete
+              sheets={sheets}
+              bilhetes={bilhetesDaMesa}
+              aoEntregar={entregarBilhete}
+            />
+          )}
+          {ehNoite && !masterMode && playerSheetId && (
+            <BilheteSecreto
+              bilhetes={bilhetesDaMesa}
+              sheetId={playerSheetId}
+              aoAbrir={marcarBilheteAberto}
+            />
+          )}
+
           {ehNoite && masterMode && selectedToken && !fichaDoTokenEscolhido && (
             <div className="tk-ligar">
               <strong>{selectedToken.nome || 'Token'}</strong>
