@@ -1,0 +1,130 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   A CAÇADA
+
+   Princípio que manda em tudo aqui: NADA BLOQUEIA. A caçada acontece
+   enquanto a mesa olha o mapa, discute e decide para onde corre. Um painel
+   modal mataria justamente a cena que ele existe para apoiar — por isso
+   `pointer-events:none` na camada inteira e nada que cubra o centro.
+
+   O movimento todo é regido por `--cac-tensao` (0 a 1) e `--cac-batida` (o
+   intervalo entre duas batidas do coração), que vêm calculados do mesmo
+   relógio que desenha o número. Relógio e batida em lugares diferentes
+   dessincronizam na primeira vez que alguém mexe num deles.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cac{
+  position:absolute;inset:0;z-index:60;
+  pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;
+  padding-top:26px;gap:7px;
+  font-family:'IM Fell English SC',Cinzel,Georgia,serif;
+  animation:cacEntra .5s ease both;
+}
+@keyframes cacEntra{from{opacity:0}to{opacity:1}}
+
+/* ───────── O PULSO NAS BORDAS ─────────
+   Vermelho só nas bordas: o miolo é onde está o mapa, e o mapa é o que a
+   mesa precisa enxergar para decidir. Tingir o centro seria esconder a
+   informação justamente quando ela mais importa.
+
+   `opacity` acompanha a tensão, então no começo é quase imperceptível e no
+   fim a tela inteira respira. */
+.cac-pulso{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(130% 96% at 50% 50%,transparent 42%,rgba(126,16,24,.86) 100%);
+  opacity:calc(.22 + var(--cac-tensao,0) * .78);
+  mix-blend-mode:screen;
+  animation:cacBate var(--cac-batida,900ms) ease-in-out infinite;
+}
+/* Duas batidas desiguais, como sístole e diástole: a primeira forte, a
+   segunda logo atrás e mais fraca. Pulso regular de metrônomo soa a
+   carregamento; este soa a peito. */
+@keyframes cacBate{
+  0%{transform:scale(1);filter:brightness(1)}
+  8%{transform:scale(1.012);filter:brightness(1.5)}
+  18%{transform:scale(1);filter:brightness(1)}
+  26%{transform:scale(1.007);filter:brightness(1.25)}
+  38%,100%{transform:scale(1);filter:brightness(1)}
+}
+
+/* ───────── O RELÓGIO ───────── */
+
+.cac-relogio{
+  position:relative;
+  width:92px;height:92px;
+  display:grid;place-items:center;
+}
+.cac-relogio svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.cac-trilho{
+  fill:none;stroke:rgba(10,8,12,.78);stroke-width:6;
+}
+.cac-arco{
+  fill:none;stroke:#C8303C;stroke-width:6;stroke-linecap:round;
+  filter:drop-shadow(0 0 calc(3px + var(--cac-tensao,0) * 12px) rgba(200,48,60,.8));
+  /* Sem transição: o valor vem do relógio a cada 100ms, e interpolar por
+     cima disso faria o anel chegar atrasado em relação ao número. */
+}
+/* No Cerco o anel não esvazia — ele gira, porque não há fim para contar. */
+.cac-arco-cerco{
+  stroke-dasharray:38 176;
+  animation:cacGira 1.6s linear infinite;
+  transform-origin:50% 50%;
+}
+@keyframes cacGira{to{transform:rotate(360deg)}}
+
+.cac-relogio strong{
+  position:relative;z-index:1;
+  font-size:30px;line-height:1;color:#F0E4D2;
+  text-shadow:0 2px 10px rgba(0,0,0,.9),0 0 18px rgba(200,48,60,.5);
+  font-variant-numeric:tabular-nums;
+}
+.cac-relogio small{
+  position:absolute;bottom:14px;z-index:1;
+  font-size:7.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(200,160,140,.72);
+}
+
+/* Nos últimos segundos o número salta junto com a batida: é o aviso de que
+   o tempo está acabando sem precisar de palavra nenhuma. */
+.cac[data-tensao="alta"] .cac-relogio strong{
+  animation:cacSalta var(--cac-batida,900ms) ease-in-out infinite;
+}
+@keyframes cacSalta{
+  0%,100%{transform:scale(1)}
+  8%{transform:scale(1.13)}
+  22%{transform:scale(1)}
+}
+
+/* ───────── QUEM ───────── */
+
+.cac-quem{
+  margin:0;text-align:center;
+  color:#E8D9C4;font-size:12.5px;letter-spacing:.1em;
+  text-shadow:0 2px 8px rgba(0,0,0,.9);
+}
+.cac-quem span{
+  display:block;margin-top:2px;
+  font-family:'IM Fell English',Georgia,serif;font-style:italic;
+  font-size:10.5px;letter-spacing:.04em;color:rgba(214,180,160,.8);
+  text-transform:none;
+}
+.cac[data-cerco] .cac-quem span{color:#D98A8A}
+
+/* ───────── SEM MOVIMENTO ─────────
+   O relógio continua — ele É a informação. O que para é o que só serve
+   para apertar: a batida e o salto do número. */
+html[data-motion="reduced"] .cac,
+html[data-motion="reduced"] .cac-pulso,
+html[data-motion="reduced"] .cac-arco-cerco,
+html[data-motion="reduced"] .cac[data-tensao="alta"] .cac-relogio strong{
+  animation:none;
+}
+html[data-motion="reduced"] .cac{opacity:1}
+html[data-motion="reduced"] .cac-pulso{opacity:calc(.18 + var(--cac-tensao,0) * .5)}
+
+@media (max-width:720px){
+  .cac-relogio{width:74px;height:74px}
+  .cac-relogio strong{font-size:25px}
+  .cac-quem{font-size:11px}
+}

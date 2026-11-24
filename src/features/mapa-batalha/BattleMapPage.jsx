@@ -32,6 +32,9 @@ import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
 import BilheteSecreto from '../oneshot/BilheteSecreto.jsx';
+import Cacada from '../oneshot/Cacada.jsx';
+import ComecarCacada from '../oneshot/ComecarCacada.jsx';
+import { cacadaParaComecar } from '../oneshot/cacada.mjs';
 import EntregarBilhete from '../oneshot/EntregarBilhete.jsx';
 import { bilheteParaEntregar } from '../oneshot/bilhete.mjs';
 import '../oneshot/token-sem-ficha.css';
@@ -332,6 +335,29 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     addDoc(col('bilhetes'), novo)
       .catch(e => console.error('Erro ao entregar o bilhete:', e));
   };
+  /* A CAÇADA.
+     Documento único da mesa, e não um por jogador: todos têm de estar no
+     MESMO relógio, senão cada tela conta um tempo e a decisão de correr
+     deixa de ser a mesma decisão para todo mundo. */
+  const [cacadaDaMesa, setCacadaDaMesa] = useState(null);
+  useEffect(() => {
+    if (!ehNoite) { setCacadaDaMesa(null); return undefined; }
+    const un = liveSnapshot(docIn('config', 'cacada'),
+      snap => setCacadaDaMesa(snap.exists() ? snap.data() : null),
+      () => setCacadaDaMesa(null));
+    return () => un();
+  }, [ehNoite]);
+
+  const comecarCacada = ({ oQue, segundos, modo }) => {
+    setDoc(docIn('config', 'cacada'), cacadaParaComecar({
+      oQue, segundos, modo, mapa: currentMap ? String(currentMap.id) : '',
+    })).catch(e => console.error('Erro ao soltar a caçada:', e));
+  };
+  const encerrarCacada = () => {
+    setDoc(docIn('config', 'cacada'), { ativa: false }, { merge: true })
+      .catch(e => console.error('Erro ao encerrar a caçada:', e));
+  };
+
   const marcarBilheteAberto = id => {
     setDoc(docIn('bilhetes', String(id)), { aberto: true }, { merge: true })
       .catch(e => console.error('Erro ao marcar o bilhete:', e));
@@ -2606,6 +2632,24 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               era por aqui que o painel da Dinastia E voltava. Em vez dele,
               o caminho curto para ligar a ficha do primo — que é o que o
               Mestre queria ver quando clicou. */}
+          {/* O relógio: na tela de todos, sem bloquear nada. */}
+          {ehNoite && (
+            <Cacada
+              cacada={cacadaDaMesa}
+              mapaAtual={currentMap ? String(currentMap.id) : ''}
+              mestre={masterMode}
+              aoEscapar={encerrarCacada}
+            />
+          )}
+          {ehNoite && masterMode && (
+            <ComecarCacada
+              cacada={cacadaDaMesa}
+              oQuePadrao={aparicoesDaMesa?.[0]?.nome || 'O vulto'}
+              aoComecar={comecarCacada}
+              aoEncerrar={encerrarCacada}
+            />
+          )}
+
           {ehNoite && masterMode && (
             <EntregarBilhete
               sheets={sheets}
