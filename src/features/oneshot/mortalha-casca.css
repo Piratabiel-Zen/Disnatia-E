@@ -398,3 +398,59 @@ html[data-tema-mesa="mortalha"] .access-player:has(.game3-mode-combat) .immersiv
 html[data-tema-mesa="mortalha"] .access-master:has(.game3-mode-combat) .immersive-content{
   padding-top:calc(var(--mor-topo) + var(--mor-fita) + 14px) !important;
 }
+
+/* ───────── O CABEÇALHO DO MAPA NÃO SERVE À NOITE ─────────
+   "⚔ Mapa de Batalha" e o selo "MESTRE · Conduzindo a mesa" são da outra
+   mesa: aqui o mapa se chama Cenário do Horror e quem está conduzindo já
+   sabe disso. O que some é só o enfeite — os controles de seleção e de
+   tela cheia ficam, porque são usados. O espaço devolvido vai para a
+   imagem, que é o que a mesa olha. */
+html[data-tema-mesa="mortalha"] .battlemap-heading-sigil,
+html[data-tema-mesa="mortalha"] .battlemap-heading-title,
+html[data-tema-mesa="mortalha"] .battlemap-master-mark{display:none !important}
+html[data-tema-mesa="mortalha"] .battlemap-heading{padding:2px 4px !important;gap:6px !important}
+
+/* ───────── O TÍTULO DA MESA, MAIS ALTO E AO CENTRO ─────────
+   Numa mesa de terror o nome é parte da ambientação, não um rótulo de
+   canto: centralizado e solto, ele abre a tela como abertura de filme.
+   Vale para qualquer nome que a pessoa der à mesa. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .immersive-topbar{
+    justify-content:center !important;
+  }
+  html[data-tema-mesa="mortalha"] .brand-line{
+    position:absolute;left:50%;top:6px;transform:translateX(-50%);
+    align-items:center !important;text-align:center;
+  }
+  html[data-tema-mesa="mortalha"] .brand-line b,
+  html[data-tema-mesa="mortalha"] .brand-line strong{
+    font-size:19px !important;letter-spacing:.2em !important;
+  }
+  html[data-tema-mesa="mortalha"] .brand-line small{letter-spacing:.42em !important}
+  /* Os fios de latão dos dois lados do nome, como na referência. */
+  html[data-tema-mesa="mortalha"] .brand-line::before,
+  html[data-tema-mesa="mortalha"] .brand-line::after{
+    content:'';position:absolute;top:13px;width:86px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--mor-latao),transparent);
+  }
+  html[data-tema-mesa="mortalha"] .brand-line::before{right:calc(100% + 18px)}
+  html[data-tema-mesa="mortalha"] .brand-line::after{left:calc(100% + 18px)}
+}
+
+/* ───────── OS TALENTOS SAEM DO CAMUFLADO ─────────
+   O cinza sobre preto desaparecia dentro da própria atmosfera do site. O
+   problema não era a cor do texto e sim a do CARTÃO: painel quase da cor
+   do fundo não tem silhueta, e sem silhueta o olho não acha onde começa
+   cada talento. Papel mais claro, filete de latão e título em latão. */
+html[data-tema-mesa="mortalha"] .ost-carta{
+  background:linear-gradient(168deg,#241C15,#1A140F) !important;
+  border-color:#4A3B29 !important;border-left-color:var(--mor-latao) !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.5);
+}
+html[data-tema-mesa="mortalha"] .ost-carta h3{color:var(--mor-latao-claro) !important}
+html[data-tema-mesa="mortalha"] .ost-resumo{color:#C9A86A !important}
+html[data-tema-mesa="mortalha"] .ost-efeito{color:var(--mor-tinta) !important}
+html[data-tema-mesa="mortalha"] .ost-quando{color:#9A8A72 !important}
+html[data-tema-mesa="mortalha"] .ost-limite{color:#8B7A52 !important}
+html[data-tema-mesa="mortalha"] .ost-barra h2{color:var(--mor-latao-claro) !important}
+html[data-tema-mesa="mortalha"] .ost-barra p{color:#9A8A72 !important}

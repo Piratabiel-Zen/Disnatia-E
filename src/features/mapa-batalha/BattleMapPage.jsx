@@ -32,7 +32,10 @@ import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
 import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
-import { DURACOES as DURACOES_DO_VULTO, TAMANHOS as TAMANHOS_DO_VULTO, vultoNovo } from '../oneshot/vultoNoMapa.mjs';
+import {
+  DURACOES as DURACOES_DO_VULTO, TAMANHOS as TAMANHOS_DO_VULTO,
+  VULTO_DESENHADO, vultoNovo, vultosDisponiveis,
+} from '../oneshot/vultoNoMapa.mjs';
 import { publicarVulto } from '../../core/liveChannel';
 import { activeCampaign } from '../../core/campaign';
 import { colecaoDeFichas, sistemaDe } from '../../core/sistemas/index.mjs';
@@ -297,6 +300,10 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [modoVulto, setModoVulto] = useState(false);
   const [duracaoDoVulto, setDuracaoDoVulto] = useState('instante');
   const [tamanhoDoVulto, setTamanhoDoVulto] = useState('pessoa');
+  // Qual silhueta. As opções são as aparições que o Mestre já preparou —
+  // reusá-las evita um segundo acervo de imagens dizendo a mesma coisa.
+  const [imagemDoVulto, setImagemDoVulto] = useState(VULTO_DESENHADO);
+  const [aparicoesDaMesa, setAparicoesDaMesa] = useState([]);
   /* A FICHA RÁPIDA é a do PRÓPRIO jogador, e só dele: na cena, cada um
      precisa saber quanto lhe resta e quanto soma na competência que vai
      usar. Abrir outra aba para isso custa a vez dele. O Mestre não ganha
@@ -313,6 +320,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       { merge: true },
     ).catch(e => console.error('Erro ao guardar a cor da ficha:', e));
   };
+
+  useEffect(() => {
+    if (!ehNoite) { setAparicoesDaMesa([]); return undefined; }
+    const un = onSnapshot(col('aparicoes'),
+      snap => setAparicoesDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      () => setAparicoesDaMesa([]));
+    return () => un();
+  }, [ehNoite]);
 
   const [fogByMap, setFogByMap] = useState({});
   const [fogMode, setFogMode] = useState('off'); // off | add | erase
@@ -1933,6 +1948,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
       y: (e.clientY - rect.top) / rect.height,
       duracao: duracaoDoVulto,
       tamanho: tamanhoDoVulto,
+      imagem: vultosDisponiveis(aparicoesDaMesa)
+        .find(v => v.id === imagemDoVulto)?.imagem || '',
     }));
     // Um vulto por clique: deixar o modo ligado faria o Mestre soltar um
     // vulto sem querer no próximo clique do mapa.
@@ -1964,8 +1981,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
 
       {/* CABEÇALHO COMPACTO */}
       <div className="battlemap-heading" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', flexShrink: 0, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 14 }}>{'\u2694'}</span>
-        <h2 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 14, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>Mapa de Batalha</h2>
+        <span className="battlemap-heading-sigil" style={{ fontSize: 14 }}>{'\u2694'}</span>
+        <h2 className="battlemap-heading-title" style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 14, color: '#E8D8C0', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>Mapa de Batalha</h2>
         {masterMode&&<div className="battlemap-master-mark" aria-label="Acesso do Mestre"><span className="master-sigil" aria-hidden="true">M</span><span>MESTRE<small>Conduzindo a mesa</small></span></div>}
         {currentMap?.nome && <span style={{ fontSize: 11, color: '#5A5070', fontFamily: 'Cinzel,serif' }}>· {currentMap.nome}</span>}
         {currentMap&&<div role="group" aria-label="Seleção múltipla de tokens" style={{display:'inline-flex',alignItems:'center',gap:5,marginLeft:'auto'}}>
@@ -2080,6 +2097,13 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                         <select value={tamanhoDoVulto} onChange={e => setTamanhoDoVulto(e.target.value)}
                           style={{background:'#15110E',color:'#D7CDBA',border:'1px solid #3A2E22',borderRadius:4,fontSize:9,padding:'2px 4px'}}>
                           {TAMANHOS_DO_VULTO.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                        </select>
+                        <select value={imagemDoVulto} onChange={e => setImagemDoVulto(e.target.value)}
+                          title="Qual silhueta aparece. As opções são as aparições que você já preparou."
+                          style={{background:'#15110E',color:'#D7CDBA',border:'1px solid #3A2E22',borderRadius:4,fontSize:9,padding:'2px 4px',maxWidth:120}}>
+                          {vultosDisponiveis(aparicoesDaMesa).map(v => (
+                            <option key={v.id} value={v.id}>{v.nome}</option>
+                          ))}
                         </select>
                       </label>
                       <button
@@ -2582,7 +2606,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               />
             );
           })}
-          <MapSheetDock masterMode={masterMode} sheets={sheets} enemies={enemies} floatingSheets={floatingSheets} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet} onChangeSheet={sheet=>updSheet(sheet.id,sheet)}/>
+          <MapSheetDock semBestas={ehNoite} masterMode={masterMode} sheets={sheets} enemies={enemies} floatingSheets={floatingSheets} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet} onChangeSheet={sheet=>updSheet(sheet.id,sheet)}/>
 
 
         </div>

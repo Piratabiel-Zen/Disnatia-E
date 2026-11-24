@@ -6,6 +6,9 @@
 
    Não pega clique: os tokens são arrastados por baixo, inclusive sobre o
    escuro, e a visão de cada criança abre o caminho conforme ela anda. */
+/* A prévia do Mestre: o mesmo escuro, fraco o bastante para ele ler o mapa
+   por baixo e ainda saber o que a mesa não viu. */
+.nev[data-previa]{opacity:.5}
 .nev{
   position:absolute;inset:0;z-index:3;
   pointer-events:none;

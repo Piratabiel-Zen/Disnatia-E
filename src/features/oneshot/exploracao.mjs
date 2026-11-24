@@ -118,13 +118,41 @@ export function jaDescoberto(ponto, clareiras = []) {
  * própria visão. Um jogador sem token não fica cego — vê o descoberto —
  * senão quem ainda não pôs ficha na mesa fica olhando uma tela preta.
  */
-export function visaoDaMesa({ mestre = false, clareiras = [], tokens = [], dono = '' } = {}) {
-  if (mestre) return { tudoVisivel: true, mascara: null };
+export function visaoDaMesa({
+  mestre = false, clareiras = [], tokens = [], dono = '', aspecto = 2,
+} = {}) {
+  /* O MESTRE VÊ UMA PRÉVIA ESMAECIDA, E NÃO O NADA.
+   *
+   * Antes ele não recebia névoa nenhuma — "ele precisa do mapa inteiro para
+   * conduzir" — e o resultado foi pior do que esconder: ele pintava às
+   * cegas. Clicava para revelar, nada mudava na tela dele, e a conclusão
+   * óbvia era que revelar não funcionava.
+   *
+   * Agora ele vê o mesmo escuro dos jogadores, só que fraco: lê o mapa
+   * inteiro POR BAIXO e ao mesmo tempo sabe o que a mesa ainda não viu. É a
+   * única forma de pintar sabendo o que se está fazendo.
+   *
+   * E a prévia dele mostra a visão de TODOS os tokens, não a de um dono:
+   * ele precisa enxergar o que cada criança está enxergando. */
+  if (mestre) {
+    return {
+      tudoVisivel: false,
+      previa: true,
+      mascara: mascaraDaExploracao({
+        clareiras,
+        visoes: (tokens || [])
+          .filter(Boolean)
+          .map(t => ({ x: fracao(t.x), y: fracao(t.y), r: t.raio ?? RAIO_DA_VISAO })),
+        aspecto,
+      }),
+    };
+  }
   const meus = tokens
     .filter(t => t && String(t.dono || '') === String(dono) && dono)
     .map(t => ({ x: fracao(t.x), y: fracao(t.y), r: t.raio ?? RAIO_DA_VISAO }));
   return {
     tudoVisivel: false,
-    mascara: mascaraDaExploracao({ clareiras, visoes: meus }),
+    previa: false,
+    mascara: mascaraDaExploracao({ clareiras, visoes: meus, aspecto }),
   };
 }

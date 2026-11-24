@@ -38,20 +38,52 @@ function Cartao({
   const estado = estadoDoCartao(cartao);
   const temEstado = cartao.tipo === 'pista' || cartao.tipo === 'documento';
   const arrastando = useRef(false);
+  const inicio = useRef(null);
+
+  /* O CARTÃO SÓ ANDA DEPOIS DE A PESSOA ARRASTAR DE VERDADE.
+   *
+   * O bug que isto corrige: o cartão pulava para o canto superior esquerdo
+   * ao mexer num seletor. `select` não estava na lista de coisas que NÃO
+   * iniciam arrasto, então abrir um seletor começava um arrasto; quando a
+   * lista fechava, chegava um evento de ponteiro sem coordenada de tela
+   * (clientX e clientY em zero), e zero-zero é exatamente o canto de cima à
+   * esquerda do quadro.
+   *
+   * São três travas, e cada uma sozinha já resolveria — juntas, fecham a
+   * classe inteira do problema em vez de só este caso:
+   *  1. seletor, rótulo e link também não iniciam arrasto;
+   *  2. evento sem coordenada é ignorado;
+   *  3. e, acima de tudo, só vira arrasto depois de andar alguns pixels —
+   *     então clique nenhum move cartão nenhum, venha de onde vier.
+   */
+  const LIMIAR = 4;
 
   const comecar = evento => {
-    if (!podeEditar || evento.target.closest('button,input,textarea')) return;
+    if (!podeEditar) return;
+    if (evento.target.closest('button,input,textarea,select,label,a,[role="button"]')) return;
     evento.currentTarget.setPointerCapture(evento.pointerId);
-    arrastando.current = true;
+    inicio.current = { x: evento.clientX, y: evento.clientY };
+    arrastando.current = false;
   };
   const mover = evento => {
-    if (!arrastando.current) return;
+    if (!inicio.current) return;
+    if (!evento.clientX && !evento.clientY) return;
+    if (!arrastando.current) {
+      const andou = Math.abs(evento.clientX - inicio.current.x)
+        + Math.abs(evento.clientY - inicio.current.y);
+      if (andou < LIMIAR) return;
+      arrastando.current = true;
+    }
     aoArrastar(cartao.id, evento);
   };
   const soltar = evento => {
-    if (!arrastando.current) return;
+    const estavaArrastando = arrastando.current;
+    inicio.current = null;
     arrastando.current = false;
     try { evento.currentTarget.releasePointerCapture(evento.pointerId); } catch { /* já solto */ }
+    // Sem arrasto de verdade não há posição nova para gravar: foi um clique.
+    if (!estavaArrastando) return;
+    if (!evento.clientX && !evento.clientY) return;
     aoSoltar(cartao.id, evento);
   };
 

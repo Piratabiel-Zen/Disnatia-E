@@ -107,13 +107,27 @@ test('jogador sem token não fica cego', () => {
   assert.ok(v.mascara, 'o jogador sem token perdeu até as clareiras');
 });
 
-test('o Mestre vê a casa inteira', () => {
-  // Esconder do narrador seria esconder de quem conduz.
-  const v = visaoDaMesa({ mestre: true, clareiras: [], tokens: [], dono: 'm' });
-  assert.equal(v.tudoVisivel, true);
-  assert.equal(v.mascara, null);
-  const jsx = semComentarios(fonte('src/features/oneshot/NevoaDeExploracao.jsx'));
-  assert.match(jsx, /if \(tudoVisivel\) return null/);
+test('o Mestre vê uma prévia esmaecida, e não o nada', () => {
+  /* Esconder do narrador seria esconder de quem conduz — mas não mostrar
+     NADA foi pior: ele pintava às cegas, clicava para revelar, nada mudava
+     na tela dele, e a conclusão óbvia era que revelar não funcionava.
+     Agora ele vê o mesmo escuro, fraco o bastante para ler o mapa por
+     baixo e ainda saber o que a mesa não viu. */
+  const v = visaoDaMesa({
+    mestre: true, clareiras: [clareiraNova(0.3, 0.3)], tokens: [], dono: 'm',
+  });
+  assert.equal(v.previa, true);
+  assert.ok(v.mascara, 'o Mestre voltou a não ver névoa nenhuma');
+  const css = semComentarios(fonte('src/features/oneshot/exploracao.css'));
+  assert.match(css, /\.nev\[data-previa\]\{opacity:\.\d+\}/,
+    'a prévia do Mestre perdeu a opacidade menor');
+});
+
+test('a prévia do Mestre mostra a visão de todas as crianças', () => {
+  // Ele precisa enxergar o que cada uma está enxergando, não a de um dono.
+  const tokens = [{ dono: 'u1', x: 0.2, y: 0.2 }, { dono: 'u2', x: 0.8, y: 0.8 }];
+  const v = visaoDaMesa({ mestre: true, clareiras: [], tokens, dono: '' });
+  assert.equal(v.mascara.match(/radial-gradient/g).length, 2);
 });
 
 test('o raio fica dentro dos limites, mesmo com lixo', () => {

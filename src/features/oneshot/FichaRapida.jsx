@@ -95,6 +95,7 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
             </div>
           </div>
 
+          <p className="fr-secao">Habilidade especial</p>
           {talento && (
             <p className="fr-talento">
               <b>{talento.nome}</b>
@@ -102,6 +103,7 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
             </p>
           )}
 
+          <p className="fr-secao">Competências</p>
           <ul className="fr-competencias">
             {COMPETENCIAS.map(c => (
               <li key={c.id}>

@@ -7,7 +7,7 @@ function DockIcon({enemy=false}) {
 }
 const FAMILIAR_ICONS={cachorro:'🐕',aguia:'🦅',gato:'🐈',leao:'🦁',tigre:'🐅',cavalo:'🐎',fada:'🧚',corvo:'🐦‍⬛',lobo:'🐺',coruja:'🦉',raposa:'🦊',outro:'✨'};
 
-export default function MapSheetDock({masterMode,sheets,enemies,floatingSheets=[],floatingEnemies,onSelectSheet,onSelectEnemy,onCreateSheet,onChangeSheet}) {
+export default function MapSheetDock({semBestas=false,masterMode,sheets,enemies,floatingSheets=[],floatingEnemies,onSelectSheet,onSelectEnemy,onCreateSheet,onChangeSheet}) {
   const [panel,setPanel]=useState('');
   const [activeFamiliar,setActiveFamiliar]=useState(null);
   const root=useRef(null),playersButton=useRef(null),enemiesButton=useRef(null),familiarsButton=useRef(null);
@@ -38,8 +38,11 @@ export default function MapSheetDock({masterMode,sheets,enemies,floatingSheets=[
     <button ref={playersButton} type="button" className="map-dock-trigger" title={masterMode?'Fichas dos personagens':(sheets[0]?.nome||'Minha ficha')} aria-label={masterMode?'Fichas dos personagens':'Minha ficha'} aria-expanded={masterMode?panel==='players':undefined} aria-controls={masterMode?'map-sheet-picker':undefined} onClick={()=>{if(!masterMode){if(sheets[0])onSelectSheet(sheets[0]);return;}setPanel(panel==='players'?'':'players');}}>
       {!masterMode&&sheets[0]?.foto?<img src={sheets[0].foto} alt=""/>:<DockIcon/>}
     </button>
-    <button ref={familiarsButton} type="button" className="map-dock-trigger familiars" title="Familiares" aria-label="Familiares" aria-expanded={familiarPanel} aria-controls="map-family-picker" onClick={()=>setPanel(familiarPanel?'':'familiars')}><span aria-hidden="true">🐾</span><span>Familiares</span></button>
-    {masterMode&&<button ref={enemiesButton} type="button" className="map-dock-trigger enemies" title="Fichas dos inimigos" aria-label="Fichas dos inimigos" aria-expanded={enemyPanel} aria-controls="map-sheet-picker" onClick={()=>setPanel(enemyPanel?'':'enemies')}><DockIcon enemy/><small>{enemies.length}</small></button>}
+    {/* Numa noite de terror não há familiar nem bestiário: os personagens
+        são gente comum e o que existe do outro lado não vira ficha. Os dois
+        gatilhos somem com `semBestas`, e com eles os painéis. */}
+    {!semBestas&&<button ref={familiarsButton} type="button" className="map-dock-trigger familiars" title="Familiares" aria-label="Familiares" aria-expanded={familiarPanel} aria-controls="map-family-picker" onClick={()=>setPanel(familiarPanel?'':'familiars')}><span aria-hidden="true">🐾</span><span>Familiares</span></button>}
+    {masterMode&&!semBestas&&<button ref={enemiesButton} type="button" className="map-dock-trigger enemies" title="Fichas dos inimigos" aria-label="Fichas dos inimigos" aria-expanded={enemyPanel} aria-controls="map-sheet-picker" onClick={()=>setPanel(enemyPanel?'':'enemies')}><DockIcon enemy/><small>{enemies.length}</small></button>}
     {masterMode&&panel==='players'&&<section id="map-sheet-picker" className="map-sheet-picker" aria-label="Fichas dos personagens">
       <header><b>PERSONAGENS</b><button type="button" aria-label="Fechar lista de fichas" onClick={()=>setPanel('')}>{'\u00D7'}</button></header>
       <div className="map-sheet-picker-list">{sheets.map(row=>{
@@ -62,7 +65,7 @@ export default function MapSheetDock({masterMode,sheets,enemies,floatingSheets=[
         </button>;
       })}{!rows.length&&<p>Nenhuma ficha cadastrada.</p>}</div>
     </section>}
-    {familiarPanel&&<section id="map-family-picker" className="map-sheet-picker familiars" aria-label="Familiares disponíveis">
+    {familiarPanel&&!semBestas&&<section id="map-family-picker" className="map-sheet-picker familiars" aria-label="Familiares disponíveis">
       <header><b>FAMILIARES</b><button type="button" aria-label="Fechar lista de familiares" onClick={()=>setPanel('')}>{'\u00D7'}</button></header>
       <div className="map-sheet-picker-list">{familiarRows.map(row=>{
         const kind=row.f.tipo||'outro',icon=FAMILIAR_ICONS[kind]||'✨';

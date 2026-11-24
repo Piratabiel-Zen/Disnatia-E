@@ -31,6 +31,28 @@ export const TAMANHO_PADRAO = 'pessoa';
 export const tamanhoPorId = id =>
   TAMANHOS.find(t => t.id === id) || TAMANHOS.find(t => t.id === TAMANHO_PADRAO);
 
+/**
+ * DE ONDE VEM A SILHUETA.
+ *
+ * O Mestre escolhe entre as aparições que ele mesmo preparou — são as
+ * imagens que ele já subiu para a mesa, e reusá-las aqui evita um segundo
+ * acervo de imagens dizendo a mesma coisa.
+ *
+ * `desenhada` é a saída quando ele não escolhe nada: ombros e cabeça, sem
+ * forma reconhecível. É o bastante — o que assusta é a forma de gente onde
+ * não devia ter — e garante que pôr um vulto nunca dependa de ter imagem
+ * pronta.
+ */
+export const VULTO_DESENHADO = 'desenhada';
+
+/** As aparições com imagem viram opções de vulto. */
+export const vultosDisponiveis = (aparicoes = []) => [
+  { id: VULTO_DESENHADO, nome: 'Silhueta', imagem: '' },
+  ...(aparicoes || [])
+    .filter(a => a && a.imagem)
+    .map(a => ({ id: String(a.id), nome: String(a.titulo || 'Aparição'), imagem: String(a.imagem) })),
+];
+
 const fracao = n => Math.min(1, Math.max(0, Number(n) || 0));
 
 export function vultoNovo({ mapa, x, y, duracao, tamanho, imagem = '' } = {}) {

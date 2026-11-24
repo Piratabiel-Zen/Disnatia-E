@@ -9,8 +9,11 @@
 
 .fr{
   position:absolute;left:10px;bottom:10px;z-index:42;
-  width:min(300px,calc(100vw - 28px));
-  border:1px solid var(--fr-borda);border-radius:10px;
+  /* Mais larga que antes: na referência a ficha é uma PÁGINA de grimório,
+     com o retrato grande à esquerda e os números à direita. Em 300px as
+     competências ficavam em duas colunas de nome cortado. */
+  width:min(390px,calc(100vw - 28px));
+  border:1px solid var(--fr-borda);border-radius:4px;
   background:var(--fr-fundo);
   box-shadow:0 10px 30px rgba(0,0,0,.66);
   color:var(--fr-tinta);
@@ -43,6 +46,17 @@
 .fr-seta{flex:0 0 auto;font-size:10px;color:var(--fr-fraca)}
 
 /* ---- O corpo ---- */
+/* As divisórias com título no meio do fio, como na referência. */
+.fr-secao{
+  display:flex;align-items:center;gap:8px;margin:1px 0 -2px;
+  font-family:Cinzel,Georgia,serif;font-size:8.5px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--fr-realce);
+}
+.fr-secao::before,.fr-secao::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--fr-borda),transparent);
+}
+
 .fr-corpo{
   padding:0 9px 9px;display:grid;gap:9px;
   max-height:min(64vh,520px);overflow-y:auto;overscroll-behavior:contain;
@@ -50,9 +64,24 @@
 .fr-topo{display:flex;gap:9px;align-items:flex-start}
 /* O retrato guarda o 3x4 da ficha: esticar aqui deformaria o rosto que a
    pessoa escolheu. */
+/* O retrato pregado torto com o lacre, como na referência e como na ficha
+   grande: é o mesmo personagem, e dois jeitos de mostrar a mesma foto fazem
+   a ficha rápida parecer de outro sistema. */
 .fr-retrato{
-  flex:0 0 auto;width:54px;aspect-ratio:3/4;object-fit:cover;border-radius:3px;
+  position:relative;
+  flex:0 0 auto;width:78px;aspect-ratio:3/4;object-fit:cover;border-radius:2px;
   border:1px solid var(--fr-borda);background:rgba(0,0,0,.4);
+  transform:rotate(-1.4deg);
+  box-shadow:0 4px 12px rgba(0,0,0,.6);
+}
+/* O lacre de cera no canto do retrato. */
+.fr-topo{position:relative}
+.fr-topo::before{
+  content:'';position:absolute;z-index:2;left:64px;top:52px;
+  width:17px;height:17px;border-radius:48% 52% 46% 54%;
+  background:radial-gradient(circle at 36% 32%,#9E2B33,#5E1319 68%,#3A0C10);
+  box-shadow:0 2px 5px rgba(0,0,0,.7);
+  pointer-events:none;
 }
 .fr-retrato-vazio{
   display:grid;place-items:center;text-align:center;
@@ -60,9 +89,15 @@
   line-height:1.3;color:var(--fr-fraca);
 }
 .fr-quem{flex:1;min-width:0;display:grid;gap:3px}
+/* O nome numa placa de pergaminho, como na referência: é o que faz a ficha
+   ler como documento e não como caixa de interface. */
 .fr-quem>b{
-  font-family:Cinzel,Georgia,serif;font-size:13px;letter-spacing:.05em;
-  color:var(--fr-realce);
+  padding:3px 8px;border-radius:2px;text-align:center;
+  background:linear-gradient(170deg,rgba(201,180,140,.92),rgba(168,146,107,.88));
+  border:1px solid rgba(0,0,0,.4);
+  font-family:Cinzel,Georgia,serif;font-size:13px;letter-spacing:.1em;
+  text-transform:uppercase;color:#241B10;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .fr-quem>small{
   font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
@@ -110,12 +145,20 @@
   list-style:none;margin:0;padding:0;
   display:grid;grid-template-columns:1fr 1fr;gap:1px 10px;
 }
+/* Pontilhado entre o nome e o número, como índice de livro: alinha o olho
+   na linha certa quando são doze seguidas. */
 .fr-competencias li{
-  display:flex;align-items:baseline;justify-content:space-between;gap:6px;
-  padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:baseline;gap:5px;padding:2px 0;
 }
+.fr-competencias li::after{
+  content:'';flex:1;order:1;align-self:center;height:1px;
+  background:repeating-linear-gradient(90deg,currentColor 0 1px,transparent 1px 4px);
+  color:var(--fr-fraca);opacity:.3;
+}
+.fr-competencias li b{order:2}
 .fr-competencias span{
-  font-size:10px;color:var(--fr-fraca);
+  order:0;flex:0 0 auto;
+  font-family:Cinzel,Georgia,serif;font-size:10px;color:var(--fr-tinta);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .fr-competencias b{
@@ -153,7 +196,18 @@
    estreito num mapa pequeno some atrás do dedo. */
 @media (max-width:720px){
   .fr{left:6px;right:6px;bottom:6px;width:auto}
-  .fr-corpo{max-height:52vh}
+  /* As divisórias com título no meio do fio, como na referência. */
+.fr-secao{
+  display:flex;align-items:center;gap:8px;margin:1px 0 -2px;
+  font-family:Cinzel,Georgia,serif;font-size:8.5px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--fr-realce);
+}
+.fr-secao::before,.fr-secao::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--fr-borda),transparent);
+}
+
+.fr-corpo{max-height:52vh}
   .fr-competencias{gap:1px 8px}
 }
 

@@ -111,13 +111,22 @@ test('os três medidores aparecem', () => {
 test('nenhuma cor está escrita na folha de estilo', () => {
   /* A paleta mora no modelo, para a tela não ter uma sexta cor que o modelo
      não conhece. O CSS só lê variáveis.
-     A exceção são os SINAIS DO SISTEMA — nível de dano e competência
-     travada em negativo: eles têm que significar a mesma coisa nas cinco
-     paletas, então não podem sair da cor que o jogador escolheu. */
+     Duas exceções, e as duas são categorias e não conveniências:
+
+     SINAIS DO SISTEMA — nível de dano e competência travada em negativo:
+     têm que significar a mesma coisa nas cinco paletas, senão o vermelho
+     de "quase morrendo" viraria outra coisa na ficha roxa.
+
+     MATERIAIS — o pergaminho da placa do nome e a cera do lacre: são
+     objetos DESENHADOS na ficha, não a cor dela. Papel é papel e cera é
+     cera nas cinco cores; tingi-los faria a placa parecer um botão. */
   const css = semComentarios(fonte('src/features/oneshot/ficha-rapida.css'));
   const semNiveis = css
     .replace(/\[data-nivel="[23]"\]\{[^}]*\}/g, '')
-    .replace(/\[data-negativo\]\{[^}]*\}/g, '');
+    .replace(/\[data-negativo\]\{[^}]*\}/g, '')
+    // materiais: o pergaminho da placa e a cera do lacre
+    .replace(/\.fr-quem>b\{[^}]*\}/g, '')
+    .replace(/\.fr-topo::before\{[^}]*\}/g, '');
   const hex = semNiveis.match(/#[0-9A-Fa-f]{3,6}\b/g) || [];
   assert.deepEqual(hex, [], `cor fixa no CSS: ${hex.join(', ')}`);
 });

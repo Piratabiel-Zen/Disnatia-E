@@ -9,8 +9,10 @@ import './exploracao.css';
  * cresce com o tamanho do mapa, ao contrário de desenhar isto num canvas e
  * repintar a cada passo de token.
  *
- * O MESTRE NÃO LEVA NÉVOA. Ele precisa do mapa inteiro para conduzir, e
- * esconder dele seria esconder do narrador.
+ * O MESTRE VÊ UMA PRÉVIA ESMAECIDA, e não o nada. Antes ele não recebia
+ * névoa nenhuma, e o resultado foi pior que esconder: pintava às cegas,
+ * clicava para revelar, nada mudava na tela dele, e a conclusão óbvia era
+ * que revelar não funcionava.
  *
  * E a camada não pega clique: os tokens continuam sendo arrastados por
  * baixo dela, inclusive sobre o que ainda está escuro — o Mestre move a
@@ -19,7 +21,7 @@ import './exploracao.css';
 export default function NevoaDeExploracao({
   mestre = false, clareiras = [], tokens = [], dono = '', aspecto = 2,
 }) {
-  const { tudoVisivel, mascara } = visaoDaMesa({ mestre, clareiras, tokens, dono, aspecto });
+  const { tudoVisivel, previa, mascara } = visaoDaMesa({ mestre, clareiras, tokens, dono, aspecto });
   if (tudoVisivel) return null;
 
   // Sem clareira e sem token, o escuro é inteiro: é o começo da noite, com
@@ -35,5 +37,7 @@ export default function NevoaDeExploracao({
     }
     : undefined;
 
-  return <div className="nev" aria-hidden="true" style={estilo} />;
+  // Na prévia do Mestre o escuro é fraco: ele lê o mapa por baixo e ainda
+  // sabe o que a mesa não viu.
+  return <div className="nev" data-previa={previa ? '' : undefined} aria-hidden="true" style={estilo} />;
 }
