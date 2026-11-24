@@ -257,3 +257,88 @@
    repetir aqui passaria por cima de quem religou o movimento na mesa. */
 html[data-quality="light"] .atm i,
 html[data-motion="reduced"] .atm i{animation:none !important}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O QUE FALTAVA PARA DAR MEDO
+
+   A queixa da mesa: o mapa é bonito, mas não assusta. O diagnóstico é que
+   a atmosfera era CONSTANTE — névoa que passa sempre igual, luz que pulsa
+   sempre igual. Constância vira papel de parede em dois minutos, por mais
+   bem feita que seja.
+
+   O que assusta é o que QUEBRA. Então entram três coisas que acontecem de
+   vez em quando e sem aviso, e nada delas é contínuo:
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. O APAGÃO CURTO. A casa inteira pisca para o escuro por um quarto de
+      segundo, a cada vinte e tantos — e a pessoa nunca sabe se viu algo
+      mudar de lugar no meio. Vai na escuridão, que é a camada que já cobre
+      tudo, em vez de abrir uma camada nova para um efeito de um quadro. */
+.atm[data-pulso] .atm-escuridao{
+  animation:atmPisca calc(23s / var(--atm-pulso,1)) steps(1) infinite;
+}
+@keyframes atmPisca{
+  0%,96.4%,100%{opacity:var(--atm-escuridao,.45)}
+  96.6%{opacity:calc(var(--atm-escuridao,.45) + .42)}
+  97%{opacity:var(--atm-escuridao,.45)}
+  98.2%{opacity:calc(var(--atm-escuridao,.45) + .3)}
+  98.5%{opacity:var(--atm-escuridao,.45)}
+}
+
+/* 2. A COISA QUE ATRAVESSA. Uma sombra larga cruza o mapa de um lado ao
+      outro, devagar, de muito em muito tempo. Sem forma: o que assusta é
+      não dar para dizer o que era. */
+.atm-passagem{
+  background:linear-gradient(100deg,
+    transparent 0 38%,rgba(0,0,0,.5) 46%,rgba(0,0,0,.62) 50%,rgba(0,0,0,.5) 54%,transparent 62%);
+  background-size:260% 100%;
+  opacity:0;
+  animation:atmPassa calc(41s / var(--atm-pulso,1)) ease-in-out infinite;
+}
+@keyframes atmPassa{
+  0%,72%{opacity:0;background-position:-30% 0}
+  76%{opacity:.5}
+  88%{opacity:.5}
+  92%,100%{opacity:0;background-position:130% 0}
+}
+
+/* 3. A RESPIRAÇÃO DA CASA. O mapa inteiro incha e desincha um fio, muito
+      devagar — meio por cento de escala, num ciclo de quase um minuto.
+      Ninguém vê acontecer; sente-se que o lugar não está parado. É o efeito
+      mais barato daqui e o que mais muda a sensação. */
+.atm[data-respira]{animation:atmRespira calc(52s / var(--atm-pulso,1)) ease-in-out infinite}
+@keyframes atmRespira{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.005)}
+}
+
+/* A PRESSÃO DA MESA deixa marca própria: quanto mais pavor acumulado, mais
+   o vermelho encosta nas bordas. Não é mais um efeito piscando — é um
+   estado, e é o que faz a casa parecer estar respondendo às crianças. */
+/* O vermelho vai em `soft-light` sobre o mapa INTEIRO, e não como vinheta
+   nas bordas. A vinheta de borda parecia não fazer nada: nestes mapas as
+   bordas já são pretas — a planta da casa é irregular e sobra preto em
+   volta —, então o vermelho caía justamente onde não havia pixel para
+   tingir. Em soft-light ele pega o que está ACESO: a caldeira, a lâmpada,
+   as velas. A casa não fica vermelha, fica doente. */
+.atm-pressao{
+  background:
+    radial-gradient(128% 96% at 50% 50%,rgba(150,26,34,.5),rgba(92,10,20,.75));
+  mix-blend-mode:soft-light;
+  opacity:var(--atm-pressao,0);
+  transition:opacity 2.4s ease;
+}
+/* E uma segunda marca, essa sim nas bordas, para fechar o cerco quando a
+   mesa está no fim. Fraca: duas camadas fortes apagariam o mapa. */
+.atm-pressao-borda{
+  background:radial-gradient(118% 90% at 50% 50%,transparent 58%,rgba(70,6,14,.85));
+  opacity:calc(var(--atm-pressao,0) * .8);
+  transition:opacity 2.4s ease;
+}
+
+/* Os freios valem para tudo isto, inclusive para a respiração, que vive na
+   raiz da camada e não num filho. */
+html[data-quality="light"] .atm,
+html[data-motion="reduced"] .atm{animation:none !important}
+html[data-quality="light"] .atm .atm-escuridao,
+html[data-motion="reduced"] .atm .atm-escuridao{animation:none !important}

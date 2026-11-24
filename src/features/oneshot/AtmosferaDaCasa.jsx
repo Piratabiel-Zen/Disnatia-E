@@ -1,4 +1,5 @@
-import { atmosferaDoMapa, mapaPorId } from './mapasDaCasa.mjs';
+import { mapaPorId } from './mapasDaCasa.mjs';
+import { atmosferaComPressao } from './pressaoDaNoite.mjs';
 import './atmosfera-da-casa.css';
 
 /**
@@ -52,10 +53,14 @@ const CAMADA_DO_EFEITO = {
 
 export const camadaDoEfeito = nome => CAMADA_DO_EFEITO[nome] ?? null;
 
-export default function AtmosferaDaCasa({ mapa: idDoMapa, fase, apagao = false }) {
-  const atm = atmosferaDoMapa(idDoMapa, fase);
-  if (!atm) return null;
+export default function AtmosferaDaCasa({
+  mapa: idDoMapa, fase, apagao = false,
+  // O quanto a mesa está mal, de 0 a 1. Soma à hora e nunca clareia.
+  pressao = 0,
+}) {
   const mapa = mapaPorId(idDoMapa);
+  if (!mapa) return null;
+  const atm = atmosferaComPressao(fase, pressao);
 
   // Uma camada por efeito, sem repetir: dois efeitos do mesmo mapa podem
   // cair na mesma camada (vela-respira e vela-caos são as duas velas), e
@@ -71,17 +76,26 @@ export default function AtmosferaDaCasa({ mapa: idDoMapa, fase, apagao = false }
       data-mapa={mapa.id}
       data-fase={atm.fase}
       data-apagao={apagao ? '' : undefined}
+      data-pulso=""
+      data-respira=""
       style={{
         '--atm-escuridao': atm.escuridao,
         '--atm-nevoa': atm.nevoa,
         '--atm-sombras': atm.sombras,
         '--atm-pulso': atm.instabilidade,
+        '--atm-pressao': atm.pressao * 0.58,
       }}
     >
       {/* A escuridão vem primeiro e por baixo das luzes: luz desenhada
           embaixo do véu não ilumina nada. */}
       <i className="atm-escuridao" />
       {camadas.map(c => <i key={c} className={c} />)}
+      {/* O que QUEBRA a constância: a sombra que atravessa de muito em muito
+          tempo, e a marca da pressão da mesa. Atmosfera constante vira papel
+          de parede em dois minutos, por mais bem feita que seja. */}
+      <i className="atm-passagem" />
+      <i className="atm-pressao" />
+      <i className="atm-pressao-borda" />
     </div>
   );
 }

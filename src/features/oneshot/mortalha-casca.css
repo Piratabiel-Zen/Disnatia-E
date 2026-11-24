@@ -454,3 +454,51 @@ html[data-tema-mesa="mortalha"] .ost-quando{color:#9A8A72 !important}
 html[data-tema-mesa="mortalha"] .ost-limite{color:#8B7A52 !important}
 html[data-tema-mesa="mortalha"] .ost-barra h2{color:var(--mor-latao-claro) !important}
 html[data-tema-mesa="mortalha"] .ost-barra p{color:#9A8A72 !important}
+
+/* ───────── O MAPA TAMBÉM É CENÁRIO ─────────
+   Os controles do mapa vinham com o roxo e o ciano da Dinastia E. Numa
+   noite de terror eles são a única coisa na tela que não pertence à casa —
+   e bastam eles para quebrar o que a atmosfera constrói: a pessoa olha para
+   um mapa de porão e vê um botão de nave espacial em cima.
+
+   Repintados em latão sobre couro, eles somem na ambientação sem sumir da
+   mão de quem opera. */
+html[data-tema-mesa="mortalha"] .battlemap-heading button,
+html[data-tema-mesa="mortalha"] .battlemap-toolbar button,
+html[data-tema-mesa="mortalha"] .battlemap-viewport button:not(.fr-aba):not(.fr-paleta button){
+  border-color:rgba(176,138,66,.34) !important;
+  background:rgba(20,14,11,.82) !important;
+  color:#C9B48C !important;
+  font-family:Cinzel,Georgia,serif !important;
+}
+html[data-tema-mesa="mortalha"] .battlemap-heading button:hover,
+html[data-tema-mesa="mortalha"] .battlemap-toolbar button:hover{
+  border-color:var(--mor-latao-claro) !important;color:var(--mor-latao-claro) !important;
+}
+/* O botão ligado fica em sangue, não em roxo: é a cor que esta mesa usa
+   para "isto está acontecendo agora". */
+html[data-tema-mesa="mortalha"] .battlemap-heading button[aria-pressed="true"]{
+  border-color:rgba(142,31,43,.75) !important;
+  background:rgba(142,31,43,.24) !important;
+  color:#E0707C !important;
+}
+
+/* O painel de token e o seletor de mapas, na mesma pele. */
+html[data-tema-mesa="mortalha"] .battlemap-token-panel,
+html[data-tema-mesa="mortalha"] .map-sheet-picker,
+html[data-tema-mesa="mortalha"] .battlemap-library{
+  background:linear-gradient(168deg,rgba(26,19,15,.97),rgba(14,10,8,.98)) !important;
+  border-color:rgba(176,138,66,.4) !important;
+  color:var(--mor-tinta) !important;
+}
+html[data-tema-mesa="mortalha"] .map-dock-trigger{
+  border-color:rgba(176,138,66,.4) !important;
+  background:rgba(20,14,11,.86) !important;color:#C9B48C !important;
+}
+
+/* A moldura do mapa: um fio de latão e uma sombra para dentro, para a
+   imagem parecer vista por uma abertura e não colada na tela. */
+html[data-tema-mesa="mortalha"] .battlemap-viewport{
+  border:1px solid rgba(176,138,66,.3) !important;
+  box-shadow:inset 0 0 90px rgba(0,0,0,.75) !important;
+}

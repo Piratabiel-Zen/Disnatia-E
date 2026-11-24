@@ -33,6 +33,9 @@ import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
 import { mapaPorId, FASES, FASE_PADRAO } from '../oneshot/mapasDaCasa.mjs';
 import {
+  MINUTOS_POR_FASE, faseDoRelogio, minutosAteVirar, pressaoDaMesa,
+} from '../oneshot/pressaoDaNoite.mjs';
+import {
   DURACOES as DURACOES_DO_VULTO, TAMANHOS as TAMANHOS_DO_VULTO,
   VULTO_DESENHADO, vultoNovo, vultosDisponiveis,
 } from '../oneshot/vultoNoMapa.mjs';
@@ -304,6 +307,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   // reusá-las evita um segundo acervo de imagens dizendo a mesma coisa.
   const [imagemDoVulto, setImagemDoVulto] = useState(VULTO_DESENHADO);
   const [aparicoesDaMesa, setAparicoesDaMesa] = useState([]);
+  // O relógio da noite: ligado, a hora anda sozinha. O Mestre conduz a cena
+  // e virar a hora no meio de uma perseguição é o que mais se esquece de
+  // fazer — justamente quando mais importa.
+  const [noiteComecouEm, setNoiteComecouEm] = useState(0);
+  const [agoraDaNoite, setAgoraDaNoite] = useState(Date.now());
   /* A FICHA RÁPIDA é a do PRÓPRIO jogador, e só dele: na cena, cada um
      precisa saber quanto lhe resta e quanto soma na competência que vai
      usar. Abrir outra aba para isso custa a vez dele. O Mestre não ganha
@@ -312,6 +320,18 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const minhaFichaDaNoite = ehNoite && playerSheetId
     ? sheets.find(f => String(f.id) === String(playerSheetId)) || null
     : null;
+  /* A HORA QUE VALE: a do relógio quando ele está ligado, senão a que o
+     Mestre marcou na mão. Virar na mão reinicia a contagem a partir dali —
+     automatismo que tira o controle de quem narra é automatismo errado. */
+  const horaDaNoite = ehNoite && noiteComecouEm
+    ? faseDoRelogio(noiteComecouEm, agoraDaNoite, MINUTOS_POR_FASE)
+    : faseDaNoite;
+
+  /* A PRESSÃO vem do Pavor acumulado das crianças, e ninguém a opera:
+     quanto mais a mesa se assusta, mais a casa responde. É o que faz o
+     cenário parecer vivo em vez de cenário. */
+  const pressaoDaNoite = ehNoite ? pressaoDaMesa(sheets) : 0;
+
   const guardarCorDaFicha = (cor) => {
     if (!minhaFichaDaNoite) return;
     setDoc(
@@ -328,6 +348,14 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       () => setAparicoesDaMesa([]));
     return () => un();
   }, [ehNoite]);
+
+  useEffect(() => {
+    if (!ehNoite || !noiteComecouEm) return undefined;
+    // De meio em meio minuto: a hora vira a cada 45, e um tique por segundo
+    // só gastaria quadro numa tela que já tem mapa, tokens e névoa.
+    const t = window.setInterval(() => setAgoraDaNoite(Date.now()), 30000);
+    return () => window.clearInterval(t);
+  }, [ehNoite, noiteComecouEm]);
 
   const [fogByMap, setFogByMap] = useState({});
   const [fogMode, setFogMode] = useState('off'); // off | add | erase
@@ -2081,12 +2109,35 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                       <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 7px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#C0A86E',fontFamily:'Cinzel,serif'}}>
                         Hora
                         <select
-                          value={faseDaNoite}
-                          onChange={e => setFaseDaNoite(e.target.value)}
+                          value={horaDaNoite}
+                          onChange={e => {
+                            setFaseDaNoite(e.target.value);
+                            // Virar na mão reinicia a contagem a partir dali.
+                            if (noiteComecouEm) setNoiteComecouEm(0);
+                          }}
                           style={{background:'#15110E',color:'#D7CDBA',border:'1px solid #3A2E22',borderRadius:4,fontSize:9,padding:'2px 4px'}}
                         >
                           {FASES.map(f => <option key={f.id} value={f.id}>{f.nome} · {f.horas}</option>)}
                         </select>
+                        {/* O relógio é OPCIONAL e o Mestre manda nele. */}
+                        <button
+                          type="button"
+                          onClick={() => setNoiteComecouEm(v => (v ? 0 : Date.now()))}
+                          title={noiteComecouEm
+                            ? 'A noite está andando sozinha. Clique para parar.'
+                            : `A noite anda sozinha, ${MINUTOS_POR_FASE} min por hora`}
+                          style={{padding:'2px 7px',borderRadius:4,cursor:'pointer',fontSize:9,
+                            fontFamily:'Cinzel,serif',
+                            border:`1px solid ${noiteComecouEm?'rgba(192,168,110,.7)':'rgba(192,168,110,.28)'}`,
+                            background:noiteComecouEm?'rgba(192,168,110,.16)':'transparent',
+                            color:noiteComecouEm?'#E3C782':'#8A7C68'}}
+                        >
+                          {noiteComecouEm
+                            ? (minutosAteVirar(noiteComecouEm, agoraDaNoite, MINUTOS_POR_FASE) === null
+                              ? '⏱ amanhecendo'
+                              : `⏱ vira em ${minutosAteVirar(noiteComecouEm, agoraDaNoite, MINUTOS_POR_FASE)} min`)
+                            : '⏱ correr'}
+                        </button>
                       </label>
                       <label style={{display:'flex',alignItems:'center',gap:4,padding:'3px 7px',borderRadius:7,background:'rgba(4,6,15,.7)',fontSize:9,color:'#C4414F',fontFamily:'Cinzel,serif'}}>
                         Vulto
@@ -2254,7 +2305,9 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                     camadas declaradas, e inventar luzes para ele daria uma
                     névoa genérica por cima de uma arte que não pediu nada. */}
                 {ehNoite && mapaPorId(String(currentMap.id)) && (
-                  <AtmosferaDaCasa mapa={String(currentMap.id)} fase={faseDaNoite} />
+                  <AtmosferaDaCasa
+                    mapa={String(currentMap.id)} fase={horaDaNoite} pressao={pressaoDaNoite}
+                  />
                 )}
                 {ehNoite && <VultoNoMapa mapa={String(currentMap.id)} />}
                 {marquee && <div aria-hidden="true" style={{position:'absolute',left:`${Math.min(marquee.left,marquee.right)}%`,top:`${Math.min(marquee.top,marquee.bottom)}%`,width:`${Math.abs(marquee.right-marquee.left)}%`,height:`${Math.abs(marquee.bottom-marquee.top)}%`,border:'1px solid rgba(113,196,255,.95)',background:'rgba(65,145,255,.18)',boxShadow:'0 0 14px rgba(65,145,255,.28)',pointerEvents:'none',zIndex:90}}/>}
