@@ -445,7 +445,7 @@ html[data-tema-mesa="mortalha"] .battlemap-heading{padding:2px 4px !important;ga
   /* A marca ✦ some no layout centralizado: empilhada acima do nome ela
      empurrava a linha de baixo para fora dos 64px da barra, e o subtítulo
      saía cortado pela fita. O nome já é a marca. */
-  html[data-tema-mesa="mortalha"] .brand-line .brand-mark{display:none !important}
+  html[data-tema-mesa="mortalha"] .brand-line .brand-mark{flex:0 0 auto}
   html[data-tema-mesa="mortalha"] .brand-line h1{
     margin:0 !important;line-height:1.08 !important;
   }
@@ -875,4 +875,277 @@ html[data-tema-mesa="mortalha"] .sessao-local-texto small,
 html[data-tema-mesa="mortalha"] .ad-eyebrow,
 html[data-tema-mesa="mortalha"] .ad-muted{
   color:var(--mor-cinza) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O CORTE DA REFERÊNCIA
+
+   Com a imagem de referência em mãos, as diferenças que sobravam eram de
+   forma, não de cor: pastilhas quadradas onde deviam ser arredondadas,
+   aba ativa marcada por um fio em vez de uma moldura, lacre redondo onde
+   havia uma gota, e os dois botões menores empilhados em vez de lado a
+   lado. Cada bloco abaixo resolve um desses.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. O nome em duas tintas ----
+   A última palavra em sangue, como no cartaz. O `<i>` vem do JSX porque
+   CSS não sabe cortar por palavra — só por linha. */
+html[data-tema-mesa="mortalha"] .brand-line h1 .marca-tinta{
+  font-style:normal;
+  color:var(--mor-sangue-claro) !important;
+  -webkit-text-fill-color:var(--mor-sangue-claro) !important;
+}
+
+/* ---- 2. As pastilhas do topo ----
+   Na referência são cápsulas de borda fina, não retângulos. O raio alto é
+   o que as separa da fita de abas logo abaixo, que é toda em canto vivo:
+   redondo em cima, reto embaixo, e os dois níveis param de se confundir. */
+html[data-tema-mesa="mortalha"] .top-actions>button,
+html[data-tema-mesa="mortalha"] .top-actions>div>button,
+html[data-tema-mesa="mortalha"] .top-actions .ad-quality,
+html[data-tema-mesa="mortalha"] .top-actions .live-status{
+  border-radius:999px !important;
+  padding:7px 15px !important;
+  border:1px solid var(--mor-latao-fraco) !important;
+  background:rgba(10,8,7,.82) !important;
+  color:var(--mor-pergaminho) !important;
+  box-shadow:inset 0 1px 0 rgba(176,138,83,.09) !important;
+}
+html[data-tema-mesa="mortalha"] .top-actions>button:hover,
+html[data-tema-mesa="mortalha"] .top-actions>div>button:hover{
+  border-color:var(--mor-latao) !important;
+  background:rgba(96,25,29,.3) !important;
+}
+
+/* ---- 3. O floreio entre a barra e a fita ----
+   Um losango de latão no meio do fio que separa as duas. Pequeno de
+   propósito: ele existe para dizer que ali termina uma coisa e começa
+   outra, não para ser visto. */
+html[data-tema-mesa="mortalha"] .immersive-topbar{position:relative}
+html[data-tema-mesa="mortalha"] .immersive-topbar::after{
+  content:'';position:absolute;left:50%;bottom:-4px;
+  width:46px;height:7px;transform:translateX(-50%);
+  background:
+    linear-gradient(90deg,transparent,var(--mor-latao-fraco) 22%,transparent 23%),
+    linear-gradient(270deg,transparent,var(--mor-latao-fraco) 22%,transparent 23%);
+  pointer-events:none;
+}
+html[data-tema-mesa="mortalha"] .immersive-topbar::before{
+  content:'◆';position:absolute;left:50%;bottom:-9px;
+  transform:translateX(-50%);
+  font-size:8px;line-height:1;color:var(--mor-latao);
+  text-shadow:0 0 6px rgba(176,138,83,.4);
+  pointer-events:none;z-index:2;
+}
+
+/* ---- 4. A aba aberta é uma moldura, não um fio ----
+   O fio embaixo marcava a aba certa, mas de longe sumia. Na referência a
+   aba aberta é uma caixa: borda de latão nos quatro lados e miolo mais
+   escuro que a fita. Lida de relance, e é o que uma aba precisa ser. */
+html[data-tema-mesa="mortalha"] .grim-nav{position:relative}
+html[data-tema-mesa="mortalha"] .grim-link{
+  position:relative;
+  border-radius:2px !important;
+}
+/* O filete entre as abas. Em `::before` para não brigar com a moldura. */
+html[data-tema-mesa="mortalha"] .grim-link+.grim-link::before{
+  content:'';position:absolute;left:-1px;top:50%;
+  width:1px;height:22px;transform:translateY(-50%);
+  background:linear-gradient(180deg,transparent,var(--mor-latao-fraco),transparent);
+}
+html[data-tema-mesa="mortalha"] .grim-link.active{
+  background:linear-gradient(180deg,rgba(16,13,12,.86),rgba(10,8,7,.7)) !important;
+  border:1px solid var(--mor-latao) !important;
+  color:var(--mor-latao-claro) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(216,181,122,.16),
+    0 2px 10px rgba(0,0,0,.45) !important;
+}
+html[data-tema-mesa="mortalha"] .grim-link.active::before{display:none}
+/* O fio de baixo some: a moldura já faz o trabalho, e os dois juntos
+   viravam duas marcas para a mesma coisa. */
+html[data-tema-mesa="mortalha"] .grim-link.active::after{display:none !important}
+
+/* ---- 5. A gota de sangue no alto do pergaminho ----
+   Era um lacre de cera redondo. Na referência é uma gota: redonda embaixo
+   e em ponta em cima, caindo sobre o papel. O recorte faz a ponta; o
+   brilho deslocado dá o volume. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .sessao-home::after{
+    width:21px;height:30px;margin-top:16px;
+    border-radius:50% 50% 50% 50% / 62% 62% 38% 38%;
+    clip-path:polygon(50% 0,72% 26%,88% 52%,88% 74%,72% 94%,50% 100%,28% 94%,12% 74%,12% 52%,28% 26%);
+    background:
+      radial-gradient(circle at 36% 68%,var(--mor-sangue-claro),var(--mor-sangue) 54%,var(--mor-sangue-escuro));
+    box-shadow:0 6px 16px rgba(58,15,18,.6);
+  }
+}
+
+/* ---- 6. O sobretítulo entre losangos ----
+   "◆ RELATOS DO MACABRO ◆", como na referência: o nome da mesa pequeno,
+   em sangue, ladeado. É o que diz de onde a aventura vem sem repetir o
+   nome em tamanho de título. */
+html[data-tema-mesa="mortalha"] .sessao-kicker{
+  color:var(--mor-sangue) !important;
+  font-family:var(--mor-letra) !important;
+  font-size:10px !important;letter-spacing:.3em !important;
+  display:inline-flex !important;align-items:center;gap:11px;
+}
+html[data-tema-mesa="mortalha"] .sessao-kicker::before,
+html[data-tema-mesa="mortalha"] .sessao-kicker::after{
+  content:'◆';font-size:7px;opacity:.8;
+}
+
+/* ---- 7. O floreio sob o título ----
+   Linha com losango no meio, separando o nome da aventura da frase de
+   efeito. Sem ele as duas se leem como um bloco só de texto. */
+html[data-tema-mesa="mortalha"] .sessao-titulo h2{
+  position:relative;padding-bottom:20px !important;
+}
+/* O fio: duas metades que afinam para fora, deixando o meio livre. */
+html[data-tema-mesa="mortalha"] .sessao-titulo h2::after{
+  content:'';position:absolute;left:50%;bottom:9px;
+  width:min(78%,260px);height:1px;transform:translateX(-50%);
+  background:
+    linear-gradient(90deg,transparent,rgba(96,25,29,.55) 30%,rgba(96,25,29,.55) 43%,transparent 45%),
+    linear-gradient(90deg,transparent 55%,rgba(96,25,29,.55) 57%,rgba(96,25,29,.55) 70%,transparent);
+}
+/* E o losango que ocupa o meio livre. */
+html[data-tema-mesa="mortalha"] .sessao-titulo h2::before{
+  content:'◆';position:absolute;left:50%;bottom:4px;
+  transform:translateX(-50%);
+  font-size:9px;line-height:1;color:var(--mor-sangue);
+  -webkit-text-fill-color:var(--mor-sangue);
+}
+html[data-tema-mesa="mortalha"] .sessao-titulo h2::first-line{color:var(--mor-carvao)}
+
+/* ---- 8. Os dois botões menores, lado a lado ----
+   Empilhados eles faziam o pergaminho crescer para baixo e o cartão
+   perdia a proporção da referência. O principal ocupa a linha inteira
+   porque é a ação da noite; os outros dois dividem a de baixo. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .sessao-acoes{
+    grid-template-columns:1fr 1fr !important;
+    gap:9px !important;
+  }
+  html[data-tema-mesa="mortalha"] .sessao-acao-principal{grid-column:1 / -1}
+  /* Com um botão menor só (jogador, sem "dividir em grupos"), ele também
+     toma a linha: meia largura solta no canto parece defeito. */
+  html[data-tema-mesa="mortalha"] .sessao-acao:only-of-type{grid-column:1 / -1}
+}
+
+/* ---- 9. O respiro em volta do pergaminho ----
+   Na referência o papel flutua sobre o cenário: há cemitério visível de
+   todos os lados dele. Sem margem própria o cartão encosta na fita e na
+   borda da tela, e a sensação de "colado sobre a cena" se perde — vira
+   fundo de página. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .sessao-home{
+    /* O topo fica curto porque `.immersive-content` já abriu o espaço da
+       barra e da fita; só os lados e o pé são daqui. */
+    padding:6px clamp(24px,3.4vw,54px) 40px !important;
+    gap:0 clamp(22px,2.6vw,40px) !important;
+  }
+  /* O título cabe no papel com folga: antes ele ocupava a largura toda e
+     o cartão virava uma faixa de texto. */
+  html[data-tema-mesa="mortalha"] .sessao-titulo h2{
+    font-size:clamp(26px,2.5vw,40px) !important;
+    line-height:1.06 !important;
+    margin:14px 0 0 !important;
+  }
+  html[data-tema-mesa="mortalha"] .sessao-titulo{
+    padding:54px 34px 14px !important;
+  }
+  html[data-tema-mesa="mortalha"] .sessao-acoes{
+    padding:0 34px 40px !important;
+  }
+}
+
+/* ---- 10. O quadro do lugar ----
+   O nome do lugar estava encostado na borda de cima do quadro, meio
+   cortado pela fita. E o quadro esticava até o fim da coluna mesmo com
+   uma ficha só dentro, o que deixava um retângulo vazio do tamanho da
+   tela. Agora ele tem respiro e para onde o conteúdo para. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .sessao-frentes{
+    align-self:start !important;
+  }
+  html[data-tema-mesa="mortalha"] .sessao-frente{
+    padding:18px 20px 22px !important;
+    border-radius:4px !important;
+  }
+}
+html[data-tema-mesa="mortalha"] .ad-location,
+html[data-tema-mesa="mortalha"] .sessao-frente>h3{
+  font-family:var(--mor-letra) !important;
+  color:var(--mor-latao-claro) !important;
+  font-size:19px !important;letter-spacing:.04em !important;
+  margin:0 0 14px !important;
+  display:flex;align-items:center;gap:10px;
+}
+/* O ponto de latão antes do nome, como na referência. */
+html[data-tema-mesa="mortalha"] .ad-location::before,
+html[data-tema-mesa="mortalha"] .sessao-frente>h3::before{
+  content:'';flex:0 0 auto;
+  width:11px;height:11px;border-radius:50%;
+  border:1px solid var(--mor-latao);
+  background:radial-gradient(circle,var(--mor-latao) 40%,transparent 42%);
+}
+
+/* ---- 11. "Dividir em dois grupos" numa linha ----
+   O rótulo mais comprido quebrava em duas linhas e deixava os dois botões
+   de alturas diferentes. Menos letra e menos espacejamento resolvem sem
+   encurtar o texto, que diz exatamente o que o botão faz. */
+html[data-tema-mesa="mortalha"] .sessao-acoes .sessao-acao{
+  font-size:11px !important;letter-spacing:.1em !important;
+  padding:12px 10px !important;white-space:nowrap;
+}
+
+/* ---- 12. O pergaminho acompanha o que tem escrito ----
+   A grade nasceu com `grid-template-rows:auto 1fr auto` e a linha do meio
+   esticava até o fim da página, levando o papel junto: um vão enorme entre
+   a frase de efeito e os botões. Na referência o papel termina logo
+   abaixo do último botão. Linhas em `auto` e o conteúdo ancorado no alto
+   dão isso — e o papel volta a ter proporção de papel. */
+@media (min-width:901px){
+  html[data-tema-mesa="mortalha"] .sessao-home{
+    grid-template-rows:auto auto auto !important;
+    align-content:start !important;
+  }
+  html[data-tema-mesa="mortalha"] .sessao-titulo{padding-bottom:26px !important}
+}
+
+/* ---- 13. O nome e a legenda cabem nos 64px da barra ----
+   Somando entrelinha e margem, o par passava de 66px numa barra de 64: a
+   legenda saía cortada pela metade de baixo, e só em telas largas, porque
+   o nome cresce com a tela. O teto do nome desce e a legenda encosta
+   nele — nenhuma das duas perde legibilidade e as duas cabem. */
+html[data-tema-mesa="mortalha"] .brand-line h1{
+  font-size:clamp(16px,1.35vw,22px) !important;
+  line-height:1 !important;margin:0 !important;
+}
+html[data-tema-mesa="mortalha"] .brand-line small{
+  display:block;margin-top:2px !important;line-height:1 !important;
+}
+
+/* O bloco do nome centrado na barra em qualquer largura. O alinhamento
+   só estava escrito dentro da media query de 1700px, então abaixo dela o
+   par nome+legenda descia 15px e a legenda raspava na borda de baixo —
+   cabia por 1px, que é o mesmo que não caber quando a fonte carrega. */
+html[data-tema-mesa="mortalha"] .brand-line{
+  /* EM LINHA, NÃO EMPILHADO. Alguma regra deixava a marca em coluna, e
+     com `flex-direction:column` o ✦ virava a PRIMEIRA linha: empurrava o
+     nome 30px para baixo e a legenda raspava na borda da barra. Era por
+     isso que a solução anterior tinha sido esconder a marca — estava-se
+     tratando o sintoma. Em linha, o ✦ fica à esquerda do nome, como na
+     referência, e o par cabe com folga. */
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  align-self:center !important;
+  justify-content:flex-start !important;
+  gap:12px;
+}
+html[data-tema-mesa="mortalha"] .brand-line>div{
+  display:flex;flex-direction:column;justify-content:center;
 }

@@ -31,6 +31,7 @@ import InterfaceFeedback from './experience/InterfaceFeedback';
 import GameExperience3 from './experience/GameExperience3';
 import { ExperienceProvider, ImmersiveNavigation, ExperienceLayer } from './experience/ExperienceKit';
 import { PlayerIdentityChip } from './experience/PlayerAccess';
+import { nomeEmDuasTintas } from './adventure/nomeEmDuasTintas.mjs';
 
 const MasterBattleConsole = lazy(() => import('./experience/MasterBattleConsole'));
 
@@ -87,7 +88,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
             <div className="brand-line">
               <span className="brand-mark">✦</span>
               <div>
-                <h1>{campaign?.name || 'Dinastia E'}</h1>
+                <h1>{nomeEmDuasTintas(campaign?.name || 'Dinastia E')}</h1>
                 <small>{campaign?.world ? `${campaign.world} · ` : ''}{termo(campaign, tab, TAB_LABELS[tab] || 'Livro do Mundo')}</small>
               </div>
             </div>
