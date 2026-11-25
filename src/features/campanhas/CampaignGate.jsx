@@ -30,7 +30,14 @@ async function sha256(value) {
 // Cada mesa é um portal: um astrolábio que gira devagar em volta do sigilo.
 // Escolher a mesa abre o portal; se ela tem senha, é ali mesmo que se diz a
 // palavra de passagem.
-function CampaignPortal({ campaign, onEnter, onRemove, canManage, contaUid, removendo }) {
+function CampaignPortal({ campaign, onEnter, onRemove, onRename, canManage, contaUid, removendo }) {
+  // O que o criador pode mudar depois, sem refazer a mesa: o nome e a
+  // frase. Eram decididos no cadastro e viravam pedra — a única saída era
+  // criar outra mesa e perder tudo o que já estava dentro desta.
+  const [editando, setEditando] = useState(false);
+  const [rascunho, setRascunho] = useState({ name: '', tagline: '' });
+  const [salvando, setSalvando] = useState(false);
+  const [erroEdicao, setErroEdicao] = useState('');
   // REMOVER SÓ APARECE NA MESA QUE ESTA CONTA CRIOU.
   //
   // Entrar no modo de gerência não é um passe para apagar a mesa dos outros.
@@ -42,6 +49,34 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage, contaUid, remo
   const souQuemCriou = Boolean(contaUid) && String(campaign.criadoPor || '') === String(contaUid);
   const mesaOrfa = !campaign.criadoPor;
   const podeRemover = canManage && !campaign.primary && (souQuemCriou || mesaOrfa);
+  /* EDITAR É SÓ DE QUEM CRIOU, e não de quem souber a senha de Mestre: a
+     senha é passada de pessoa para pessoa durante a campanha, e o nome da
+     mesa aparece para todo mundo na lista de mesas. Mesa órfã fica de fora
+     também — ali qualquer conta passaria. */
+  const podeEditar = canManage && !campaign.primary && souQuemCriou;
+
+  const abrirEdicao = () => {
+    setRascunho({ name: campaign.name || '', tagline: campaign.tagline || '' });
+    setErroEdicao('');
+    setEditando(true);
+  };
+  const gravarEdicao = async evento => {
+    evento.preventDefault();
+    const nome = rascunho.name.trim();
+    // Mesa sem nome some da lista: sobra um cartão com um buraco onde
+    // devia estar o título, e nem o dono sabe qual é qual.
+    if (!nome) { setErroEdicao('A mesa precisa de um nome.'); return; }
+    setSalvando(true);
+    setErroEdicao('');
+    try {
+      await onRename?.(campaign, { name: nome, tagline: rascunho.tagline.trim() });
+      setEditando(false);
+    } catch (erro) {
+      setErroEdicao(erro?.message || 'Não deu para gravar.');
+    } finally {
+      setSalvando(false);
+    }
+  };
   const theme = campaignTheme(campaign);
   const locked = Boolean(requiredPasswordHash(campaign)) && !isUnlocked(campaign);
   const [asking, setAsking] = useState(false);
@@ -137,9 +172,38 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage, contaUid, remo
         <span className="portal-core" aria-hidden="true">{campaign.sigil || theme.sigil}</span>
       </button>
       <div className="portal-text">
+        {editando ? (
+          <form className="portal-editar" onSubmit={gravarEdicao}>
+            <label>
+              Nome da mesa
+              <input
+                value={rascunho.name} autoFocus maxLength={80}
+                onChange={e => setRascunho(r => ({ ...r, name: e.target.value }))}
+              />
+            </label>
+            <label>
+              Frase de efeito
+              <input
+                value={rascunho.tagline} maxLength={160}
+                placeholder="o que esta mesa é, em uma linha"
+                onChange={e => setRascunho(r => ({ ...r, tagline: e.target.value }))}
+              />
+            </label>
+            {erroEdicao ? <span className="portal-word-error" role="alert">{erroEdicao}</span> : null}
+            <div className="portal-word-actions">
+              <button type="submit" className="portal-enter" disabled={salvando}>
+                {salvando ? 'Gravando...' : 'Gravar'}
+              </button>
+              <button type="button" className="portal-back" onClick={() => setEditando(false)}>Cancelar</button>
+            </div>
+          </form>
+        ) : (
+        <>
         <h2>{campaign.name}</h2>
         <span className="portal-where">{[campaign.genre || theme.label, campaign.world].filter(Boolean).join(', em ')}</span>
         <p>{campaign.tagline || 'Uma mesa à espera da primeira cena.'}</p>
+        </>
+        )}
       </div>
       {asking ? (
         <form className="portal-word" onSubmit={speak}>
@@ -162,6 +226,12 @@ function CampaignPortal({ campaign, onEnter, onRemove, canManage, contaUid, remo
       ) : (
         <div className="portal-actions">
           <button type="button" className="portal-enter" onClick={enter}>{locked ? 'Entrar com senha' : 'Entrar na mesa'}</button>
+          {podeEditar ? (
+            <button
+              type="button" className="portal-back" onClick={abrirEdicao}
+              title="Mudar o nome e a frase desta mesa, que foi criada por você"
+            >Editar</button>
+          ) : null}
           {podeRemover ? (
             <button
               type="button" className="portal-back" disabled={removendo}
@@ -268,6 +338,16 @@ export default function CampaignGate({ onChoose }) {
     } finally { setBusy(false); }
   };
 
+  /* Grava só o nome e a frase, com merge: o documento da mesa carrega
+     sistema, tema, dono e as senhas, e mandar o objeto inteiro daqui
+     arriscaria apagar algum desses por omissão. */
+  const renameCampaign = async (campaign, campos) => {
+    await setDoc(globalDoc('campaigns', campaign.id), campos, { merge: true });
+    setRows(atual => atual.map(linha => (
+      String(linha.id) === String(campaign.id) ? { ...linha, ...campos } : linha
+    )));
+  };
+
   const removeCampaign = async campaign => {
     if (campaign.primary || removendoId) return;
     setRemovendoId(String(campaign.id));
@@ -352,6 +432,7 @@ export default function CampaignGate({ onChoose }) {
               campaign={campaign}
               onEnter={onChoose}
               onRemove={removeCampaign}
+              onRename={renameCampaign}
               canManage={manage}
               contaUid={conta?.uid || ''}
               removendo={removendoId === String(campaign.id)}

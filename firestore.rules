@@ -131,7 +131,16 @@ service cloud.firestore {
       // precisar de uma senha que ainda não existe.
       allow create: if logado() && request.resource.data.criadoPor == request.auth.uid;
 
-      allow update: if mestre(cid);
+      // Atualizar: o Mestre, e também quem criou a mesa.
+      //
+      // `criadoPor` entra aqui pelo mesmo motivo que já entrava no apagar:
+      // a criação da mesa é uma sequência de escritas e a última — o
+      // registro de membro — pode falhar sozinha. Quando falha, mestre(cid)
+      // dá falso e o criador fica sem poder mexer na própria mesa. Agora
+      // ele pode ao menos corrigir o nome e a frase, que é o que a tela
+      // oferece a ele.
+      allow update: if mestre(cid)
+        || (logado() && resource.data.get('criadoPor', '') == request.auth.uid);
 
       // APAGAR.
       //

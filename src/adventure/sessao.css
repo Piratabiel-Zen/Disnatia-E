@@ -128,7 +128,11 @@
    só o enquadramento mudou. */
 .sessao-frente .ad-party-viewport{min-height:0;padding-left:52px;min-width:0;max-width:100%}
 .sessao-frente .ad-party-row{min-height:0;gap:12px}
-.sessao-integrante{position:relative;display:grid;gap:5px}
+/* `flex:0 0 auto` e não o padrão: como item de uma linha que agora QUEBRA,
+   o default `0 1 auto` fazia os cartões se espremerem uns contra os outros
+   em vez de passar para a linha de baixo. Com oito personagens eles ficavam
+   todos numa fila fina e ilegível, que é o oposto de caber. */
+.sessao-integrante{position:relative;display:grid;gap:5px;flex:0 0 auto}
 .sessao-vazio{margin:0;padding:14px 0;font-size:.98rem;color:#7A6A8A;font-style:italic}
 
 .sessao-mover{display:flex;gap:4px;justify-content:center}

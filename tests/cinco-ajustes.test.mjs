@@ -226,14 +226,62 @@ test('a letra da mortalha é de impressão antiga, e só na mortalha', () => {
   assert.match(fonte('index.html'), /IM\+Fell\+English\+SC/);
 });
 
-test('ficha que ninguém abriu não conta como integrante do grupo', () => {
+test('o quadro do lugar mostra todas as fichas da mesa', () => {
   const jsx = semComentarios(fonte('src/adventure/SessionHome.jsx'));
-  assert.match(jsx, /const naMesa = \(sheets \|\| \[\]\)\.filter/);
-  assert.match(jsx, /splitParty\(naMesa, groups\)/);
-  // Ficha com dono, com retrato ou com nome próprio É alguém — some só a
-  // que ficou exatamente como nasceu.
-  assert.match(jsx, /f\.dono \|\| f\.ownerId \|\| f\.visitorId \|\| f\.playerId/);
-  assert.match(jsx, /if \(f\.foto\) return true;/);
-  // E nada é apagado: a ficha continua no banco e na aba de fichas.
-  assert.ok(!/deleteDoc|remove\(/.test(jsx), 'o quadro do grupo não apaga ficha de ninguém');
+  /* Houve aqui um filtro que escondia a ficha "sem dono, sem retrato, nome
+     padrão". A intenção era tirar um registro abandonado de uma mesa
+     específica, e o efeito foi pior que o problema: numa mesa em que
+     ninguém ligou a conta ainda — que é toda mesa no começo — ele escondia
+     o elenco INTEIRO, e o quadro dizia "Ninguém nesta frente ainda" com
+     cinco fichas cadastradas.
+
+     Ficha que não serve se apaga na aba de Fichas, que é onde isso é
+     intencional e reversível. */
+  assert.match(jsx, /splitParty\(sheets, groups\)/);
+  assert.ok(!/const naMesa =/.test(jsx), 'o filtro voltou e vai esvaziar o quadro de novo');
+  // E nada aqui apaga ficha de ninguém.
+  assert.ok(!/deleteDoc|remove\(/.test(jsx));
+});
+
+test('a roda de fichas da Dinastia E não entra na mesa de terror', () => {
+  const mapa = semComentarios(fonte('src/features/mapa-batalha/BattleMapPage.jsx'));
+  // A bolinha com a silhueta só repetia o caminho para a ficha rápida, que
+  // já está aberta ali embaixo com retrato, vida, pavor e competências.
+  assert.match(mapa, /\{!ehNoite && <MapSheetDock/);
+  // E o canto de baixo à esquerda fica com o que é desta mesa: esconder,
+  // e a ficha logo abaixo.
+  const esc = semComentarios(fonte('src/features/oneshot/esconderijo.css'));
+  assert.match(esc, /\.esc-entrar\{[^}]*left:12px;bottom:52px/);
+  const fr = semComentarios(fonte('src/features/oneshot/ficha-rapida.css'));
+  assert.match(fr, /\.fr\{[^}]*left:10px;bottom:10px/);
+});
+
+test('os cartões do elenco quebram a linha em vez de se espremer', () => {
+  const css = semComentarios(fonte('src/adventure/sessao.css'));
+  // Como item de uma linha que quebra, o `flex` padrão fazia os cartões se
+  // espremerem uns contra os outros em vez de passar para a linha de baixo.
+  assert.match(css, /\.sessao-integrante\{[^}]*flex:0 0 auto/);
+});
+
+test('quem criou a mesa pode trocar o nome e a frase', () => {
+  const jsx = semComentarios(fonte('src/features/campanhas/CampaignGate.jsx'));
+  // Eram decididos no cadastro e viravam pedra: a única saída era criar
+  // outra mesa e perder tudo o que já estava dentro desta.
+  assert.match(jsx, /const podeEditar = canManage && !campaign\.primary && souQuemCriou;/);
+  // E não é de quem souber a senha de Mestre: ela é passada de pessoa para
+  // pessoa durante a campanha, e o nome aparece para todo mundo na lista.
+  assert.ok(!/podeEditar = [^;]*mestre/i.test(jsx));
+  // Grava só os dois campos, com merge: o documento carrega sistema, tema,
+  // dono e as senhas, e mandar o objeto inteiro apagaria algum por omissão.
+  assert.match(jsx, /setDoc\(globalDoc\('campaigns', campaign\.id\), campos, \{ merge: true \}\)/);
+  // Mesa sem nome some da lista.
+  assert.match(jsx, /if \(!nome\) \{ setErroEdicao/);
+});
+
+test('as regras deixam o criador consertar a própria mesa', () => {
+  const regras = fonte('firestore.rules');
+  // A criação da mesa é uma sequência de escritas e a última — o registro
+  // de membro — pode falhar sozinha. Quando falha, mestre(cid) dá falso e
+  // o criador fica sem poder mexer na própria mesa.
+  assert.match(regras, /allow update: if mestre\(cid\)\s*\|\|\s*\(logado\(\) && resource\.data\.get\('criadoPor', ''\) == request\.auth\.uid\)/);
 });

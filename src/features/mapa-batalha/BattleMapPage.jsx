@@ -2853,7 +2853,12 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               />
             );
           })}
-          <MapSheetDock semBestas={ehNoite} masterMode={masterMode} sheets={sheets} enemies={enemies} floatingSheets={floatingSheets} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet} onChangeSheet={sheet=>updSheet(sheet.id,sheet)}/>
+          {/* A roda de fichas da Dinastia E — a bolinha com a silhueta, mais
+              familiares e inimigos — não entra na mesa de terror: a ficha
+              rápida já está ali embaixo com retrato, vida, pavor e
+              competências, e a bolinha só repetia o caminho para ela em
+              cima do painel que já estava aberto. */}
+          {!ehNoite && <MapSheetDock semBestas={ehNoite} masterMode={masterMode} sheets={sheets} enemies={enemies} floatingSheets={floatingSheets} floatingEnemies={floatingEnemies} onSelectSheet={handleSelectSheet} onSelectEnemy={toggleFloatingEnemy} onCreateSheet={quickAddSheet} onChangeSheet={sheet=>updSheet(sheet.id,sheet)}/>}
 
 
         </div>

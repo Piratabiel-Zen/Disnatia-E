@@ -130,27 +130,21 @@ export default function SessionHome({
   const campaign = activeCampaign();
   const theme = campaignTheme(campaign);
   const groups = readGroups(session);
-  /* FICHA QUE NINGUÉM ABRIU NÃO É INTEGRANTE DO GRUPO.
-     Uma mesa acumula fichas criadas e abandonadas — nome padrão, sem dono,
-     sem retrato, nada escrito. Elas apareciam no quadro do lugar como se
-     fosse gente, e o Mestre olhava para um "Aventureiro" que não existe em
-     cena nenhuma.
+  /* TODAS AS FICHAS DA MESA.
+     Houve aqui um filtro que escondia a ficha "sem dono, sem retrato, nome
+     padrão" do quadro do grupo. A intenção era tirar um registro
+     abandonado de uma mesa específica, e o efeito foi pior que o problema:
+     numa mesa em que ninguém ligou a conta ainda — que é toda mesa no
+     começo — ele escondia o elenco INTEIRO, e o quadro ficava dizendo
+     "Ninguém nesta frente ainda" com cinco fichas cadastradas.
 
-     A ficha NÃO é apagada: continua inteira no banco e na aba de fichas,
-     que é onde se apaga de propósito. Isto aqui é só o quadro do grupo
-     deixando de contar como presente quem nunca chegou. */
-  const naMesa = (sheets || []).filter(f => {
-    if (!f) return false;
-    if (f.dono || f.ownerId || f.visitorId || f.playerId) return true;
-    if (f.foto) return true;
-    const nome = String(f.nome || '').trim().toLowerCase();
-    return Boolean(nome) && nome !== 'aventureiro' && nome !== 'personagem';
-  });
-  const frentes = splitParty(naMesa, groups);
+     Ficha que não serve se apaga na aba de Fichas, que é onde isso é
+     intencional e reversível. O quadro do lugar mostra quem está na mesa. */
+  const frentes = splitParty(sheets, groups);
   const mine = current && String(current.id) === String(playerId);
   const [busy, setBusy] = useState(false);
   // Null para o Mestre e para quem ainda não tem nada escrito na ficha.
-  const capitulo = meuCapitulo({ sheets: naMesa, playerId, groups, masterMode });
+  const capitulo = meuCapitulo({ sheets, playerId, groups, masterMode });
 
   const saveGroups = async next => {
     if (!masterMode || busy) return;

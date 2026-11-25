@@ -67,9 +67,14 @@ html[data-quality="light"] .g3-portrait,html[data-quality="light"] .g3-hud-orb,h
 .ad-party{position:relative;z-index:1;margin:28px 0 22px;content-visibility:visible!important;contain:none!important}.ad-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.ad-section-head h3{margin-top:4px}.ad-muted{font:12px/1.6 system-ui,sans-serif;color:var(--ad-muted)}
 /* O viewport e a fileira são elementos separados de propósito. Blink podia adiar
    a pintura dos filhos quando o mesmo nó era, ao mesmo tempo, flex e scroller. */
-.ad-party-viewport{position:relative;z-index:1;width:100%;min-height:188px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#826b44 #10151a;content-visibility:visible!important;contain:none!important;isolation:isolate;-webkit-overflow-scrolling:touch}
-.ad-party-viewport::-webkit-scrollbar{height:7px}.ad-party-viewport::-webkit-scrollbar-track{background:#10151a}.ad-party-viewport::-webkit-scrollbar-thumb{background:#826b44;border-radius:999px}
-.ad-party-row{display:flex;width:max-content;min-width:100%;min-height:181px;align-items:stretch;gap:14px;padding:4px 3px 9px;overflow:visible;content-visibility:visible!important;contain:none!important;visibility:visible!important;opacity:1!important;transform:none!important;filter:none!important}
+.ad-party-viewport{position:relative;z-index:1;width:100%;min-height:188px;max-height:min(58vh,430px);overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#826b44 #10151a;content-visibility:visible!important;contain:none!important;isolation:isolate;-webkit-overflow-scrolling:touch}
+.ad-party-viewport::-webkit-scrollbar{height:7px;width:7px}.ad-party-viewport::-webkit-scrollbar-track{background:#10151a}.ad-party-viewport::-webkit-scrollbar-thumb{background:#826b44;border-radius:999px}
+ /* QUEBRA EM VEZ DE ROLAR.
+   Era uma fila de largura infinita com barra embaixo: com cinco primos a
+   terceira ficha já saía da tela, e a pessoa tinha de descobrir sozinha
+   que aquilo rolava para o lado. O bloco tem largura de sobra na vertical
+   e nenhuma na horizontal, então quem cede é a linha. */
+.ad-party-row{display:flex;flex-wrap:wrap;width:100%;box-sizing:border-box;min-height:181px;align-items:stretch;gap:14px;padding:4px 3px 9px;overflow:visible;content-visibility:visible!important;contain:none!important;visibility:visible!important;opacity:1!important;transform:none!important;filter:none!important}
 .ad-companion{flex:0 0 134px;min-width:0;display:flex;align-items:center;flex-direction:column;border:1px solid #5f513c!important;background:linear-gradient(#1c2529,#101519)!important;padding:10px 10px 7px;border-radius:4px;color:#d6c7aa;opacity:1!important}
 .ad-companion.own{border-color:#b99b5b!important;background:linear-gradient(#30322a,#11191e)!important}.ad-companion.active-turn{box-shadow:0 0 0 2px #cfad6c77}
 .ad-companion:enabled:hover{background:#353c35!important;border-color:#dfc380!important}
