@@ -65,7 +65,9 @@ export const duracaoPorId = id =>
  */
 export const TETO_DA_IMAGEM = 220 * 1024;
 
-export function avisoDeAssombracao({ aparicao = {}, intensidade, duracao } = {}) {
+export function avisoDeAssombracao({
+  aparicao = {}, intensidade, duracao, para = [],
+} = {}) {
   const img = String(aparicao.imagem || '');
   return {
     id: `asb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -73,8 +75,32 @@ export function avisoDeAssombracao({ aparicao = {}, intensidade, duracao } = {})
     imagem: img.length <= TETO_DA_IMAGEM ? img : '',
     intensidade: intensidadePorId(intensidade).id,
     duracao: duracaoPorId(duracao).id,
+    /* QUEM LEVA O SUSTO.
+       Vazio quer dizer a mesa inteira, que é como era antes e continua
+       sendo o caso comum. Com nomes dentro, só eles — e aí dois primos
+       veem a tela escurecer enquanto os outros três não veem nada, que é
+       uma cena difícil de conseguir de qualquer outro jeito. */
+    para: [...new Set((para || []).map(String).filter(Boolean))],
     comecouEm: Date.now(),
   };
+}
+
+/**
+ * Este susto é para mim?
+ *
+ * LIMITE QUE PRECISA ESTAR ESCRITO: a assombração corre pelo canal vivo,
+ * que entrega a todo mundo e não tem consulta por destinatário como o
+ * Firestore das aparições. Então o recorte aqui é de TELA: quem não está na
+ * lista não vê nada acontecer, mas o aviso passou pela máquina dele e
+ * alguém com o console aberto consegue lê-lo.
+ *
+ * É a mesma força do selo da ficha e do bilhete: serve contra o primo
+ * curioso, não contra o primo programador.
+ */
+export function assombracaoEhMinha(aviso, uid) {
+  const lista = Array.isArray(aviso?.para) ? aviso.para.map(String) : [];
+  if (!lista.length) return true;
+  return lista.includes(String(uid || ''));
 }
 
 /**

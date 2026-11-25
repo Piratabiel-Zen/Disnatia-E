@@ -14,8 +14,9 @@ import {
 } from './assombracao.mjs';
 import { publicarAssombracao } from '../../core/liveChannel';
 import {
-  TIPOS_DE_APARICAO, alternarPessoa, aparicaoNova, cartaoDeAparicao, estaRevelada,
-  jaNoMural, quemVe, revelarParaTodos, tipoDaAparicao,
+  ALCANCES, TIPOS_DE_APARICAO, alcanceDa, alternarPessoa, aparicaoNova,
+  cartaoDeAparicao, comAlcance, estaRevelada, jaNoMural, plateiaDa, quemVe,
+  revelarParaTodos, tipoDaAparicao,
 } from './aparicoes.mjs';
 import './paginas-one-shot.css';
 import './aparicoes.css';
@@ -42,6 +43,7 @@ export default function AparicoesPage() {
   const [duracao, setDuracao] = useState(DURACAO_PADRAO);
   const [fichas, setFichas] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
+  const [escolhendoPlateia, setEscolhendoPlateia] = useState(null);
   const [filtro, setFiltro] = useState('');
   const [cartoes, setCartoes] = useState([]);
 
@@ -104,11 +106,23 @@ export default function AparicoesPage() {
    * sem deixar nada para examinar frustra em vez de assustar.
    */
   const assombrar = useCallback(async aparicao => {
-    if (!aparicao?.liberadoParaTodos) {
+    /* O SUSTO SEGUE O ALCANCE.
+       Antes isto revelava para a mesa inteira, sempre — o que fazia sentido
+       quando revelar era sim ou não, e passou a não fazer quando o Mestre
+       ganhou o alcance "alguns": ele apontava dois primos e o susto
+       entregava a coisa para os cinco.
+
+       Agora: alcance "alguns" escurece só a tela daqueles dois. Alcance
+       "ninguém" vira "a mesa", porque um susto que não deixa nada para a
+       mesa examinar depois frustra em vez de assustar — e esse é o único
+       caso em que a ação muda a escolha do Mestre. */
+    const alcance = alcanceDa(aparicao);
+    const alvo = alcance === 'alguns' ? plateiaDa(aparicao) : [];
+    if (alcance === 'ninguem') {
       await salvar({ ...revelarParaTodos(aparicao, true), id: aparicao.id });
     }
     await publicarAssombracao(avisoDeAssombracao({
-      aparicao, intensidade, duracao,
+      aparicao, intensidade, duracao, para: alvo,
     }));
   }, [intensidade, duracao, salvar]);
 
@@ -273,11 +287,31 @@ export default function AparicoesPage() {
                 title="Cria um cartão no mural, com a mesma plateia desta aparição"
               >Pregar</button>
             )}
-            <button
-              type="button" className="apa-revelar"
-              onClick={() => salvar({ ...revelarParaTodos(a, !a.liberadoParaTodos), id: a.id })}
-              title={a.liberadoParaTodos ? 'Recolher' : 'Revelar à mesa'}
-            >{a.liberadoParaTodos ? 'Recolher' : 'Revelar'}</button>
+            {/* QUEM VÊ, em três botões e não num interruptor.
+                Com "Revelar / Recolher" o terceiro estado — só algumas
+                pessoas — não tinha onde ser escolhido: ficava escondido
+                dentro do detalhe, longe da linha onde o Mestre age. E os
+                três precisam estar à vista ao mesmo tempo porque a pergunta
+                no meio da cena não é "revelo?", é "para quem?". */}
+            <div className="apa-alcance" role="group" aria-label="Quem vê">
+              {ALCANCES.map(al => (
+                <button
+                  key={al.id} type="button"
+                  data-ligado={alcanceDa(a) === al.id ? 'sim' : 'nao'}
+                  title={al.resumo}
+                  onClick={() => {
+                    if (al.id === 'alguns') {
+                      // "Alguns" abre a plateia: escolher o alcance sem
+                      // escolher as pessoas não revelaria para ninguém, e o
+                      // Mestre acharia que revelou.
+                      setAbertaId(String(a.id));
+                      setEscolhendoPlateia(String(a.id));
+                    }
+                    salvar({ ...comAlcance(a, al.id), id: a.id });
+                  }}
+                >{al.nome}</button>
+              ))}
+            </div>
             {/* ASSOMBRAR é diferente de revelar: revelar põe a aparição à
                 vista para a mesa consultar; assombrar escurece a tela de
                 todo mundo AGORA, onde quer que a pessoa esteja. Fica ao
@@ -286,7 +320,9 @@ export default function AparicoesPage() {
             <button
               type="button" className="apa-assombrar"
               onClick={() => assombrar(a)}
-              title={`Escurece a tela da mesa: ${intensidadePorId(intensidade).nome}, ${duracaoPorId(duracao).nome.toLowerCase()}`}
+              title={alcanceDa(a) === 'alguns'
+                ? `Escurece a tela só de ${quemVe(a, nomePorUid)}: ${intensidadePorId(intensidade).nome}, ${duracaoPorId(duracao).nome.toLowerCase()}`
+                : `Escurece a tela da mesa: ${intensidadePorId(intensidade).nome}, ${duracaoPorId(duracao).nome.toLowerCase()}`}
             >Assombrar</button>
           </li>
         ))}
@@ -362,21 +398,52 @@ export default function AparicoesPage() {
             </div>
           </div>
 
-          {fichas.some(f => f.dono) && (
-            <div className="apa-plateia">
-              <span>Revelar só para</span>
-              <div>
-                {fichas.filter(f => f.dono).map(f => (
-                  <button
-                    key={f.id} type="button"
-                    data-ligado={(aberta.liberadoPara || []).includes(String(f.dono)) ? 'sim' : 'nao'}
-                    onClick={() => salvar({ ...alternarPessoa(aberta, f.dono), id: aberta.id })}
-                  >{f.nome || 'personagem'}</button>
-                ))}
-              </div>
-              <em>Mostrar a uma pessoa só é o que separa quem viu de quem não acredita.</em>
-            </div>
-          )}
+          <div
+            className="apa-plateia"
+            data-valendo={alcanceDa(aberta) === 'alguns' ? 'sim' : 'nao'}
+            data-chamando={escolhendoPlateia === String(aberta.id) ? 'sim' : undefined}
+          >
+            <span>A plateia</span>
+            {fichas.some(f => f.dono) ? (
+              <>
+                <div>
+                  {fichas.filter(f => f.dono).map(f => (
+                    <button
+                      key={f.id} type="button"
+                      data-ligado={plateiaDa(aberta).includes(String(f.dono)) ? 'sim' : 'nao'}
+                      onClick={() => {
+                        setEscolhendoPlateia(null);
+                        salvar({ ...alternarPessoa(aberta, f.dono), id: aberta.id });
+                      }}
+                    >{f.nome || 'personagem'}</button>
+                  ))}
+                </div>
+                {/* A plateia fica guardada mesmo com o alcance em Ninguém ou
+                    A mesa: montar com calma e soltar depois é o uso normal.
+                    O aviso existe para o Mestre não achar que marcar alguém
+                    aqui já revelou. */}
+                {alcanceDa(aberta) !== 'alguns' && plateiaDa(aberta).length > 0 && (
+                  <em className="apa-guardada">
+                    Guardada. Vale quando o alcance for <b>Alguns</b>.
+                  </em>
+                )}
+                {alcanceDa(aberta) === 'alguns' && plateiaDa(aberta).length === 0 && (
+                  <em className="apa-vazia">
+                    Alcance <b>Alguns</b> sem ninguém marcado: ainda não vê
+                    quem quer que seja.
+                  </em>
+                )}
+                <em>Mostrar a uma pessoa só é o que separa quem viu de quem não acredita.</em>
+              </>
+            ) : (
+              /* Sem conta ligada não há para quem apontar: quem vê é
+                 decidido pelo uid, e ficha sem dono não tem um. */
+              <em className="apa-vazia">
+                Nenhum primo tem conta ligada à ficha ainda, então só dá para
+                escolher entre <b>Ninguém</b> e <b>A mesa</b>.
+              </em>
+            )}
+          </div>
         </section>
       )}
 

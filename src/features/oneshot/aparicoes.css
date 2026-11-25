@@ -63,13 +63,29 @@
 }
 .apa-lista li[data-revelada="sim"] .apa-nomes em{color:#C4414F}
 
-.apa-revelar{
-  flex:0 0 auto;margin-right:6px;padding:5px 11px;border-radius:2px;cursor:pointer;
-  background:transparent;border:1px solid #35353A;color:#8A8784;
-  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
-  letter-spacing:.12em;text-transform:uppercase;
+/* ---- QUEM VÊ ----
+   Os três alcances juntos, encostados, como um interruptor de três
+   posições. Separados em botões soltos eles pareceriam três ações
+   independentes — e são excludentes: escolher um desliga os outros dois. */
+.apa-alcance{
+  flex:0 0 auto;margin-right:6px;
+  display:flex;border:1px solid #242427;border-radius:3px;overflow:hidden;
 }
-.apa-revelar:hover{border-color:#C4414F;color:#C4414F}
+.apa-alcance button{
+  padding:5px 9px;cursor:pointer;
+  background:transparent;border:0;border-left:1px solid #242427;color:#6E6C6A;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;
+  letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+  transition:color .15s ease,background .15s ease;
+}
+.apa-alcance button:first-child{border-left:0}
+.apa-alcance button:hover{color:#B8B4AE}
+/* Vermelho só no que está revelando. "Ninguém" ligado fica neutro de
+   propósito: é o estado de repouso, e acender nele ensinaria o olho a
+   procurar cor onde não há nada acontecendo. */
+.apa-alcance button[data-ligado="sim"]{background:#1A1A1D;color:#C8C6C2}
+.apa-alcance button[data-ligado="sim"]:nth-child(2),
+.apa-alcance button[data-ligado="sim"]:nth-child(3){color:#C4414F;background:#1C1416}
 
 /* ---- O detalhe ---- */
 .apa-detalhe{
@@ -119,6 +135,27 @@
 }
 .apa-plateia button[data-ligado="sim"]{border-color:#C4414F;color:#C4414F}
 .apa-plateia em{font-style:normal;font-size:10.5px;color:#585654}
+
+/* A plateia escolhida que ainda não está valendo. Sem este aviso o Mestre
+   marca um primo, vê o nome aceso e acha que revelou. */
+.apa-plateia .apa-guardada{color:#8A7A52}
+.apa-plateia .apa-guardada b,.apa-plateia .apa-vazia b{color:#C4A75C;font-weight:400}
+.apa-plateia .apa-vazia{color:#9A6A6A}
+/* Apagada enquanto o alcance não é "alguns": continua legível e clicável,
+   só não finge estar no ar. */
+.apa-plateia[data-valendo="nao"] button[data-ligado="sim"]{
+  border-color:#4A3A3E;color:#8A6A70;
+}
+/* Quando o Mestre clica em "Alguns" lá na linha, a plateia chama por ele. */
+.apa-plateia[data-chamando="sim"]{
+  animation:apaChama 1.6s ease-in-out 2;
+  border-radius:3px;
+}
+@keyframes apaChama{
+  0%,100%{box-shadow:0 0 0 0 rgba(196,65,79,0)}
+  50%{box-shadow:0 0 0 2px rgba(196,65,79,.45)}
+}
+html[data-motion="reduced"] .apa-plateia[data-chamando="sim"]{animation:none}
 
 /* ---- A mesa: a coisa aparecendo ---- */
 .apa-galeria{list-style:none;margin:0;padding:0;display:grid;gap:22px}

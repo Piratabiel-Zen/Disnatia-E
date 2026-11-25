@@ -117,7 +117,7 @@ test('ela mora na casca, não numa aba', () => {
   // A tela tem que escurecer esteja a pessoa onde estiver: a graça é pegar
   // quem estava mexendo na ficha.
   const sessao = semComentarios(fonte('src/AuthenticatedSession.jsx'));
-  assert.match(sessao, /<Assombracao \/>/);
+  assert.match(sessao, /<Assombracao uid=\{access\?\.uid \|\| ''\} \/>/);
 });
 
 test('o fim vem do relógio de quem assiste, não de um segundo aviso', () => {

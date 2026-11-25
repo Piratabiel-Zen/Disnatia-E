@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { assinarAssombracao } from '../../core/liveChannel';
-import { estagioDaAssombracao, avisoAindaVale } from './assombracao.mjs';
+import { estagioDaAssombracao, avisoAindaVale, assombracaoEhMinha } from './assombracao.mjs';
 import { tocarAssombracao } from './somDaAssombracao.mjs';
 import './assombracao.css';
 
@@ -21,7 +21,7 @@ import './assombracao.css';
  * podendo rolar, escrever e clicar enquanto a coisa está lá — ele só não
  * enxerga direito, que é o efeito pretendido.
  */
-export default function Assombracao() {
+export default function Assombracao({ uid = '' }) {
   const [aviso, setAviso] = useState(null);
   const [estagio, setEstagio] = useState(null);
   const quadro = useRef(0);
@@ -30,9 +30,12 @@ export default function Assombracao() {
   // susto que a mesa já levou.
   useEffect(() => assinarAssombracao(novo => {
     if (!avisoAindaVale(novo)) return;
+    // Nem todo susto é para todo mundo: uma aparição revelada só a alguns
+    // escurece a tela só deles.
+    if (!assombracaoEhMinha(novo, uid)) return;
     setAviso(novo);
     tocarAssombracao(novo.intensidade);
-  }), []);
+  }), [uid]);
 
   // O relógio é de quem assiste. É isto que garante que a tela volta mesmo
   // se nada mais chegar pela rede.

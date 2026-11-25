@@ -23,44 +23,124 @@ export const TIPOS_DE_APARICAO = Object.freeze([
   { id: 'vulto', nome: 'Vulto', icone: '◐', resumo: 'O que mal se vê — e é pior por isso.' },
 ]);
 
-export const aparicaoNova = (tipo = 'criatura') => ({
+/* ═══════════════════════════════════════════════════════════════════════
+   QUEM VÊ A APARIÇÃO
+
+   Três alcances, e o Mestre escolhe um: NINGUÉM (ele ainda está montando),
+   A MESA (todos veem) ou ALGUNS (só quem ele apontar).
+
+   A parte que não é óbvia é POR QUE existem quatro campos para três
+   estados. É que dois deles não são escolha, são consequência:
+
+     `alcance` e `plateia` — o que o Mestre QUER. Ninguém consulta.
+     `liberadoParaTodos` e `liberadoPara` — o que o banco OBEDECE.
+
+   A tela do jogador não filtra nada em JavaScript: ela pergunta ao
+   Firestore por `liberadoParaTodos == true` e por `liberadoPara`
+   contendo o uid dele. Ou seja, quem está em `liberadoPara` RECEBE o
+   documento, ponto — esconder no código não esconderia nada.
+
+   Daí a separação. `plateia` guarda a escolha de pessoas mesmo enquanto o
+   alcance é "ninguém", e `liberadoPara` só é preenchido quando o alcance é
+   "alguns". Assim o Mestre pode montar a plateia com calma, deixar em
+   ninguém, e soltar depois sem remontar a lista — que era o que acontecia
+   antes, porque recolher apagava a seleção junto.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+export const ALCANCES = Object.freeze([
+  { id: 'ninguem', nome: 'Ninguém', resumo: 'Só você. Nada sai daqui.' },
+  { id: 'mesa', nome: 'A mesa', resumo: 'Todos veem, agora.' },
+  { id: 'alguns', nome: 'Alguns', resumo: 'Só quem você apontar.' },
+]);
+
+export const ehAlcance = id => ALCANCES.some(a => a.id === String(id));
+
+/**
+ * O alcance de uma aparição.
+ *
+ * Aparição antiga não tem o campo, então ele é deduzido do efeito — é o que
+ * mantém o que já está na mesa funcionando sem conversão nenhuma.
+ */
+export function alcanceDa(aparicao) {
+  if (ehAlcance(aparicao?.alcance)) return String(aparicao.alcance);
+  if (aparicao?.liberadoParaTodos === true) return 'mesa';
+  if (Array.isArray(aparicao?.liberadoPara) && aparicao.liberadoPara.length) return 'alguns';
+  return 'ninguem';
+}
+
+/** A plateia escolhida, mesmo que agora não esteja valendo. */
+export function plateiaDa(aparicao) {
+  if (Array.isArray(aparicao?.plateia)) return aparicao.plateia.map(String);
+  // Aparição antiga: quem estava liberado era a plateia.
+  if (Array.isArray(aparicao?.liberadoPara)) return aparicao.liberadoPara.map(String);
+  return [];
+}
+
+/**
+ * Aplica alcance e plateia aos campos que o banco realmente obedece.
+ *
+ * Tudo que muda quem vê passa por aqui. Escrever `liberadoPara` à mão em
+ * qualquer outro lugar é como o vazamento acontece.
+ */
+function comEfeito(aparicao, alcance, plateia) {
+  const quais = [...new Set((plateia || []).map(String).filter(Boolean))];
+  return {
+    ...aparicao,
+    alcance,
+    plateia: quais,
+    liberadoParaTodos: alcance === 'mesa',
+    liberadoPara: alcance === 'alguns' ? quais : [],
+  };
+}
+
+export const aparicaoNova = (tipo = 'criatura') => comEfeito({
   tipo: String(tipo),
   titulo: '',
   descricao: '',
   imagem: '',
+  criadoEm: Date.now(),
   // Nasce escondida, sempre. Aparição que nasce revelada estraga a cena antes
   // de ela existir — e é o erro que não dá para desfazer numa mesa de terror.
-  liberadoParaTodos: false,
-  liberadoPara: [],
-  criadoEm: Date.now(),
-});
+}, 'ninguem', []);
 
-/** Está à vista da mesa? */
-export const estaRevelada = aparicao =>
-  aparicao?.liberadoParaTodos === true
-  || (Array.isArray(aparicao?.liberadoPara) && aparicao.liberadoPara.length > 0);
+/** Está à vista de alguém? */
+export const estaRevelada = aparicao => {
+  const alcance = alcanceDa(aparicao);
+  if (alcance === 'mesa') return true;
+  return alcance === 'alguns' && plateiaDa(aparicao).length > 0;
+};
 
-/** Revelar para a mesa inteira, ou recolher. */
-export const revelarParaTodos = (aparicao, revelar) => ({
-  ...aparicao,
-  liberadoParaTodos: Boolean(revelar),
-  liberadoPara: revelar ? [] : [],
-});
+/** Trocar o alcance, sem perder a plateia já escolhida. */
+export const comAlcance = (aparicao, alcance) =>
+  comEfeito(aparicao, ehAlcance(alcance) ? String(alcance) : 'ninguem', plateiaDa(aparicao));
 
-/** Revelar só para uma pessoa — o que ela vê e os outros não. */
+/** Revelar para a mesa inteira, ou recolher para ninguém. */
+export const revelarParaTodos = (aparicao, revelar) =>
+  comAlcance(aparicao, revelar ? 'mesa' : 'ninguem');
+
+/**
+ * Pôr ou tirar uma pessoa da plateia.
+ *
+ * Marcar alguém já muda o alcance para "alguns": apontar uma pessoa e a
+ * aparição continuar invisível para ela seria a pior surpresa possível no
+ * meio de uma cena.
+ */
 export function alternarPessoa(aparicao, uid) {
-  const lista = Array.isArray(aparicao?.liberadoPara) ? [...aparicao.liberadoPara] : [];
   const alvo = String(uid || '');
   if (!alvo) return aparicao;
-  const i = lista.indexOf(alvo);
-  if (i >= 0) lista.splice(i, 1); else lista.push(alvo);
-  return { ...aparicao, liberadoPara: lista, liberadoParaTodos: false };
+  const atual = plateiaDa(aparicao);
+  const tem = atual.includes(alvo);
+  const nova = tem ? atual.filter(u => u !== alvo) : [...atual, alvo];
+  // Tirar o último da lista volta para "ninguém": alcance "alguns" sem
+  // ninguém dentro é um estado que não quer dizer nada.
+  return comEfeito(aparicao, nova.length ? 'alguns' : 'ninguem', nova);
 }
 
 /** Quem vê isto, dito em palavras para o Mestre conferir de relance. */
 export function quemVe(aparicao, nomePorUid = {}) {
-  if (aparicao?.liberadoParaTodos) return 'A mesa inteira';
-  const lista = Array.isArray(aparicao?.liberadoPara) ? aparicao.liberadoPara : [];
+  const alcance = alcanceDa(aparicao);
+  if (alcance === 'mesa') return 'A mesa inteira';
+  const lista = alcance === 'alguns' ? plateiaDa(aparicao) : [];
   if (!lista.length) return 'Ninguém ainda';
   return lista.map(uid => nomePorUid[uid] || 'alguém').join(', ');
 }
@@ -94,8 +174,14 @@ export function cartaoDeAparicao(aparicao, { id, x = 0.4, y = 0.4 } = {}) {
     texto: String(aparicao.descricao || ''),
     imagem: String(aparicao.imagem || ''),
     x, y,
-    liberadoParaTodos: aparicao.liberadoParaTodos === true,
-    liberadoPara: Array.isArray(aparicao.liberadoPara) ? [...aparicao.liberadoPara] : [],
+    /* O cartão herda a MESMA plateia da aparição — e pela mesma derivação,
+       e não copiando os campos crus: se o cálculo de quem vê mudar um dia,
+       ele muda nos dois lugares de uma vez. Pregar no mural uma aparição
+       que só um primo viu não pode mostrá-la aos outros. */
+    alcance: alcanceDa(aparicao),
+    plateia: plateiaDa(aparicao),
+    liberadoParaTodos: alcanceDa(aparicao) === 'mesa',
+    liberadoPara: alcanceDa(aparicao) === 'alguns' ? plateiaDa(aparicao) : [],
     origemAparicao: String(aparicao.id || ''),
     criadoEm: Date.now(),
   };

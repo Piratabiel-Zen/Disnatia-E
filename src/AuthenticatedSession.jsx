@@ -63,7 +63,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
       {/* A assombração mora na casca e não numa aba: a tela tem que escurecer
           esteja a pessoa onde estiver — a graça é pegar quem estava mexendo
           na ficha. Só nas mesas que têm névoa, que são as de uma noite. */}
-      {temNevoa && <Assombracao />}
+      {temNevoa && <Assombracao uid={access?.uid || ''} />}
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
             existe: duas paisagens sobrepostas não é clima, é sujeira. */}
