@@ -381,6 +381,21 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       .catch(e => console.error('Erro ao encerrar a caçada:', e));
   };
 
+  const reescreverBilhete = (id, texto) => {
+    const limpo = String(texto || '').trim();
+    if (!limpo) return;
+    /* `aberto: false` de novo: o papel reescrito é outro papel. Se ficasse
+       aberto, o jogador que já tinha lido não veria nada mudar — o texto
+       trocaria calado no bolso dele. */
+    setDoc(docIn('bilhetes', String(id)),
+      { texto: limpo, aberto: false, em: Date.now() }, { merge: true })
+      .catch(e => console.error('Erro ao reescrever o bilhete:', e));
+  };
+  const apagarBilhete = id => {
+    deleteDoc(docIn('bilhetes', String(id)))
+      .catch(e => console.error('Erro ao apagar o bilhete:', e));
+  };
+
   const marcarBilheteAberto = id => {
     setDoc(docIn('bilhetes', String(id)), { aberto: true }, { merge: true })
       .catch(e => console.error('Erro ao marcar o bilhete:', e));
@@ -412,6 +427,17 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
      quanto mais a mesa se assusta, mais a casa responde. É o que faz o
      cenário parecer vivo em vez de cenário. */
   const pressaoDaNoite = ehNoite ? pressaoDaMesa(sheets) : 0;
+
+  /* Um ponto a mais ou a menos, da própria ficha do jogador.
+     `merge` e um campo só: a ficha está aberta em outras telas ao mesmo
+     tempo, e gravar o objeto inteiro daqui atropelaria o que ele estiver
+     escrevendo na aba de Fichas. */
+  const mudarPontoDaFicha = (campo, valor) => {
+    if (!minhaFichaDaNoite?.id) return;
+    setDoc(docIn(colecaoDasFichas, String(minhaFichaDaNoite.id)),
+      { [String(campo)]: Number(valor) || 0 }, { merge: true })
+      .catch(e => console.error('Erro ao mudar o ponto:', e));
+  };
 
   const guardarCorDaFicha = (cor) => {
     if (!minhaFichaDaNoite) return;
@@ -2647,7 +2673,11 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               O alto é do Mestre e a direita é do painel de token; embaixo
               sobra o canto que nenhuma das duas mãos usa durante a cena. */}
           {minhaFichaDaNoite && (
-            <FichaRapida ficha={minhaFichaDaNoite} aoMudarCor={guardarCorDaFicha} />
+            <FichaRapida
+              ficha={minhaFichaDaNoite}
+              aoMudarCor={guardarCorDaFicha}
+              aoMudar={mudarPontoDaFicha}
+            />
           )}
           {/* Sem `aoMudarCor`: a cor é escolha de quem joga a ficha. */}
           {!minhaFichaDaNoite && fichaDoTokenEscolhido && (
@@ -2696,6 +2726,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               sheets={sheets}
               bilhetes={bilhetesDaMesa}
               aoEntregar={entregarBilhete}
+              aoReescrever={reescreverBilhete}
+              aoApagar={apagarBilhete}
             />
           )}
           {ehNoite && !masterMode && playerSheetId && (

@@ -82,3 +82,49 @@ html[data-motion="reduced"] .eb-feito{animation:none;opacity:1}
   color:#6B6054;font-family:'IM Fell English',Georgia,serif;
   font-size:9px;line-height:1.45;
 }
+
+.eb-cancelar{
+  width:100%;margin-top:5px;padding:6px;border-radius:2px;cursor:pointer;
+  background:transparent;border:1px solid rgba(176,138,66,.24);
+  color:#6B6054;font-family:'IM Fell English SC',Cinzel,serif;
+  font-size:9.5px;letter-spacing:.1em;
+}
+.eb-cancelar:hover{color:#C9B48C;border-color:rgba(176,138,66,.5)}
+
+/* OS JÁ ENTREGUES. Sem esta lista, um bilhete mandado por engano ficava na
+   mão do jogador para sempre — não havia por onde alcançá-lo. */
+.eb-entregues{margin-top:12px;padding-top:10px;border-top:1px solid rgba(176,138,66,.2)}
+.eb-entregues>span{
+  display:block;margin-bottom:7px;color:#8A7C68;
+  font-family:'IM Fell English SC',Cinzel,serif;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+}
+.eb-entregues ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.eb-entregues li{
+  padding:7px 9px;border-radius:2px;
+  background:rgba(32,24,18,.6);border:1px solid rgba(176,138,66,.16);
+}
+/* O que o primo já leu fica marcado: reescrever depois disso troca o texto
+   debaixo do nariz dele, e o Mestre precisa saber antes de clicar. */
+.eb-entregues li[data-aberto]{border-left:2px solid rgba(200,48,60,.5)}
+.eb-entregue-quem{display:flex;align-items:baseline;gap:7px;margin-bottom:3px}
+.eb-entregue-quem b{color:#C9B48C;font-family:'IM Fell English',Georgia,serif;font-size:11px;font-weight:400}
+.eb-entregue-quem em{font-style:normal;font-size:8.5px;letter-spacing:.08em;color:#6B6054}
+.eb-entregues li[data-aberto] .eb-entregue-quem em{color:#C06A6A}
+.eb-entregues p{
+  margin:0 0 6px;color:#8A7C68;
+  font-family:'IM Fell English',Georgia,serif;font-size:10px;line-height:1.45;
+}
+.eb-entregue-acoes{display:flex;gap:5px}
+.eb-entregue-acoes button{
+  flex:1;padding:4px;border-radius:2px;cursor:pointer;
+  background:transparent;border:1px solid rgba(176,138,66,.24);
+  color:#8A7C68;font-family:'IM Fell English SC',Cinzel,serif;
+  font-size:9px;letter-spacing:.08em;
+}
+.eb-entregue-acoes button:hover{color:#C9B48C;border-color:rgba(176,138,66,.55)}
+.eb-apagar:hover{color:#E08A8A !important;border-color:rgba(200,48,60,.6) !important}
+.eb-nota-aberto{
+  margin:8px 0 0 !important;color:#6B6054 !important;
+  font-size:9px !important;line-height:1.45;
+}

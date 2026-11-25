@@ -238,7 +238,10 @@
 /* ───────── O BOLSO ───────── */
 
 .blt-bolso{
-  position:absolute;left:12px;bottom:14px;z-index:44;
+  /* Segundo degrau: acima do esconder, que está acima da ficha. */
+  position:absolute;left:10px;
+  bottom:calc(10px + var(--fr-altura,var(--fr-aba,48px)) + 6px + var(--fr-degrau,34px));
+  z-index:44;
   font-family:'IM Fell English SC',Cinzel,Georgia,serif;
 }
 .blt-bolso > button{

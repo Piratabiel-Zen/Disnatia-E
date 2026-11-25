@@ -29,6 +29,40 @@ const Portrait = memo(function Portrait({ sheet, own, active, onOpen }) {
 
 
 
+/* O RETRATO DA NOITE
+   A companhia de uma mesa de terror não tem classe nem pontos de vida com
+   esse nome. O cartão da Dinastia E chamava quem não tinha nome de
+   "Aventureiro" e quem não tinha classe de "Companheiro" — dois rótulos
+   inventados por outro sistema, aparecendo como se fossem o personagem.
+
+   Aqui o nome é o nome que está na ficha, e nada mais é inventado: quando
+   não há nome, isso é dito. Debaixo dele, os três medidores que esta mesa
+   realmente usa. */
+const RetratoDaNoite = memo(function RetratoDaNoite({ ficha, own, active, onOpen }) {
+  const vida = Math.max(0, Number(ficha.pv) || 0);
+  const vidaMax = Math.max(1, Number(ficha.pvMaximo) || Number(ficha.pv) || 1);
+  return <button
+    className={`ad-companion noite ${own ? 'own' : ''} ${active ? 'active-turn' : ''}`}
+    onClick={onOpen} disabled={!onOpen}
+    title={ficha.nome || 'ficha sem nome'}
+  >
+    <span className="ad-portrait">
+      <span className="ad-portrait-fallback" aria-hidden="true">
+        {String(ficha.nome || '?').slice(0, 1)}
+      </span>
+      {ficha.foto ? <img src={ficha.foto} alt="" width="76" height="86" loading="eager" decoding="async" draggable="false" /> : null}
+    </span>
+    <span className="ad-companion-name" data-sem={ficha.nome ? undefined : ''}>
+      {ficha.nome || 'sem nome'}
+    </span>
+    <span className="ad-noite-medidas">
+      <i data-m="vida">{vida}/{vidaMax}</i>
+      <i data-m="pavor">{Number(ficha.pavor) || 0}</i>
+      <i data-m="sanidade">{Number(ficha.sanidade) || 0}</i>
+    </span>
+  </button>;
+});
+
 /* O RETRATO DO EXORCISTA
    A companhia de uma mesa de CAIN não tem classe nem pontos de vida. O que
    se precisa saber de relance, no meio de uma caçada, é a categoria e quanto
@@ -63,6 +97,7 @@ export function AdventureView({ session, combat, combatState, sheets, playerId, 
   // meio de uma mesa de exorcismo sem ninguém entender de onde vinha.
   const mesa = activeCampaign();
   const ehCain = sistemaDe(mesa).id === 'cain';
+  const ehNoite = sistemaDe(mesa).id === 'oneshot';
   const [fichasDoSistema, setFichasDoSistema] = useState([]);
   useEffect(() => {
     if (!ehCain) return undefined;
@@ -86,7 +121,14 @@ export function AdventureView({ session, combat, combatState, sheets, playerId, 
       onPanel={onPanel}
       onNavigate={onNavigate}
     >
-      {sheet => (ehCain
+      {sheet => (ehNoite
+        ? <RetratoDaNoite
+            ficha={sheet}
+            own={String(sheet.id) === playerId}
+            active={current?.type === 'player' && currentId === String(sheet.id)}
+            onOpen={masterMode || String(sheet.id) === playerId ? () => onPanel('sheet', sheet.id) : null}
+          />
+        : ehCain
         ? <RetratoExorcista
             ficha={sheet}
             own={String(sheet.id) === playerId}

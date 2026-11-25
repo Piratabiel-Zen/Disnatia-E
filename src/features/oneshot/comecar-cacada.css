@@ -2,7 +2,8 @@
    cena — e o botão de encerrar aparece no lugar do de começar, porque
    durante a caçada não há outra decisão a tomar ali. */
 .cc{
-  position:absolute;left:12px;bottom:14px;z-index:44;
+  /* O Mestre não tem ficha rápida no canto, então ele começa do chão. */
+  position:absolute;left:10px;bottom:14px;z-index:44;
   display:flex;flex-direction:column;align-items:flex-start;gap:6px;
   font-family:'IM Fell English SC',Cinzel,Georgia,serif;
 }
@@ -21,7 +22,7 @@
 /* Encerrar é vermelho e fica sozinho: no meio da caçada é o único botão
    que importa, e ele precisa ser achado sem procurar. */
 .cc-parar{
-  position:absolute;left:12px;bottom:14px;z-index:61;
+  position:absolute;left:10px;bottom:14px;z-index:61;
   background:rgba(110,22,31,.72);border:1px solid rgba(200,48,60,.7);color:#F0D6D6;
   animation:ccPisca 1.8s ease-in-out infinite;
 }

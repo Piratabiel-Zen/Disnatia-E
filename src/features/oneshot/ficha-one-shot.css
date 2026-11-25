@@ -492,3 +492,28 @@
 .osf-medidor-topo{margin-bottom:4px}
 .osf-caixas{gap:5px}
 .osf-caixas button{width:19px;height:19px}
+
+/* A senha da ficha, dentro da ficha. Mesmo bloco dos outros, sem destaque:
+   é preparação e não parte do personagem. */
+.osf-senha-nota,.osf-senha-aviso{
+  margin:0 0 9px;font-family:'Crimson Text',Georgia,serif;
+  font-size:12px;line-height:1.5;color:var(--osf-fraca,#6E6C6A);
+}
+.osf-senha-aviso{color:#C4A75C}
+.osf-senha-campo{display:flex;gap:6px;flex-wrap:wrap}
+.osf-senha-campo input{
+  flex:1 1 160px;min-width:0;padding:7px 9px;border-radius:3px;
+  background:rgba(0,0,0,.3);border:1px solid var(--osf-linha,#242427);
+  color:var(--osf-tinta,#C8C6C2);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;
+}
+.osf-senha-campo input:focus{outline:none;border-color:var(--osf-realce,#B08A53)}
+.osf-senha-campo button{
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+  background:transparent;border:1px solid var(--osf-linha,#35353A);
+  color:var(--osf-fraca,#8A8784);
+  font-family:Cinzel,Georgia,serif;font-size:10.5px;letter-spacing:.1em;
+}
+.osf-senha-campo button:hover:not(:disabled){border-color:#6A8A6E;color:#8FB894}
+.osf-senha-campo button:disabled{opacity:.4;cursor:default}
+.osf-senha-tirar:hover:not(:disabled){border-color:#9A5A5A !important;color:#C08A8A !important}

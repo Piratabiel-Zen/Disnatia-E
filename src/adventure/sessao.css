@@ -351,3 +351,20 @@ html[data-quality="light"] .sessao-ceu i:first-child{animation:none}
 
 html[data-motion="reduced"] .sessao-capitulo{animation:none}
 html[data-motion="reduced"] .sessao-capitulo-ficha:hover{transform:none}
+
+/* O retrato da mesa de terror. Sem barra de PV e sem classe: esta mesa
+   mede vida, pavor e sanidade, e o cartão mostra os três em miniatura. */
+.ad-companion.noite .ad-noite-medidas{
+  display:flex;gap:6px;margin-top:4px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
+}
+.ad-companion.noite .ad-noite-medidas i{
+  font-style:normal;padding:1px 4px;border-radius:2px;
+  background:rgba(0,0,0,.3);border:1px solid rgba(120,100,70,.3);
+}
+.ad-companion.noite .ad-noite-medidas i[data-m="vida"]{color:#C98A8A}
+.ad-companion.noite .ad-noite-medidas i[data-m="pavor"]{color:#C9A86A}
+.ad-companion.noite .ad-noite-medidas i[data-m="sanidade"]{color:#8AA8C9}
+/* Ficha sem nome é dita, e não batizada de "Aventureiro" por um sistema
+   que não é este. */
+.ad-companion.noite .ad-companion-name[data-sem]{opacity:.55;font-style:italic}

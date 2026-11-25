@@ -101,10 +101,64 @@ test('as doze competências entram, com nome e número e mais nada', () => {
   assert.equal(COMPETENCIAS.length, 12);
 });
 
-test('os três medidores aparecem', () => {
+test('os três medidores aparecem, de uma lista só', () => {
   const jsx = semComentarios(fonte('src/features/oneshot/FichaRapida.jsx'));
+  // Vieram de três blocos quase iguais para uma lista: três blocos
+  // parecidos divergem no primeiro ajuste, e aqui eles ganharam botões.
   for (const m of ['vida', 'pavor', 'sanidade']) {
-    assert.match(jsx, new RegExp(`data-medidor="${m}"`), `falta o medidor de ${m}`);
+    assert.match(jsx, new RegExp(`id: '${m}'`), `falta o medidor de ${m}`);
+  }
+  assert.match(jsx, /data-medidor=\{m\.id\}/);
+  assert.equal((jsx.match(/MEDIDORES\.map/g) || []).length, 1);
+});
+
+test('os pontos sobem e descem na própria ficha', () => {
+  const jsx = semComentarios(fonte('src/features/oneshot/FichaRapida.jsx'));
+  /* Levar dano é a coisa mais frequente da noite e era a que exigia mais
+     passos: sair do mapa, achar a aba de Fichas, abrir a sua, mudar o
+     número, voltar. No meio de uma caçada ninguém faz isso — anota num
+     papel e esquece. */
+  assert.match(jsx, /className="fr-passo"/);
+  assert.match(jsx, /aoMudar\(m\.campo, limitar\(ficha\[m\.campo\] - 1, 0, m\.teto\(pvMaximo\)\)\)/);
+  assert.match(jsx, /aoMudar\(m\.campo, limitar\(ficha\[m\.campo\] \+ 1, 0, m\.teto\(pvMaximo\)\)\)/);
+  // Só para quem pode mexer naquela ficha: o Mestre olhando a ficha de um
+  // primo pelo token continua só olhando.
+  assert.match(jsx, /\{aoMudar && \(/);
+  assert.match(jsx, /data-comBotoes=\{aoMudar \? '' : undefined\}/);
+});
+
+test('o ponto nunca sai da faixa da ficha', () => {
+  const jsx = semComentarios(fonte('src/features/oneshot/FichaRapida.jsx'));
+  // Vida negativa e sanidade acima do teto quebram a deterioração, que lê
+  // esses números para decidir o estado da ficha.
+  assert.match(jsx, /const limitar = \(valor, minimo, maximo\) =>/);
+  assert.match(jsx, /Math\.min\(maximo, Math\.max\(minimo, Number\(valor\) \|\| 0\)\)/);
+});
+
+test('mudar um ponto não atropela o resto da ficha', () => {
+  const mapa = semComentarios(fonte('src/features/mapa-batalha/BattleMapPage.jsx'));
+  // A ficha está aberta em outras telas ao mesmo tempo: gravar o objeto
+  // inteiro daqui atropelaria o que o jogador estiver escrevendo na aba.
+  assert.match(mapa, /\{ \[String\(campo\)\]: Number\(valor\) \|\| 0 \}, \{ merge: true \}/);
+  assert.match(mapa, /aoMudar=\{mudarPontoDaFicha\}/);
+});
+
+test('os botões do canto se empilham a partir da ficha medida', () => {
+  /* Três coisas disputavam o mesmo canto, cada uma com a própria distância
+     do fundo chutada à mão — e com a ficha ABERTA, que é quando ela cresce,
+     as três se sobrepunham. */
+  const jsx = semComentarios(fonte('src/features/oneshot/FichaRapida.jsx'));
+  assert.match(jsx, /new ResizeObserver\(medir\)/);
+  assert.match(jsx, /setProperty\('--fr-altura'/);
+  // No palco e não no :root: duas fichas na mesma tela — Mestre e jogador —
+  // escreveriam no mesmo lugar e a última ganharia.
+  assert.match(jsx, /const palco = el\?\.offsetParent;/);
+  for (const arquivo of [
+    'src/features/oneshot/esconderijo.css',
+    'src/features/oneshot/bilhete.css',
+  ]) {
+    assert.match(semComentarios(fonte(arquivo)), /var\(--fr-altura,var\(--fr-aba,48px\)\)/,
+      `${arquivo} não acompanha a altura da ficha`);
   }
 });
 

@@ -106,6 +106,47 @@ const URL = process.env.URL || 'http://localhost:5173/tests/browser/bilhete.html
   assert.ok(bolso.sumiu);
   assert.match(bolso.rotulo || '', /1/, 'o bilhete lido tem de ficar guardado');
 
+  /* ─── O MESTRE CORRIGE O QUE MANDOU ───
+     Bilhete errado acontece: o Mestre clica no primo de cima da lista, ou
+     troca "A saída" por "O chamado". Sem isto, o errado ficava na mão do
+     jogador para sempre — não havia por onde alcançá-lo. */
+  const entregues = () => p.evaluate(() => [...document.querySelectorAll('.eb-entregues li')]
+    .map(l => ({
+      quem: l.querySelector('b').textContent,
+      estado: l.querySelector('em').textContent,
+      texto: l.querySelector('p').textContent,
+      aberto: l.hasAttribute('data-aberto'),
+    })));
+
+  let lista = await entregues();
+  assert.equal(lista.length, 1, 'o bilhete entregue não apareceu na lista do Mestre');
+  assert.ok(lista[0].aberto, 'o Mestre precisa ver que o primo já leu antes de reescrever');
+  assert.match(lista[0].estado, /já leu/);
+
+  await p.click('.eb-entregue-acoes button');
+  await p.waitForTimeout(250);
+  await p.fill('.eb textarea', 'Esqueça o que leu. A troca não era com você.');
+  await p.click('.eb-enviar');
+  await p.waitForTimeout(600);
+  lista = await entregues();
+  assert.equal(lista.length, 1, 'reescrever criou um segundo bilhete em vez de trocar o texto');
+  assert.match(lista[0].texto, /Esqueça o que leu/);
+  // Reescrito volta a FECHAR: se ficasse aberto, quem já tinha lido não
+  // veria nada mudar — o texto trocaria calado no bolso dele.
+  assert.ok(!lista[0].aberto, 'o bilhete reescrito continuou aberto');
+  assert.ok(await p.evaluate(() => Boolean(document.querySelector('.blt'))),
+    'o papel reescrito não subiu de novo na tela de quem recebeu');
+
+  // O papel está no caminho: no jogo são duas telas, aqui é a mesma.
+  await p.click('.blt-papel');
+  await p.waitForTimeout(1500);
+  await p.click('.blt-pe button');
+  await p.waitForTimeout(600);
+
+  await p.click('.eb-apagar');
+  await p.waitForTimeout(500);
+  assert.deepEqual(await entregues(), [], 'apagar não tirou o bilhete da mesa');
+
   assert.deepEqual(erros, [], 'erro de JavaScript na página');
   await navegador.close();
   console.log('bilhete: tudo certo');

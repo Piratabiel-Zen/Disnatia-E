@@ -172,38 +172,48 @@ html[data-away="true"] .cenario-mesa-chuva i{animation-play-state:paused}
   position:absolute;top:-25%;left:-55%;width:210%;height:150%;
   display:block;will-change:transform;
 }
-/* Manchas grandes e moles. Nuvem fechada vira fumaça de palco. */
+/* ───────── A NÉVOA DO CENÁRIO ─────────
+
+   ANTES PARECIA POEIRA, e o motivo não era a opacidade: eram as DIREÇÕES.
+   Uma camada corria para a direita, outra para a esquerda, e uma terceira
+   piscava de opacidade por cima. Três movimentos brigando no mesmo lugar o
+   olho não lê como ar se movendo — lê como grão, como sujeira na lente.
+
+   Névoa de verdade tem vento, e vento tem UMA direção. As três camadas
+   agora correm para o mesmo lado, da esquerda para a direita, em
+   velocidades diferentes: é a diferença de velocidade que dá profundidade,
+   e não a diferença de rumo.
+
+   E são FAIXAS largas e baixas em vez de manchas redondas. Mancha redonda
+   é nuvem; névoa encosta no chão e se estica na horizontal. Com faixas dá
+   para baixar a opacidade (ele pediu menos espessa) sem ela sumir, porque
+   o que a faz existir passa a ser a extensão e não a densidade. */
 .cenario-nevoa-fundo{
   background-image:
-    radial-gradient(ellipse 40% 28% at 18% 62%,rgba(198,200,206,.17),transparent 70%),
-    radial-gradient(ellipse 32% 24% at 58% 74%,rgba(186,188,196,.14),transparent 72%),
-    radial-gradient(ellipse 46% 22% at 88% 58%,rgba(206,208,214,.12),transparent 70%);
-  animation:cenario-nevoa-a 78s linear infinite;
+    radial-gradient(ellipse 62% 16% at 20% 68%,rgba(206,208,214,.13),transparent 74%),
+    radial-gradient(ellipse 54% 13% at 66% 78%,rgba(192,195,202,.11),transparent 76%),
+    radial-gradient(ellipse 70% 15% at 94% 62%,rgba(210,212,218,.09),transparent 74%);
+  animation:cenario-nevoa-corre 74s linear infinite;
 }
 .cenario-nevoa-meio{
   background-image:
-    radial-gradient(ellipse 36% 20% at 34% 82%,rgba(170,172,180,.16),transparent 72%),
-    radial-gradient(ellipse 28% 26% at 76% 68%,rgba(200,202,208,.11),transparent 70%);
-  animation:cenario-nevoa-b 112s linear infinite;
+    radial-gradient(ellipse 58% 12% at 36% 84%,rgba(178,181,189,.12),transparent 78%),
+    radial-gradient(ellipse 48% 14% at 80% 72%,rgba(204,206,213,.08),transparent 76%);
+  animation:cenario-nevoa-corre 118s linear infinite;
 }
-/* O véu: baixa o contraste do conjunto inteiro. É ele que dá o "espessa",
-   mais do que as manchas — e é o que mantém o "sútil", porque não tem borda. */
+/* O véu: baixa o contraste do conjunto inteiro, sem borda nenhuma. Ele é
+   quem dá a sensação de ar carregado — e agora anda junto, devagar, em vez
+   de piscar no lugar. Piscar era metade da impressão de poeira. */
 .cenario-nevoa-frente{
-  background-image:radial-gradient(ellipse 75% 46% at 50% 78%,rgba(214,216,220,.1),transparent 76%);
-  animation:cenario-nevoa-respira 34s ease-in-out infinite;
+  background-image:radial-gradient(ellipse 86% 30% at 50% 82%,rgba(214,216,220,.07),transparent 80%);
+  animation:cenario-nevoa-corre 168s linear infinite;
 }
 
-@keyframes cenario-nevoa-a{
-  from{transform:translate3d(0,0,0)}
-  to{transform:translate3d(13%,-2%,0)}
-}
-@keyframes cenario-nevoa-b{
-  from{transform:translate3d(9%,1%,0)}
-  to{transform:translate3d(-7%,-3%,0)}
-}
-@keyframes cenario-nevoa-respira{
-  0%,100%{opacity:.6}
-  50%{opacity:1}
+/* UM rumo só, e o laço fecha sem salto: a faixa anda exatamente o bastante
+   para a próxima ocupar o lugar da anterior. */
+@keyframes cenario-nevoa-corre{
+  from{transform:translate3d(-8%,0,0)}
+  to{transform:translate3d(8%,0,0)}
 }
 
 /* Fora do modo imersivo a névoa sai inteira: quem escolheu "Leve" está

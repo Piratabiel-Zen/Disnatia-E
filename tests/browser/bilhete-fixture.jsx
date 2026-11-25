@@ -24,7 +24,9 @@ function Demo(){
       <span id="conta" style={{fontSize:11,alignSelf:'center'}}>{bilhetes.length} na mesa</span>
     </div>
     <div id="palco" style={{position:'relative',width:'100%',height:520,background:'#140F0C',border:'1px solid #3A2E22'}}>
-      <EntregarBilhete sheets={FICHAS} bilhetes={bilhetes} aoEntregar={entregar}/>
+      <EntregarBilhete sheets={FICHAS} bilhetes={bilhetes} aoEntregar={entregar}
+        aoReescrever={(id,texto)=>setBilhetes(l=>l.map(b=>b.id===id?{...b,texto,aberto:false}:b))}
+        aoApagar={id=>setBilhetes(l=>l.filter(b=>b.id!==id))}/>
       <BilheteSecreto bilhetes={bilhetes} sheetId={euSou}
         aoAbrir={id=>setBilhetes(l=>l.map(b=>b.id===id?{...b,aberto:true}:b))}/>
     </div>

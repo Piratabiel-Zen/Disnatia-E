@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   COMPETENCIAS, PAVOR_MAXIMO, SANIDADE_MAXIMA,
   competenciasDaFicha, deterioracao, normalizar, pvMaximoDaFicha,
@@ -23,7 +23,41 @@ import './ficha-rapida.css';
  * pessoa não quer ler o que Furtividade significa, quer saber se soma ou
  * subtrai.
  */
-export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
+/* Os três, numa lista só: o botão, o rótulo e o teto saem daqui, e não de
+   três blocos quase iguais que vão divergir no primeiro ajuste. */
+const MEDIDORES = Object.freeze([
+  { id: 'vida', nome: 'Vida', campo: 'pv', estado: 'ferida', teto: max => max },
+  { id: 'pavor', nome: 'Pavor', campo: 'pavor', estado: 'pavor', teto: () => PAVOR_MAXIMO },
+  { id: 'sanidade', nome: 'Sanidade', campo: 'sanidade', estado: 'sanidade', teto: () => SANIDADE_MAXIMA },
+]);
+
+const limitar = (valor, minimo, maximo) =>
+  Math.min(maximo, Math.max(minimo, Number(valor) || 0));
+
+export default function FichaRapida({ ficha: bruta, aoMudarCor, aoMudar }) {
+  /* A FICHA DIZ A PRÓPRIA ALTURA.
+     Os botões que moram acima dela — esconder, bilhetes — precisam saber
+     onde ela termina, e ela cresce quando abre. Com um número chutado no
+     CSS eles ficavam certos com a ficha fechada e por baixo dela aberta.
+
+     A medida vai para o elemento que contém os três (o palco do mapa), e
+     não para o `:root`: duas fichas na mesma tela — Mestre e jogador —
+     escreveriam no mesmo lugar e a última ganharia. */
+  const caixa = useRef(null);
+  useEffect(() => {
+    const el = caixa.current;
+    const palco = el?.offsetParent;
+    if (!el || !palco) return undefined;
+    const medir = () => palco.style.setProperty('--fr-altura', `${Math.round(el.offsetHeight)}px`);
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    return () => {
+      observador.disconnect();
+      palco.style.removeProperty('--fr-altura');
+    };
+  }, []);
+
   const [aberta, setAberta] = useState(false);
   const [escolhendoCor, setEscolhendoCor] = useState(false);
   if (!bruta) return null;
@@ -43,6 +77,7 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
 
   return (
     <div
+      ref={caixa}
       className="fr" data-aberta={aberta ? '' : undefined}
       style={{
         '--fr-fundo': cor.fundo,
@@ -81,16 +116,33 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor }) {
               <small>{[ficha.ocupacao, ficha.idade && `${ficha.idade} anos`]
                 .filter(Boolean).join(' · ') || 'sem ocupação'}</small>
 
-              <div className="fr-medidores">
-                <span data-medidor="vida" data-nivel={estado.ferida || undefined}>
-                  Vida <b>{ficha.pv}/{pvMaximo}</b>
-                </span>
-                <span data-medidor="pavor" data-nivel={estado.pavor || undefined}>
-                  Pavor <b>{ficha.pavor}/{PAVOR_MAXIMO}</b>
-                </span>
-                <span data-medidor="sanidade" data-nivel={estado.sanidade || undefined}>
-                  Sanidade <b>{ficha.sanidade}/{SANIDADE_MAXIMA}</b>
-                </span>
+              {/* OS TRÊS MEDIDORES, COM MÃO.
+                  Levar dano é a coisa mais frequente da noite, e era a que
+                  exigia mais passos: sair do mapa, achar a aba de Fichas,
+                  abrir a sua, mudar o número, voltar. No meio de uma caçada
+                  ninguém faz isso — anota num papel e esquece.
+
+                  Os botões só aparecem para quem pode mexer naquela ficha
+                  (`aoMudar`), então o Mestre olhando a ficha de um primo
+                  pelo token continua só olhando. */}
+              <div className="fr-medidores" data-comBotoes={aoMudar ? '' : undefined}>
+                {MEDIDORES.map(m => (
+                  <span key={m.id} data-medidor={m.id} data-nivel={estado[m.estado] || undefined}>
+                    {aoMudar && (
+                      <button
+                        type="button" className="fr-passo" aria-label={`Menos um de ${m.nome}`}
+                        onClick={() => aoMudar(m.campo, limitar(ficha[m.campo] - 1, 0, m.teto(pvMaximo)))}
+                      >−</button>
+                    )}
+                    {m.nome} <b>{ficha[m.campo]}/{m.teto(pvMaximo)}</b>
+                    {aoMudar && (
+                      <button
+                        type="button" className="fr-passo" aria-label={`Mais um de ${m.nome}`}
+                        onClick={() => aoMudar(m.campo, limitar(ficha[m.campo] + 1, 0, m.teto(pvMaximo)))}
+                      >+</button>
+                    )}
+                  </span>
+                ))}
               </div>
             </div>
           </div>

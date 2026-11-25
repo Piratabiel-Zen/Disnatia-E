@@ -7,6 +7,20 @@
    valor de cor está escrito aqui — a paleta mora em `fichaRapida.mjs`, para
    a tela não ter uma sexta cor que o modelo não conhece. */
 
+/* ───────── A PILHA DO CANTO ─────────
+   Três coisas disputavam o mesmo canto: a ficha, o botão de esconder e o
+   bolso dos bilhetes. Cada uma tinha a própria distância do fundo, chutada
+   à mão, e com a ficha ABERTA — que é quando ela cresce — as três se
+   sobrepunham.
+
+   Agora a própria ficha MEDE a altura dela e escreve em `--fr-altura` no
+   palco do mapa; os botões se empilham a partir desse número. `--fr-aba` é
+   só a reserva para o primeiro quadro, antes da medida chegar. */
+:root{
+  --fr-aba:48px;        /* reserva: a altura da ficha fechada */
+  --fr-degrau:34px;     /* cada botão acima dela */
+}
+
 .fr{
   position:absolute;left:10px;bottom:10px;z-index:42;
   /* Mais larga que antes: na referência a ficha é uma PÁGINA de grimório,
@@ -213,3 +227,28 @@
 
 html[data-motion="reduced"] .fr-paleta button{transition:none}
 html[data-motion="reduced"] .fr-paleta button:hover{transform:none}
+
+/* Os passos de um ponto. Pequenos e colados no número, porque são para o
+   dedo no meio de uma cena e não para configurar nada: quem os usa está
+   levando dano agora. */
+.fr-medidores[data-comBotoes] span{
+  display:inline-flex;align-items:center;gap:5px;
+  padding-inline:3px;
+}
+.fr-passo{
+  width:17px;height:17px;flex:0 0 auto;
+  display:grid;place-items:center;cursor:pointer;
+  background:rgba(0,0,0,.34);border:1px solid var(--fr-borda);border-radius:2px;
+  color:var(--fr-fraca);
+  font-family:system-ui,sans-serif;font-size:12px;line-height:1;
+  transition:color .15s ease,border-color .15s ease;
+}
+.fr-passo:hover{color:var(--fr-realce);border-color:var(--fr-realce)}
+.fr-passo:active{background:rgba(0,0,0,.6)}
+/* No dedo os três medidores viram linhas inteiras: dois alvos de 17px a
+   cinco pixels um do outro é erro garantido. */
+@media (pointer:coarse){
+  .fr-medidores[data-comBotoes]{display:grid;gap:5px}
+  .fr-medidores[data-comBotoes] span{justify-content:space-between}
+  .fr-passo{width:30px;height:30px;font-size:15px}
+}

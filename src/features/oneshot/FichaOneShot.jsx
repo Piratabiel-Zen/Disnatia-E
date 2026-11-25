@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { camposDaSenha, estadoDaSenha, temSenha } from '../sheets/senhaDaFicha.mjs';
 import {
   ATRIBUTOS, ATRIBUTO_MAXIMO_NA_CRIACAO, ATRIBUTO_MINIMO, COMPETENCIAS,
   DIFICULDADES, PAVOR_MAXIMO, PONTOS_DE_SORTE, SANIDADE_MAXIMA,
@@ -63,6 +65,14 @@ export default function FichaOneShot({
   fichasDaMesa = [],
 }) {
   const ficha = normalizar(bruta);
+  /* Rascunho e botão, e não gravação a cada tecla: gravar calcula um
+     resumo com sal novo, e uma escrita por letra gravaria oito senhas
+     diferentes para "esqueleto" — só a última valeria. */
+  const [rascunhoDaSenha, setRascunhoDaSenha] = useState('');
+  const gravarSenha = async (texto = rascunhoDaSenha) => {
+    aoMudar?.(await camposDaSenha(texto));
+    setRascunhoDaSenha('');
+  };
   const competencias = competenciasDaFicha(ficha);
   const pvMaximo = pvMaximoDaFicha(ficha);
   const restantes = pontosRestantes(ficha);
@@ -392,6 +402,48 @@ export default function FichaOneShot({
           </>
         )}
       </section>
+
+      {/* A SENHA DA FICHA, logo abaixo do talento.
+          Fica aqui e não numa tela de administração porque é aqui que o
+          Mestre está quando pensa nela: ele acabou de montar o personagem
+          de alguém e vai passar a ficha para essa pessoa. */}
+      {mestre && (
+        <section className="osf-bloco osf-senha">
+          <h4>
+            Senha desta ficha
+            <em>{estadoDaSenha(ficha) === 'protegida' ? 'com senha' : 'sem senha'}</em>
+          </h4>
+          <p className="osf-senha-nota">
+            Quem souber a senha abre esta ficha e joga com ela. Depois de
+            gravada a senha não fica em lugar nenhum — só o resumo dela. Se
+            esquecer, grave outra.
+          </p>
+          {estadoDaSenha(ficha) === 'antiga' && (
+            <p className="osf-senha-aviso">
+              Esta senha é antiga, guardada em texto puro e visível para a
+              mesa. Grave-a de novo aqui para trocá-la.
+            </p>
+          )}
+          <div className="osf-senha-campo">
+            <input
+              type="text" value={rascunhoDaSenha}
+              placeholder={temSenha(ficha) ? 'trocar a senha…' : 'definir uma senha…'}
+              onChange={e => setRascunhoDaSenha(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && rascunhoDaSenha.trim()) gravarSenha(); }}
+            />
+            <button type="button" disabled={!rascunhoDaSenha.trim()} onClick={gravarSenha}>
+              Gravar
+            </button>
+            {temSenha(ficha) && (
+              <button
+                type="button" className="osf-senha-tirar"
+                onClick={() => gravarSenha('')}
+                title="Deixar a ficha aberta para quem clicar"
+              >Tirar</button>
+            )}
+          </div>
+        </section>
+      )}
 
       </div>
 

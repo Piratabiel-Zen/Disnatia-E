@@ -248,12 +248,16 @@ test('a roda de fichas da Dinastia E não entra na mesa de terror', () => {
   // A bolinha com a silhueta só repetia o caminho para a ficha rápida, que
   // já está aberta ali embaixo com retrato, vida, pavor e competências.
   assert.match(mapa, /\{!ehNoite && <MapSheetDock/);
-  // E o canto de baixo à esquerda fica com o que é desta mesa: esconder,
-  // e a ficha logo abaixo.
-  const esc = semComentarios(fonte('src/features/oneshot/esconderijo.css'));
-  assert.match(esc, /\.esc-entrar\{[^}]*left:12px;bottom:52px/);
+  /* E o canto de baixo à esquerda fica com o que é desta mesa, empilhado a
+     partir da ALTURA MEDIDA da ficha: bilhetes em cima, esconder no meio,
+     ficha embaixo. Com distâncias chutadas à mão eles ficavam certos com a
+     ficha fechada e por baixo dela aberta. */
   const fr = semComentarios(fonte('src/features/oneshot/ficha-rapida.css'));
   assert.match(fr, /\.fr\{[^}]*left:10px;bottom:10px/);
+  const esc = semComentarios(fonte('src/features/oneshot/esconderijo.css'));
+  assert.match(esc, /\.esc-entrar\{[^}]*var\(--fr-altura/);
+  const blt = semComentarios(fonte('src/features/oneshot/bilhete.css'));
+  assert.match(blt, /\.blt-bolso\{[^}]*var\(--fr-degrau/);
 });
 
 test('os cartões do elenco quebram a linha em vez de se espremer', () => {
@@ -284,4 +288,86 @@ test('as regras deixam o criador consertar a própria mesa', () => {
   // de membro — pode falhar sozinha. Quando falha, mestre(cid) dá falso e
   // o criador fica sem poder mexer na própria mesa.
   assert.match(regras, /allow update: if mestre\(cid\)\s*\|\|\s*\(logado\(\) && resource\.data\.get\('criadoPor', ''\) == request\.auth\.uid\)/);
+});
+
+test('a névoa do cenário corre num rumo só', () => {
+  const css = semComentarios(fonte('src/experience/cenario-da-mesa.css'));
+  /* Parecia poeira, e o motivo não era a opacidade: eram as DIREÇÕES. Uma
+     camada corria para a direita, outra para a esquerda, e uma terceira
+     piscava por cima. Três movimentos brigando no mesmo lugar o olho lê
+     como grão, não como ar. */
+  const rumos = css.match(/@keyframes cenario-nevoa-[a-z]+\{[^}]*\}[^@]*/g) || [];
+  assert.equal(rumos.length, 1, 'voltou a ter mais de um movimento de névoa');
+  assert.match(css, /@keyframes cenario-nevoa-corre\{\s*from\{transform:translate3d\(-8%,0,0\)\}\s*to\{transform:translate3d\(8%,0,0\)\}/);
+  // Nenhuma camada pisca: piscar era metade da impressão de poeira.
+  assert.ok(!/cenario-nevoa-respira/.test(css));
+  // E as três correm, cada uma no seu tempo — é a diferença de VELOCIDADE
+  // que dá profundidade, não a de rumo.
+  const tempos = [...css.matchAll(/animation:cenario-nevoa-corre (\d+)s/g)].map(m => Number(m[1]));
+  assert.equal(tempos.length, 3);
+  assert.equal(new Set(tempos).size, 3, 'duas camadas no mesmo tempo andam coladas');
+});
+
+test('a névoa do cenário ficou mais fina e mais larga', () => {
+  const css = semComentarios(fonte('src/experience/cenario-da-mesa.css'));
+  // Faixas baixas em vez de manchas redondas: névoa encosta no chão e se
+  // estica na horizontal. Assim dá para baixar a opacidade sem ela sumir.
+  const alfas = [...css.matchAll(/rgba\(\d+,\s*\d+,\s*\d+,\s*(\.\d+)\)/g)]
+    .map(m => Number(m[1]))
+    .filter((_, i, todos) => todos.length);
+  const daNevoa = [...css.matchAll(/cenario-nevoa-(?:fundo|meio|frente)\{[\s\S]*?\}/g)]
+    .join('')
+    .match(/rgba\([^)]*\)/g) || [];
+  assert.ok(daNevoa.length >= 5, 'sumiram camadas de névoa');
+  for (const cor of daNevoa) {
+    const a = Number(cor.match(/,\s*(\.\d+)\)/)?.[1] || 1);
+    assert.ok(a <= 0.14, `camada com ${a} de opacidade: espessa demais`);
+  }
+  assert.ok(alfas.length > 0);
+});
+
+test('o retrato da mesa de terror não inventa nome nem classe', () => {
+  const jsx = semComentarios(fonte('src/adventure/AdventureSession.jsx'));
+  /* O cartão da Dinastia E chamava quem não tinha nome de "Aventureiro" e
+     quem não tinha classe de "Companheiro" — dois rótulos inventados por
+     outro sistema, aparecendo como se fossem o personagem. */
+  assert.match(jsx, /const RetratoDaNoite = memo/);
+  assert.match(jsx, /\{ficha\.nome \|\| 'sem nome'\}/);
+  const cartao = jsx.slice(jsx.indexOf('const RetratoDaNoite'), jsx.indexOf('/* O RETRATO DO EXORCISTA'));
+  assert.ok(!/Aventureiro|Companheiro|PV/.test(cartao), 'vazou vocabulário de outro sistema');
+  // E é escolhido pelo sistema da mesa, não por acaso.
+  assert.match(jsx, /const ehNoite = sistemaDe\(mesa\)\.id === 'oneshot';/);
+  assert.match(jsx, /\{sheet => \(ehNoite/);
+});
+
+test('a senha mora dentro da ficha, logo abaixo do talento', () => {
+  const jsx = semComentarios(fonte('src/features/oneshot/FichaOneShot.jsx'));
+  // É aqui que o Mestre está quando pensa nela: acabou de montar o
+  // personagem de alguém e vai passar a ficha para essa pessoa.
+  const talento = jsx.indexOf('Talento especial');
+  const senha = jsx.indexOf('osf-senha');
+  assert.ok(talento > -1 && senha > talento, 'a senha não veio depois do talento');
+  // Só o Mestre define.
+  assert.match(jsx, /\{mestre && \(\s*<section className="osf-bloco osf-senha"/);
+  // Rascunho e botão: gravar calcula um resumo com sal novo, e uma escrita
+  // por letra gravaria uma senha por caractere.
+  assert.match(jsx, /onChange=\{e => setRascunhoDaSenha\(e\.target\.value\)\}/);
+  assert.match(jsx, /await camposDaSenha\(texto\)/);
+});
+
+test('o mestre pode reescrever e apagar um bilhete já entregue', () => {
+  const jsx = semComentarios(fonte('src/features/oneshot/EntregarBilhete.jsx'));
+  // Bilhete errado acontece — o Mestre clica no primo de cima da lista.
+  // Sem esta lista, o errado ficava na mão do jogador para sempre.
+  assert.match(jsx, /className="eb-entregues"/);
+  assert.match(jsx, /aoReescrever\?\.\(editando\.id, texto\.trim\(\)\)/);
+  assert.match(jsx, /aoApagar\?\.\(b\.id\)/);
+  // Corrigir não pode virar um segundo papel: o errado continuaria lá.
+  assert.match(jsx, /if \(editando\) \{/);
+
+  const mapa = semComentarios(fonte('src/features/mapa-batalha/BattleMapPage.jsx'));
+  // Reescrito volta a FECHAR: se ficasse aberto, quem já tinha lido não
+  // veria nada mudar — o texto trocaria calado no bolso dele.
+  assert.match(mapa, /\{ texto: limpo, aberto: false, em: Date\.now\(\) \}, \{ merge: true \}/);
+  assert.match(mapa, /deleteDoc\(docIn\('bilhetes', String\(id\)\)\)/);
 });
