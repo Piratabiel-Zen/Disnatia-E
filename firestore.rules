@@ -256,7 +256,16 @@ service cloud.firestore {
     // nada. Era segredo de tela, exatamente o que ela existia para evitar.
     function acessoSeletivo(colecao) {
       return colecao.matches('c__[a-z0-9-]+__documentos')
-        || colecao.matches('c__[a-z0-9-]+__mural_cartoes');
+        || colecao.matches('c__[a-z0-9-]+__mural_cartoes')
+        // APARIÇÕES entraram aqui depois de um vazamento encontrado na
+        // mesa: elas eram "da mesa comum", ou seja, QUALQUER membro lia
+        // qualquer aparição — inclusive as de alcance "ninguém", que o
+        // Mestre ainda está montando. A tela escondia; o banco entregava.
+        //
+        // Vale para os seis tipos de uma vez (criatura, cenário, item,
+        // página, símbolo, vulto), porque o tipo é um campo do documento e
+        // não uma coleção: proteger a coleção protege todos.
+        || colecao.matches('c__[a-z0-9-]+__aparicoes');
     }
 
     function daMesaComum(colecao) {
@@ -280,7 +289,8 @@ service cloud.firestore {
     // Um documento guardado só chega a quem o Mestre liberou. Escrever é só
     // do Mestre: o documento é material dele.
     match /{colecao}/{documento} {
-      allow read: if colecao.matches('c__[a-z0-9-]+__documentos')
+      allow read: if (colecao.matches('c__[a-z0-9-]+__documentos')
+          || colecao.matches('c__[a-z0-9-]+__aparicoes'))
         && membro(idNaColecao(colecao))
         && (
           mestre(idNaColecao(colecao))
@@ -288,7 +298,8 @@ service cloud.firestore {
           || request.auth.uid in resource.data.get('liberadoPara', [])
         );
 
-      allow write: if colecao.matches('c__[a-z0-9-]+__documentos')
+      allow write: if (colecao.matches('c__[a-z0-9-]+__documentos')
+          || colecao.matches('c__[a-z0-9-]+__aparicoes'))
         && mestre(idNaColecao(colecao))
         && tamanhoRazoavel();
     }

@@ -15,27 +15,75 @@
    A régua: 64px de barra do topo + 46px de fita = 110px até o conteúdo.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════════
+   A PALETA DA MESA — cinco cores, e nada além delas
+
+     preto carvão   #100D0C   o fundo de tudo
+     sangue seco    #60191D   superfícies e o que está ativo
+     ouro antigo    #B08A53   fios, títulos, o que chama
+     pergaminho     #D8C5A4   o texto que se lê
+     cinza fúnebre  #77716D   o texto que só acompanha
+
+   O que mudou e por quê: o tema vinha de "sombrio", que é AZULADO no fundo
+   (#0A0708 com viés frio) e tem um vermelho de sinalização (#C8102E). Juntos
+   eles dão um ar de interface de alarme. A paleta nova é quente e apagada —
+   carvão em vez de azul, sangue SECO em vez de sangue fresco — que é a
+   diferença entre uma casa velha e um aviso de incêndio.
+
+   As cores do app (`--accent`, `--fundo-mesa`...) são escritas pelo
+   JavaScript direto no elemento, então precisam de `!important` aqui para
+   serem substituídas: regra de folha não vence estilo em linha sem isso.
+
+   OS DERIVADOS SAEM DAS CINCO, e não de uma sexta cor escolhida à mão: cada
+   tom novo é uma das cinco mais clara ou mais escura. É o que impede a
+   paleta de virar sete cores em duas semanas.
+
+   CONTRASTE: pergaminho sobre carvão dá ~11:1 e é o texto; ouro dá ~6:1 e
+   serve para título e fio; cinza dá ~3,5:1 e só vale para apoio. Sangue seco
+   é escuro demais para ser letra sobre fundo escuro — é superfície.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 html[data-tema-mesa="mortalha"]{
-  --mor-pergaminho:#C9B48C;
-  --mor-pergaminho-escuro:#A8926B;
-  --mor-couro:#1A130F;
-  --mor-couro-claro:#2A1E16;
-  --mor-latao:#B08A42;
-  --mor-latao-claro:#E3C782;
-  --mor-sangue:#8E1F2B;
-  --mor-sangue-claro:#C4414F;
-  --mor-tinta:#E8DCC2;
+  --mor-carvao:#100D0C;
+  --mor-sangue:#60191D;
+  --mor-latao:#B08A53;
+  --mor-pergaminho:#D8C5A4;
+  --mor-cinza:#77716D;
+
+  /* Derivados, todos das cinco acima. */
+  --mor-carvao-claro:#1B1715;
+  --mor-carvao-fundo:#0A0807;
+  --mor-sangue-escuro:#3A0F12;
+  --mor-sangue-claro:#8A2730;
+  --mor-latao-claro:#D8B57A;
+  --mor-latao-fraco:rgba(176,138,83,.34);
+  --mor-pergaminho-escuro:#B5A183;
+  --mor-tinta:var(--mor-pergaminho);
+  --mor-couro:var(--mor-carvao-claro);
+  --mor-couro-claro:#241E1A;
+
   --mor-fita:48px;
   --mor-topo:64px;
+
+  /* As cores do app passam a vir da paleta. */
+  --accent:var(--mor-sangue) !important;
+  --accent-soft:var(--mor-sangue-claro) !important;
+  --bronze:var(--mor-latao) !important;
+  --ink-mesa:var(--mor-pergaminho) !important;
+  --contraste-mesa:var(--mor-pergaminho) !important;
+  --contraste-claro-mesa:var(--mor-pergaminho) !important;
+  --superficie-mesa:var(--mor-carvao-claro) !important;
+  --linha-mesa:var(--mor-latao-fraco) !important;
+  --fundo-mesa:var(--mor-carvao) !important;
 }
 
 /* ───────── A BARRA DO TOPO ───────── */
 
 html[data-tema-mesa="mortalha"] .immersive-topbar{
   background:
-    linear-gradient(180deg,rgba(26,19,15,.97),rgba(12,9,7,.98)) !important;
+    linear-gradient(180deg,rgba(27,23,21,.97),rgba(12,9,7,.98)) !important;
   border-bottom:1px solid var(--mor-latao) !important;
-  box-shadow:0 1px 0 rgba(227,199,130,.18),0 10px 26px rgba(0,0,0,.5);
+  box-shadow:0 1px 0 rgba(176,138,83,.18),0 10px 26px rgba(0,0,0,.5);
 }
 html[data-tema-mesa="mortalha"] .brand-line b,
 html[data-tema-mesa="mortalha"] .brand-line strong{
@@ -68,7 +116,7 @@ html[data-tema-mesa="mortalha"] .top-actions .ad-quality{
 }
 html[data-tema-mesa="mortalha"] .top-actions button:hover{
   border-color:var(--mor-latao-claro) !important;
-  box-shadow:0 0 0 1px rgba(227,199,130,.25),0 4px 14px rgba(0,0,0,.5);
+  box-shadow:0 0 0 1px rgba(176,138,83,.25),0 4px 14px rgba(0,0,0,.5);
   transform:translateY(-1px);
 }
 html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(0)}
@@ -106,9 +154,9 @@ html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(
     gap:0 !important;
     overflow:visible !important;
     background:
-      linear-gradient(180deg,rgba(84,20,26,.96),rgba(44,11,15,.97)) !important;
+      linear-gradient(180deg,rgba(58,15,18,.96),rgba(44,11,15,.97)) !important;
     border-right:0 !important;
-    border-top:1px solid rgba(227,199,130,.4) !important;
+    border-top:1px solid rgba(176,138,83,.4) !important;
     border-bottom:1px solid var(--mor-latao) !important;
     box-shadow:0 8px 22px rgba(0,0,0,.5);
     z-index:300 !important;
@@ -140,7 +188,7 @@ html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(
     width:auto !important;height:auto !important;
     padding:0 16px !important;margin:0 !important;
     border:0 !important;border-radius:0 !important;
-    border-right:1px solid rgba(227,199,130,.22) !important;
+    border-right:1px solid rgba(176,138,83,.22) !important;
     background:transparent !important;
     color:var(--mor-tinta) !important;
     font-family:Cinzel,Georgia,serif !important;
@@ -165,12 +213,12 @@ html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(
     border:0 !important;
   }
   html[data-tema-mesa="mortalha"] .grim-link:hover{
-    background:rgba(227,199,130,.08) !important;
-    color:#FFF3DA !important;
+    background:rgba(176,138,83,.08) !important;
+    color:var(--mor-pergaminho) !important;
   }
   html[data-tema-mesa="mortalha"] .grim-link.active{
-    background:linear-gradient(180deg,rgba(142,31,43,.5),rgba(84,20,26,.3)) !important;
-    color:#FFF3DA !important;
+    background:linear-gradient(180deg,rgba(96,25,29,.5),rgba(58,15,18,.3)) !important;
+    color:var(--mor-pergaminho) !important;
   }
   /* O fio de latão embaixo do item aberto: é o que marca onde a pessoa está
      sem precisar de cor de fundo forte, que numa fita vermelha vira mancha. */
@@ -182,7 +230,7 @@ html[data-tema-mesa="mortalha"] .top-actions button:active{transform:translateY(
   html[data-tema-mesa="mortalha"] .grim-switch-table{
     margin-left:auto !important;align-self:center !important;
     width:auto !important;padding:5px 12px !important;
-    border:1px solid rgba(227,199,130,.4) !important;border-radius:2px !important;
+    border:1px solid rgba(176,138,83,.4) !important;border-radius:2px !important;
     background:transparent !important;color:var(--mor-latao-claro) !important;
     font-family:Cinzel,Georgia,serif !important;font-size:10px !important;
     letter-spacing:.12em;text-transform:uppercase;
@@ -218,7 +266,7 @@ html[data-tema-mesa="mortalha"] .ad-action-dock{
   border-color:var(--mor-latao) !important;
 }
 html[data-tema-mesa="mortalha"] .ad-action-dock>button{
-  border-right-color:rgba(227,199,130,.22) !important;
+  border-right-color:rgba(176,138,83,.22) !important;
   color:var(--mor-tinta) !important;
   transition:background .2s ease,transform .14s ease;
 }
@@ -372,7 +420,15 @@ html[data-tema-mesa="mortalha"] .battlemap-heading{padding:2px 4px !important;ga
      sobrou. */
   html[data-tema-mesa="mortalha"] .immersive-topbar{
     display:grid !important;
-    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    /* O trilho da direita não pode encolher abaixo dos botões. Com
+       `minmax(0,1fr)` nos dois lados o navegador dividia a sobra em partes
+       iguais, e quando a fileira de botões passava de metade ela vazava
+       para a esquerda — por cima do nome, que é justamente o que esta
+       grade existe para impedir. `max-content` no piso do trilho faz a
+       conta ao contrário: os botões pegam o que precisam, o trilho da
+       esquerda fica com o resto, e o nome sai do centro exato em vez de
+       sair por baixo de alguma coisa. */
+    grid-template-columns:minmax(0,1fr) auto minmax(max-content,1fr);
     align-items:center;
     column-gap:14px;
     justify-content:initial !important;
@@ -425,17 +481,17 @@ html[data-tema-mesa="mortalha"] .battlemap-heading{padding:2px 4px !important;ga
    do fundo não tem silhueta, e sem silhueta o olho não acha onde começa
    cada talento. Papel mais claro, filete de latão e título em latão. */
 html[data-tema-mesa="mortalha"] .ost-carta{
-  background:linear-gradient(168deg,#241C15,#1A140F) !important;
-  border-color:#4A3B29 !important;border-left-color:var(--mor-latao) !important;
+  background:linear-gradient(168deg,var(--mor-couro-claro),var(--mor-carvao-claro)) !important;
+  border-color:var(--mor-latao-fraco) !important;border-left-color:var(--mor-latao) !important;
   box-shadow:0 6px 18px rgba(0,0,0,.5);
 }
 html[data-tema-mesa="mortalha"] .ost-carta h3{color:var(--mor-latao-claro) !important}
-html[data-tema-mesa="mortalha"] .ost-resumo{color:#C9A86A !important}
+html[data-tema-mesa="mortalha"] .ost-resumo{color:var(--mor-latao-claro) !important}
 html[data-tema-mesa="mortalha"] .ost-efeito{color:var(--mor-tinta) !important}
-html[data-tema-mesa="mortalha"] .ost-quando{color:#9A8A72 !important}
-html[data-tema-mesa="mortalha"] .ost-limite{color:#8B7A52 !important}
+html[data-tema-mesa="mortalha"] .ost-quando{color:var(--mor-cinza) !important}
+html[data-tema-mesa="mortalha"] .ost-limite{color:var(--mor-cinza) !important}
 html[data-tema-mesa="mortalha"] .ost-barra h2{color:var(--mor-latao-claro) !important}
-html[data-tema-mesa="mortalha"] .ost-barra p{color:#9A8A72 !important}
+html[data-tema-mesa="mortalha"] .ost-barra p{color:var(--mor-cinza) !important}
 
 /* ───────── O MAPA TAMBÉM É CENÁRIO ─────────
    Os controles do mapa vinham com o roxo e o ciano da Dinastia E. Numa
@@ -450,7 +506,7 @@ html[data-tema-mesa="mortalha"] .battlemap-toolbar button,
 html[data-tema-mesa="mortalha"] .battlemap-viewport button:not(.fr-aba):not(.fr-paleta button){
   border-color:rgba(176,138,66,.34) !important;
   background:rgba(20,14,11,.82) !important;
-  color:#C9B48C !important;
+  color:var(--mor-pergaminho) !important;
   font-family:Cinzel,Georgia,serif !important;
 }
 html[data-tema-mesa="mortalha"] .battlemap-heading button:hover,
@@ -460,22 +516,22 @@ html[data-tema-mesa="mortalha"] .battlemap-toolbar button:hover{
 /* O botão ligado fica em sangue, não em roxo: é a cor que esta mesa usa
    para "isto está acontecendo agora". */
 html[data-tema-mesa="mortalha"] .battlemap-heading button[aria-pressed="true"]{
-  border-color:rgba(142,31,43,.75) !important;
-  background:rgba(142,31,43,.24) !important;
-  color:#E0707C !important;
+  border-color:rgba(96,25,29,.75) !important;
+  background:rgba(96,25,29,.24) !important;
+  color:var(--mor-latao-claro) !important;
 }
 
 /* O painel de token e o seletor de mapas, na mesma pele. */
 html[data-tema-mesa="mortalha"] .battlemap-token-panel,
 html[data-tema-mesa="mortalha"] .map-sheet-picker,
 html[data-tema-mesa="mortalha"] .battlemap-library{
-  background:linear-gradient(168deg,rgba(26,19,15,.97),rgba(14,10,8,.98)) !important;
+  background:linear-gradient(168deg,rgba(27,23,21,.97),rgba(10,8,7,.98)) !important;
   border-color:rgba(176,138,66,.4) !important;
   color:var(--mor-tinta) !important;
 }
 html[data-tema-mesa="mortalha"] .map-dock-trigger{
   border-color:rgba(176,138,66,.4) !important;
-  background:rgba(20,14,11,.86) !important;color:#C9B48C !important;
+  background:rgba(20,14,11,.86) !important;color:var(--mor-pergaminho) !important;
 }
 
 /* A moldura do mapa: um fio de latão e uma sombra para dentro, para a
@@ -533,7 +589,7 @@ html[data-tema-mesa="mortalha"] .battlemap-viewport{
     content:'';grid-column:1;grid-row:1;z-index:2;
     justify-self:center;align-self:start;margin-top:9px;
     width:42px;height:42px;border-radius:46% 54% 50% 50%;
-    background:radial-gradient(circle at 38% 32%,#B8343E,#7A1821 62%,#4A0E14);
+    background:radial-gradient(circle at 38% 32%,var(--mor-sangue-claro),var(--mor-sangue) 62%,var(--mor-sangue-escuro));
     box-shadow:0 4px 12px rgba(0,0,0,.66),inset 0 -2px 6px rgba(0,0,0,.4);
     animation:morLacre .62s cubic-bezier(.2,1.4,.4,1) 1;
   }
@@ -559,7 +615,7 @@ html[data-tema-mesa="mortalha"] .battlemap-viewport{
 
 /* ---- A tipografia do pergaminho ---- */
 html[data-tema-mesa="mortalha"] .sessao-kicker{
-  color:#6B5636 !important;letter-spacing:.34em !important;
+  color:var(--mor-latao-fraco) !important;letter-spacing:.34em !important;
   font-family:'IBM Plex Mono',ui-monospace,monospace !important;font-size:9px !important;
 }
 html[data-tema-mesa="mortalha"] .sessao-titulo h2{
@@ -572,11 +628,11 @@ html[data-tema-mesa="mortalha"] .sessao-titulo h2{
      vermelho e a primeira linha é repintada, o que dá exatamente o corte da
      referência ("Sua próxima" escuro, "aventura" em sangue) e continua
      certo se o nome da mesa fizer o texto quebrar noutro ponto. */
-  color:#8E1F2B !important;text-shadow:none !important;text-wrap:balance;
+  color:var(--mor-sangue) !important;text-shadow:none !important;text-wrap:balance;
 }
-html[data-tema-mesa="mortalha"] .sessao-titulo h2::first-line{color:#2A1F14}
+html[data-tema-mesa="mortalha"] .sessao-titulo h2::first-line{color:var(--mor-carvao)}
 html[data-tema-mesa="mortalha"] .sessao-titulo p{
-  color:#4A3A26 !important;
+  color:var(--mor-carvao-claro) !important;
   font-family:'Crimson Text',Georgia,serif !important;font-style:italic;
   font-size:16px !important;max-width:34ch;margin:10px auto 0 !important;
 }
@@ -586,23 +642,23 @@ html[data-tema-mesa="mortalha"] .sessao-titulo p{
    dois em latão vazado, lado a lado. */
 html[data-tema-mesa="mortalha"] .sessao-acao-principal{
   padding:13px 18px !important;border-radius:3px !important;
-  background:linear-gradient(180deg,#8E1F2B,#5E1319) !important;
+  background:linear-gradient(180deg,var(--mor-sangue),var(--mor-sangue-escuro)) !important;
   border:1px solid var(--mor-latao) !important;
-  box-shadow:inset 0 0 0 1px rgba(227,199,130,.22),0 6px 18px rgba(0,0,0,.45) !important;
-  color:#F2E4C8 !important;
+  box-shadow:inset 0 0 0 1px rgba(176,138,83,.22),0 6px 18px rgba(0,0,0,.45) !important;
+  color:var(--mor-pergaminho) !important;
   font-family:Cinzel,Georgia,serif !important;font-size:14px !important;
   letter-spacing:.16em !important;text-transform:uppercase;
 }
 html[data-tema-mesa="mortalha"] .sessao-acao{
   padding:10px 14px !important;border-radius:3px !important;
-  background:rgba(26,19,15,.1) !important;
+  background:rgba(27,23,21,.1) !important;
   border:1px solid rgba(74,58,38,.6) !important;
-  color:#3A2C1C !important;
+  color:var(--mor-carvao-claro) !important;
   font-family:Cinzel,Georgia,serif !important;font-size:11px !important;
   letter-spacing:.12em !important;text-transform:uppercase;
 }
 html[data-tema-mesa="mortalha"] .sessao-acao:hover{
-  background:rgba(26,19,15,.2) !important;border-color:#4A3A26 !important;
+  background:rgba(27,23,21,.2) !important;border-color:var(--mor-carvao-claro) !important;
 }
 /* Os dois secundários dividem a linha, como na imagem. */
 @media (min-width:901px){
@@ -614,7 +670,7 @@ html[data-tema-mesa="mortalha"] .sessao-acao:hover{
 
 /* ---- A coluna do lugar ---- */
 html[data-tema-mesa="mortalha"] .sessao-frentes{
-  border:1px solid rgba(227,199,130,.26) !important;
+  border:1px solid rgba(176,138,83,.26) !important;
   background:var(--mor-couro) !important;
 }
 html[data-tema-mesa="mortalha"] .sessao-local-texto b,
@@ -682,13 +738,34 @@ html[data-tema-mesa="mortalha"] .brand-line h1{
   font-size:clamp(17px,1.5vw,25px) !important;
   letter-spacing:.055em !important;
   font-weight:400 !important;
+  /* O NOME DA MESA ESTAVA LILÁS, e a cor não vinha de `color`: vinha de um
+     `linear-gradient` roxo recortado na letra por `background-clip:text`,
+     com `-webkit-text-fill-color:transparent` para deixar o gradiente
+     aparecer. Trocar `color` não mudava nada — era preciso desfazer os três.
+     Foi o que a primeira checagem de paleta deixou passar: ela olhava
+     `color`, que já estava certo, e o que pintava era outra propriedade. */
+  background:none !important;
+  -webkit-background-clip:border-box !important;
+  background-clip:border-box !important;
+  -webkit-text-fill-color:currentColor !important;
+  color:var(--mor-pergaminho) !important;
   text-shadow:
-    .5px 0 0 rgba(138,31,43,.5),
-    -.5px .5px 0 rgba(12,10,14,.8),
-    0 0 14px rgba(176,138,66,.22);
+    .5px 0 0 rgba(96,25,29,.5),
+    -.5px .5px 0 rgba(16,13,12,.8),
+    0 0 14px rgba(176,138,83,.22);
+}
+/* O selo redondo ao lado do nome vinha com o roxo da Dinastia E em três
+   lugares (borda, miolo e brilho). Vira latão vazado sobre carvão. */
+html[data-tema-mesa="mortalha"] .brand-line .brand-mark{
+  border-color:var(--mor-latao-fraco) !important;
+  background:radial-gradient(circle,rgba(176,138,83,.2),transparent 68%) !important;
+  color:var(--mor-latao) !important;
+  box-shadow:0 0 18px rgba(176,138,83,.12) !important;
+  animation:none !important;
 }
 html[data-tema-mesa="mortalha"] .brand-line small{
   font-family:var(--mor-corpo) !important;
+  color:var(--mor-cinza) !important;
   letter-spacing:.2em !important;
   text-transform:lowercase !important;
   font-style:italic;
@@ -731,3 +808,71 @@ html[data-tema-mesa="mortalha"] .sessao-frente .ad-party-viewport{
   padding-left:0 !important;
 }
 html[data-tema-mesa="mortalha"] .sessao-local{gap:10px}
+
+
+/* ───────── O QUE AINDA ESTAVA FORA DA PALETA ─────────
+   Pontos que vinham do tema "sombrio" e destoavam: o azul do fundo da
+   casca, o vermelho de sinalização nas abas e o verde-água dos cartões de
+   personagem. Cada um passa a sair das cinco. */
+
+html[data-tema-mesa="mortalha"] .adventure-shell,
+html[data-tema-mesa="mortalha"] .immersive-stage{
+  background:var(--mor-carvao) !important;
+  color:var(--mor-pergaminho);
+}
+
+/* A fita: sangue seco e não carmesim. O ativo acende em ouro, que é o que
+   diferencia "onde estou" de "o que é clicável" sem inventar uma cor. */
+html[data-tema-mesa="mortalha"] .grim-nav{
+  background:linear-gradient(180deg,var(--mor-sangue-escuro),var(--mor-sangue-escuro)) !important;
+  border-bottom:1px solid var(--mor-latao) !important;
+}
+html[data-tema-mesa="mortalha"] .grim-link{
+  color:var(--mor-pergaminho-escuro) !important;
+}
+html[data-tema-mesa="mortalha"] .grim-link:hover{color:var(--mor-pergaminho) !important}
+html[data-tema-mesa="mortalha"] .grim-link.active,
+html[data-tema-mesa="mortalha"] .grim-link[aria-current="page"]{
+  color:var(--mor-latao-claro) !important;
+  background:linear-gradient(180deg,rgba(176,138,83,.14),transparent) !important;
+  box-shadow:inset 0 -2px 0 var(--mor-latao) !important;
+}
+
+html[data-tema-mesa="mortalha"] .immersive-topbar{
+  background:linear-gradient(180deg,var(--mor-carvao-claro),var(--mor-carvao-fundo)) !important;
+}
+
+/* O cartão do personagem no quadro do lugar. O verde-água vinha de uma cor
+   de classe da Dinastia E, que nesta mesa não quer dizer nada. */
+html[data-tema-mesa="mortalha"] .ad-companion{
+  border-color:var(--mor-latao-fraco) !important;
+  background:linear-gradient(180deg,var(--mor-carvao-claro),var(--mor-carvao)) !important;
+  color:var(--mor-pergaminho) !important;
+}
+html[data-tema-mesa="mortalha"] .ad-companion.own,
+html[data-tema-mesa="mortalha"] .ad-companion.active-turn{
+  border-color:var(--mor-latao) !important;
+  box-shadow:0 0 0 1px rgba(176,138,83,.2) inset;
+}
+html[data-tema-mesa="mortalha"] .ad-portrait{
+  border-color:var(--mor-latao-fraco) !important;
+  background:var(--mor-carvao-fundo) !important;
+  color:var(--mor-latao) !important;
+}
+html[data-tema-mesa="mortalha"] .ad-companion-name{color:var(--mor-pergaminho) !important}
+html[data-tema-mesa="mortalha"] .ad-companion-class{color:var(--mor-cinza) !important}
+
+/* O quadro em volta do elenco e o painel do lugar. */
+html[data-tema-mesa="mortalha"] .sessao-frente{
+  border-color:var(--mor-latao-fraco) !important;
+  background:linear-gradient(180deg,rgba(27,23,21,.92),rgba(10,8,7,.94)) !important;
+}
+html[data-tema-mesa="mortalha"] .sessao-vazio{color:var(--mor-cinza) !important}
+
+/* Texto de apoio: o cinza fúnebre tem um lugar, e é este. */
+html[data-tema-mesa="mortalha"] .brand-line small,
+html[data-tema-mesa="mortalha"] .sessao-local-texto small,
+html[data-tema-mesa="mortalha"] .ad-eyebrow,
+html[data-tema-mesa="mortalha"] .ad-muted{
+  color:var(--mor-cinza) !important;
+}

@@ -448,13 +448,23 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     ).catch(e => console.error('Erro ao guardar a cor da ficha:', e));
   };
 
+  /* A LISTA DE APARIÇÕES É DO MESTRE.
+     Isto lia a coleção inteira, sem filtro: é a lista de onde ele escolhe
+     a imagem do vulto e o que vem na caçada. Para um jogador, a mesma
+     leitura entregava TODAS as aparições — inclusive as de alcance
+     "ninguém", que o Mestre ainda está montando.
+
+     A correção de verdade está nas regras, que agora tratam `aparicoes`
+     como material liberado por pessoa. Esta guarda existe para que a tela
+     também não peça o que não é dela: sem ela, o jogador passaria a
+     receber um erro de permissão a cada abertura do mapa. */
   useEffect(() => {
-    if (!ehNoite) { setAparicoesDaMesa([]); return undefined; }
+    if (!ehNoite || !masterMode) { setAparicoesDaMesa([]); return undefined; }
     const un = onSnapshot(col('aparicoes'),
       snap => setAparicoesDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
       () => setAparicoesDaMesa([]));
     return () => un();
-  }, [ehNoite]);
+  }, [ehNoite, masterMode]);
 
   useEffect(() => {
     if (!ehNoite || !noiteComecouEm) return undefined;
