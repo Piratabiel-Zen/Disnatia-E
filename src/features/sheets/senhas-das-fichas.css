@@ -1,0 +1,65 @@
+/* O painel de senhas. Fica na página de fichas, só para o Mestre, e é
+   deliberadamente sem graça: é tela de preparação, não de cena. */
+.snf{
+  max-width:620px;margin:0 auto 26px;padding:16px 18px;
+  border:1px solid var(--linha-mesa,#242427);border-radius:4px;
+  background:var(--superficie-mesa,#101012);
+}
+.snf header h3{
+  margin:0 0 6px;color:var(--ink-mesa,#C8C6C2);
+  font-family:Cinzel,Georgia,serif;font-size:14px;letter-spacing:.1em;font-weight:400;
+}
+.snf header p{
+  margin:0 0 14px;color:#7B7873;
+  font-family:'Crimson Text',Georgia,serif;font-size:13px;line-height:1.5;
+}
+
+.snf ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.snf li{
+  display:grid;gap:6px;padding:10px 12px;
+  border:1px solid #1E1E21;border-radius:3px;background:#0C0C0D;
+}
+/* Só a ficha com senha antiga chama atenção: é a única que pede ação. */
+.snf li[data-estado="antiga"]{border-color:#4A3A22;background:#120F0A}
+
+.snf-quem{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.snf-quem strong{
+  color:var(--ink-mesa,#C8C6C2);font-family:Cinzel,Georgia,serif;
+  font-size:13px;font-weight:400;letter-spacing:.04em;
+}
+.snf-quem em{font-style:normal;font-size:11px;color:#6E6C6A;line-height:1.4}
+.snf li[data-estado="antiga"] .snf-quem em{color:#C4A75C}
+.snf li[data-estado="protegida"] .snf-quem em{color:#6A8A6E}
+
+.snf-campo{display:flex;gap:6px;flex-wrap:wrap}
+.snf-campo input{
+  flex:1 1 170px;min-width:0;padding:7px 9px;border-radius:3px;
+  background:#09090A;border:1px solid #242427;color:#C8C6C2;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;
+}
+.snf-campo input:focus{outline:none;border-color:#35353A}
+.snf-campo button{
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+  background:transparent;border:1px solid #35353A;color:#8A8784;
+  font-family:Cinzel,Georgia,serif;font-size:10.5px;letter-spacing:.1em;
+}
+.snf-campo button:hover:not(:disabled){border-color:#6A8A6E;color:#8FB894}
+.snf-campo button:disabled{opacity:.4;cursor:default}
+.snf-tirar:hover:not(:disabled){border-color:#9A5A5A !important;color:#C08A8A !important}
+
+.snf-feito{
+  font-family:'Crimson Text',Georgia,serif;font-size:12px;color:#6A8A6E;
+  animation:snfFeito 2.4s ease both;
+}
+@keyframes snfFeito{0%{opacity:0}10%,74%{opacity:1}100%{opacity:0}}
+html[data-motion="reduced"] .snf-feito{animation:none;opacity:1}
+
+.snf-vazio,.snf-erro,.snf-limite{
+  font-family:'Crimson Text',Georgia,serif;font-size:12px;line-height:1.5;
+}
+.snf-vazio{color:#5A5856;font-style:italic;margin:0}
+.snf-erro{color:#C08A8A;margin:10px 0 0}
+.snf-limite{
+  margin:14px 0 0;padding-top:10px;border-top:1px solid #1E1E21;
+  color:#5A5856;font-size:11px;
+}

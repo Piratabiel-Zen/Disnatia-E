@@ -380,3 +380,46 @@ service cloud.firestore {
     }
   }
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// DÍVIDA CONHECIDA: A SENHA DA FICHA NÃO É CONFERIDA AQUI
+//
+// Cada ficha pode ter uma senha, definida pelo Mestre. Ela deixou de ser
+// guardada em texto puro — o documento guarda o resumo (SHA-256 com um sal
+// por ficha) e o texto é descartado na hora. Isso resolveu o problema
+// concreto que existia: a senha de cada jogador estava LEGÍVEL para todos
+// os outros, porque as regras acima deixam todo membro ler toda ficha da
+// mesa, e senha de mesa é senha reaproveitada.
+//
+// O que NÃO está resolvido: a conferência acontece no navegador. Quem abrir
+// o console ainda consegue entrar numa ficha que não é dele. A senha segura
+// a porta normal, não o invasor curioso com ferramentas.
+//
+// FECHAR ISSO DE VERDADE pede um mecanismo que hoje não existe: tomar posse
+// de uma ficha não escreve nada no servidor — é estado do navegador
+// (localStorage + o objeto de acesso). Enquanto a posse não for um
+// documento, não há escrita para regra nenhuma julgar.
+//
+// O desenho que funcionaria, nos moldes já provados pela senha da mesa:
+//
+//   campaigns/{cid}/privado/fichas   → { <fichaId>: resumo }  ninguém lê
+//   campaigns/{cid}/posse/{uid}      → { fichaId, senhaHash } só o dono lê
+//
+//   match /campaigns/{cid}/posse/{uid} {
+//     allow create, update: if logado()
+//       && request.auth.uid == uid
+//       && request.resource.data.get('senhaHash','')
+//          == senhaDaFicha(cid, request.resource.data.fichaId);
+//     allow read: if request.auth.uid == uid || mestre(cid);
+//   }
+//
+// A chave é o UID e não o id da ficha: assim o resumo guardado no documento
+// é o da própria pessoa, que ela já conhece, e guardá-lo ali não vaza nada.
+// É exatamente o truque que faz a senha da mesa funcionar em
+// campaigns/{cid}/membros/{uid}.
+//
+// Mexer nisso significa mudar como o site escolhe a ficha do jogador, o que
+// toca a entrada de TODAS as mesas — Dinastia E e Estrela de Absinto
+// incluídas. Por isso está escrito aqui em vez de meio feito.
+// ──────────────────────────────────────────────────────────────────────
+

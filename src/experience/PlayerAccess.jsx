@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { storageSuffix } from '../core/campaign';
+import { conferirSenha } from '../features/sheets/senhaDaFicha.mjs';
 import { isVisitorSheet, verifyVisitorPassword } from '../adventure/visitorAccess.mjs';
 import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
@@ -101,10 +102,11 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
   if (access?.role === 'player' && sheets.some(s => String(s.id) === String(access.sheetId))) return null;
   if (access?.role === 'master' && masterMode) return null;
 
-  const enterPlayer = () => {
+  const enterPlayer = async () => {
     if (!selected) return;
-    const expected = String(selected.senha || '').trim();
-    if (expected && String(pin).trim() !== expected) {
+    // Conferir virou calcular um resumo, então isto é assíncrono agora. A
+    // ficha de mesa antiga, com o texto puro, continua aceita.
+    if (!await conferirSenha(selected, pin)) {
       setError('Senha incorreta para esta ficha.');
       return;
     }

@@ -31,6 +31,7 @@ import AtmosferaDaCasa from '../oneshot/AtmosferaDaCasa.jsx';
 import NevoaDeExploracao from '../oneshot/NevoaDeExploracao.jsx';
 import VultoNoMapa from '../oneshot/VultoNoMapa.jsx';
 import FichaRapida from '../oneshot/FichaRapida.jsx';
+import { conferirSenha, temSenha } from '../sheets/senhaDaFicha.mjs';
 import BilheteSecreto from '../oneshot/BilheteSecreto.jsx';
 import Cacada from '../oneshot/Cacada.jsx';
 import Esconderijo from '../oneshot/Esconderijo.jsx';
@@ -2012,12 +2013,14 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
   const closeFloatingEnemy = eid => setFloatingEnemies(prev => prev.filter(p => p.enemyId !== eid));
   const handleSelectSheet = (s) => {
     const sid = String(s.id);
-    if (masterMode || access?.role==='visitor'&&String(s.visitorId)===String(access.visitorId) || (playerSheetId && String(playerSheetId) === sid) || !s.senha || unlockedIds[sid]) { toggleFloatingSheet(sid); return; }
+    if (masterMode || access?.role==='visitor'&&String(s.visitorId)===String(access.visitorId) || (playerSheetId && String(playerSheetId) === sid) || !temSenha(s) || unlockedIds[sid]) { toggleFloatingSheet(sid); return; }
     setPwTarget(sid); setPwInput(''); setPwError(false);
   };
-  const tryPassword = () => {
+  // Assíncrona desde que conferir virou calcular um resumo. A ficha antiga,
+  // com o texto puro, continua aceita.
+  const tryPassword = async () => {
     const s = sheets.find(x => String(x.id) === pwTarget);
-    if (s && pwInput === s.senha) {
+    if (s && await conferirSenha(s, pwInput)) {
       setUnlockedIds(prev => ({ ...prev, [pwTarget]: true }));
       toggleFloatingSheet(pwTarget);
       setPwTarget(null); setPwInput('');

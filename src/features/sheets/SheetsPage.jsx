@@ -8,6 +8,8 @@ import { SheetFull,newSheet } from "./SheetComponents";
 import { visibleSheets } from '../../adventure/visitorAccess.mjs';
 import CombatMode from "./CombatMode";
 import { col, docIn } from '../../core/campaign';
+import SenhasDasFichas from './SenhasDasFichas.jsx';
+import { conferirSenha, temSenha } from './senhaDaFicha.mjs';
 class SheetRenderBoundary extends Component {
   constructor(props){super(props);this.state={error:null};}
   static getDerivedStateFromError(error){return {error};}
@@ -50,13 +52,16 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
   const handleTabClick = (s) => {
     const sid = String(s.id);
     if (activeId === sid) { setActiveId(null); return; }
-    if (masterMode || access?.role==='visitor' || (playerSheetId && String(playerSheetId) === sid) || !s.senha || unlockedIds[sid]) { setActiveId(sid); return; }
+    if (masterMode || access?.role==='visitor' || (playerSheetId && String(playerSheetId) === sid) || !temSenha(s) || unlockedIds[sid]) { setActiveId(sid); return; }
     setPwTarget(sid); setPwInput(''); setPwError(false);
   };
 
-  const tryPassword = () => {
+  // Agora é assíncrona porque conferir virou calcular um resumo. A ficha de
+  // mesa antiga, com o texto puro, continua aceita — recusá-la trancaria
+  // jogadores para fora no meio de uma sessão.
+  const tryPassword = async () => {
     const s = sheets.find(x => String(x.id) === pwTarget);
-    if (s && pwInput === s.senha) {
+    if (s && await conferirSenha(s, pwInput)) {
       setUnlockedIds(prev=>({...prev,[pwTarget]:true}));
       setActiveId(pwTarget);
       setPwTarget(null); setPwInput('');
@@ -76,6 +81,15 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
         <div style={{width:60,height:1,background:'linear-gradient(90deg,transparent,rgba(30,200,255,0.6),transparent)',margin:'12px auto 0'}}/>
       </div>
       {!loaded&&<div style={{textAlign:'center',color:'#5A5070',fontFamily:'Cinzel,serif',fontSize:13,padding:40}}>Conectando ao cosmos...</div>}
+
+      {/* As senhas das fichas, só para o Mestre. Fica acima da lista porque
+          é tela de preparação: ele abre, define as cinco e não volta mais. */}
+      {masterMode && loaded && (
+        <SenhasDasFichas
+          fichas={sheets}
+          aoGravar={(id, campos) => setDoc(docIn('sheets', String(id)), campos, { merge: true })}
+        />
+      )}
       
       {pwTarget && (
         <div style={{position:'fixed',inset:0,zIndex:9980,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'none'}} onClick={()=>setPwTarget(null)}>

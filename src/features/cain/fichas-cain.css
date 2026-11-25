@@ -164,3 +164,16 @@
   border:1px solid var(--linha-forte,#4A3E31);color:var(--tinta,#CEC4B4);
 }
 .registro-comando-confirma button:first-child{border-color:#8E1F2B;color:#C4414F}
+
+/* O campo de senha da ficha: rascunho e botão, porque gravar passou a
+   calcular um resumo e uma escrita por tecla gravaria uma senha por letra. */
+.registro-senha{display:flex;gap:6px;flex-wrap:wrap}
+.registro-senha input{flex:1 1 150px;min-width:0}
+.registro-senha button{
+  padding:6px 12px;border-radius:3px;cursor:pointer;
+  background:transparent;border:1px solid var(--linha-mesa,#35353A);
+  color:var(--ink-mesa,#8A8784);
+  font-family:Cinzel,Georgia,serif;font-size:10.5px;letter-spacing:.1em;
+}
+.registro-senha button:hover:not(:disabled){border-color:#6A8A6E;color:#8FB894}
+.registro-senha button:disabled{opacity:.4;cursor:default}

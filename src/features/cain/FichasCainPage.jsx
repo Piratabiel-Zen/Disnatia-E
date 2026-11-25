@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { camposDaSenha, temSenha } from '../sheets/senhaDaFicha.mjs';
 import { onSnapshot } from '../../adventure/sharedSnapshot';
 import { deleteDoc, setDoc } from 'firebase/firestore';
 import { col, docIn } from '../../core/campaign';
@@ -40,6 +41,9 @@ export default function FichasCainPage({ playerSheetId = '' }) {
   const [fichas, setFichas] = useState([]);
   const [membros, setMembros] = useState([]);
   const [abertaId, setAbertaId] = useState(null);
+  // O rascunho da senha não acompanha a ficha aberta: trocar de ficha tem
+  // de limpar o campo, senão a senha digitada para uma aparece na outra.
+  const [rascunhoDaSenha, setRascunhoDaSenha] = useState('');
   const [recusada, setRecusada] = useState(null);
   const [tremendo, setTremendo] = useState(false);
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -102,8 +106,11 @@ export default function FichasCainPage({ playerSheetId = '' }) {
   // Ela convive com o dono por conta: são duas chaves para a mesma porta. A
   // conta serve quando o jogador tem login; a senha serve quando ele entra de
   // outro aparelho ou quando a mesa ainda não se cadastrou toda.
-  const definirSenha = useCallback((ficha, senha) => {
-    gravar({ ...ficha, senha: String(senha || '') });
+  // Guarda o RESUMO e não o texto: as regras deixam todo membro ler toda
+  // ficha da mesa, então senha em texto puro aqui era a senha de cada um
+  // legível para todos os outros. E senha de mesa é senha reaproveitada.
+  const definirSenha = useCallback(async (ficha, senha) => {
+    gravar({ ...ficha, ...(await camposDaSenha(senha)) });
   }, [gravar]);
 
   const remover = useCallback(async ficha => {
@@ -127,6 +134,7 @@ export default function FichasCainPage({ playerSheetId = '' }) {
       setTimeout(() => setTremendo(false), 460);
       return;
     }
+    setRascunhoDaSenha('');
     setAbertaId(atual => (atual === chave ? null : chave));
   }, [membro, playerSheetId]);
 
@@ -292,12 +300,37 @@ export default function FichasCainPage({ playerSheetId = '' }) {
                   assim que entrarem, os nomes aparecem aqui.
                 </p>
               )}
+              {/* RASCUNHO E BOTÃO, e não gravação a cada tecla.
+                  Antes isto escrevia o campo a cada caractere, o que era
+                  barato quando a senha ia em texto puro. Agora cada escrita
+                  calcula um resumo com sal novo — uma por letra gravaria
+                  oito senhas diferentes para "esqueleto" e só a última
+                  valeria, o que é confuso de depurar e caro à toa. */}
               <label>
                 <span>Senha desta ficha</span>
-                <input
-                  type="text" value={aberta.senha || ''} placeholder="sem senha: abre direto"
-                  onChange={e => definirSenha(aberta, e.target.value)}
-                />
+                <div className="registro-senha">
+                  <input
+                    type="text" value={rascunhoDaSenha}
+                    placeholder={temSenha(aberta) ? 'trocar a senha…' : 'sem senha: abre direto'}
+                    onChange={e => setRascunhoDaSenha(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key !== 'Enter' || !rascunhoDaSenha.trim()) return;
+                      definirSenha(aberta, rascunhoDaSenha);
+                      setRascunhoDaSenha('');
+                    }}
+                  />
+                  <button
+                    type="button" disabled={!rascunhoDaSenha.trim()}
+                    onClick={() => { definirSenha(aberta, rascunhoDaSenha); setRascunhoDaSenha(''); }}
+                  >Gravar</button>
+                  {temSenha(aberta) && (
+                    <button
+                      type="button"
+                      onClick={() => { definirSenha(aberta, ''); setRascunhoDaSenha(''); }}
+                      title="Deixar a ficha aberta para quem clicar"
+                    >Tirar</button>
+                  )}
+                </div>
               </label>
               <p className="registro-aviso">
                 Passe esta senha ao jogador. É com ela que ele abre a ficha na porta
