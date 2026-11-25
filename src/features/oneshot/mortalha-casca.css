@@ -815,9 +815,21 @@ html[data-tema-mesa="mortalha"] .sessao-local{gap:10px}
    casca, o vermelho de sinalização nas abas e o verde-água dos cartões de
    personagem. Cada um passa a sair das cinco. */
 
+/* A CASCA NÃO PODE TER FUNDO PRÓPRIO.
+   O cenário da mesa — a mansão, o cemitério, a névoa — é desenhado em
+   `position:fixed; z-index:0`, ATRÁS de tudo. Quando a passagem da paleta
+   pôs carvão opaco aqui, a casca passou a cobrir a mansão inteira e a
+   mesa ficou com um retângulo liso no lugar do cenário.
+
+   O carvão continua existindo, mas no lugar certo: na raiz, atrás do
+   cenário, para a mesa que não tem imagem de fundo nenhuma. Aqui só a
+   cor do texto. */
+html[data-tema-mesa="mortalha"]{
+  background:var(--mor-carvao);
+}
 html[data-tema-mesa="mortalha"] .adventure-shell,
 html[data-tema-mesa="mortalha"] .immersive-stage{
-  background:var(--mor-carvao) !important;
+  background:transparent !important;
   color:var(--mor-pergaminho);
 }
 

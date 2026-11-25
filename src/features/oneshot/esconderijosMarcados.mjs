@@ -1,17 +1,22 @@
 /**
  * OS ESCONDERIJOS MARCADOS
  *
- * O Mestre aponta, antes ou durante a cena, os lugares da casa onde dá para
- * se enfiar: atrás do armário do sótão, embaixo da mesa coberta, no vão da
- * escada. No mapa aparece um ponto branco minúsculo, como uma estrela — e
- * ele PULSA por dois segundos no instante em que é posto.
+ * O Mestre aponta, durante a cena, um lugar onde dá para se enfiar: atrás
+ * do armário do sótão, embaixo da mesa coberta, no vão da escada. Nasce um
+ * ponto branco minúsculo, como uma estrela, que pisca DOIS SEGUNDOS e
+ * some.
  *
- * O pulso é o recado; a estrela é a lembrança. Se tudo ficasse pulsando o
- * tempo todo, o mapa viraria um painel de avisos e o olho pararia de
- * registrar qualquer um deles. Dois segundos é quanto basta para a pessoa
- * virar a cabeça, e curto o bastante para não competir com a narração.
+ * Some de verdade. A primeira versão deixava a estrela acesa depois do
+ * pulso, achando que servia de lembrete, e o que aconteceu no teste de
+ * mesa foi o previsível: cada cena acumulava pontos sobre o mapa até ele
+ * virar um céu estrelado e nenhum deles querer dizer nada.
  *
- * O ponto não diz se o esconderijo é bom. Só diz "aqui tem alguma coisa" —
+ * O ponto é um GESTO, não um marcador. Vale enquanto o Mestre está
+ * falando daquele canto — "dá para entrar ali" — e morre junto com a
+ * frase. Por isso também não há botão de apagar: não existe nada para
+ * apagar dois segundos depois.
+ *
+ * E ele não diz se o esconderijo é bom. Só diz "aqui tem alguma coisa" —
  * o resto o Mestre fala, e a dúvida é metade da cena.
  */
 
@@ -45,14 +50,22 @@ export function aindaPulsando(marca, agora = Date.now()) {
   return passou >= 0 && passou < DURACAO_DO_PULSO;
 }
 
-/** As marcas de um mapa, sem as que caem em cima de outra. */
-export function marcasDoMapa(marcas, mapaId) {
+/**
+ * As marcas VIVAS de um mapa.
+ *
+ * O corte por tempo acontece aqui, e não só na tela, porque é a mesma
+ * resposta para as duas perguntas que importam: o que desenhar agora, e o
+ * que já pode ser apagado do banco. Deixar a tela esconder e o banco
+ * guardar seria juntar lixo que ninguém vê.
+ */
+export function marcasDoMapa(marcas, mapaId, agora = Date.now()) {
   const onde = String(mapaId || '');
   if (!onde) return [];
   const boas = [];
   for (const m of marcas || []) {
     if (!m || String(m.mapa || '') !== onde) continue;
     if (!Number.isFinite(Number(m.x)) || !Number.isFinite(Number(m.y))) continue;
+    if (!aindaPulsando(m, agora)) continue;
     const repetida = boas.some(b =>
       Math.hypot(Number(b.x) - Number(m.x), Number(b.y) - Number(m.y)) < PERTO_DEMAIS);
     if (!repetida) boas.push(m);
@@ -60,15 +73,7 @@ export function marcasDoMapa(marcas, mapaId) {
   return boas;
 }
 
-/** A marca mais próxima de um ponto, para o Mestre poder tirar com um toque. */
-export function marcaEm(marcas, { x, y }, mapaId) {
-  let perto = null;
-  let menor = Infinity;
-  for (const m of marcasDoMapa(marcas, mapaId)) {
-    const d = Math.hypot(Number(m.x) - emFaixa(x), Number(m.y) - emFaixa(y));
-    if (d < menor) { menor = d; perto = m; }
-  }
-  // O raio de acerto é maior que o ponto desenhado: a estrela tem 6px e
-  // ninguém acerta 6px com o dedo num mapa inteiro na tela.
-  return menor <= PERTO_DEMAIS * 2 ? perto : null;
+/** O que já passou dos dois segundos e pode sair do banco. */
+export function marcasVencidas(marcas, agora = Date.now()) {
+  return (marcas || []).filter(m => m?.id && !aindaPulsando(m, agora));
 }

@@ -97,6 +97,25 @@ function maisPerto(cor) {
     if (!valor) erros.push(`${v} não resolveu`);
   }
 
+  /* A CASCA TEM DE SER TRANSPARENTE.
+     O cenário da mesa — a mansão, o cemitério — é desenhado em
+     `position:fixed; z-index:0`, atrás de tudo. Quando esta paleta entrou
+     ela pôs carvão opaco na casca, e a mesa passou a mostrar um retângulo
+     liso no lugar do cenário. O erro não aparecia em teste de fonte
+     nenhum: a cor ESTAVA na paleta, era só a camada errada. */
+  const casca = await p.evaluate(() => {
+    const fundo = sel => {
+      const e = document.querySelector(sel);
+      return e ? getComputedStyle(e).backgroundColor : null;
+    };
+    return { shell: fundo('.adventure-shell'), stage: fundo('.immersive-stage') };
+  });
+  for (const [onde, cor] of Object.entries(casca)) {
+    if (!cor) continue;
+    const transparente = /rgba\(0,\s*0,\s*0,\s*0\)|transparent/.test(cor);
+    if (!transparente) erros.push(`.${onde} voltou a ter fundo opaco (${cor}) e cobre o cenário`);
+  }
+
   const fora = [];
   for (const { onde, prop, valor } of lido.pintados) {
     const perto = maisPerto(valor);

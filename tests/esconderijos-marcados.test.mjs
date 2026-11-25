@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  DURACAO_DO_PULSO, marcaNova, aindaPulsando, marcasDoMapa, marcaEm,
+  DURACAO_DO_PULSO, marcaNova, aindaPulsando, marcasDoMapa, marcasVencidas,
 } from '../src/features/oneshot/esconderijosMarcados.mjs';
 
 test('o pulso dura dois segundos, nem mais', () => {
@@ -40,39 +40,53 @@ test('marca sem mapa não existe — ela apareceria em todos', () => {
 
 test('cada mapa mostra só as suas', () => {
   const marcas = [
-    { x: 10, y: 10, mapa: 'sotao' },
-    { x: 50, y: 50, mapa: 'porao' },
-    { x: 80, y: 80, mapa: 'sotao' },
+    { x: 10, y: 10, mapa: 'sotao', em: 1000 },
+    { x: 50, y: 50, mapa: 'porao', em: 1000 },
+    { x: 80, y: 80, mapa: 'sotao', em: 1000 },
   ];
-  assert.equal(marcasDoMapa(marcas, 'sotao').length, 2);
-  assert.equal(marcasDoMapa(marcas, 'porao').length, 1);
-  assert.deepEqual(marcasDoMapa(marcas, ''), []);
+  assert.equal(marcasDoMapa(marcas, 'sotao', 1500).length, 2);
+  assert.equal(marcasDoMapa(marcas, 'porao', 1500).length, 1);
+  assert.deepEqual(marcasDoMapa(marcas, '', 1500), []);
+});
+
+test('A ESTRELA SOME DEPOIS DOS DOIS SEGUNDOS', () => {
+  /* O pedido veio do teste de mesa: as estrelas ficavam no mapa e cada
+     cena acumulava mais, até virar um céu estrelado onde nenhuma queria
+     dizer nada. Ela é um gesto, não um marcador — vale enquanto o Mestre
+     está falando daquele canto e morre junto com a frase. */
+  const marcas = [{ id: 'a', x: 10, y: 10, mapa: 'sotao', em: 1000 }];
+  assert.equal(marcasDoMapa(marcas, 'sotao', 1500).length, 1, 'durante o pulso, aparece');
+  assert.equal(marcasDoMapa(marcas, 'sotao', 2999).length, 1, 'um instante antes do fim');
+  assert.equal(marcasDoMapa(marcas, 'sotao', 3000).length, 0, 'no limite, sumiu');
+  assert.equal(marcasDoMapa(marcas, 'sotao', 90000).length, 0, 'e não volta');
+});
+
+test('o que venceu sai do banco, não só da tela', () => {
+  // Esconder na tela e guardar no banco juntaria lixo que ninguém vê e
+  // que todo mundo baixa ao abrir o mapa.
+  const marcas = [
+    { id: 'viva', x: 1, y: 1, mapa: 'sotao', em: 2500 },
+    { id: 'velha', x: 2, y: 2, mapa: 'sotao', em: 100 },
+    { x: 3, y: 3, mapa: 'sotao', em: 100 },  // sem id: não dá para apagar
+  ];
+  assert.deepEqual(marcasVencidas(marcas, 3000).map(m => m.id), ['velha']);
 });
 
 test('dois toques no mesmo lugar não viram duas estrelas', () => {
   const marcas = [
-    { x: 30, y: 30, mapa: 'sotao' },
-    { x: 30.4, y: 30.6, mapa: 'sotao' },  // dedo trêmulo
-    { x: 36, y: 30, mapa: 'sotao' },      // outro lugar de verdade
+    { x: 30, y: 30, mapa: 'sotao', em: 1000 },
+    { x: 30.4, y: 30.6, mapa: 'sotao', em: 1000 },  // dedo trêmulo
+    { x: 36, y: 30, mapa: 'sotao', em: 1000 },      // outro lugar de verdade
   ];
-  assert.equal(marcasDoMapa(marcas, 'sotao').length, 2);
+  assert.equal(marcasDoMapa(marcas, 'sotao', 1500).length, 2);
 });
 
 test('marca quebrada não derruba o mapa', () => {
-  const marcas = [null, { mapa: 'sotao' }, { x: 'abc', y: 1, mapa: 'sotao' }, undefined];
-  assert.deepEqual(marcasDoMapa(marcas, 'sotao'), []);
+  const marcas = [null, { mapa: 'sotao' }, { x: 'abc', y: 1, mapa: 'sotao', em: 1000 }, undefined];
+  assert.deepEqual(marcasDoMapa(marcas, 'sotao', 1500), []);
   assert.deepEqual(marcasDoMapa(null, 'sotao'), []);
 });
 
-test('o Mestre acerta a marca com o dedo, não com a ponta do pixel', () => {
-  const marcas = [{ x: 50, y: 50, mapa: 'sotao' }];
-  // Perto o bastante: tirou.
-  assert.ok(marcaEm(marcas, { x: 51, y: 51 }, 'sotao'));
-  // Longe: não tirou nada por engano.
-  assert.equal(marcaEm(marcas, { x: 70, y: 70 }, 'sotao'), null);
-  // E não pega marca de outro mapa.
-  assert.equal(marcaEm(marcas, { x: 50, y: 50 }, 'porao'), null);
-});
 
 test('a mesa VÊ as estrelas — não é material só do Mestre', async () => {
   const { readFileSync } = await import('node:fs');
@@ -90,12 +104,7 @@ test('a mesa VÊ as estrelas — não é material só do Mestre', async () => {
 
   // Mas quem PÕE é só o Mestre.
   assert.match(mapa, /if \(!marcando \|\| !masterMode\) return false/);
+  // E não há mais apagar: a estrela morre sozinha.
+  assert.ok(!/marcaEm/.test(mapa), 'voltou o apagar por toque, que não tem mais o que apagar');
 });
 
-test('o mesmo toque põe e tira', () => {
-  // Um botão de apagar separado obrigaria o Mestre a trocar de modo no
-  // meio da cena só para corrigir um toque errado.
-  const marcas = [{ id: 'a', x: 40, y: 40, mapa: 'sotao' }];
-  assert.equal(marcaEm(marcas, { x: 40.5, y: 40.5 }, 'sotao').id, 'a');
-  assert.equal(marcaEm(marcas, { x: 12, y: 80 }, 'sotao'), null);
-});

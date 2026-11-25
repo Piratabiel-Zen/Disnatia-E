@@ -78,8 +78,12 @@ test('o azul e o vermelho de sinalização foram embora', () => {
   for (const velha of ['142,31,43', '227,199,130', '201,168,106']) {
     assert.ok(!folha.includes(velha), `o rgba antigo ${velha} ficou`);
   }
-  // E a casca não pode mais pintar o fundo com o azulado do tema.
-  assert.match(folha, /\.adventure-shell[\s\S]{0,160}background:var\(--mor-carvao\) !important/);
+  /* E o carvão pinta a RAIZ, não a casca. A casca fica transparente de
+     propósito: o cenário da mesa é desenhado atrás dela, e casca com
+     fundo opaco some com a mansão inteira — foi o que aconteceu quando
+     esta paleta entrou. */
+  assert.match(folha, /html\[data-tema-mesa="mortalha"\]\{\s*background:var\(--mor-carvao\);/);
+  assert.match(folha, /\.adventure-shell[\s\S]{0,200}background:transparent !important/);
 });
 
 test('o cinza fúnebre tem um lugar, e é o texto de apoio', () => {

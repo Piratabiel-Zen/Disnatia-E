@@ -16,21 +16,14 @@
     0 0 3px 1px rgba(255,255,255,.95),
     0 0 9px 2px rgba(224,240,255,.55),
     0 0 20px 6px rgba(180,214,255,.22);
-  opacity:.72;
-  animation:mesRespira 3.6s ease-in-out infinite;
-}
+  /* NÃO HÁ ESTADO DE REPOUSO. A estrela só existe durante o pulso: três
+     batidas de 0,62s, que dão os dois segundos, e some.
 
-/* Em repouso ela respira de leve, só para não virar um pixel morto. */
-@keyframes mesRespira{
-  0%,100%{opacity:.52;transform:scale(.88)}
-  50%{opacity:.86;transform:scale(1.06)}
-}
-
-/* O PULSO: os dois segundos do recado. Três batidas largas e acabou —
-   `forwards` deixa a estrela no estado de repouso em vez de dar um salto
-   de volta no último quadro. */
-.mes-pulso{
-  animation:mesPulso .62s ease-out 3 forwards;
+     A primeira versão tinha um `mesRespira` infinito para depois do
+     pulso, achando que servia de lembrete. No teste de mesa o resultado
+     foi o previsível — as estrelas iam se acumulando cena após cena até
+     o mapa virar um céu estrelado onde nenhuma queria dizer nada. */
+  animation:mesPulso .62s ease-out 3;
 }
 @keyframes mesPulso{
   0%{opacity:1;transform:scale(1)}
@@ -38,7 +31,7 @@
   100%{opacity:.6;transform:scale(1)}
 }
 /* E um anel que abre e some junto, que é o que faz o olho virar. */
-.mes-pulso::after{
+.mes-estrela::after{
   content:'';position:absolute;inset:-3px;border-radius:50%;
   border:1px solid rgba(255,255,255,.8);
   animation:mesAnel .62s ease-out 3;
@@ -57,7 +50,7 @@
    recado continua, só não se mexe. */
 html[data-motion="reduced"] .mes-estrela,
 html[data-motion="reduced"] .mes-pulso,
-html[data-motion="reduced"] .mes-pulso::after{
+html[data-motion="reduced"] .mes-estrela::after{
   animation:none;opacity:.9;transform:none;
 }
 
@@ -98,4 +91,34 @@ html[data-motion="reduced"] .mes-pulso::after{
 @media (max-width:900px){
   .mes-botao{right:10px;top:10px;font-size:10px;padding:6px 10px}
   .mes-dica{right:10px;top:42px;max-width:180px}
+}
+
+/* ───────── A COLUNA DO CANTO ─────────
+   O botão de ping já morava no topo direito, e os dois botões novos
+   nasceram por cima dele: como são largos, eles avançavam da borda até
+   passar do ping, que fica a 84px da direita.
+
+   Agora os três formam uma coluna: ping encostado no canto, e os dois de
+   cena descendo a partir dele. Um degrau só (`--mes-degrau`) manda nos
+   três, então mexer na altura de um move os outros junto. */
+html[data-tema-mesa="mortalha"]{--mes-degrau:38px}
+html[data-tema-mesa="mortalha"] .battlemap-ping-button{
+  right:14px !important;
+  top:14px !important;
+}
+html[data-tema-mesa="mortalha"] .battlemap-ping-wheel-inline{
+  right:14px !important;
+  top:calc(14px + var(--mes-degrau)) !important;
+}
+html[data-tema-mesa="mortalha"] .mes-botao{top:calc(14px + var(--mes-degrau))}
+html[data-tema-mesa="mortalha"] .mes-dica{top:calc(14px + var(--mes-degrau) * 3)}
+html[data-tema-mesa="mortalha"] .pamb-abrir{top:calc(14px + var(--mes-degrau) * 2)}
+html[data-tema-mesa="mortalha"] .pamb{top:calc(14px + var(--mes-degrau) * 3)}
+
+@media (max-width:900px){
+  html[data-tema-mesa="mortalha"]{--mes-degrau:34px}
+  html[data-tema-mesa="mortalha"] .mes-botao{right:10px;top:calc(10px + var(--mes-degrau))}
+  html[data-tema-mesa="mortalha"] .mes-dica{right:10px;top:calc(10px + var(--mes-degrau) * 3)}
+  html[data-tema-mesa="mortalha"] .pamb-abrir{right:10px;top:calc(10px + var(--mes-degrau) * 2)}
+  html[data-tema-mesa="mortalha"] .pamb{right:10px;top:calc(10px + var(--mes-degrau) * 3)}
 }

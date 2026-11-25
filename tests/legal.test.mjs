@@ -120,7 +120,7 @@ test('as regras limitam o tamanho do que se grava numa mesa', () => {
      não grava bytes. */
   const blocos = [...regras.matchAll(/allow (?:write|create|update)[^:]*:[\s\S]*?;/g)]
     .map(m => m[0]);
-  for (const seletiva of ['documentos', 'mural_cartoes', 'aparicoes', 'itens', 'esconderijos']) {
+  for (const seletiva of ['documentos', 'mural_cartoes', 'aparicoes', 'esconderijos']) {
     const seus = blocos.filter(b => b.includes(`__${seletiva}'`));
     assert.ok(seus.length, `nenhuma regra de escrita para ${seletiva}`);
     for (const bloco of seus) {

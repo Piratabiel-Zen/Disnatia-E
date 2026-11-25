@@ -270,14 +270,18 @@ service cloud.firestore {
         // Se o jogador ao lado vê na tela que o primo entrou e se deu
         // certo, a cena perde o que ela tem de melhor — a espera. Quem
         // conta isso é o Mestre, na hora em que ele escolher contar.
-        || colecao.matches('c__[a-z0-9-]+__esconderijos')
-        // As MARCAS de esconderijo (as estrelas) NÃO entram aqui: elas são
-        // o recado visual do Mestre para a mesa, e um recado que só quem
-        // escreveu enxerga não é recado. Ficam entre as comuns.
-        // ITENS: a lanterna de um não é a lanterna do outro. Mesma máquina
-        // das aparições — `liberadoParaTodos` para o que é da mesa,
-        // `liberadoPara` para o que tem dono.
-        || colecao.matches('c__[a-z0-9-]+__itens');
+        || colecao.matches('c__[a-z0-9-]+__esconderijos');
+        // Duas coisas que NÃO entram aqui, de propósito:
+        //
+        // As MARCAS de esconderijo (as estrelas) são o recado visual do
+        // Mestre para a mesa, e um recado que só quem escreveu enxerga não
+        // é recado. Ficam entre as comuns.
+        //
+        // Os ITENS não têm coleção própria: são as aparições de tipo
+        // "item" e herdam a regra delas. Houve uma coleção `itens` aqui
+        // por um dia — ela significava cadastrar a mesma lanterna duas
+        // vezes, nas aparições e nos itens, que é como duas cópias da
+        // mesma coisa saem de sincronia e ninguém sabe qual vale.
     }
 
     function daMesaComum(colecao) {
@@ -318,8 +322,7 @@ service cloud.firestore {
     // do Mestre: o documento é material dele.
     match /{colecao}/{documento} {
       allow read: if (colecao.matches('c__[a-z0-9-]+__documentos')
-          || colecao.matches('c__[a-z0-9-]+__aparicoes')
-          || colecao.matches('c__[a-z0-9-]+__itens'))
+          || colecao.matches('c__[a-z0-9-]+__aparicoes'))
         && membro(idNaColecao(colecao))
         && (
           mestre(idNaColecao(colecao))
@@ -328,8 +331,7 @@ service cloud.firestore {
         );
 
       allow write: if (colecao.matches('c__[a-z0-9-]+__documentos')
-          || colecao.matches('c__[a-z0-9-]+__aparicoes')
-          || colecao.matches('c__[a-z0-9-]+__itens'))
+          || colecao.matches('c__[a-z0-9-]+__aparicoes'))
         && mestre(idNaColecao(colecao))
         && tamanhoRazoavel();
     }

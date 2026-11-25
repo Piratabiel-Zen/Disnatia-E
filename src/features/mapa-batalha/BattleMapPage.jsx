@@ -39,11 +39,12 @@ import { chanceDePassar } from '../oneshot/esconderijo.mjs';
 import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
 import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
 import MarcasDeEsconderijo from '../oneshot/MarcasDeEsconderijo.jsx';
-import { marcaNova, marcaEm, marcasDoMapa } from '../oneshot/esconderijosMarcados.mjs';
+import { marcaNova, marcasDoMapa, marcasVencidas } from '../oneshot/esconderijosMarcados.mjs';
 import CamadaDeAmbientacao from '../oneshot/CamadaDeAmbientacao.jsx';
 import PainelDeAmbientacao from '../oneshot/PainelDeAmbientacao.jsx';
 import { pecaNova, pecaEm, cabeMais } from '../oneshot/ambientacao.mjs';
 import { useMembro } from '../acesso/useMembro';
+import { bolsaDeItens } from '../oneshot/itens.mjs';
 import { observarLiberados } from '../acesso/observarLiberados';
 import {
   entrandoNoArmario, portasAbrem, saiuDoArmario,
@@ -426,7 +427,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const [itensDaMesa, setItensDaMesa] = useState([]);
   useEffect(() => {
     if (!ehNoite || !membro) { setItensDaMesa([]); return undefined; }
-    return observarLiberados('itens', membro, setItensDaMesa, () => setItensDaMesa([]));
+    return observarLiberados('aparicoes', membro,
+      lista => setItensDaMesa(bolsaDeItens(lista)), () => setItensDaMesa([]));
   }, [ehNoite, membro?.uid, membro?.papel]);
 
   /* AS ESTRELAS. Diferente do painel do esconderijo, estas a mesa VÊ: é
@@ -464,6 +466,23 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       () => setMarcasDaMesa([]));
     return () => un();
   }, [ehNoite]);
+
+  /* A VARREDURA. A estrela some da tela sozinha quando vence, mas o
+     documento ficaria no banco para sempre — e numa noite de sessão isso
+     é um monte de lixo que todo mundo baixa a cada vez que abre o mapa.
+     Só o Mestre apaga: se os cinco navegadores da mesa fizessem isso,
+     seriam cinco deletes para cada estrela. */
+  useEffect(() => {
+    if (!ehNoite || !masterMode) return undefined;
+    const vencidas = marcasVencidas(marcasDaMesa);
+    if (!vencidas.length) return undefined;
+    const t = window.setTimeout(() => {
+      for (const m of vencidas) {
+        deleteDoc(docIn('marcas_esconderijo', String(m.id))).catch(() => {});
+      }
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [ehNoite, masterMode, marcasDaMesa]);
 
 
   /* E a vista do Mestre. Só ele assina: é material de condução. */
@@ -1209,21 +1228,17 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const moveRuler = e => { if(!rulerMode||!rulerDrawingRef.current)return; const p=rulerPoint(e); if(p)setRuler(r=>r?{...r,end:p}:r); };
   const endRuler = () => { rulerDrawingRef.current=false; };
 
-  /* Marcar e desmarcar são o mesmo gesto: um toque põe, um toque em cima
-     de uma estrela tira. Um botão de apagar separado obrigaria o Mestre a
-     trocar de modo no meio da cena para corrigir um toque errado. */
-  const porOuTirarEstrela = e => {
+  /* Pôr uma estrela. Não há como tirar, e não falta nada: ela vive dois
+     segundos e some sozinha. A primeira versão tinha o toque duplo para
+     apagar, e virou código morto no instante em que a marca passou a ter
+     prazo. */
+  const porEstrela = e => {
     if (!marcando || !masterMode) return false;
     const mapaId = currentMap ? String(currentMap.id) : '';
     const ponto = rulerPoint(e);
     if (!ponto || !mapaId) return false;
     e.stopPropagation(); e.preventDefault();
 
-    const existente = marcaEm(marcasDaMesa, ponto, mapaId);
-    if (existente?.id) {
-      deleteDoc(docIn('marcas_esconderijo', String(existente.id))).catch(() => {});
-      return true;
-    }
     const nova = marcaNova({ ...ponto, mapa: mapaId, por: membro?.uid || '' });
     if (nova) addDoc(col('marcas_esconderijo'), nova).catch(() => {});
     return true;
@@ -2593,7 +2608,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               ref={frameRef}
               title={zoom > 1 ? 'Clique e arraste para mover · use a roda para controlar o zoom' : 'Use a roda do mouse para aproximar'}
           onPointerDown={e => porOuPegarPeca(e)
-            || porOuTirarEstrela(e)
+            || porEstrela(e)
             || startTokenMarquee(e)
             || (pingMode ? sendMapPing(e) : (rulerMode ? startRuler(e) : onMapPanStart(e)))}
               onPointerMove={e => moveTokenMarquee(e) || (rulerMode ? moveRuler(e) : onMapPanMove(e))}
@@ -2965,8 +2980,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             </button>
           )}
           {ehNoite && bolsaAberta && (
-            <ItensDaNoite membro={membro} mestre={masterMode}
-              aoFechar={() => setBolsaAberta(false)} />
+            <ItensDaNoite membro={membro} aoFechar={() => setBolsaAberta(false)} />
           )}
           {ehNoite && masterMode && (
             <ComecarCacada
