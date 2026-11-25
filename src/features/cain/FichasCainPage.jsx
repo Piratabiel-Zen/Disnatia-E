@@ -245,7 +245,7 @@ export default function FichasCainPage({ playerSheetId = '' }) {
                   data-selada={podeAbrirFicha(f, membro, playerSheetId) ? 'nao' : 'sim'}
                 >
                   <span className="registro-retrato">
-                    {f.foto ? <img src={f.foto} alt="" /> : <i>{f.categoria || 'I'}</i>}
+                    {f.foto ? <img src={f.foto} alt="" loading="lazy" decoding="async" /> : <i>{f.categoria || 'I'}</i>}
                   </span>
                   <span className="registro-nome">
                     <b>{f.nome || 'Exorcista sem nome'}</b>

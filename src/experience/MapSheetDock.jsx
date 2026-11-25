@@ -36,7 +36,7 @@ export default function MapSheetDock({semBestas=false,masterMode,sheets,enemies,
   const closeFamiliar=()=>setActiveFamiliar(null);
   return <div className="map-sheet-dock" ref={root}>
     <button ref={playersButton} type="button" className="map-dock-trigger" title={masterMode?'Fichas dos personagens':(sheets[0]?.nome||'Minha ficha')} aria-label={masterMode?'Fichas dos personagens':'Minha ficha'} aria-expanded={masterMode?panel==='players':undefined} aria-controls={masterMode?'map-sheet-picker':undefined} onClick={()=>{if(!masterMode){if(sheets[0])onSelectSheet(sheets[0]);return;}setPanel(panel==='players'?'':'players');}}>
-      {!masterMode&&sheets[0]?.foto?<img src={sheets[0].foto} alt=""/>:<DockIcon/>}
+      {!masterMode&&sheets[0]?.foto?<img src={sheets[0].foto} alt="" loading="lazy" decoding="async" />:<DockIcon/>}
     </button>
     {/* Numa noite de terror não há familiar nem bestiário: os personagens
         são gente comum e o que existe do outro lado não vira ficha. Os dois

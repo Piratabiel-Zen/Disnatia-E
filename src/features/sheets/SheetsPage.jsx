@@ -127,7 +127,7 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
                 display:'flex',alignItems:'center',justifyContent:'center',
               }}>
                 {s.foto
-                  ?<img src={s.foto} alt="" style={{width:'100%',height:'100%',objectFit:'cover',filter:locked?'grayscale(70%)':'none'}}/>
+                  ?<img src={s.foto} alt="" style={{width:'100%',height:'100%',objectFit:'cover',filter:locked?'grayscale(70%)':'none'}} loading="lazy" decoding="async" />
                   :<span style={{fontSize:22}}>{locked?'🔒':cls.icon}</span>
                 }
                 {(hasPts||hasCooldown)&&(

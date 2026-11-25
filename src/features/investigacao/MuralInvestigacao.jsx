@@ -8,6 +8,7 @@ import {
 } from './mural.mjs';
 import { comprimirParaDocumento } from '../../core/media';
 import './mural.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 /* O barbante com folga.
    Uma reta entre dois pontos é um diagrama. Um fio que cede no meio é um
@@ -190,7 +191,7 @@ function Cartao({
             {temImagem && (
               <div className={`mural-foto${podeEditar ? ' editavel' : ''}`}>
                 {cartao.imagem
-                  ? <img src={cartao.imagem} alt={cartao.titulo || 'Fotografia'} />
+                  ? <img src={cartao.imagem} alt={cartao.titulo || 'Fotografia'} loading="lazy" decoding="async" />
                   : <span>{podeEditar ? 'Anexar fotografia' : 'Sem imagem'}</span>}
                 {podeEditar && (
                   <button
@@ -293,6 +294,8 @@ export default function MuralInvestigacao({
     [alturas],
   );
   const [busca, setBusca] = useState('');
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
   const [tiposLigados, setTiposLigados] = useState([]);
   const [ligandoDe, setLigandoDe] = useState(null);
 

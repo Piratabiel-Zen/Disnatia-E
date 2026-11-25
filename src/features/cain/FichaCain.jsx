@@ -288,7 +288,7 @@ export default function FichaCain({ ficha, membro, aoMudar, aoRolar, fichaLibera
             onKeyDown={e => { if (!somenteLeitura && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); retratoRef.current?.click(); } }}
           >
             {ficha.foto
-              ? <img src={ficha.foto} alt="" />
+              ? <img src={ficha.foto} alt="" loading="lazy" decoding="async" />
               : <span>{somenteLeitura ? 'Sem retrato de arquivo' : 'Anexar retrato'}</span>}
             {!somenteLeitura && ficha.foto && (
               <button

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { MANUAL_CAIN, buscarNoManual } from './manualCain.mjs';
 import './referencia-cain.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 function Parte({ parte }) {
   if (parte.tipo === 'lista') {
@@ -41,8 +42,10 @@ function Parte({ parte }) {
  */
 export default function ManualCainPage() {
   const [busca, setBusca] = useState('');
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
   const secoes = useMemo(() => buscarNoManual(MANUAL_CAIN, busca), [busca]);
-  const filtrando = busca.trim().length > 0;
+  const filtrando = buscaAdiado.trim().length > 0;
 
   return (
     <div className="ref">

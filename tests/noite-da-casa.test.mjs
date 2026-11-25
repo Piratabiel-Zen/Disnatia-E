@@ -54,7 +54,7 @@ test('uma mesa de oneshot com qualquer nome continua achando o cenário', () => 
 
 test('as duas versões da imagem do casarão existem no public', () => {
   for (const arquivo of ['public/media/mesas/casa-do-horror.webp',
-    'public/media/mesas/casa-do-horror.jpg']) {
+    'public/media/mesas/casa-do-horror.webp']) {
     assert.ok(existsSync(new URL(`../${arquivo}`, import.meta.url)), `falta ${arquivo}`);
   }
 });

@@ -16,7 +16,7 @@ const MAX_DISTANCE = 4.2;
 const DEFAULT_DISTANCE = 2.9;
 
 // Texturas reais do planeta (NASA Blue Marble), servidas pelo próprio site.
-const EARTH_TEXTURES = { day: '/media/terra/dia.jpg', night: '/media/terra/noite.jpg', water: '/media/terra/agua.png' };
+const EARTH_TEXTURES = { day: '/media/terra/dia.webp', night: '/media/terra/noite.webp', water: '/media/terra/agua.webp' };
 
 // A escolha do jogador, não a do sistema operacional — ver movimento.mjs.
 const prefersReducedMotion = () => motionIsReduced();

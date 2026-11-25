@@ -14,6 +14,7 @@ import CorpoDoDocumento from './CorpoDoDocumento.jsx';
 import { cartaoDeDocumento, jaNoMural } from './paraOMural.mjs';
 import './documentos.css';
 import './documentos-tipos.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 /**
  * O ARQUIVO
@@ -31,6 +32,8 @@ export default function DocumentosPage() {
   const [documentos, setDocumentos] = useState([]);
   const [fichas, setFichas] = useState([]);
   const [busca, setBusca] = useState('');
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
   const [aberto, setAberto] = useState(null);
   const [falha, setFalha] = useState('');
 

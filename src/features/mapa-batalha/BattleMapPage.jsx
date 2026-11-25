@@ -35,7 +35,14 @@ import { conferirSenha, temSenha } from '../sheets/senhaDaFicha.mjs';
 import BilheteSecreto from '../oneshot/BilheteSecreto.jsx';
 import Cacada from '../oneshot/Cacada.jsx';
 import Esconderijo from '../oneshot/Esconderijo.jsx';
-import { registroDoEsconderijo } from '../oneshot/esconderijo.mjs';
+import { chanceDePassar } from '../oneshot/esconderijo.mjs';
+import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
+import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
+import { useMembro } from '../acesso/useMembro';
+import { observarLiberados } from '../acesso/observarLiberados';
+import {
+  entrandoNoArmario, portasAbrem, saiuDoArmario,
+} from '../oneshot/vigiaDoEsconderijo.mjs';
 import { estadoDaCacada } from '../oneshot/cacada.mjs';
 import ComecarCacada from '../oneshot/ComecarCacada.jsx';
 import { cacadaParaComecar } from '../oneshot/cacada.mjs';
@@ -114,7 +121,7 @@ function BattleMapCharPanel({ sheet, customAbilities, onSaveCustomAbilities, onC
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
         {sheet.foto
-          ? <img src={sheet.foto} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: `1.5px solid ${sheetColor}55`, flexShrink: 0 }} />
+          ? <img src={sheet.foto} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: `1.5px solid ${sheetColor}55`, flexShrink: 0 }} loading="lazy" decoding="async" />
           : <div style={{ width: 36, height: 36, borderRadius: 8, background: `${sheetColor}15`, border: `1.5px dashed ${sheetColor}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cls.icon}</div>}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontFamily: 'Cinzel,serif', fontSize: 13, fontWeight: 700, color: sheetColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sheet.nome || 'Sem nome'}</div>
@@ -358,18 +365,74 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
      disso para narrar, e os outros primos precisam ouvir dele, não da
      interface. */
   const [escondido, setEscondido] = useState(null);
-  const esconderMe = () => {
-    if (escondido) return;
-    setEscondido(estadoDaCacada(cacadaDaMesa, {
-      agora: Date.now(), mapaAtual: currentMap ? String(currentMap.id) : '',
-    }));
-  };
-  const contarEsconderijo = resultado => {
-    const registro = registroDoEsconderijo({ quem: playerSheetId, resultado });
-    if (!registro) return;
-    addDoc(col('esconderijos'), registro)
+
+  /* O registro nasce NO CLIQUE, não no fim dos 3,4 segundos. É a diferença
+     entre o Mestre ver a porta se fechando — que é a cena — e receber um
+     aviso de que ela já fechou, que não é cena nenhuma. O documento é um
+     por ficha, e não um por tentativa: o que o Mestre precisa é do estado
+     de agora, e um histórico que ninguém lê só engorda a coleção. */
+  const marcarEsconderijo = registro => {
+    if (!registro || !playerSheetId) return;
+    setDoc(docIn('esconderijos', String(playerSheetId)), registro, { merge: true })
       .catch(e => console.error('Erro ao registrar o esconderijo:', e));
   };
+
+  const esconderMe = () => {
+    if (escondido) return;
+    const cacada = estadoDaCacada(cacadaDaMesa, {
+      agora: Date.now(), mapaAtual: currentMap ? String(currentMap.id) : '',
+    });
+    setEscondido(cacada);
+    marcarEsconderijo(entrandoNoArmario({
+      quem: playerSheetId,
+      nome: minhaFichaDaNoite?.nome || '',
+      cacada,
+      chance: chanceDePassar(cacada),
+    }));
+  };
+
+  const contarEsconderijo = resultado => {
+    marcarEsconderijo(portasAbrem(
+      entrandoNoArmario({
+        quem: playerSheetId,
+        nome: minhaFichaDaNoite?.nome || '',
+        cacada: escondido,
+        chance: chanceDePassar(escondido),
+      }),
+      resultado,
+    ));
+  };
+
+  /* Sair do armário limpa a linha. Sem isto o painel do Mestre viraria um
+     mural de tudo que já aconteceu na noite, e a linha que importa — a de
+     quem está entrando AGORA — ficaria no meio do resto. */
+  const sairDoEsconderijo = () => {
+    setEscondido(null);
+    if (!playerSheetId) return;
+    setDoc(docIn('esconderijos', String(playerSheetId)),
+      saiuDoArmario({ quem: String(playerSheetId) }), { merge: true })
+      .catch(() => {});
+  };
+
+  /* A BOLSA. A contagem no botão vem da mesma consulta que a gaveta usa,
+     para o número no canto e a lista dentro nunca discordarem. */
+  const { membro } = useMembro();
+  const [bolsaAberta, setBolsaAberta] = useState(false);
+  const [itensDaMesa, setItensDaMesa] = useState([]);
+  useEffect(() => {
+    if (!ehNoite || !membro) { setItensDaMesa([]); return undefined; }
+    return observarLiberados('itens', membro, setItensDaMesa, () => setItensDaMesa([]));
+  }, [ehNoite, membro?.uid, membro?.papel]);
+
+  /* E a vista do Mestre. Só ele assina: é material de condução. */
+  const [esconderijosDaMesa, setEsconderijosDaMesa] = useState([]);
+  useEffect(() => {
+    if (!ehNoite || !masterMode) { setEsconderijosDaMesa([]); return undefined; }
+    const un = onSnapshot(col('esconderijos'),
+      snap => setEsconderijosDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      () => setEsconderijosDaMesa([]));
+    return () => un();
+  }, [ehNoite, masterMode]);
 
   const comecarCacada = ({ oQue, segundos, modo }) => {
     setDoc(docIn('config', 'cacada'), cacadaParaComecar({
@@ -2446,7 +2509,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   userSelect: 'none', touchAction: 'none',
                 }}
               >
-                <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} />
+                <img src={currentMap.img} alt="mapa de batalha" draggable={false} onLoad={handleMapImgLoad} style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }} loading="lazy" decoding="async" />
                 <MapAtmosphere atmosfera={currentMap.atmosfera} img={currentMap.img} />
                 {/* A atmosfera da casa só entra quando o mapa aberto É um dos
                     sete: mapa que o Mestre subiu por conta própria não tem
@@ -2559,13 +2622,13 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                                 ? `drop-shadow(0 0 1px rgba(255,255,255,.98)) drop-shadow(0 0 ${Math.max(7,9*tokenScale)}px ${info.color})`
                                 : isSelected
                                   ? `drop-shadow(0 0 1px rgba(255,255,255,.96)) drop-shadow(0 0 ${Math.max(5,7*tokenScale)}px ${info.color})`
-                                  : (displayMaxHp>0 ? `drop-shadow(0 0 1px ${healthRingColor}) drop-shadow(0 0 ${Math.max(3,4*tokenScale)}px ${healthRingColor}99) drop-shadow(0 2px 4px rgba(0,0,0,.68))` : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))'),
+                                  : (displayMaxHp > 0 ? `drop-shadow(0 0 1px ${healthRingColor}) drop-shadow(0 0 ${Math.max(3,4*tokenScale)}px ${healthRingColor}99) drop-shadow(0 2px 4px rgba(0,0,0,.68))` : 'drop-shadow(0 2px 4px rgba(0,0,0,.68))'),
                               transition: (draggingId === token.id || rotatingId === token.id)
                                 ? 'none'
                                 : flippingId === String(token.id)
                                   ? 'filter .14s ease, transform .46s cubic-bezier(.34,.9,.3,1)'
                                   : 'filter .14s ease, transform .12s linear',
-                            }} />
+                            }} loading="lazy" decoding="async" />
                           : <span style={{ fontSize: dispSize * 0.4, filter: isSelected ? `drop-shadow(0 0 6px ${info.color})` : 'none', transform:`rotate(${Number(token.rotation || 0)}deg) rotateY(${token.flipped?180:0}deg)`, transition:rotatingId===token.id?'none':flippingId===String(token.id)?'transform .46s cubic-bezier(.34,.9,.3,1)':'transform .12s linear' }}>{token.tipo === 'inimigo' ? '💀' : '🧙'}</span>}
                       </div>
                       <div style={{ fontSize: 10 * labelScale, fontFamily: 'Cinzel,serif', color: info.color, background: 'rgba(4,6,15,0.75)', borderRadius: Math.max(3, 5 * labelScale), padding: `${Math.max(1, labelScale)}px ${Math.max(3, 7 * labelScale)}px`, whiteSpace: 'nowrap', maxWidth: Math.max(56, 90 * labelScale), overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -2703,7 +2766,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               cacada={escondido}
               imagem={imagemDoVulto !== VULTO_DESENHADO ? imagemDoVulto : ''}
               aoTerminar={contarEsconderijo}
-              aoFechar={() => setEscondido(null)}
+              aoFechar={sairDoEsconderijo}
             />
           )}
           {/* E o botão para entrar, só para quem tem ficha na mesa. */}
@@ -2721,6 +2784,18 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               mestre={masterMode}
               aoEscapar={encerrarCacada}
             />
+          )}
+          {ehNoite && masterMode && <VigiaDoEsconderijo registros={esconderijosDaMesa} />}
+
+          {/* A bolsa: no terceiro degrau do canto, acima dos bilhetes. */}
+          {ehNoite && membro && (
+            <button type="button" className="itn-abrir" onClick={() => setBolsaAberta(true)}>
+              ◈ Itens{itensDaMesa.length ? <b>{itensDaMesa.length}</b> : null}
+            </button>
+          )}
+          {ehNoite && bolsaAberta && (
+            <ItensDaNoite membro={membro} mestre={masterMode}
+              aoFechar={() => setBolsaAberta(false)} />
           )}
           {ehNoite && masterMode && (
             <ComecarCacada
@@ -2778,7 +2853,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 'calc(84px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 41, width: 'min(280px, calc(100vw - 28px))', maxHeight: 'calc(100% - 108px)', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${(TOKEN_TYPES[selectedToken.tipo] || TOKEN_TYPES.jogador).color}55`, flexShrink: 0 }}>
-                  {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                  {selectedToken.foto && <img src={selectedToken.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} loading="lazy" decoding="async" />}
                 </div>
                 <input value={selectedToken.nome} onChange={e => updateToken(selectedToken.id, { nome: e.target.value })} style={{ flex: 1, fontFamily: 'Cinzel,serif', fontSize: 12 }} />
                 <button onClick={() => {setSelectedId(null);setSelectedTokenIds([]);}} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5070', borderRadius: 5, cursor: 'pointer', padding: '3px 8px', fontSize: 11 }}>✕</button>

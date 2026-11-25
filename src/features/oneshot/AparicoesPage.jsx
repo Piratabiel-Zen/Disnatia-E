@@ -188,7 +188,7 @@ export default function AparicoesPage() {
                         onClick={() => setExaminando(a)}
                         title="Examinar de perto"
                       >
-                        <img src={a.imagem} alt={a.titulo || ''} />
+                        <img src={a.imagem} alt={a.titulo || ''} loading="lazy" decoding="async" />
                       </button>
                     )
                     : <div className="apa-sem-imagem">{tipoDaAparicao(a.tipo).icone}</div>}
@@ -267,7 +267,7 @@ export default function AparicoesPage() {
           <li key={a.id} data-revelada={estaRevelada(a) ? 'sim' : 'nao'} data-aberta={String(a.id) === abertaId ? 'sim' : 'nao'}>
             <button type="button" className="apa-linha" onClick={() => setAbertaId(atual => (atual === String(a.id) ? null : String(a.id)))}>
               {a.imagem
-                ? <img src={a.imagem} alt="" className="apa-mini" />
+                ? <img src={a.imagem} alt="" className="apa-mini" loading="lazy" decoding="async" />
                 : <span className="apa-mini apa-mini-vazia">{tipoDaAparicao(a.tipo).icone}</span>}
               <span className="apa-nomes">
                 <b>{a.titulo || `${tipoDaAparicao(a.tipo).nome} sem título`}</b>
@@ -385,7 +385,7 @@ export default function AparicoesPage() {
           </fieldset>
 
           <div className="apa-imagem">
-            {aberta.imagem && <img src={aberta.imagem} alt="" />}
+            {aberta.imagem && <img src={aberta.imagem} alt="" loading="lazy" decoding="async" />}
             <div className="apa-imagem-acoes">
               <label className="apa-anexar">
                 {aberta.imagem ? 'Trocar imagem' : 'Anexar imagem'}

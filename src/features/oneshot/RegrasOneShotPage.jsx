@@ -3,6 +3,7 @@ import { SECOES_DAS_REGRAS, buscarNasRegras } from './regrasOneShot.mjs';
 import Emblema from './Emblema.jsx';
 import './paginas-one-shot.css';
 import './regras-one-shot.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 /**
  * O LIVRO DA NOITE
@@ -27,9 +28,11 @@ import './regras-one-shot.css';
  */
 export default function RegrasOneShotPage() {
   const [busca, setBusca] = useState('');
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
   const [abertoId, setAbertoId] = useState(SECOES_DAS_REGRAS[0]?.id || '');
 
-  const termo = busca.trim();
+  const termo = buscaAdiado.trim();
   const achados = useMemo(() => (termo ? buscarNasRegras(termo) : []), [termo]);
 
   const capitulos = useMemo(

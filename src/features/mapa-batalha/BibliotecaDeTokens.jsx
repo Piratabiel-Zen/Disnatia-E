@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import './biblioteca-de-tokens.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 /**
  * A BIBLIOTECA DE TOKENS
@@ -34,6 +35,8 @@ export default function BibliotecaDeTokens({
   tokens = [], fichas = [], aoColocar, aoExcluir, aoFechar, aoCriarNovo,
 }) {
   const [busca, setBusca] = useState('');
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
   const [marcados, setMarcados] = useState(() => new Set());
 
   const nomeDaFicha = useMemo(() => {
@@ -43,7 +46,7 @@ export default function BibliotecaDeTokens({
   }, [fichas]);
 
   const visiveis = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
+    const termo = buscaAdiado.trim().toLowerCase();
     if (!termo) return tokens;
     return tokens.filter(t => {
       const ficha = t.sheetId ? nomeDaFicha.get(String(t.sheetId)) || '' : '';
@@ -96,7 +99,7 @@ export default function BibliotecaDeTokens({
                 <button type="button" className="bib-linha" onClick={() => alternar(id)}>
                   <span className="bib-marca" aria-hidden="true" />
                   {t.foto
-                    ? <img src={t.foto} alt="" className="bib-mini" />
+                    ? <img src={t.foto} alt="" className="bib-mini" loading="lazy" decoding="async" />
                     : <span className="bib-mini bib-mini-vazia">{String(t.nome || '?').slice(0, 1)}</span>}
                   <span className="bib-nomes">
                     <b>{t.nome || 'Token'}</b>

@@ -371,7 +371,7 @@ const handleClose = () => { onClose(); };
                   overflow: 'hidden', background: c.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.3s'
                 }}>
-                  {c.foto ? <img src={c.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isDead ? 'grayscale(1)' : 'none' }} /> : <span style={{ fontSize: 20 }}>{c.type === 'enemy' ? '💀' : '⚔️'}</span>}
+                  {c.foto ? <img src={c.foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isDead ? 'grayscale(1)' : 'none' }} loading="lazy" decoding="async" /> : <span style={{ fontSize: 20 }}>{c.type === 'enemy' ? '💀' : '⚔️'}</span>}
                 </div>
                 <div style={{ fontSize: 9, color: isActive ? hpC : '#777', fontWeight: isActive ? 700 : 400, maxWidth: 80, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {isActive ? '▶ VEZ' : `#${idx + 1}`}

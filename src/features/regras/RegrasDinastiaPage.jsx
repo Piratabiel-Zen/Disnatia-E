@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { RULES_DATA } from '../../data/gameData';
 import { CATEGORIAS, parseRuleBody, regraCombina, resumoDaRegra } from './regrasTexto.mjs';
 import './regras.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 // MANUAL DE REGRAS
 //
@@ -76,6 +77,8 @@ function CorpoDaRegra({ texto }) {
 
 export default function RulesSection() {
   const [busca, setBusca] = useState('');
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
   const [categoria, setCategoria] = useState('todas');
   const [abertaId, setAbertaId] = useState(RULES_DATA[0]?.title || '');
 

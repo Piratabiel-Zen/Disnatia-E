@@ -63,7 +63,7 @@ export default function Esconderijo({ cacada, imagem = '', aoTerminar, aoFechar 
       {fase === 'pego' && (
         <div className="esc-coisa" aria-hidden="true">
           {imagem
-            ? <img src={imagem} alt="" />
+            ? <img src={imagem} alt="" loading="lazy" decoding="async" />
             : (
               <svg viewBox="0 0 120 200" preserveAspectRatio="xMidYMax meet">
                 <path

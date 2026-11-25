@@ -7,13 +7,13 @@ export const acquiredSpells = [{
 }];
 
 export const acquiredFiles = [
-  { id: 'portadores', title: 'Portadores do Destino', src: '/archives/assembleia/01-portadores.jpeg' },
-  { id: 'jansen', title: 'Jansen de Louros', src: '/archives/assembleia/02-jansen.jpeg' },
-  { id: 'ignacio', title: 'Ignácio Caetano', src: '/archives/assembleia/03-ignacio.jpeg' },
-  { id: 'kenai', title: 'Kenai Ursos', src: '/archives/assembleia/04-kenai.jpeg' },
-  { id: 'mateeo', title: 'Mateeo / Matheus Detel', src: '/archives/assembleia/05-mateeo.jpeg' },
-  { id: 'jack', title: 'Jack Daniels', src: '/archives/assembleia/06-jack.jpeg' },
-  { id: 'elyon', title: 'Elyon de São Tomé', src: '/archives/assembleia/07-elyon.jpeg' },
-  { id: 'assembleia', title: 'Assembleia / Profecia / Artefatos', src: '/archives/assembleia/08-assembleia.jpeg' },
-  { id: 'comunicado', title: 'Comunicado interno restrito', src: '/archives/assembleia/09-comunicado.jpeg' },
+  { id: 'portadores', title: 'Portadores do Destino', src: '/archives/assembleia/01-portadores.webp' },
+  { id: 'jansen', title: 'Jansen de Louros', src: '/archives/assembleia/02-jansen.webp' },
+  { id: 'ignacio', title: 'Ignácio Caetano', src: '/archives/assembleia/03-ignacio.webp' },
+  { id: 'kenai', title: 'Kenai Ursos', src: '/archives/assembleia/04-kenai.webp' },
+  { id: 'mateeo', title: 'Mateeo / Matheus Detel', src: '/archives/assembleia/05-mateeo.webp' },
+  { id: 'jack', title: 'Jack Daniels', src: '/archives/assembleia/06-jack.webp' },
+  { id: 'elyon', title: 'Elyon de São Tomé', src: '/archives/assembleia/07-elyon.webp' },
+  { id: 'assembleia', title: 'Assembleia / Profecia / Artefatos', src: '/archives/assembleia/08-assembleia.webp' },
+  { id: 'comunicado', title: 'Comunicado interno restrito', src: '/archives/assembleia/09-comunicado.webp' },
 ];

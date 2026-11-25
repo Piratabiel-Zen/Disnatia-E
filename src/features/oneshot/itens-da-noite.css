@@ -1,0 +1,149 @@
+/* ───────── A BOLSA ─────────
+   O botão fica no terceiro degrau do canto, acima dos bilhetes, na mesma
+   coluna. Os degraus vêm de `--fr-degrau` para que mexer na altura da
+   ficha mova os três juntos. */
+.itn-abrir{
+  position:absolute;left:10px;
+  bottom:calc(10px + var(--fr-altura,var(--fr-aba,48px)) + 6px + var(--fr-degrau,34px) * 2);
+  z-index:45;
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+  background:rgba(20,14,11,.88);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.4));
+  color:var(--mor-cinza,#9C8A68);
+  font-family:var(--mor-letra,'IM Fell English SC',Cinzel,Georgia,serif);
+  font-size:10.5px;letter-spacing:.12em;
+  transition:color .2s ease,border-color .2s ease;
+}
+.itn-abrir:hover{color:var(--mor-latao-claro,#E3C782);border-color:var(--mor-latao,#B08A53)}
+/* A contagem no botão: saber que chegou alguma coisa sem precisar abrir. */
+.itn-abrir b{font-weight:400;color:var(--mor-latao-claro,#D8B57A);margin-left:6px}
+
+.itn-fundo{
+  position:absolute;inset:0;z-index:70;
+  display:grid;place-items:center;padding:20px;
+  background:rgba(6,5,4,.74);backdrop-filter:blur(2px);
+}
+.itn{
+  width:min(420px,94vw);max-height:min(76vh,620px);
+  display:flex;flex-direction:column;
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.34));border-radius:5px;
+  background:linear-gradient(168deg,rgba(27,23,21,.98),rgba(10,8,7,.99));
+  box-shadow:0 22px 60px rgba(0,0,0,.7);
+}
+.itn-topo{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 15px;border-bottom:1px solid var(--mor-latao-fraco,rgba(176,138,83,.22));
+}
+.itn-topo h3{
+  margin:0;font-size:14px;font-weight:400;letter-spacing:.1em;
+  color:var(--mor-latao-claro,#D8B57A);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.itn-fechar{
+  background:none;border:0;cursor:pointer;font-size:14px;line-height:1;
+  color:var(--mor-cinza,#77716D);padding:4px 6px;
+}
+.itn-fechar:hover{color:var(--mor-pergaminho,#D8C5A4)}
+
+.itn-lista{list-style:none;margin:0;padding:12px;display:grid;gap:10px;overflow:auto}
+.itn-vazio{
+  margin:0;padding:28px 18px;text-align:center;
+  color:var(--mor-cinza,#77716D);font-style:italic;font-size:12.5px;
+}
+
+.itn-carta{
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;
+  padding:10px;border-radius:4px;
+  background:rgba(10,8,7,.6);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.2));
+  border-left:2px solid var(--mor-latao,#B08A53);
+}
+/* O da mesa tem a borda mais apagada: a diferença entre "meu" e "de
+   todos" precisa ser vista antes de ser lida. */
+.itn-mesa{border-left-color:var(--mor-cinza,#77716D)}
+
+/* Tamanho fixo e `aspect-ratio` para a lista não pular quando a imagem
+   chega: sem isso, cada miniatura que carrega empurra o cartão de baixo e
+   o dedo erra o botão que estava mirando. */
+.itn-mini{
+  width:56px;height:56px;aspect-ratio:1;
+  object-fit:cover;border-radius:3px;
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.3));
+  background:rgba(16,13,12,.9);
+  display:grid;place-items:center;
+}
+.itn-mini-vazia{color:var(--mor-latao-fraco,rgba(176,138,83,.4));font-size:18px}
+
+.itn-corpo{min-width:0;display:grid;gap:3px}
+.itn-nome{
+  font-weight:400;font-size:13px;letter-spacing:.03em;
+  color:var(--mor-pergaminho,#D8C5A4);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.itn-desc{
+  margin:0;font-size:11.5px;line-height:1.45;
+  color:var(--mor-cinza,#9A9490);
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);
+  overflow-wrap:anywhere;
+}
+.itn-mais,.itn-apagar{
+  justify-self:start;background:none;border:0;cursor:pointer;padding:2px 0;
+  font-size:10px;letter-spacing:.08em;color:var(--mor-latao,#B08A53);
+  text-decoration:underline;text-underline-offset:3px;
+}
+.itn-apagar{color:var(--mor-sangue-claro,#8A2730)}
+.itn-selo{
+  justify-self:start;margin-top:2px;padding:2px 7px;border-radius:999px;
+  font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--mor-cinza,#77716D);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.25));
+}
+
+/* ---- O lado do Mestre ---- */
+.itn-entrega{margin-top:7px;display:grid;gap:6px}
+.itn-alcances,.itn-gente{display:flex;flex-wrap:wrap;gap:5px}
+.itn-alcances button,.itn-gente button{
+  padding:4px 9px;border-radius:999px;cursor:pointer;
+  font-size:9.5px;letter-spacing:.06em;
+  background:rgba(10,8,7,.8);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.28));
+  color:var(--mor-cinza,#77716D);
+}
+.itn-alcances button.is-on,.itn-gente button.is-on{
+  border-color:var(--mor-latao,#B08A53);
+  background:rgba(96,25,29,.34);
+  color:var(--mor-pergaminho,#D8C5A4);
+}
+.itn-quem{
+  margin:0;font-size:10px;font-style:italic;color:var(--mor-cinza,#77716D);
+}
+
+.itn-novo{
+  display:grid;gap:7px;padding:12px 12px 0;
+}
+.itn-novo input,.itn-novo textarea{
+  width:100%;box-sizing:border-box;padding:8px 10px;border-radius:3px;
+  background:rgba(10,8,7,.8);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.26));
+  color:var(--mor-pergaminho,#D8C5A4);
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);font-size:12px;
+  resize:vertical;
+}
+.itn-novo input:focus,.itn-novo textarea:focus{outline:none;border-color:var(--mor-latao,#B08A53)}
+.itn-novo-pe{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.itn-anexo,.itn-criar{
+  padding:7px 12px;border-radius:3px;cursor:pointer;
+  font-size:10px;letter-spacing:.1em;
+  background:rgba(10,8,7,.8);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.3));
+  color:var(--mor-cinza,#9C8A68);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.itn-criar{margin-left:auto;background:rgba(96,25,29,.4);color:var(--mor-pergaminho,#D8C5A4)}
+.itn-criar:disabled{opacity:.42;cursor:not-allowed}
+.itn-novo-pe .itn-mini{width:34px;height:34px}
+
+@media (max-width:900px){
+  .itn{width:min(100%,460px);max-height:82vh}
+  .itn-mini{width:46px;height:46px}
+}

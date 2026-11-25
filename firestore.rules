@@ -265,7 +265,16 @@ service cloud.firestore {
         // Vale para os seis tipos de uma vez (criatura, cenário, item,
         // página, símbolo, vulto), porque o tipo é um campo do documento e
         // não uma coleção: proteger a coleção protege todos.
-        || colecao.matches('c__[a-z0-9-]+__aparicoes');
+        || colecao.matches('c__[a-z0-9-]+__aparicoes')
+        // ESCONDERIJOS: quem está no armário é informação de condução.
+        // Se o jogador ao lado vê na tela que o primo entrou e se deu
+        // certo, a cena perde o que ela tem de melhor — a espera. Quem
+        // conta isso é o Mestre, na hora em que ele escolher contar.
+        || colecao.matches('c__[a-z0-9-]+__esconderijos')
+        // ITENS: a lanterna de um não é a lanterna do outro. Mesma máquina
+        // das aparições — `liberadoParaTodos` para o que é da mesa,
+        // `liberadoPara` para o que tem dono.
+        || colecao.matches('c__[a-z0-9-]+__itens');
     }
 
     function daMesaComum(colecao) {
@@ -284,13 +293,30 @@ service cloud.firestore {
       allow write: if daMesaComum(colecao) && membro(idNaColecao(colecao)) && tamanhoRazoavel();
     }
 
+    // O que só o Mestre lê, e a mesa escreve.
+    //
+    // Os esconderijos invertem a lógica das aparições: qualquer membro
+    // PRECISA escrever (é o jogador que entra no armário), mas só o Mestre
+    // pode ler. Escrever a linha de outra pessoa continua possível, e isso
+    // é deliberado: a alternativa seria guardar o vínculo uid→ficha nas
+    // regras, e numa mesa de primos o risco não paga a complicação. O que
+    // não podia continuar é QUALQUER UM LENDO, que é o que estragava a cena.
+    match /{colecao}/{documento} {
+      allow read: if colecao.matches('c__[a-z0-9-]+__esconderijos')
+        && mestre(idNaColecao(colecao));
+      allow write: if colecao.matches('c__[a-z0-9-]+__esconderijos')
+        && membro(idNaColecao(colecao))
+        && tamanhoRazoavel();
+    }
+
     // Documentos liberados por pessoa.
     //
     // Um documento guardado só chega a quem o Mestre liberou. Escrever é só
     // do Mestre: o documento é material dele.
     match /{colecao}/{documento} {
       allow read: if (colecao.matches('c__[a-z0-9-]+__documentos')
-          || colecao.matches('c__[a-z0-9-]+__aparicoes'))
+          || colecao.matches('c__[a-z0-9-]+__aparicoes')
+          || colecao.matches('c__[a-z0-9-]+__itens'))
         && membro(idNaColecao(colecao))
         && (
           mestre(idNaColecao(colecao))
@@ -299,7 +325,8 @@ service cloud.firestore {
         );
 
       allow write: if (colecao.matches('c__[a-z0-9-]+__documentos')
-          || colecao.matches('c__[a-z0-9-]+__aparicoes'))
+          || colecao.matches('c__[a-z0-9-]+__aparicoes')
+          || colecao.matches('c__[a-z0-9-]+__itens'))
         && mestre(idNaColecao(colecao))
         && tamanhoRazoavel();
     }

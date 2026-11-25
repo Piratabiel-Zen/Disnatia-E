@@ -690,7 +690,7 @@ export function ImmersiveNavigation({ tab, onNavigate, accent='#A855F7', masterM
       </div>
       {onLeaveCampaign&&<button className="grim-switch-table" onClick={onLeaveCampaign} title="Escolher outra mesa"><span>⇄</span><span className="grim-label">Trocar de mesa</span></button>}
       <div className="grim-player-mini">
-        <div className={masterMode?"grim-avatar master-sigil":"grim-avatar"}>{masterMode?'M':selectedSheet?.foto?<img src={selectedSheet.foto}/>:<span>{selectedSheet?.nome?.[0]||'?'}</span>}</div>
+        <div className={masterMode?"grim-avatar master-sigil":"grim-avatar"}>{masterMode?'M':selectedSheet?.foto?<img src={selectedSheet.foto} loading="lazy" decoding="async" />:<span>{selectedSheet?.nome?.[0]||'?'}</span>}</div>
         <div><b>{masterMode?'Mestre':selectedSheet?.nome||'Escolha sua ficha'}</b><small>{masterMode?'Conduzindo a mesa':combat?.active?'Em combate':`Explorando ${campaign?.world||'Cosmum'}`}</small></div>
       </div>
     </aside>
@@ -742,7 +742,7 @@ export function SessionDashboard({ onNavigate, masterMode }){
       <section className="session-card character-card">
         <header><span>SEU PERSONAGEM</span><select value={selectedSheetId||''} onChange={e=>setSelectedSheetId(e.target.value)}>{sheets.map(s=><option key={s.id} value={s.id}>{s.nome||'Personagem'}</option>)}</select></header>
         {selectedSheet?<div className="character-compact">
-          <div className="character-portrait" style={{'--c':cls?.color||'#A855F7'}}>{selectedSheet.foto?<img src={selectedSheet.foto}/>:<span>{selectedSheet.nome?.[0]||'?'}</span>}</div>
+          <div className="character-portrait" style={{'--c':cls?.color||'#A855F7'}}>{selectedSheet.foto?<img src={selectedSheet.foto} loading="lazy" decoding="async" />:<span>{selectedSheet.nome?.[0]||'?'}</span>}</div>
           <div className="character-info"><h3>{selectedSheet.nome||'Sem nome'}</h3><p>{cls?.name||'Classe personalizada'} · Nv {selectedSheet.nivel||1}</p>
             <div className="hp-track"><i style={{width:`${hpPct}%`}}/></div><div className="stat-row"><span>❤ {hp}/{maxHp}</span><span>✦ {selectedSheet.vigos||0} VC</span></div>
           </div>
@@ -937,7 +937,7 @@ function CombatHud({ onNavigate }){
     <div className="combat-action-character">
       <div className="combat-action-orbs">
         <CombatResourceOrb value={hp} max={maxHp} color="#E8193C" label="HP" className="hp"/>
-        <div className="combat-action-portrait g3-portrait g3-portrait-lg" data-entity-id={String(selectedSheet.id||'')} data-classe={String(selectedSheet.classe||'').toLowerCase()} title={'Ornamento de '+(selectedClass?.name||'classe')}>{selectedSheet.foto?<img src={selectedSheet.foto} alt=""/>:<span>{selectedClass?.icon||selectedSheet.nome?.[0]||'✦'}</span>}</div>
+        <div className="combat-action-portrait g3-portrait g3-portrait-lg" data-entity-id={String(selectedSheet.id||'')} data-classe={String(selectedSheet.classe||'').toLowerCase()} title={'Ornamento de '+(selectedClass?.name||'classe')}>{selectedSheet.foto?<img src={selectedSheet.foto} alt="" loading="lazy" decoding="async" />:<span>{selectedClass?.icon||selectedSheet.nome?.[0]||'✦'}</span>}</div>
         <CombatResourceOrb value={vc} max={maxVc} color="#a855f7" label="VC" className="vc"/>
       </div>
       <div className="combat-action-identity"><small>{isMyTurn?'✦ SEU TURNO':`VEZ DE ${current?.nome||'—'}`}</small><b>{selectedSheet.nome||'Personagem'}</b><span>{selectedClass?.icon||'✦'} {selectedClass?.name||'Classe'}</span>{!masterMode&&<span className="combat-hotkey-status">{isMyTurn?'ATALHOS 1\u20134 ATIVOS':'1\u20134 NO SEU TURNO'}</span>}</div>
@@ -968,7 +968,7 @@ function CombatHud({ onNavigate }){
       <div className="combat-target-grid">
         <button className="no-target" disabled={busy} onClick={()=>emitAction(null)}><span>◇</span><b>Sem alvo</b><small>Ação sem alvo específico</small></button>
         {targets.map((t,i)=><button key={t.id||i} disabled={busy} className={String(t.id||'')===String(current?.id||'')?'current':''} onClick={()=>emitAction(t)}>
-          <span className="target-avatar">{t.foto?<img src={t.foto} alt=""/>:t.nome?.[0]||'?'}</span><b>{t.nome||'Combatente'}</b><small>{t.type==='enemy'?'Inimigo':t.type==='summon'?'Invocação':'Personagem'}</small>
+          <span className="target-avatar">{t.foto?<img src={t.foto} alt="" loading="lazy" decoding="async" />:t.nome?.[0]||'?'}</span><b>{t.nome||'Combatente'}</b><small>{t.type==='enemy'?'Inimigo':t.type==='summon'?'Invocação':'Personagem'}</small>
         </button>)}
       </div>
     </div>}
@@ -1005,7 +1005,7 @@ function CombatActionPulse(){
     <div className="combat-action-pulse-core">
       <div className="combat-action-actor">
         <span className="combat-action-portrait">
-          {actor?.foto?<img src={actor.foto} alt=""/>:<span className="combat-action-class-icon">{event.icon||'✦'}</span>}
+          {actor?.foto?<img src={actor.foto} alt="" loading="lazy" decoding="async" />:<span className="combat-action-class-icon">{event.icon||'✦'}</span>}
         </span>
         <small>{event.actorName||'Personagem'}</small>
       </div>
@@ -1021,7 +1021,7 @@ function TurnRibbon(){
   if(!combat?.active||tab!=='mapabatalha'||!combatState?.initiative?.length) return null;
   const list=Array.isArray(combatState.initiative)?combatState.initiative:[];
   const idx=Math.max(0,Math.min(Number(combatState.turnIdx||0),list.length-1));
-  return <div className="turn-ribbon"><div className="turn-round">RODADA <b>{combatState.round||1}</b></div><div className="turn-list">{list.map((c,i)=><div key={c.id||i} className={'turn-chip '+(i===idx?'active ':'')+(c.type==='enemy'?'enemy':'')} style={{'--c':c.color||'#A855F7'}}><div>{c.foto?<img src={c.foto} alt="" decoding="async"/>:<span>{c.nome?.[0]||'?'}</span>}</div><small>{c.nome||'Combatente'}</small>{i===idx&&<b>AGORA</b>}</div>)}</div></div>;
+  return <div className="turn-ribbon"><div className="turn-round">RODADA <b>{combatState.round||1}</b></div><div className="turn-list">{list.map((c,i)=><div key={c.id||i} className={'turn-chip '+(i===idx?'active ':'')+(c.type==='enemy'?'enemy':'')} style={{'--c':c.color||'#A855F7'}}><div>{c.foto?<img src={c.foto} alt="" decoding="async" loading="lazy" />:<span>{c.nome?.[0]||'?'}</span>}</div><small>{c.nome||'Combatente'}</small>{i===idx&&<b>AGORA</b>}</div>)}</div></div>;
 }
 
 function CombatStatusDamageFx(){

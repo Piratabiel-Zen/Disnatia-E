@@ -83,7 +83,7 @@ function LivroImageGallery({ scope, masterMode, compact=false }) {
     {images.length>0&&<div className="livro-hq-grid">
       {images.map(item=><div className="livro-hq-thumb" key={item.id}>
         <button className="livro-hq-open" onClick={()=>setLightbox(item)} title="Abrir em alta qualidade">
-          <img src={item.img} alt={item.nome||'Ilustração do Livro'}/>
+          <img src={item.img} alt={item.nome||'Ilustração do Livro'} loading="lazy" decoding="async" />
           <span>Ampliar</span>
         </button>
         {masterMode&&<button className="livro-hq-remove" onClick={()=>remove(item.id)} title="Remover imagem">✕</button>}
@@ -130,7 +130,7 @@ function RelicPlate({ art, masterMode }) {
         {[0, 60, 120, 180, 240, 300].map(angle => <path key={angle} d="M120 30 l5 9 -5 9 -5 -9z" className="relic-gem" transform={`rotate(${angle} 120 120)`} />)}
       </svg>
       {cover
-        ? <button type="button" className="relic-core" onClick={() => setViewing(true)} title="Ampliar a ilustração"><img src={cover.img} alt={`Ilustração de ${art.name}`} /></button>
+        ? <button type="button" className="relic-core" onClick={() => setViewing(true)} title="Ampliar a ilustração"><img src={cover.img} alt={`Ilustração de ${art.name}`} loading="lazy" decoding="async" /></button>
         : <div className="relic-core"><ArtifactGlyph art={art} size={92} /></div>}
     </div>
     {viewing && cover && <ImageViewer src={cover.img} title={art.name} onClose={() => setViewing(false)} />}

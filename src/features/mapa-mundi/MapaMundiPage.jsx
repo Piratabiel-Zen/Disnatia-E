@@ -419,7 +419,7 @@ function MapaMundiSection({ masterMode }) {
                     onClick={handleMapClick}
                     style={{ position: 'absolute', inset: 0, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center', transition: dragging ? 'none' : 'transform 0.22s ease-out' }}
                   >
-                    <img src={mapImage} alt={currentMap.titulo} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none', pointerEvents: 'none' }} />
+                    <img src={mapImage} alt={currentMap.titulo} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none', pointerEvents: 'none' }} loading="lazy" decoding="async" />
                     {visiblePins.map(pin => {
                       const meta = TYPE_META[pin.tipo] || TYPE_META.desconhecido;
                       const active = String(selectedPin) === String(pin.id);
@@ -450,7 +450,7 @@ function MapaMundiSection({ masterMode }) {
               {selPin && (
                 <div style={{ position: 'absolute', left: 14, right: 62, bottom: 14, zIndex: 35, maxWidth: 570, padding: 14, borderRadius: 13, border: '1px solid rgba(155,124,255,.26)', background: 'rgba(6,4,12,.95)', boxShadow: '0 12px 32px rgba(0,0,0,.72)', backdropFilter:'none', animation: 'pageTurn .25s ease' }}>
                   <div style={{ display: 'flex', gap: 12 }}>
-                    {selectedPinImage && <img src={selectedPinImage} alt="" style={{ width: 116, height: 84, borderRadius: 9, objectFit: 'cover', border: '1px solid rgba(255,255,255,.08)', flexShrink: 0 }} />}
+                    {selectedPinImage && <img src={selectedPinImage} alt="" style={{ width: 116, height: 84, borderRadius: 9, objectFit: 'cover', border: '1px solid rgba(255,255,255,.08)', flexShrink: 0 }} loading="lazy" decoding="async" />}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       {masterMode ? (
                         <>

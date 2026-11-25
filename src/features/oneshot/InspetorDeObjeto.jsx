@@ -127,8 +127,7 @@ export default function InspetorDeObjeto({ objeto: bruto, aoFechar }) {
               src={imagem} alt={objeto.titulo || ''} draggable="false"
               style={{
                 transform: `translate(${arrasto.x}px, ${arrasto.y}px) scale(${estado.zoom}) rotate(${graus}deg)`,
-              }}
-            />
+              }} loading="lazy" decoding="async" />
           ) : (
             <p className="insp-sem-imagem">Sem imagem. O que há deste objeto está escrito abaixo.</p>
           )}

@@ -155,7 +155,7 @@ export default function FichaOneShot({
               com olhos escurecendo não é susto, é defeito. */}
           <div className="osf-retrato" data-perturbado={ficha.retrato && retratoPerturbado(ficha) ? '' : undefined}>
             {ficha.retrato
-              ? <img src={ficha.retrato} alt="" />
+              ? <img src={ficha.retrato} alt="" loading="lazy" decoding="async" />
               : <span className="osf-retrato-vazio">sem<br />retrato</span>}
             {podeEditar && (
               <label className="osf-retrato-trocar">

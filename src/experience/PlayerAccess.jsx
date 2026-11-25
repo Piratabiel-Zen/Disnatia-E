@@ -202,7 +202,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
                   : (c?.name || 'Classe personalizada');
                 return (
                   <button key={s.id} className={String(selectedId) === String(s.id) ? 'active' : ''} onClick={() => { setSelectedId(String(s.id)); setPin(''); setError(''); }} style={{ '--char-color': cor }}>
-                    <span>{s.foto ? <img src={s.foto} alt="" /> : (s.nome?.[0] || '?')}</span>
+                    <span>{s.foto ? <img src={s.foto} alt="" loading="lazy" decoding="async" /> : (s.nome?.[0] || '?')}</span>
                     <b>{s.nome || (ehCain ? 'Exorcista' : 'Personagem')}</b>
                     <small>{legenda}</small>
                   </button>
@@ -212,7 +212,7 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
 
             {selected && (
               <div className="access-selected" style={{ '--char-color': cls?.color || '#A855F7' }}>
-                <div className="access-selected-portrait">{selected.foto ? <img src={selected.foto} alt="" /> : (selected.nome?.[0] || '?')}</div>
+                <div className="access-selected-portrait">{selected.foto ? <img src={selected.foto} alt="" loading="lazy" decoding="async" /> : (selected.nome?.[0] || '?')}</div>
                 <div>
                   <strong>{selected.nome || (ehCain ? 'Exorcista' : 'Personagem')}</strong>
                   {ehCain ? (
@@ -275,7 +275,7 @@ export function PlayerIdentityChip({ access, onLogout }) {
   if (!access) return null;
   return (
     <button className={'player-identity-chip'+(access.role==='master'?' is-master':'')} onClick={onLogout} title="Trocar usuário">
-      <span>{access.role === 'master' ? 'M' : access.photo ? <img src={access.photo} alt="" /> : (access.name?.[0] || '?')}</span>
+      <span>{access.role === 'master' ? 'M' : access.photo ? <img src={access.photo} alt="" loading="lazy" decoding="async" /> : (access.name?.[0] || '?')}</span>
       <div><b>{access.name || (access.role === 'master' ? 'Mestre' : 'Jogador')}</b><small>{access.role === 'master' ? 'Mesa do Mestre' : 'Trocar usuário'}</small></div>
     </button>
   );

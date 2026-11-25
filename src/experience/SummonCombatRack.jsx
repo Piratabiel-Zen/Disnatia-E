@@ -41,7 +41,7 @@ function SummonMiniSheet({record,memory,api,ownerName}) {
   };
   return <article className="summon-mini-sheet" style={{'--summon-color':record.color||'#a855f7'}} aria-label={`Invocação ${record.nome}`}>
     <header>
-      <span className="summon-mini-portrait" aria-hidden="true">{(memory?.foto||record.foto)?<img src={memory?.foto||record.foto} alt=""/>:'\uD83D\uDC80'}</span>
+      <span className="summon-mini-portrait" aria-hidden="true">{(memory?.foto||record.foto)?<img src={memory?.foto||record.foto} alt="" loading="lazy" decoding="async" />:'\uD83D\uDC80'}</span>
       <span className="summon-mini-identity"><strong>{record.nome||'Invocação'}</strong><small>{ownerName?`de ${ownerName} · `:''}Ameaça {memory?.ameaca||record.ameaca||'Baixa'}</small></span>
       <button disabled={busy} onClick={()=>act(()=>api.storeSummon(record.id))}>Guardar</button></header>
     <div className="summon-mini-hpbar" aria-hidden="true"><i style={{width:Math.round(hp/max*100)+'%'}} data-low={hp/max<=.34?'true':'false'}/></div>

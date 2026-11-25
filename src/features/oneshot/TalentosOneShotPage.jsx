@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TALENTOS, TALENTOS_POR_PERSONAGEM } from './talentosOneShot.mjs';
 import './paginas-one-shot.css';
 import './talentos-one-shot.css';
+import { useBuscaAdiada } from '../../core/useBuscaAdiada';
 
 /**
  * OS TALENTOS DA NOITE
@@ -17,7 +18,9 @@ import './talentos-one-shot.css';
  */
 export default function TalentosOneShotPage() {
   const [busca, setBusca] = useState('');
-  const termo = busca.trim().toLowerCase();
+  // O filtro espera o dedo parar; a letra no campo, não.
+  const buscaAdiado = useBuscaAdiada(busca);
+  const termo = buscaAdiado.trim().toLowerCase();
   const lista = termo
     ? TALENTOS.filter(t => `${t.nome} ${t.resumo} ${t.efeito}`.toLowerCase().includes(termo))
     : TALENTOS;

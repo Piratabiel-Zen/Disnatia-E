@@ -98,7 +98,7 @@ export default function CorpoDoDocumento({ doc, tipo, mestre, salvar }) {
           <h4 className="doc-jornal-manchete">{doc.titulo || 'Sem manchete'}</h4>
           {campo('chamada') && <p className="doc-jornal-chamada">{campo('chamada')}</p>}
           {mestre && <Anexo doc={doc} salvar={salvar} rotulo="Anexar foto da matéria" />}
-          {doc.imagem && <img className="doc-jornal-foto" src={doc.imagem} alt="" />}
+          {doc.imagem && <img className="doc-jornal-foto" src={doc.imagem} alt="" loading="lazy" decoding="async" />}
           <Texto doc={doc} salvar={salvar} mestre={mestre}
                  classe="doc-jornal-colunas" dica="O corpo da matéria…" />
         </div>
@@ -129,7 +129,7 @@ export default function CorpoDoDocumento({ doc, tipo, mestre, salvar }) {
         {mestre && <Campos tipo="foto" doc={doc} salvar={salvar} />}
         <figure className="doc-foto-moldura">
           {doc.imagem
-            ? <img src={doc.imagem} alt={campo('legenda')} />
+            ? <img src={doc.imagem} alt={campo('legenda')} loading="lazy" decoding="async" />
             : (
               <div className="doc-foto-vazia">
                 {mestre ? 'Nenhuma imagem anexada ainda.' : 'A fotografia não foi revelada.'}
@@ -163,7 +163,7 @@ export default function CorpoDoDocumento({ doc, tipo, mestre, salvar }) {
             <div className="doc-relatorio-carimbo">{campo('classificacao')}</div>
           )}
           {mestre && <Anexo doc={doc} salvar={salvar} rotulo="Anexar anexo do relatório" />}
-          {doc.imagem && <img className="doc-relatorio-anexo" src={doc.imagem} alt="" />}
+          {doc.imagem && <img className="doc-relatorio-anexo" src={doc.imagem} alt="" loading="lazy" decoding="async" />}
           <Texto doc={doc} salvar={salvar} mestre={mestre}
                  classe="doc-relatorio-texto" dica="O corpo do relatório…" />
         </div>
@@ -202,7 +202,7 @@ export default function CorpoDoDocumento({ doc, tipo, mestre, salvar }) {
         </dl>
       </div>
       {mestre && <Anexo doc={doc} salvar={salvar} rotulo="Anexar foto do objeto" />}
-      {doc.imagem && <img className="doc-objeto-foto" src={doc.imagem} alt="" />}
+      {doc.imagem && <img className="doc-objeto-foto" src={doc.imagem} alt="" loading="lazy" decoding="async" />}
       <Texto doc={doc} salvar={salvar} mestre={mestre}
              classe="doc-objeto-texto" dica="Descrição, análise, o que foi notado…" />
     </div>

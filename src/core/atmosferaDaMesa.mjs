@@ -67,7 +67,7 @@ export const temAtmosferaPropria = campanha =>
 export const CENARIOS_POR_MESA = Object.freeze({
   'estrela de absinto': Object.freeze({
     imagem: '/media/mesas/terra-dourada.webp',
-    alternativa: '/media/mesas/terra-dourada.jpg',
+    alternativa: '/media/mesas/terra-dourada.webp',
     descricao: 'Uma praça alagada da Terra Dourada sob céu vermelho, com a chuva que nunca para.',
     chuva: true,
     escurecer: 0.62,
@@ -86,7 +86,7 @@ export const CENARIOS_POR_MESA = Object.freeze({
 const CENARIOS_POR_SISTEMA = Object.freeze({
   oneshot: Object.freeze({
     imagem: '/media/mesas/casa-do-horror.webp',
-    alternativa: '/media/mesas/casa-do-horror.jpg',
+    alternativa: '/media/mesas/casa-do-horror.webp',
     descricao: 'Um casarão atrás do portão de ferro, sob lua cheia, com o cemitério tomado de névoa.',
     nevoa: true,
     // Mais escuro que a praça veneziana: aqui a imagem é noite, e o texto da

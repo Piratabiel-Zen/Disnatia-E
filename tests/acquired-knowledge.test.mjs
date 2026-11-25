@@ -9,9 +9,17 @@ test('Acquired knowledge keeps all nine originals with unique paths', () => {
   assert.equal(new Set(acquiredFiles.map(file => file.src)).size, 9);
   for (const file of acquiredFiles) {
     const bytes = fs.readFileSync('public' + file.src);
-    assert.equal(bytes[0], 0xff);
-    assert.equal(bytes[1], 0xd8);
-    assert.ok(bytes.length > 200000);
+    /* As nove passaram de JPEG para WebP e perderam ~20% de peso sem
+       perder resolução. A assinatura mudou junto: WebP é um contêiner
+       RIFF, com "RIFF" nos bytes 0-3 e "WEBP" nos 8-11.
+
+       O piso de tamanho continua existindo, e é o ponto do teste: ele
+       pega o dia em que alguém trocar um original por uma miniatura —
+       que é fácil de fazer sem perceber, porque na tela as duas abrem
+       igual e só a leitura do documento mostra a diferença. */
+    assert.equal(bytes.subarray(0, 4).toString('latin1'), 'RIFF', file.src);
+    assert.equal(bytes.subarray(8, 12).toString('latin1'), 'WEBP', file.src);
+    assert.ok(bytes.length > 150000, `${file.src} encolheu demais`);
   }
   assert.equal(acquiredSpells[0].healing, '12 de vida + SOR');
   assert.equal(acquiredSpells[0].cooldown, '1 vez por dia');

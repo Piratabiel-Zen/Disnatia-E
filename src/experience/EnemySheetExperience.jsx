@@ -85,7 +85,7 @@ function EnemyIcon({ enemy, active, onClick }) {
   const cls = classFor(enemy);
   return (
     <button className={`enemy-icon-button ${active ? 'active' : ''}`} style={{'--enemy-color':color}} onClick={onClick} title={enemy.nome || 'Inimigo'}>
-      {enemy.foto ? <img src={enemy.foto} alt=""/> : <span>{cls?.icon || '💀'}</span>}
+      {enemy.foto ? <img src={enemy.foto} alt="" loading="lazy" decoding="async" /> : <span>{cls?.icon || '💀'}</span>}
     </button>
   );
 }
@@ -205,7 +205,7 @@ function EnemySheet({ enemy, onChange, onDelete, revealedArtefatos, artefatosHab
       <div className="enemy-sheet-accent"/>
       <div className="enemy-sheet-header">
         <button className="enemy-sheet-avatar" onClick={()=>photoRef.current?.click()} title="Trocar imagem">
-          {enemy.foto?<img src={enemy.foto} alt=""/>:<span>{cls?.icon || '💀'}</span>}
+          {enemy.foto?<img src={enemy.foto} alt="" loading="lazy" decoding="async" />:<span>{cls?.icon || '💀'}</span>}
         </button>
         <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}}/>
         <div className="enemy-sheet-title"><h3>{enemy.nome || 'Inimigo sem nome'}</h3><p>{cls ? `${cls.icon} ${cls.name}` : '◌ Sem classe'} · Nv {enemy.nivel || 1}{enemy.tipo?` · ${enemy.tipo}`:''}</p></div>

@@ -51,7 +51,7 @@ export default function VultoNoMapa({ mapa }) {
         opacity: estagio.presenca,
       }}
     >
-      {vulto.imagem ? <img src={vulto.imagem} alt="" /> : <span />}
+      {vulto.imagem ? <img src={vulto.imagem} alt="" loading="lazy" decoding="async" /> : <span />}
     </div>
   );
 }

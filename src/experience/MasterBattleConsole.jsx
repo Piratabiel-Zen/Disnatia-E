@@ -47,7 +47,7 @@ function makeEnemy(enemy) {
 function Avatar({ item, active=false }) {
   return (
     <span className={`mbc-avatar ${active ? 'active' : ''}`} style={{'--mbc-c':item?.color || '#A855F7'}}>
-      {item?.foto ? <img src={item.foto} alt=""/> : <b>{item?.nome?.[0] || '?'}</b>}
+      {item?.foto ? <img src={item.foto} alt="" loading="lazy" decoding="async" /> : <b>{item?.nome?.[0] || '?'}</b>}
     </span>
   );
 }

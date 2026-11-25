@@ -106,11 +106,26 @@ test('as regras limitam o tamanho do que se grava numa mesa', () => {
   assert.match(regras, /function tamanhoRazoavel\(\)/);
   assert.match(regras, /request\.resource\.size\(\) < 400 \* 1024/);
   assert.match(regras, /allow write: if daMesaComum\(colecao\) && membro\(idNaColecao\(colecao\)\) && tamanhoRazoavel\(\)/);
-  // E o teto também vale nas coleções de acesso seletivo, que ficam de fora
-  // da regra geral: é justamente nelas que moram as imagens.
-  for (const seletiva of ['documentos', 'mural_cartoes']) {
-    const bloco = regras.slice(regras.indexOf(`c__[a-z0-9-]+__${seletiva}'`));
-    assert.match(bloco.slice(0, 1400), /tamanhoRazoavel\(\)/,
-      `escrever em ${seletiva} ficou sem teto de tamanho`);
+  /* E o teto também vale nas coleções de acesso seletivo, que ficam de
+     fora da regra geral: é justamente nelas que moram as imagens.
+
+     A conferência é feita no BLOCO de escrita, e não numa janela de N
+     caracteres a partir do nome da coleção: a janela passou a falhar
+     assim que outra coleção entrou no meio, e o que ela media era a
+     distância entre dois trechos do arquivo, não a regra.
+
+     `allow write` não é a única porta: o mural usa `create` e `update`
+     separados, e foi por isso que a primeira versão desta checagem disse
+     que ele não tinha regra nenhuma. `delete` fica de fora porque apagar
+     não grava bytes. */
+  const blocos = [...regras.matchAll(/allow (?:write|create|update)[^:]*:[\s\S]*?;/g)]
+    .map(m => m[0]);
+  for (const seletiva of ['documentos', 'mural_cartoes', 'aparicoes', 'itens', 'esconderijos']) {
+    const seus = blocos.filter(b => b.includes(`__${seletiva}'`));
+    assert.ok(seus.length, `nenhuma regra de escrita para ${seletiva}`);
+    for (const bloco of seus) {
+      assert.match(bloco, /tamanhoRazoavel\(\)/,
+        `escrever em ${seletiva} ficou sem teto de tamanho`);
+    }
   }
 });

@@ -68,8 +68,7 @@ export default function Assombracao({ uid = '' }) {
           style={{
             opacity: estagio.nitidez,
             transform: `scale(${estagio.escala * (0.97 + estagio.presenca * 0.03)})`,
-          }}
-        />
+          }} loading="lazy" decoding="async" />
       )}
       {/* Sem imagem a assombração acontece assim mesmo: o escuro e o som
           sozinhos já valem a cena, e é melhor do que não acontecer nada. */}

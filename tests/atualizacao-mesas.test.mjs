@@ -74,7 +74,7 @@ test('a senha de Mestre deixou de ser uma só para o site inteiro', () => {
 
 test('o globo é a Terra de verdade, com o universo ao fundo', () => {
   const globe = read('../src/features/mapa-mundi/GlobeView.jsx');
-  assert.match(globe, /\/media\/terra\/dia\.jpg/);
+  assert.match(globe, /\/media\/terra\/dia\.webp/);
   assert.match(globe, /uNight/);
   assert.match(globe, /new THREE\.Points\(starGeometry, starMaterial\)/);
   assert.match(read('../src/features/mapa-mundi/MapaMundiPage.jsx'), /<GlobeView\s+earth/);

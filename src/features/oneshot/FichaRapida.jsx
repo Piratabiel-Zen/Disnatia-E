@@ -94,7 +94,7 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor, aoMudar }) {
         title={aberta ? 'Fechar a ficha' : 'Abrir a ficha'}
       >
         {ficha.retrato
-          ? <img className="fr-mini" src={ficha.retrato} alt="" />
+          ? <img className="fr-mini" src={ficha.retrato} alt="" loading="lazy" decoding="async" />
           : <span className="fr-mini fr-mini-vazio" aria-hidden="true" />}
         <span className="fr-aba-texto">
           <b>{nome}</b>
@@ -109,7 +109,7 @@ export default function FichaRapida({ ficha: bruta, aoMudarCor, aoMudar }) {
         <div className="fr-corpo">
           <div className="fr-topo">
             {ficha.retrato
-              ? <img className="fr-retrato" src={ficha.retrato} alt="" />
+              ? <img className="fr-retrato" src={ficha.retrato} alt="" loading="lazy" decoding="async" />
               : <span className="fr-retrato fr-retrato-vazio">sem<br />retrato</span>}
             <div className="fr-quem">
               <b>{nome}</b>

@@ -154,7 +154,11 @@ test('só quem tem ficha pode se esconder', () => {
   // E o estado da caçada entra congelado no momento da entrada: se o
   // relógio continuasse correndo por baixo, a chance mudaria no meio da
   // espera e a sombra já estaria encenando outra coisa.
-  assert.match(mapa, /setEscondido\(estadoDaCacada\(cacadaDaMesa, \{/);
+  /* O estado da caçada é calculado UMA vez, na entrada, e vai tanto para
+     a tela quanto para o registro que o Mestre lê. Calcular duas vezes
+     deixaria a sombra encenando uma chance e o painel mostrando outra. */
+  assert.match(mapa, /const cacada = estadoDaCacada\(cacadaDaMesa, \{/);
+  assert.match(mapa, /setEscondido\(cacada\)/);
 });
 
 test('ser pego mostra a coisa, e não um quadro preto', () => {

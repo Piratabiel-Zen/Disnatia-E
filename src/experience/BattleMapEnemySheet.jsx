@@ -47,7 +47,7 @@ export function BattleMapEnemyPanel({ enemy, onChangeEnemy }) {
   const f=(k,v)=>onChangeEnemy({...enemy,[k]:v});
   return <div style={{'--enemy-color':color}}>
     <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:11}}>
-      {enemy.foto?<img src={enemy.foto} alt="" style={{width:39,height:39,borderRadius:9,objectFit:'cover',border:`1.5px solid ${color}66`}}/>:<div style={{width:39,height:39,borderRadius:9,display:'grid',placeItems:'center',border:`1px solid ${color}55`,background:`${color}0d`,fontSize:17}}>{cls?.icon||'💀'}</div>}
+      {enemy.foto?<img src={enemy.foto} alt="" style={{width:39,height:39,borderRadius:9,objectFit:'cover',border:`1.5px solid ${color}66`}} loading="lazy" decoding="async" />:<div style={{width:39,height:39,borderRadius:9,display:'grid',placeItems:'center',border:`1px solid ${color}55`,background:`${color}0d`,fontSize:17}}>{cls?.icon||'💀'}</div>}
       <div style={{minWidth:0}}><div style={{font:'700 12px Cinzel,serif',color,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{enemy.nome||'Inimigo'}</div><div style={{font:'8px Cinzel,serif',color:'#6c5c65',marginTop:3}}>{cls?`${cls.icon} ${cls.name}`:'◌ Sem classe'} · Nv {enemy.nivel||1}</div></div>
     </div>
     <div style={{padding:10,border:'1px solid rgba(232,25,60,.16)',background:'rgba(232,25,60,.045)',borderRadius:9,marginBottom:9}}>

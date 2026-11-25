@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --max-warnings=-1"
+    "lint": "eslint src --max-warnings=-1",
+    "fontes:local": "node scripts/fontes-locais.mjs"
   },
   "dependencies": {
     "@3d-dice/dice-box-threejs": "^0.0.12",

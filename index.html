@@ -53,9 +53,27 @@
         } catch (_) {}
       })();
     </script>
+    <!--
+      AS FONTES
+
+      Seis famílias viravam treze arquivos. O corte abaixo tira o que
+      ninguém via: o peso 900 da Cinzel Decorative aparecia UMA vez, num
+      selo de 11px — tamanho em que 700 e 900 são indistinguíveis —, e o
+      itálico da Crimson Text nunca era pedido junto do peso 600.
+
+      Uma família não está aqui de propósito: a IBM Plex Mono, usada em 58
+      lugares. Todos caem em `ui-monospace`, que no celular e no desktop é
+      a mono do próprio sistema — já instalada, zero byte, e melhor
+      desenhada para número pequeno do que qualquer mono que se baixe.
+
+      Estas fontes ainda vêm do Google. Hospedar no próprio domínio corta
+      duas conexões (DNS + TLS para fonts.gstatic.com) antes do primeiro
+      texto aparecer: `npm run fontes:local` faz isso e reescreve este
+      bloco — precisa rodar numa máquina com saída para a internet.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&amp;family=Cinzel:wght@400;600;700&amp;family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;family=IM+Fell+English+SC&amp;family=IM+Fell+English:ital@0;1&amp;display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&amp;family=Cinzel:wght@400;600;700&amp;family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;family=IM+Fell+English+SC&amp;family=IM+Fell+English:ital@0;1&amp;display=swap" />
     <title>Dinastia E — Livro do Mundo</title>
   </head>
   <body>

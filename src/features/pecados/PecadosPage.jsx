@@ -132,7 +132,7 @@ export default function PecadosPage() {
             {(mestre || atual.imagem) && (
               <figure className={`pecados-criatura${mestre ? ' editavel' : ''}`}>
                 {atual.imagem
-                  ? <img src={atual.imagem} alt={`O Pecado ${atual.nome || 'sem nome'}`} />
+                  ? <img src={atual.imagem} alt={`O Pecado ${atual.nome || 'sem nome'}`} loading="lazy" decoding="async" />
                   : <span>Sem retrato da criatura</span>}
                 {mestre && (
                   <div className="pecados-criatura-acoes">

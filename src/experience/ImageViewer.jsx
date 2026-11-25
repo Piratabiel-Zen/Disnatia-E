@@ -31,7 +31,7 @@ export default function ImageViewer({ src, title = 'Imagem ampliada', onClose, o
       </nav>
     </header>
     <div className={`de-image-viewport ${zoom ? 'zoomed' : ''}`} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
-      {failed ? <p role="alert">Não foi possível carregar esta imagem. Feche e tente novamente.</p> : <img src={src} alt={title} onError={() => setFailed(true)} />}
+      {failed ? <p role="alert">Não foi possível carregar esta imagem. Feche e tente novamente.</p> : <img className="viewer-hero" src={src} alt={title} onError={() => setFailed(true)} decoding="async" />}
     </div>
   </dialog>, document.body);
 }
