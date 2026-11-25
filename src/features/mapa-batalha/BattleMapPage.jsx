@@ -40,6 +40,9 @@ import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
 import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
 import MarcasDeEsconderijo from '../oneshot/MarcasDeEsconderijo.jsx';
 import { marcaNova, marcaEm, marcasDoMapa } from '../oneshot/esconderijosMarcados.mjs';
+import CamadaDeAmbientacao from '../oneshot/CamadaDeAmbientacao.jsx';
+import PainelDeAmbientacao from '../oneshot/PainelDeAmbientacao.jsx';
+import { pecaNova, pecaEm, cabeMais } from '../oneshot/ambientacao.mjs';
 import { useMembro } from '../acesso/useMembro';
 import { observarLiberados } from '../acesso/observarLiberados';
 import {
@@ -431,6 +434,29 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
      recado. Por isso a coleção fica entre as comuns da mesa. */
   const [marcando, setMarcando] = useState(false);
   const [marcasDaMesa, setMarcasDaMesa] = useState([]);
+
+  /* A AMBIENTAÇÃO. Também é da mesa: a lâmpada que o Mestre acende tem de
+     acender na tela de todo mundo, senão ligar o gerador não muda nada
+     para quem está jogando. */
+  const [ambientando, setAmbientando] = useState(false);
+  const [tipoEscolhido, setTipoEscolhido] = useState('');
+  const [pecaEscolhida, setPecaEscolhida] = useState('');
+  const [pecasDaMesa, setPecasDaMesa] = useState([]);
+  const [ajustesDaMesa, setAjustesDaMesa] = useState({});
+  useEffect(() => {
+    if (!ehNoite) { setPecasDaMesa([]); return undefined; }
+    const un = onSnapshot(col('ambientacao'),
+      snap => setPecasDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      () => setPecasDaMesa([]));
+    return () => un();
+  }, [ehNoite]);
+  useEffect(() => {
+    if (!ehNoite) { setAjustesDaMesa({}); return undefined; }
+    const un = onSnapshot(docIn('config', 'ambientacao'),
+      d => setAjustesDaMesa(d.exists() ? (d.data() || {}) : {}),
+      () => setAjustesDaMesa({}));
+    return () => un();
+  }, [ehNoite]);
   useEffect(() => {
     if (!ehNoite) { setMarcasDaMesa([]); return undefined; }
     const un = onSnapshot(col('marcas_esconderijo'),
@@ -1201,6 +1227,54 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     const nova = marcaNova({ ...ponto, mapa: mapaId, por: membro?.uid || '' });
     if (nova) addDoc(col('marcas_esconderijo'), nova).catch(() => {});
     return true;
+  };
+
+  /* O MESMO TOQUE FAZ DUAS COISAS, e qual delas depende de haver um tipo
+     escolhido na paleta. Com tipo: põe. Sem tipo: pega a peça de baixo
+     para ajustar. Foi a única forma de caber num dedo só — um modo "pôr"
+     e um modo "ajustar" separados obrigariam o Mestre a trocar de modo
+     toda vez que errasse a posição de uma luz. */
+  const porOuPegarPeca = e => {
+    if (!ambientando || !masterMode) return false;
+    const mapaId = currentMap ? String(currentMap.id) : '';
+    const ponto = rulerPoint(e);
+    if (!ponto || !mapaId) return false;
+    e.stopPropagation(); e.preventDefault();
+
+    if (tipoEscolhido) {
+      if (!cabeMais(pecasDaMesa, mapaId)) return true;
+      const nova = pecaNova({ tipo: tipoEscolhido, ...ponto, mapa: mapaId });
+      if (nova) {
+        addDoc(col('ambientacao'), nova)
+          .then(ref => setPecaEscolhida(ref.id))
+          .catch(e2 => console.error('Erro ao pôr a peça:', e2));
+      }
+      return true;
+    }
+
+    const achada = pecaEm(pecasDaMesa, ponto, mapaId);
+    setPecaEscolhida(achada?.id || '');
+    return true;
+  };
+
+  const guardarPeca = peca => {
+    if (!peca?.id) return;
+    setDoc(docIn('ambientacao', String(peca.id)), peca, { merge: true })
+      .catch(e => console.error('Erro ao guardar a peça:', e));
+  };
+  const apagarPeca = peca => {
+    if (!peca?.id) return;
+    setPecaEscolhida('');
+    deleteDoc(docIn('ambientacao', String(peca.id))).catch(() => {});
+  };
+  const guardarAjuste = ajuste => {
+    const mapaId = currentMap ? String(currentMap.id) : '';
+    if (!mapaId) return;
+    /* Um documento com o ajuste de cada mapa dentro, e não um por mapa:
+       são três números por mapa, e sete documentos para isso dariam sete
+       assinaturas abertas durante a noite inteira. */
+    setDoc(docIn('config', 'ambientacao'), { [mapaId]: ajuste }, { merge: true })
+      .catch(e => console.error('Erro ao guardar o ajuste:', e));
   };
   const ownPingSheet = !masterMode && playerSheetId ? sheetVitals[String(playerSheetId)] : null;
   const ownPingClass = ownPingSheet?.classe || '';
@@ -2518,7 +2592,8 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             <div
               ref={frameRef}
               title={zoom > 1 ? 'Clique e arraste para mover · use a roda para controlar o zoom' : 'Use a roda do mouse para aproximar'}
-          onPointerDown={e => porOuTirarEstrela(e)
+          onPointerDown={e => porOuPegarPeca(e)
+            || porOuTirarEstrela(e)
             || startTokenMarquee(e)
             || (pingMode ? sendMapPing(e) : (rulerMode ? startRuler(e) : onMapPanStart(e)))}
               onPointerMove={e => moveTokenMarquee(e) || (rulerMode ? moveRuler(e) : onMapPanMove(e))}
@@ -2825,6 +2900,16 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
           )}
           {ehNoite && masterMode && <VigiaDoEsconderijo registros={esconderijosDaMesa} />}
 
+          {/* O que o Mestre pôs: luzes e coisas, por baixo das estrelas. */}
+          {ehNoite && (
+            <CamadaDeAmbientacao
+              pecas={pecasDaMesa}
+              mapaId={currentMap ? String(currentMap.id) : ''}
+              ajuste={ajustesDaMesa[currentMap ? String(currentMap.id) : ''] }
+              selecionada={pecaEscolhida}
+              editando={ambientando && masterMode} />
+          )}
+
           {/* As estrelas dos esconderijos, e o botão que as põe. */}
           {ehNoite && (
             <MarcasDeEsconderijo marcas={marcasDaMesa}
@@ -2844,6 +2929,31 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                   Toque no mapa para pôr uma estrela. Toque numa que já existe
                   para tirar. Cada uma pulsa dois segundos para a mesa.
                 </p>
+              )}
+
+              <button type="button"
+                className={`pamb-abrir${ambientando ? ' is-on' : ''}`}
+                onClick={() => {
+                  setAmbientando(v => !v);
+                  setPecaEscolhida(''); setTipoEscolhido('');
+                }}>
+                <i>◐</i> Ambientação
+              </button>
+              {ambientando && (
+                <PainelDeAmbientacao
+                  pecas={pecasDaMesa}
+                  mapaId={currentMap ? String(currentMap.id) : ''}
+                  ajuste={ajustesDaMesa[currentMap ? String(currentMap.id) : '']}
+                  escolhido={tipoEscolhido}
+                  selecionada={pecaEscolhida}
+                  aoEscolherTipo={t => { setTipoEscolhido(t); setPecaEscolhida(''); }}
+                  aoMudarPeca={guardarPeca}
+                  aoApagarPeca={apagarPeca}
+                  aoMudarAjuste={guardarAjuste}
+                  aoFechar={() => {
+                    setAmbientando(false);
+                    setPecaEscolhida(''); setTipoEscolhido('');
+                  }} />
               )}
             </>
           )}

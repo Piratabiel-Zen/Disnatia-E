@@ -1,0 +1,189 @@
+/* ───────── O BOTÃO ─────────
+   Canto superior direito, logo abaixo do de esconderijos. Os dois são da
+   mesma coluna e do mesmo tamanho: são as duas ferramentas de cena do
+   Mestre e devem parecer irmãs. O degrau sai de `--mes-degrau` para que
+   mexer num mova o outro. */
+.pamb-abrir{
+  position:absolute;right:14px;top:calc(14px + var(--mes-degrau,38px));z-index:46;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+  background:rgba(20,14,11,.9);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.4));
+  color:var(--mor-cinza,#9C8A68);
+  font-family:var(--mor-letra,'IM Fell English SC',Cinzel,Georgia,serif);
+  font-size:10.5px;letter-spacing:.12em;
+  transition:color .2s ease,border-color .2s ease,background .2s ease;
+}
+.pamb-abrir:hover{color:var(--mor-latao-claro,#E3C782);border-color:var(--mor-latao,#B08A53)}
+.pamb-abrir.is-on{
+  background:rgba(96,25,29,.5);
+  border-color:var(--mor-latao,#B08A53);
+  color:var(--mor-pergaminho,#D8C5A4);
+}
+.pamb-abrir b{font-weight:400;color:var(--mor-latao-claro,#D8B57A)}
+.pamb-abrir i{font-style:normal;font-size:11px}
+
+/* ───────── O PAINEL ─────────
+   Preso ao canto, estreito, com rolagem própria. Não é modal: o Mestre
+   precisa ver o mapa enquanto mexe, senão ajusta no escuro. */
+.pamb{
+  position:absolute;right:14px;top:calc(14px + var(--mes-degrau,38px) * 2);
+  z-index:47;
+  width:min(272px,86vw);max-height:min(74vh,560px);
+  display:flex;flex-direction:column;
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.34));border-radius:5px;
+  background:linear-gradient(170deg,rgba(27,23,21,.98),rgba(10,8,7,.99));
+  box-shadow:0 18px 50px rgba(0,0,0,.7);
+  overflow:auto;
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);
+}
+.pamb-topo{
+  position:sticky;top:0;z-index:2;
+  display:flex;align-items:center;gap:9px;
+  padding:11px 13px;
+  background:rgba(16,13,12,.98);
+  border-bottom:1px solid var(--mor-latao-fraco,rgba(176,138,83,.22));
+}
+.pamb-topo h4{
+  margin:0;flex:1;font-size:12.5px;font-weight:400;letter-spacing:.1em;
+  color:var(--mor-latao-claro,#D8B57A);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.pamb-conta{font-size:9.5px;color:var(--mor-cinza,#77716D);font-variant-numeric:tabular-nums}
+.pamb-fechar{
+  background:none;border:0;cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;
+  color:var(--mor-cinza,#77716D);
+}
+.pamb-fechar:hover{color:var(--mor-pergaminho,#D8C5A4)}
+
+.pamb-dica,.pamb-nota,.pamb-cheio{
+  margin:10px 13px 0;font-size:10.5px;line-height:1.45;font-style:italic;
+  color:var(--mor-cinza,#8E8884);
+}
+.pamb-cheio{color:var(--mor-sangue-claro,#8A2730);font-style:normal}
+
+/* ---- A paleta ---- */
+.pamb-paleta{padding:10px 13px 0}
+.pamb-paleta h5,.pamb-mapa-todo h5{
+  margin:0 0 7px;font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--mor-latao,#B08A53);font-weight:400;
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.pamb-tipos{display:flex;flex-wrap:wrap;gap:5px}
+.pamb-tipos button{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 9px;border-radius:999px;cursor:pointer;
+  font-size:10px;letter-spacing:.04em;
+  background:rgba(10,8,7,.8);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.26));
+  color:var(--mor-cinza,#9A9490);
+  font-family:inherit;
+}
+.pamb-tipos button:hover:not(:disabled){border-color:var(--mor-latao,#B08A53)}
+.pamb-tipos button.is-on{
+  border-color:var(--mor-latao,#B08A53);
+  background:rgba(96,25,29,.36);
+  color:var(--mor-pergaminho,#D8C5A4);
+}
+.pamb-tipos button:disabled{opacity:.35;cursor:not-allowed}
+/* A bolinha de cor é a pista mais rápida de que tipo é qual — mais
+   rápida que o nome, que exige leitura. */
+.pamb-tipos i,.pamb-qual i{
+  width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+  box-shadow:0 0 5px currentColor;
+}
+
+/* ---- Os ajustes de uma peça ---- */
+.pamb-ajustes{padding:11px 13px 0;display:grid;gap:9px}
+.pamb-qual{display:flex;align-items:center;gap:8px}
+.pamb-qual b{
+  flex:1;font-weight:400;font-size:12px;
+  color:var(--mor-pergaminho,#D8C5A4);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.pamb-apagar{
+  background:none;border:0;cursor:pointer;padding:2px 0;
+  font-size:9.5px;letter-spacing:.08em;color:var(--mor-sangue-claro,#8A2730);
+  text-decoration:underline;text-underline-offset:3px;font-family:inherit;
+}
+
+/* O INTERRUPTOR. É o controle que o Mestre aperta no meio da cena, sem
+   olhar, quando os primos ligam o gerador — por isso é o maior da tela. */
+.pamb-interruptor{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:11px 13px;border-radius:4px;cursor:pointer;
+  background:rgba(10,8,7,.85);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.3));
+  color:var(--mor-cinza,#77716D);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+  font-size:12px;letter-spacing:.1em;
+  transition:background .18s ease,border-color .18s ease,color .18s ease;
+}
+.pamb-bolha{
+  width:11px;height:11px;border-radius:50%;flex:0 0 auto;
+  background:#2A2622;
+  box-shadow:inset 0 0 0 1px rgba(150,140,120,.3);
+  transition:background .18s ease,box-shadow .18s ease;
+}
+.pamb-interruptor.is-on{
+  background:rgba(96,25,29,.3);
+  border-color:var(--mor-latao,#B08A53);
+  color:var(--mor-pergaminho,#D8C5A4);
+}
+.pamb-interruptor.is-on .pamb-bolha{
+  background:#FFE9B8;
+  box-shadow:0 0 8px 2px rgba(255,220,150,.6);
+}
+
+/* ---- As faixas ---- */
+.pamb-faixa{display:grid;gap:4px}
+.pamb-rotulo{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--mor-cinza,#77716D);
+}
+.pamb-rotulo b{
+  font-weight:400;font-size:10.5px;letter-spacing:0;
+  color:var(--mor-latao-claro,#D8B57A);
+  font-variant-numeric:tabular-nums;
+}
+.pamb-controles{display:flex;align-items:center;gap:7px}
+.pamb-controles button{
+  width:24px;height:24px;flex:0 0 auto;border-radius:3px;cursor:pointer;
+  background:rgba(10,8,7,.85);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.3));
+  color:var(--mor-latao-claro,#D8B57A);
+  font-size:13px;line-height:1;padding:0;
+}
+.pamb-controles button:hover{border-color:var(--mor-latao,#B08A53)}
+.pamb-controles input[type="range"]{
+  flex:1;min-width:0;height:3px;-webkit-appearance:none;appearance:none;
+  background:linear-gradient(90deg,var(--mor-sangue,#60191D),var(--mor-latao,#B08A53));
+  border-radius:2px;outline:none;
+}
+.pamb-controles input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:13px;height:13px;border-radius:50%;cursor:pointer;
+  background:var(--mor-pergaminho,#D8C5A4);
+  box-shadow:0 1px 4px rgba(0,0,0,.6);
+}
+.pamb-controles input[type="range"]::-moz-range-thumb{
+  width:13px;height:13px;border:0;border-radius:50%;cursor:pointer;
+  background:var(--mor-pergaminho,#D8C5A4);
+}
+
+/* ---- O mapa inteiro ---- */
+.pamb-mapa-todo{
+  margin-top:12px;padding:11px 13px 13px;display:grid;gap:8px;
+  border-top:1px solid var(--mor-latao-fraco,rgba(176,138,83,.2));
+}
+.pamb-zerar{
+  justify-self:start;background:none;border:0;cursor:pointer;padding:2px 0;
+  font-size:9.5px;letter-spacing:.08em;color:var(--mor-latao,#B08A53);
+  text-decoration:underline;text-underline-offset:3px;font-family:inherit;
+}
+
+@media (max-width:900px){
+  .pamb-abrir{right:10px;top:calc(10px + var(--mes-degrau,34px));font-size:10px;padding:6px 10px}
+  .pamb{right:10px;top:calc(10px + var(--mes-degrau,34px) * 2);width:min(252px,90vw);max-height:62vh}
+}
