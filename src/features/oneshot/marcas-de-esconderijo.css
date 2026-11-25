@@ -1,0 +1,101 @@
+/* ───────── AS ESTRELAS DO MAPA ─────────
+   Um ponto branco de 6px com um halo curto. Pequeno é o ponto todo: ele
+   tem que parecer um reflexo que você quase não viu, não um marcador de
+   mapa de GPS. */
+.mes{position:absolute;inset:0;pointer-events:none;z-index:24}
+
+.mes-estrela{
+  position:absolute;
+  width:6px;height:6px;margin:-3px 0 0 -3px;
+  border-radius:50%;
+  background:#FFFFFF;
+  /* Três halos de raios diferentes: o de perto dá o brilho, o do meio dá o
+     corpo e o de longe dá a sensação de que a luz escapa — que é o que
+     separa um ponto branco de uma estrela. */
+  box-shadow:
+    0 0 3px 1px rgba(255,255,255,.95),
+    0 0 9px 2px rgba(224,240,255,.55),
+    0 0 20px 6px rgba(180,214,255,.22);
+  opacity:.72;
+  animation:mesRespira 3.6s ease-in-out infinite;
+}
+
+/* Em repouso ela respira de leve, só para não virar um pixel morto. */
+@keyframes mesRespira{
+  0%,100%{opacity:.52;transform:scale(.88)}
+  50%{opacity:.86;transform:scale(1.06)}
+}
+
+/* O PULSO: os dois segundos do recado. Três batidas largas e acabou —
+   `forwards` deixa a estrela no estado de repouso em vez de dar um salto
+   de volta no último quadro. */
+.mes-pulso{
+  animation:mesPulso .62s ease-out 3 forwards;
+}
+@keyframes mesPulso{
+  0%{opacity:1;transform:scale(1)}
+  35%{opacity:1;transform:scale(2.3)}
+  100%{opacity:.6;transform:scale(1)}
+}
+/* E um anel que abre e some junto, que é o que faz o olho virar. */
+.mes-pulso::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.8);
+  animation:mesAnel .62s ease-out 3;
+}
+@keyframes mesAnel{
+  0%{transform:scale(.6);opacity:.9}
+  100%{transform:scale(4.2);opacity:0}
+}
+
+/* Enquanto o Mestre está marcando, as estrelas ficam mais fortes — ele
+   precisa ver o que já pôs para não empilhar outra em cima. */
+.mes-marcando .mes-estrela{opacity:1;animation-duration:1.8s}
+
+/* O site decide movimento pelo data-motion da raiz, nunca por
+   prefers-reduced-motion no CSS. Sem animação a estrela fica acesa: o
+   recado continua, só não se mexe. */
+html[data-motion="reduced"] .mes-estrela,
+html[data-motion="reduced"] .mes-pulso,
+html[data-motion="reduced"] .mes-pulso::after{
+  animation:none;opacity:.9;transform:none;
+}
+
+/* ---- O botão do Mestre ---- */
+.mes-botao{
+  position:absolute;right:14px;top:14px;z-index:46;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+  background:rgba(20,14,11,.9);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.4));
+  color:var(--mor-cinza,#9C8A68);
+  font-family:var(--mor-letra,'IM Fell English SC',Cinzel,Georgia,serif);
+  font-size:10.5px;letter-spacing:.12em;
+  transition:color .2s ease,border-color .2s ease,background .2s ease;
+}
+.mes-botao:hover{color:var(--mor-latao-claro,#E3C782);border-color:var(--mor-latao,#B08A53)}
+.mes-botao.is-on{
+  background:rgba(96,25,29,.5);
+  border-color:var(--mor-latao,#B08A53);
+  color:var(--mor-pergaminho,#D8C5A4);
+}
+.mes-botao b{font-weight:400;color:var(--mor-latao-claro,#D8B57A)}
+.mes-botao i{font-style:normal;font-size:11px}
+
+/* A dica de como sair do modo, logo abaixo do botão. Sem ela o Mestre
+   fica marcando sem saber que o clique agora é só para isso. */
+.mes-dica{
+  position:absolute;right:14px;top:48px;z-index:46;
+  max-width:210px;padding:7px 10px;border-radius:3px;
+  background:rgba(10,8,7,.92);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.25));
+  color:var(--mor-cinza,#9A9490);
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);
+  font-size:10.5px;line-height:1.45;font-style:italic;
+  pointer-events:none;
+}
+
+@media (max-width:900px){
+  .mes-botao{right:10px;top:10px;font-size:10px;padding:6px 10px}
+  .mes-dica{right:10px;top:42px;max-width:180px}
+}

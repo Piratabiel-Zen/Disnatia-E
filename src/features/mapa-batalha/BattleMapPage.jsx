@@ -38,6 +38,8 @@ import Esconderijo from '../oneshot/Esconderijo.jsx';
 import { chanceDePassar } from '../oneshot/esconderijo.mjs';
 import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
 import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
+import MarcasDeEsconderijo from '../oneshot/MarcasDeEsconderijo.jsx';
+import { marcaNova, marcaEm, marcasDoMapa } from '../oneshot/esconderijosMarcados.mjs';
 import { useMembro } from '../acesso/useMembro';
 import { observarLiberados } from '../acesso/observarLiberados';
 import {
@@ -423,6 +425,20 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
     if (!ehNoite || !membro) { setItensDaMesa([]); return undefined; }
     return observarLiberados('itens', membro, setItensDaMesa, () => setItensDaMesa([]));
   }, [ehNoite, membro?.uid, membro?.papel]);
+
+  /* AS ESTRELAS. Diferente do painel do esconderijo, estas a mesa VÊ: é
+     o recado visual do Mestre, e um recado que só ele enxerga não é
+     recado. Por isso a coleção fica entre as comuns da mesa. */
+  const [marcando, setMarcando] = useState(false);
+  const [marcasDaMesa, setMarcasDaMesa] = useState([]);
+  useEffect(() => {
+    if (!ehNoite) { setMarcasDaMesa([]); return undefined; }
+    const un = onSnapshot(col('marcas_esconderijo'),
+      snap => setMarcasDaMesa(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      () => setMarcasDaMesa([]));
+    return () => un();
+  }, [ehNoite]);
+
 
   /* E a vista do Mestre. Só ele assina: é material de condução. */
   const [esconderijosDaMesa, setEsconderijosDaMesa] = useState([]);
@@ -1166,6 +1182,26 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
   const startRuler = e => { if(!rulerMode)return; e.stopPropagation(); e.preventDefault(); const p=rulerPoint(e); if(!p)return; rulerDrawingRef.current=true; setRuler({start:p,end:p}); };
   const moveRuler = e => { if(!rulerMode||!rulerDrawingRef.current)return; const p=rulerPoint(e); if(p)setRuler(r=>r?{...r,end:p}:r); };
   const endRuler = () => { rulerDrawingRef.current=false; };
+
+  /* Marcar e desmarcar são o mesmo gesto: um toque põe, um toque em cima
+     de uma estrela tira. Um botão de apagar separado obrigaria o Mestre a
+     trocar de modo no meio da cena para corrigir um toque errado. */
+  const porOuTirarEstrela = e => {
+    if (!marcando || !masterMode) return false;
+    const mapaId = currentMap ? String(currentMap.id) : '';
+    const ponto = rulerPoint(e);
+    if (!ponto || !mapaId) return false;
+    e.stopPropagation(); e.preventDefault();
+
+    const existente = marcaEm(marcasDaMesa, ponto, mapaId);
+    if (existente?.id) {
+      deleteDoc(docIn('marcas_esconderijo', String(existente.id))).catch(() => {});
+      return true;
+    }
+    const nova = marcaNova({ ...ponto, mapa: mapaId, por: membro?.uid || '' });
+    if (nova) addDoc(col('marcas_esconderijo'), nova).catch(() => {});
+    return true;
+  };
   const ownPingSheet = !masterMode && playerSheetId ? sheetVitals[String(playerSheetId)] : null;
   const ownPingClass = ownPingSheet?.classe || '';
   const ownPingClassDef = CLASSES.find(c => c.id === ownPingClass);
@@ -2482,7 +2518,9 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             <div
               ref={frameRef}
               title={zoom > 1 ? 'Clique e arraste para mover · use a roda para controlar o zoom' : 'Use a roda do mouse para aproximar'}
-          onPointerDown={e => startTokenMarquee(e) || (pingMode ? sendMapPing(e) : (rulerMode ? startRuler(e) : onMapPanStart(e)))}
+          onPointerDown={e => porOuTirarEstrela(e)
+            || startTokenMarquee(e)
+            || (pingMode ? sendMapPing(e) : (rulerMode ? startRuler(e) : onMapPanStart(e)))}
               onPointerMove={e => moveTokenMarquee(e) || (rulerMode ? moveRuler(e) : onMapPanMove(e))}
               onPointerUp={e => endTokenMarquee(e) || (rulerMode ? endRuler(e) : endMapPan(e))}
               onPointerCancel={e => endTokenMarquee(e) || (rulerMode ? endRuler(e) : endMapPan(e))}
@@ -2786,6 +2824,29 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             />
           )}
           {ehNoite && masterMode && <VigiaDoEsconderijo registros={esconderijosDaMesa} />}
+
+          {/* As estrelas dos esconderijos, e o botão que as põe. */}
+          {ehNoite && (
+            <MarcasDeEsconderijo marcas={marcasDaMesa}
+              mapaId={currentMap ? String(currentMap.id) : ''} marcando={marcando} />
+          )}
+          {ehNoite && masterMode && (
+            <>
+              <button type="button"
+                className={`mes-botao${marcando ? ' is-on' : ''}`}
+                onClick={() => setMarcando(v => !v)}>
+                <i>✦</i> Esconderijos
+                {marcasDoMapa(marcasDaMesa, currentMap ? String(currentMap.id) : '').length
+                  ? <b>{marcasDoMapa(marcasDaMesa, String(currentMap.id)).length}</b> : null}
+              </button>
+              {marcando && (
+                <p className="mes-dica">
+                  Toque no mapa para pôr uma estrela. Toque numa que já existe
+                  para tirar. Cada uma pulsa dois segundos para a mesa.
+                </p>
+              )}
+            </>
+          )}
 
           {/* A bolsa: no terceiro degrau do canto, acima dos bilhetes. */}
           {ehNoite && membro && (

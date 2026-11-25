@@ -59,3 +59,19 @@ test('nada ficou para trás nos dois formatos ao mesmo tempo', () => {
     .filter(f => todos.has(f));
   assert.deepEqual(duplos, [], `sobrou o formato antigo:\n${duplos.join('\n')}`);
 });
+
+test('os sete mapas da casa existem, e são sete', () => {
+  const { MAPAS, PASTA } = JSON.parse(JSON.stringify({ MAPAS: [], PASTA: '' }));
+  // Lido da fonte para não depender de import com efeito colateral.
+  const fonte = readFileSync(join(RAIZ, 'src/features/oneshot/mapasDaCasa.mjs'), 'utf8');
+  const nomes = [...fonte.matchAll(/imagem: `\$\{PASTA\}\/([a-z]+)\.webp`/g)].map(m => m[1]);
+  assert.deepEqual(nomes,
+    ['patio', 'terreo', 'quartos', 'sotao', 'porao', 'ritual', 'galpao'],
+    'a lista dos sete mapas mudou');
+  for (const nome of nomes) {
+    const caminho = join(RAIZ, 'public/media/mapas/casa', `${nome}.webp`);
+    assert.ok(existsSync(caminho), `falta a imagem de ${nome}`);
+    // E nenhum é uma miniatura por engano: o mapa é a tela inteira.
+    assert.ok(statSync(caminho).size > 80 * 1024, `${nome} está pequeno demais para um mapa`);
+  }
+});

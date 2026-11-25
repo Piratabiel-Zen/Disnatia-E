@@ -271,6 +271,9 @@ service cloud.firestore {
         // certo, a cena perde o que ela tem de melhor — a espera. Quem
         // conta isso é o Mestre, na hora em que ele escolher contar.
         || colecao.matches('c__[a-z0-9-]+__esconderijos')
+        // As MARCAS de esconderijo (as estrelas) NÃO entram aqui: elas são
+        // o recado visual do Mestre para a mesa, e um recado que só quem
+        // escreveu enxerga não é recado. Ficam entre as comuns.
         // ITENS: a lanterna de um não é a lanterna do outro. Mesma máquina
         // das aparições — `liberadoParaTodos` para o que é da mesa,
         // `liberadoPara` para o que tem dono.
