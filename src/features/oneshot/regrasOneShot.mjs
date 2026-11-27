@@ -12,7 +12,8 @@
 import {
   DIFICULDADES, PAVOR_MAXIMO, SANIDADE_MAXIMA, PONTOS_DE_SORTE, PV_ADULTO, PV_JOVEM,
   IDADE_JOVEM_MIN, IDADE_JOVEM_MAX, PONTOS_DE_ATRIBUTO, ATRIBUTO_MAXIMO_NA_CRIACAO,
-  RECUO_AO_RESISTIR, TALENTOS_POR_PERSONAGEM, ATRIBUTO_MINIMO, ATRIBUTO_MAXIMO,
+  SANIDADE_VISOES, SANIDADE_DESVANTAGEM, DESVANTAGEM_DA_SANIDADE, ALIVIO_AO_LEVANTAR,
+  TALENTOS_POR_PERSONAGEM, ATRIBUTO_MINIMO, ATRIBUTO_MAXIMO,
   COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA, REFORCO_A_PARTIR_DE, REFORCO_BONUS,
 } from './fichaOneShot.mjs';
 import { TALENTOS } from './talentosOneShot.mjs';
@@ -81,27 +82,47 @@ export const SECOES_DAS_REGRAS = Object.freeze([
     ordem: 5,
     numeral: 'V',
     emblema: 'coracao',
-    abertura: 'A vida cai. O pavor e a sanidade enchem — e é pior.',
+    abertura: 'A vida cai. O pavor estoura. A sanidade não volta.',
     titulo: 'Vida, Pavor e Sanidade',
     corpo: [
       `Vida: ${PV_ADULTO} pontos. Dos ${IDADE_JOVEM_MIN} aos ${IDADE_JOVEM_MAX} anos, ${PV_JOVEM} — corpo pequeno quebra antes, e a mesa precisa saber disso antes de pôr uma criança nesta história, não depois.`,
-      `Pavor vai até ${PAVOR_MAXIMO}; Sanidade, até ${SANIDADE_MAXIMA}. Os dois ENCHEM, e é essa a diferença: eles não medem o que a pessoa aguenta, medem o quanto dela já foi gasto.`,
-      'Enchem com o que acontece e com o que se escolhe. Um susto. Uma falha feia. O 1 natural. Barulho onde não se podia fazer nenhum. E, principalmente, olhar o que era melhor não ter olhado.',
-      'Calma, conforto, um vestígio de normalidade — isso devolve marca. Pouco, e por pouco tempo. A casa tem mais noite do que vocês têm fôlego.',
+
+      `PAVOR é um pavio de ${PAVOR_MAXIMO} pontos, e estourar NÃO tira vida. Quando ele chega em ${PAVOR_MAXIMO}, a pessoa rola VONTADE para segurar. Segurou: o pavio zera e a cena segue. Não segurou: o pavio zera do mesmo jeito e ela leva 1 de Sanidade.`,
+
+      'O pavio é curto de propósito. Assim o estouro acontece dentro da cena em que o medo aconteceu, e não três cenas depois, quando a mesa já esqueceu o que deu medo — é o que liga a causa ao preço.',
+
+      'Enche com o que acontece e com o que se escolhe: um susto, uma falha feia, o 1 natural, barulho onde não se podia fazer nenhum. E, principalmente, olhar o que era melhor não ter olhado.',
+
+      `SANIDADE vai até ${SANIDADE_MAXIMA} e não cicla: ela sobe e fica. Tem três degraus com nome.`,
+
+      `${SANIDADE_VISOES} — começam as visões e a vista embaça. Não tira número nenhum: o custo é que a pessoa deixa de saber o que viu de verdade, e isso é com o Mestre, não com o dado.`,
+
+      `${SANIDADE_DESVANTAGEM} — ${DESVANTAGEM_DA_SANIDADE} em TUDO que se rolar. É o degrau que aparece na conta, e onde a pessoa já não é confiável nem para si mesma.`,
+
+      `${SANIDADE_MAXIMA} — ela cai. A Vida vai a zero e ela fica no chão. Não levanta sozinha: alguém precisa chegar perto e acalmar. Quem levantar devolve ${ALIVIO_AO_LEVANTAR} degrau — ela volta em ${SANIDADE_MAXIMA - ALIVIO_AO_LEVANTAR}, de pé, com 1 de vida e já com a desvantagem.`,
+
+      'Daí para baixo a Sanidade só desce com ajuda de fora ou com um item. Sozinha ela não melhora, e é isso que faz a mesa se cuidar em vez de cada um correr para o seu lado.',
     ],
   },
   {
-    id: 'visao',
+    id: 'esconder',
     ordem: 6,
     numeral: 'VI',
     emblema: 'olho',
-    abertura: 'Medidor cheio, vem a visão. E toda visão oferece alguma coisa.',
-    titulo: 'A visão',
+    abertura: 'O relógio corre na tela. Ache um buraco antes de ele parar.',
+    titulo: 'Esconder-se',
     corpo: [
-      'Medidor cheio, vem a visão. Ela é sempre apavorante, e nem sempre é monstro: às vezes é só uma coisa muito errada a respeito de quem está olhando.',
-      'E ela oferece. Toda visão oferece alguma coisa — alívio, resposta, saída. Aí a pessoa escolhe, em voz alta, na frente da mesa.',
-      'CEDER custa 1 de Vida. O que a visão mostrou passa a fazer parte da história, e o Mestre vai usar isso.',
-      `RESISTIR não custa nada agora, e o medidor recua ${RECUO_AO_RESISTIR}. Repare no tamanho desse alívio: ele é curto de propósito. A visão não foi embora — ela voltou para o fim da fila.`,
+      'Quando alguma coisa começa a caçar, o Mestre põe um relógio na tela e ele corre à vista de todos. O que vocês têm são aqueles segundos.',
+
+      'ACHE UM LUGAR. O Mestre marca no mapa, com um ponto de luz, onde dá para se enfiar — o ponto pisca dois segundos e some, então preste atenção na hora em que ele aparecer. Quem não achou pode rolar SORTE: é o atributo de encontrar, no meio do susto, um buraco que ninguém tinha visto.',
+
+      'ENTRE. O Mestre pode pedir um teste de competência para isso: Agilidade para passar por um vão, Atletismo para subir, Furtividade para fazer sem barulho. Nem todo esconderijo cobra — armário aberto não cobra nada.',
+
+      'FIQUE. Aperte Esconder e você continua escondido até a cena acabar. Sair antes é escolha sua, e é escolha de verdade: ninguém de dentro do armário sabe o que está acontecendo lá fora.',
+
+      'Se a criatura te vir, acabou: ou você é pega, ou leva o que o Mestre decidir que custa ter sido vista.',
+
+      'Se ela não te vir, você está a salvo — com uma condição. Com a SANIDADE alta, estar a salvo não basta: o Mestre pede VONTADE para você segurar a respiração, ou não gritar, ou não sair correndo quando aquilo passar do outro lado da porta. Falhar aí é o que entrega um esconderijo perfeito.',
     ],
   },
   {

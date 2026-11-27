@@ -221,8 +221,11 @@ test('a página de aparições tem o botão de pregar no mural', () => {
 
 /* ── Pavor e retrato ──────────────────────────────────────────────────── */
 
-test('o pavor enche em três e é roxo', () => {
-  assert.equal(PAVOR_MAXIMO, 3, 'o pavor foi reduzido para 3 a pedido da mesa');
+test('o pavor é um pavio de dois, e é roxo', () => {
+  /* Três viraram dois depois do teste de mesa: o pavio precisa estourar
+     DENTRO da cena em que o medo aconteceu, e com três degraus o estouro
+     caía duas cenas depois, quando a mesa já tinha esquecido o motivo. */
+  assert.equal(PAVOR_MAXIMO, 2, 'o pavio do pavor foi reduzido para 2');
   assert.equal(SANIDADE_MAXIMA, 6, 'a sanidade não mudou');
   const sistema = semComentarios(fonte('src/core/sistemas/oneshot/index.mjs'));
   assert.match(sistema, /#8B5FAF/i, 'o pavor precisa da cor roxa declarada no sistema');

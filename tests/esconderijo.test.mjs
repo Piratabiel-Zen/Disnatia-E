@@ -118,7 +118,7 @@ test('o resultado é sorteado na entrada, não na saída', () => {
   const jsx = semComentarios(fonte('src/features/oneshot/Esconderijo.jsx'));
   // Assim a sombra que passa já sabe se vai parar, e a encenação pode ser
   // honesta com ela mesma: a sombra que vai pegar você hesita antes.
-  assert.match(jsx, /useState\(\(\) => resolverEsconderijo\(cacada\)\)/);
+  assert.match(jsx, /useState\(\(\) => resolverEsconderijo\(cacada, Math\.random, sorte\)\)/);
   assert.match(jsx, /data-para=\{resultado\.passou \? undefined : ''\}/);
 });
 

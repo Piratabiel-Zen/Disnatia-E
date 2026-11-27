@@ -35,15 +35,45 @@ export const PV_JOVEM = 3;
 export const IDADE_JOVEM_MIN = 6;
 export const IDADE_JOVEM_MAX = 18;
 
-// Três, e não cinco: a mesa pediu depois de ver o medidor na tela. Pavor é o
-// medidor curto de propósito — ele enche numa cena ruim, e a visão vem antes
-// de a pessoa se acostumar com o medo.
-export const PAVOR_MAXIMO = 3;
-export const SANIDADE_MAXIMA = 6;
-/** Resistir à visão não zera o medidor: recua dois. O alívio é curto. */
-export const RECUO_AO_RESISTIR = 2;
+/**
+ * DOIS, e não três nem cinco.
+ *
+ * O Pavor encolheu de novo depois do teste de mesa. Ele não é mais um
+ * medidor de desgaste: é um PAVIO. Dois sustos e ele estoura, e o que
+ * sobra do estouro não é dano — é Sanidade, que não volta sozinha.
+ *
+ * O medidor curto faz o estouro acontecer DENTRO da cena em que o medo
+ * aconteceu, e não três cenas depois, quando a mesa já esqueceu o que deu
+ * medo. É o que liga a causa ao preço.
+ */
+export const PAVOR_MAXIMO = 2;
 
-export const PONTOS_DE_SORTE = 2;
+/**
+ * A Sanidade é o que fica, e ela tem degraus com nome.
+ *
+ *   4  as visões começam, e a vista embaça
+ *   5  −1 em tudo: a pessoa já não é confiável nem para si mesma
+ *   6  cai
+ *
+ * Seis continua sendo o teto porque é onde a criança desaba — e desabar
+ * não é morrer. Alguém a levanta, e ela volta ao 5.
+ */
+export const SANIDADE_MAXIMA = 6;
+export const SANIDADE_VISOES = 4;
+export const SANIDADE_DESVANTAGEM = 5;
+export const DESVANTAGEM_DA_SANIDADE = -1;
+
+/**
+ * Quem levanta um caído devolve um degrau, e só um.
+ *
+ * A pessoa sai do chão em 5, que é o degrau da desvantagem: ela se
+ * levanta já pior do que entrou. Devolver mais do que isso faria o
+ * desabamento ser de graça, e desabar é a coisa mais séria que acontece
+ * com um personagem nesta noite.
+ */
+export const ALIVIO_AO_LEVANTAR = 1;
+
+export const PONTOS_DE_SORTE = 1;
 /* O limite e o catálogo de talentos moram em `talentosOneShot.mjs`, junto dos
    dez talentos. Reexportado aqui porque as regras e a ficha já liam daqui. */
 export { TALENTOS_POR_PERSONAGEM } from './talentosOneShot.mjs';
@@ -69,7 +99,15 @@ export const PONTOS_DE_ATRIBUTO = 20;
 
 /** A competência vai de −2 (atributo zerado) a +3 (atributo em cinco). */
 export const COMPETENCIA_MINIMA = -2;
-export const COMPETENCIA_MAXIMA = 3;
+/**
+ * QUATRO, e não três.
+ *
+ * A conta é `maior - 2 + reforço`: atributo 5 dá 3, e o reforço pago leva
+ * a 4. Com o teto em 3 esse último ponto era descartado em silêncio — a
+ * pessoa investia no reforço e a ficha não mudava, que é a pior forma de
+ * um sistema dizer não.
+ */
+export const COMPETENCIA_MAXIMA = 4;
 
 /* ─── Os oito atributos ─────────────────────────────────────────────── */
 
@@ -119,9 +157,12 @@ export const COMPETENCIAS = Object.freeze([
     resumo: 'Esconder-se e caminhar sem ruído.' },
   { id: 'investigacao', nome: 'Investigação', de: ['inteligencia'], reforco: 'percepcao',
     resumo: 'Analisar evidências e documentos.' },
-  // Escalava de Percepção E Inteligência. Agora é Percepção, e quem aguenta a
-  // mata é quem tem Vontade — foi o exemplo que a mesa deu.
-  { id: 'sobrevivencia', nome: 'Sobrevivência', de: ['percepcao'], reforco: 'vontade',
+  /* Vontade virou BASE aqui, e não mais reforço.
+     Como reforço ela era um interruptor: 3 ligava o +1 e o quarto e o
+     quinto ponto não faziam nada. Agora ela escala sozinha — quem aguenta
+     a mata é quem tem Vontade, mesmo sem reparar em nada. Força entrou
+     como reforço porque passar a noite fora cobra corpo também. */
+  { id: 'sobrevivencia', nome: 'Sobrevivência', de: ['percepcao', 'vontade'], reforco: 'forca',
     resumo: 'Rastrear, orientar-se, encontrar abrigo.' },
   { id: 'persuasao', nome: 'Persuasão', de: ['carisma'], reforco: 'inteligencia',
     resumo: 'Convencer e negociar.' },
@@ -135,7 +176,9 @@ export const COMPETENCIAS = Object.freeze([
   // apoio: o que não se desenrosca, se arrebenta.
   { id: 'mecanica', nome: 'Mecânica', de: ['precisao'], reforco: 'forca',
     resumo: 'Consertar, forçar e operar máquinas.' },
-  { id: 'ocultismo', nome: 'Ocultismo', de: ['inteligencia'], reforco: 'vontade',
+  /* Ocultismo também: ler o símbolo é Inteligência, mas continuar lendo
+     depois de entender o que ele quer dizer é Vontade. */
+  { id: 'ocultismo', nome: 'Ocultismo', de: ['inteligencia', 'vontade'], reforco: 'percepcao',
     resumo: 'Reconhecer símbolos e tradições sobrenaturais.' },
   // Escalava de Precisão E Agilidade. Agora é Precisão, e Agilidade reforça.
   { id: 'pilotagem', nome: 'Pilotagem', de: ['precisao'], reforco: 'agilidade',
@@ -183,13 +226,48 @@ export const valorDoAtributo = (ficha, id) =>
 export function valorDaCompetencia(ficha, idDaCompetencia) {
   const competencia = COMPETENCIAS.find(c => c.id === idDaCompetencia);
   if (!competencia) return 0;
-  const maior = Math.max(...competencia.de.map(id => valorDoAtributo(ficha, id)));
+
+  const bases = competencia.de
+    .map(id => valorDoAtributo(ficha, id))
+    .sort((a, b) => b - a);
+  const maior = bases[0] ?? 0;
   // Sem ponto é sem ponto: o reforço não salva quem não investiu no principal.
   if (maior <= ATRIBUTO_MINIMO) return COMPETENCIA_MINIMA;
+
+  /* A SEGUNDA BASE PASSA A CONTAR.
+     Antes era `Math.max` puro, e isso fazia Sobrevivência depender só de
+     Percepção OU de Vontade — investir na outra não mudava um número
+     sequer. Quem pôs cinco em Percepção e quatro em Vontade tinha
+     exatamente a mesma Sobrevivência de quem pôs cinco e zero.
+
+     Agora a segunda dá +1 ao cruzar o mesmo limiar do reforço. É pouco de
+     propósito: ela não pode valer tanto quanto a principal, senão a
+     escolha de uma base vira irrelevante — mas é o que permite as
+     competências de duas origens chegarem ao teto. */
+  const segunda = bases[1] ?? 0;
+  const bonusDaSegunda = segunda >= REFORCO_A_PARTIR_DE ? REFORCO_BONUS : 0;
+
   const apoio = competencia.reforco ? valorDoAtributo(ficha, competencia.reforco) : 0;
   const reforco = apoio >= REFORCO_A_PARTIR_DE ? REFORCO_BONUS : 0;
-  return limitar(maior - 2 + reforco, COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA);
+
+  return limitar(maior - 2 + bonusDaSegunda + reforco, COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA);
 }
+
+/**
+ * A segunda base está pagando? A tela mostra isso ao lado do número.
+ *
+ * Separado de `reforcoAtivo` porque são dois bônus diferentes, com fontes
+ * diferentes: este vem de uma das origens da competência, aquele vem do
+ * atributo de apoio. Um `+1` sem dizer de onde veio obriga a pessoa a
+ * abrir a tabela para descobrir no que investir.
+ */
+export const segundaBaseAtiva = (ficha, idDaCompetencia) => {
+  const competencia = COMPETENCIAS.find(c => c.id === idDaCompetencia);
+  if (!competencia || competencia.de.length < 2) return false;
+  const bases = competencia.de.map(id => valorDoAtributo(ficha, id)).sort((a, b) => b - a);
+  if (bases[0] <= ATRIBUTO_MINIMO) return false;
+  return bases[1] >= REFORCO_A_PARTIR_DE;
+};
 
 /** O reforço está pago nesta ficha? A tela mostra isso ao lado do número. */
 export const reforcoAtivo = (ficha, idDaCompetencia) => {
@@ -239,53 +317,114 @@ export function rolarTeste({ dado, competencia = 0, alvo = 15 }) {
 
 /* ─── Pavor e Sanidade ──────────────────────────────────────────────── */
 
-/**
- * O que acontece ao marcar medo ou desgaste.
+/* ─── Pavor, o pavio ──────────────────────────────────────────────────
  *
- * Os dois medidores ENCHEM: eles contam o quanto a pessoa já foi gasta, não
- * o quanto ela aguenta. Cheios, vem a visão — sempre apavorante, mesmo
- * quando não é monstro nenhum. Aí a pessoa escolhe, e é a escolha que custa:
- * ceder tira 1 de PV; resistir recua o medidor em dois e a cena segue.
+ * O Pavor não mede desgaste: ele é um pavio de dois pontos. Dois sustos e
+ * estoura — e o que sobra do estouro não é dano, é Sanidade, que não volta
+ * sozinha.
  *
- * Devolve o estado novo e, quando for o caso, o aviso de que há uma visão na
- * mesa esperando resposta. Quem aplica a resposta é `responderAVisao`.
+ * Entre encher e estourar há um teste de VONTADE. É o único lugar do
+ * sistema onde a pessoa pode segurar o que está acontecendo com ela, e é
+ * por isso que Vontade existe.
  */
+
+/** Marcar Pavor ou Sanidade. Pavor cheio arma o teste de Vontade. */
 export function marcar(ficha, qual, quantidade = 1) {
   const maximo = qual === 'pavor' ? PAVOR_MAXIMO : SANIDADE_MAXIMA;
   const atual = limitar(ficha?.[qual], 0, maximo);
   const proximo = limitar(atual + inteiro(quantidade, 1), 0, maximo);
-  return {
-    ...ficha,
-    [qual]: proximo,
-    visaoPendente: proximo >= maximo ? qual : (ficha?.visaoPendente || ''),
-  };
+  const base = { ...ficha, [qual]: proximo };
+
+  /* Só o Pavor arma teste. A Sanidade não tem teste para resistir: ela já
+     é o resultado de um teste perdido, e deixá-la cobrar um segundo teste
+     seria cobrar duas vezes pelo mesmo susto. */
+  if (qual !== 'pavor') return comQuedaResolvida(base);
+  return { ...base, pavorNoLimite: proximo >= PAVOR_MAXIMO };
 }
 
 /** Tirar marcas: calmaria, conforto, um vestígio de normalidade. */
 export function aliviar(ficha, qual, quantidade = 1) {
   const maximo = qual === 'pavor' ? PAVOR_MAXIMO : SANIDADE_MAXIMA;
   const proximo = limitar(limitar(ficha?.[qual], 0, maximo) - inteiro(quantidade, 1), 0, maximo);
-  return { ...ficha, [qual]: proximo, visaoPendente: proximo >= maximo ? ficha?.visaoPendente : '' };
+  const base = { ...ficha, [qual]: proximo };
+  if (qual === 'pavor') return { ...base, pavorNoLimite: proximo >= PAVOR_MAXIMO };
+  /* Aliviar Sanidade pode tirar a pessoa do chão. Mas não é isso que a
+     levanta: quem levanta é `levantar`, com alguém ao lado. Aqui só o
+     número desce — a pessoa continua caída até ser erguida. */
+  return comQuedaResolvida(base);
 }
 
 /**
- * A resposta à visão.
+ * A resposta ao Pavor cheio.
  *
- * `cedeu` verdadeiro: a pessoa aceita o que a visão mostra. Custa 1 de PV e o
- * medidor recua igual — o preço foi pago em outro lugar.
- * `cedeu` falso: ela resiste. Nada de dano, e o medidor volta dois abaixo do
- * máximo, que é pouco: a próxima vez vem logo.
+ * `resistiu` verdadeiro: ela segurou. O pavio volta a zero e nada mais
+ * acontece — e é o único resultado do sistema em que não se paga nada.
+ * `resistiu` falso: o pavio volta a zero do mesmo jeito, e ela leva 1 de
+ * SANIDADE. Não é dano: é o estrago que fica.
+ *
+ * Nos dois casos o Pavor zera. Se ele ficasse cheio depois de falhar, o
+ * próximo susto da mesma cena cobraria de novo, e a cena viraria uma
+ * escada sem corrimão.
  */
-export function responderAVisao(ficha, { cedeu }) {
-  const qual = ficha?.visaoPendente;
-  if (!qual) return ficha;
-  const maximo = qual === 'pavor' ? PAVOR_MAXIMO : SANIDADE_MAXIMA;
+export function responderAoPavor(ficha, { resistiu }) {
+  const base = { ...ficha, pavor: 0, pavorNoLimite: false };
+  if (resistiu) return base;
+  return comQuedaResolvida({
+    ...base,
+    sanidade: limitar((ficha?.sanidade ?? 0) + 1, 0, SANIDADE_MAXIMA),
+  });
+}
+
+/* ─── A escada da Sanidade ────────────────────────────────────────────
+ *
+ * Ela não cobra nada até o 4. Dali em diante cobra em degraus, e cada
+ * degrau é pior que o anterior de um jeito diferente — não é o mesmo
+ * castigo ficando maior.
+ */
+
+/** O que a Sanidade está fazendo com esta pessoa agora. */
+export function estadoDaSanidade(ficha) {
+  const n = limitar(ficha?.sanidade, 0, SANIDADE_MAXIMA);
+  return {
+    nivel: n,
+    /* 4: as visões começam e a vista embaça. Não tira número nenhum — o
+       custo é que a pessoa deixa de saber o que viu de verdade, e isso é
+       com o Mestre, não com o dado. */
+    visoes: n >= SANIDADE_VISOES,
+    /* 5: −1 em tudo. O primeiro degrau que aparece na rolagem. */
+    desvantagem: n >= SANIDADE_DESVANTAGEM,
+    modificador: n >= SANIDADE_DESVANTAGEM ? DESVANTAGEM_DA_SANIDADE : 0,
+    /* 6: caiu. A Vida vai a zero e ela fica no chão até alguém chegar. */
+    caida: n >= SANIDADE_MAXIMA || Boolean(ficha?.caida),
+  };
+}
+
+/** Sanidade no teto derruba e zera a Vida; abaixo dele, nada muda sozinho. */
+function comQuedaResolvida(ficha) {
+  const n = limitar(ficha?.sanidade, 0, SANIDADE_MAXIMA);
+  if (n < SANIDADE_MAXIMA) return ficha;
+  return { ...ficha, caida: true, pv: 0 };
+}
+
+/**
+ * Levantar um caído.
+ *
+ * Quem faz isso é outra pessoa, ao lado — acalmando, falando, segurando.
+ * Devolve UM degrau, e só um: ela se põe de pé no 5, já pior do que
+ * entrou, e com 1 de Vida. Devolver mais faria desabar sair de graça, e
+ * desabar é a coisa mais séria que acontece com alguém nesta noite.
+ *
+ * Do 5 em diante, só ajuda de fora ou item fazem o número descer. Não
+ * existe recuperar sozinho: é essa a diferença entre Pavor e Sanidade.
+ */
+export function levantar(ficha) {
+  if (!estadoDaSanidade(ficha).caida) return ficha;
   const pvMaximo = pvDaIdade(ficha?.idade);
   return {
     ...ficha,
-    [qual]: Math.max(0, maximo - RECUO_AO_RESISTIR),
-    pv: cedeu ? limitar((ficha?.pv ?? pvMaximo) - 1, 0, pvMaximo) : limitar(ficha?.pv ?? pvMaximo, 0, pvMaximo),
-    visaoPendente: '',
+    caida: false,
+    sanidade: limitar(SANIDADE_MAXIMA - ALIVIO_AO_LEVANTAR, 0, SANIDADE_MAXIMA),
+    pv: limitar(Math.max(1, ficha?.pv ?? 0), 0, pvMaximo),
   };
 }
 
@@ -310,7 +449,8 @@ export function fichaNova(nome = '') {
     corDaFichaRapida: COR_PADRAO,
     // Ligado por padrão; o Mestre desliga por ficha na Condição.
     retratoPerturbador: true,
-    visaoPendente: '',
+    pavorNoLimite: false,
+    caida: false,
     dono: '',
     criadoEm: Date.now(),
   };

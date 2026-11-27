@@ -4,7 +4,8 @@ import {
   ATRIBUTOS, ATRIBUTO_MAXIMO_NA_CRIACAO, ATRIBUTO_MINIMO, COMPETENCIAS,
   DIFICULDADES, PAVOR_MAXIMO, PONTOS_DE_SORTE, SANIDADE_MAXIMA,
   REFORCO_A_PARTIR_DE, REFORCO_BONUS, competenciasDaFicha, deterioracao, marcar,
-  aliviar, pontosRestantes, pvMaximoDaFicha, reforcoAtivo, responderAVisao,
+  aliviar, pontosRestantes, pvMaximoDaFicha, reforcoAtivo, responderAoPavor,
+  estadoDaSanidade, levantar,
   retratoPerturbado, valorDoAtributo, normalizar,
 } from './fichaOneShot.mjs';
 import {
@@ -114,26 +115,50 @@ export default function FichaOneShot({
           coluna quando a tela é estreita. */}
       <span className="osf-vinco" aria-hidden="true" />
 
-      {/* A VISÃO vem primeiro, acima de tudo: quando ela está pendente, a mesa
-          está esperando uma resposta e nada mais na ficha importa agora. */}
-      {ficha.visaoPendente && (
+      {/* O PAVIO ESTOUROU. Enquanto isto está na tela a mesa está
+          esperando uma resposta, e nada mais na ficha importa agora. */}
+      {ficha.pavorNoLimite && (
         <section className="osf-visao">
-          <h4>Uma visão</h4>
+          <h4>O pavor encheu</h4>
           <p>
-            {ficha.visaoPendente === 'pavor'
-              ? 'O pavor encheu. Algo se mostra — e oferece alguma coisa.'
-              : 'A cabeça cedeu. O que aparece agora diz respeito a você, e é pior por isso.'}
+            Agora é um teste de <b>Vontade</b>. Passando, você segura — e
+            não custa nada. Falhando, leva 1 de Sanidade, que não volta
+            sozinha.
           </p>
           <p className="osf-visao-nota">
-            O Mestre descreve. Depois, escolha na frente da mesa.
+            O Mestre pede o teste. Depois marque aqui o que saiu.
           </p>
           {podeEditar && (
             <div className="osf-visao-botoes">
-              <button type="button" className="ceder" onClick={() => aoMudar?.(responderAVisao(ficha, { cedeu: true }))}>
-                Ceder — custa 1 de vida
+              <button type="button" onClick={() => aoMudar?.(responderAoPavor(ficha, { resistiu: true }))}>
+                Segurei — o pavor zera
               </button>
-              <button type="button" onClick={() => aoMudar?.(responderAVisao(ficha, { cedeu: false }))}>
-                Resistir — o medidor recua
+              <button type="button" className="ceder" onClick={() => aoMudar?.(responderAoPavor(ficha, { resistiu: false }))}>
+                Não segurei — +1 de Sanidade
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* CAÍDA. Não há botão para levantar sozinha: quem levanta é outra
+          pessoa, e por isso o botão fica disponível a quem abrir a ficha
+          — inclusive ao primo que chegou perto. */}
+      {estadoDaSanidade(ficha).caida && (
+        <section className="osf-visao osf-caida">
+          <h4>No chão</h4>
+          <p>
+            A Sanidade chegou ao fim e o corpo foi junto. Ela não levanta
+            sozinha: alguém precisa chegar perto, acalmar, falar com ela.
+          </p>
+          <p className="osf-visao-nota">
+            Quem levantar devolve um degrau — ela fica em {SANIDADE_MAXIMA - 1},
+            já com a desvantagem, e com 1 de vida.
+          </p>
+          {podeEditar && (
+            <div className="osf-visao-botoes">
+              <button type="button" onClick={() => aoMudar?.(levantar(ficha))}>
+                Alguém a levanta
               </button>
             </div>
           )}

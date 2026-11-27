@@ -66,3 +66,88 @@
   .ost-efeito{font-size:14.5px}
   .ost-barra input{font-size:16px}
 }
+
+/* ═══════════ A LANTERNA SOBRE OS TALENTOS ═══════════
+
+   Cada personagem tem UM talento especial na noite inteira. A página
+   precisava dizer isso sem escrever: cartão parado ao lado de cartão
+   parado faz dez talentos parecerem uma tabela de consulta.
+
+   Então uma luz passa por cima deles, um a um, como alguém varrendo a
+   estante com uma lanterna. O atraso de cada cartão sai do índice, e é só
+   isso que transforma dez brilhos simultâneos — que seriam um letreiro —
+   numa luz que anda. */
+
+.ost-carta{
+  /* `relative` e `overflow` para a luz existir dentro do cartão: sem o
+     recorte ela vaza para o cartão vizinho e a varredura perde a ordem. */
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+
+.ost-carta::before{
+  content:'';
+  position:absolute;
+  /* Mais alta e mais larga que o cartão porque entra inclinada: no
+     tamanho exato, os cantos ficariam sem luz. */
+  top:-60%;bottom:-60%;left:-40%;width:42%;
+  z-index:-1;
+  pointer-events:none;
+  background:linear-gradient(100deg,
+    transparent,
+    rgba(216,181,122,.05) 24%,
+    rgba(232,206,160,.16) 48%,
+    rgba(216,181,122,.05) 72%,
+    transparent);
+  transform:translateX(-120%) rotate(8deg);
+  /* 11s de volta inteira para dez cartões: a luz passa por um a cada 0,42s
+     e depois o corredor fica escuro um bom tempo. A pausa é o que impede
+     a página de virar um letreiro piscando atrás do texto. */
+  animation:ostLanterna 11s cubic-bezier(.4,0,.5,1) infinite;
+  animation-delay:calc(var(--ost-i,0) * .42s);
+}
+
+@keyframes ostLanterna{
+  0%     {transform:translateX(-120%) rotate(8deg)}
+  /* A varredura ocupa 14% do ciclo: rápida, como uma lanterna de verdade
+     passando, e não uma luz subindo devagar. */
+  14%    {transform:translateX(560%)  rotate(8deg)}
+  100%   {transform:translateX(560%)  rotate(8deg)}
+}
+
+/* Quando a luz chega, a borda esquerda do cartão acende junto — é o que
+   faz a varredura parecer uma coisa só, e não um brilho solto por cima. */
+.ost-carta{
+  animation:ostBorda 11s ease-in-out infinite;
+  animation-delay:calc(var(--ost-i,0) * .42s);
+}
+@keyframes ostBorda{
+  0%,13%,100%{border-left-color:#35353A}
+  5%         {border-left-color:var(--mor-latao,#B08A53)}
+}
+
+/* ---- No imersivo, os cartões também respiram ----
+   Fora do imersivo isto não entra: na aba de consulta a pessoa está
+   lendo e comparando dez talentos, e texto que flutua é texto mais
+   difícil de ler. No imersivo ela está escolhendo um. */
+.immersive-stage .ost-carta{
+  animation:
+    ostBorda 11s ease-in-out infinite,
+    ostFlutua 7.5s ease-in-out infinite;
+  animation-delay:calc(var(--ost-i,0) * .42s), calc(var(--ost-i,0) * .31s);
+}
+@keyframes ostFlutua{
+  0%,100%{transform:translateY(0)}
+  50%    {transform:translateY(-3px)}
+}
+
+/* O site decide movimento pelo data-motion da raiz, nunca por
+   prefers-reduced-motion no CSS. Sem animação os cartões ficam como
+   sempre foram — a lanterna é enfeite, não informação. */
+html[data-motion="reduced"] .ost-carta,
+html[data-motion="reduced"] .ost-carta::before,
+html[data-motion="reduced"] .immersive-stage .ost-carta{
+  animation:none;
+  transform:none;
+}

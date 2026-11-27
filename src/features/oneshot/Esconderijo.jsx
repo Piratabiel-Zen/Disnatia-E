@@ -18,8 +18,8 @@ import './esconderijo.css';
  * já sabe se vai parar, e a encenação pode ser honesta com ela mesma — a
  * sombra que vai pegar você hesita um instante antes.
  */
-export default function Esconderijo({ cacada, imagem = '', aoTerminar, aoFechar }) {
-  const [resultado] = useState(() => resolverEsconderijo(cacada));
+export default function Esconderijo({ cacada, imagem = '', sorte = 0, aoTerminar, aoFechar }) {
+  const [resultado] = useState(() => resolverEsconderijo(cacada, Math.random, sorte));
   const [fase, setFase] = useState('entrando');
   const tempos = useRef([]);
   const contou = useRef(false);

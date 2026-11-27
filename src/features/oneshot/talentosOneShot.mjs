@@ -68,8 +68,9 @@ export const TALENTOS = Object.freeze([
     id: 'mao-firme',
     nome: 'Mão que Não Treme',
     resumo: 'O medo não chega aos seus dedos.',
-    efeito: 'Uma vez por noite, faça um teste como se o seu Pavor estivesse em '
-      + 'zero. Vale para o teste inteiro, inclusive se ele for longo.',
+    efeito: 'Uma vez por noite, faça um teste como se a sua SANIDADE estivesse '
+      + 'em zero — sem a desvantagem, sem a vista embaçada. Vale para o teste '
+      + 'inteiro, inclusive se ele for longo.',
     quando: 'Antes de rolar.',
     limite: 'uma vez por noite',
   },
@@ -118,8 +119,8 @@ export const TALENTOS = Object.freeze([
     nome: 'Âncora',
     resumo: 'Sua voz traz a pessoa de volta.',
     efeito: 'Uma vez por noite, falando com um aliado que possa te ouvir, tire 1 '
-      + 'ponto de Pavor dele. Precisa ser dito em voz alta, na mesa, pelo seu '
-      + 'personagem.',
+      + 'ponto de SANIDADE dele. Precisa ser dito em voz alta, na mesa, pelo '
+      + 'seu personagem.',
     quando: 'A qualquer momento em que dê para falar.',
     limite: 'uma vez por noite',
   },

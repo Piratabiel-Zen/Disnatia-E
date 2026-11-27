@@ -9,9 +9,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ATRIBUTOS, COMPETENCIAS, PAVOR_MAXIMO, SANIDADE_MAXIMA, PONTOS_DE_SORTE,
+  SANIDADE_VISOES, SANIDADE_DESVANTAGEM, DESVANTAGEM_DA_SANIDADE, ALIVIO_AO_LEVANTAR,
   COMPETENCIA_MINIMA, COMPETENCIA_MAXIMA, REFORCO_A_PARTIR_DE,
   aliviar, competenciasDaFicha, estaMorto, fichaNova, marcar, normalizar,
-  pontosRestantes, pvDaIdade, reforcoAtivo, responderAVisao, rolarTeste,
+  pontosRestantes, pvDaIdade, reforcoAtivo, segundaBaseAtiva, responderAoPavor, estadoDaSanidade, levantar, rolarTeste,
   valorDaCompetencia,
 } from '../src/features/oneshot/fichaOneShot.mjs';
 
@@ -53,21 +54,46 @@ test('atributo sem ponto nenhum trava a competência em -2, e o reforço não sa
   );
 });
 
-test('o reforço dá +1 a partir de 3 no atributo de apoio', () => {
-  // Era o buraco da tabela antiga: Vontade e Sorte não levantavam nada, e
-  // Inteligência sozinha levantava seis competências.
-  const semVontade = { atributos: { percepcao: 3, vontade: 2 } };
-  const comVontade = { atributos: { percepcao: 3, vontade: 3 } };
-  assert.equal(valorDaCompetencia(semVontade, 'sobrevivencia'), 1);
-  assert.equal(valorDaCompetencia(comVontade, 'sobrevivencia'), 2);
-  assert.equal(reforcoAtivo(semVontade, 'sobrevivencia'), false);
-  assert.equal(reforcoAtivo(comVontade, 'sobrevivencia'), true);
+test('a SEGUNDA base conta, a partir de 3', () => {
+  /* Era o buraco da tabela: Sobrevivência sai de Percepção OU Vontade, e
+     com `Math.max` puro quem punha cinco numa e quatro na outra tinha
+     exatamente a mesma Sobrevivência de quem punha cinco e zero. A
+     segunda escolha não mudava um número sequer. */
+  const soUma = { atributos: { percepcao: 3, vontade: 2 } };
+  const asDuas = { atributos: { percepcao: 3, vontade: 3 } };
+  assert.equal(valorDaCompetencia(soUma, 'sobrevivencia'), 1);
+  assert.equal(valorDaCompetencia(asDuas, 'sobrevivencia'), 2);
+  assert.equal(segundaBaseAtiva(soUma, 'sobrevivencia'), false);
+  assert.equal(segundaBaseAtiva(asDuas, 'sobrevivencia'), true);
+
+  // E competência de uma origem só não ganha nada disso.
+  assert.equal(segundaBaseAtiva({ atributos: { carisma: 5 } }, 'persuasao'), false);
 });
 
-test('o reforço não estoura o teto de +3', () => {
-  const maximo = { atributos: { percepcao: 5, vontade: 5 } };
-  assert.equal(valorDaCompetencia(maximo, 'sobrevivencia'), COMPETENCIA_MAXIMA);
-  assert.equal(COMPETENCIA_MAXIMA, 3);
+test('o reforço continua vindo do atributo de apoio, que é outro', () => {
+  // Sobrevivência: bases Percepção e Vontade, apoio Força.
+  const semForca = { atributos: { percepcao: 4, forca: 2 } };
+  const comForca = { atributos: { percepcao: 4, forca: 3 } };
+  assert.equal(reforcoAtivo(semForca, 'sobrevivencia'), false);
+  assert.equal(reforcoAtivo(comForca, 'sobrevivencia'), true);
+  assert.equal(valorDaCompetencia(comForca, 'sobrevivencia')
+    - valorDaCompetencia(semForca, 'sobrevivencia'), 1);
+});
+
+test('duas bases levam a competência ao teto, e nada passa dele', () => {
+  /* É o que Gabriel pediu: Percepção e Vontade juntas sobem Sobrevivência
+     até +4. Com as duas no talo e o apoio pago, a conta daria 5 — o teto
+     é o que impede uma competência de valer mais que o dado. */
+  const duasBases = { atributos: { percepcao: 5, vontade: 3 } };
+  assert.equal(valorDaCompetencia(duasBases, 'sobrevivencia'), COMPETENCIA_MAXIMA);
+
+  const tudo = { atributos: { percepcao: 5, vontade: 5, forca: 5 } };
+  assert.equal(valorDaCompetencia(tudo, 'sobrevivencia'), COMPETENCIA_MAXIMA);
+  assert.equal(COMPETENCIA_MAXIMA, 4);
+
+  // Uma base só, sem apoio, não chega lá: o teto continua custando escolha.
+  assert.equal(valorDaCompetencia({ atributos: { carisma: 5 } }, 'persuasao'),
+    COMPETENCIA_MAXIMA - 1);
 });
 
 test('toda competência tem reforço, e nenhuma reforça do próprio principal', () => {
@@ -140,36 +166,68 @@ test('o 20 natural passa e o 1 natural falha, somando o que somar', () => {
   assert.equal(rolarTeste({ dado: 9, competencia: 0, alvo: 10 }).geraPavor, false);
 });
 
-test('Pavor e Sanidade enchem, e cheios trazem a visão', () => {
+test('o pavio do Pavor estoura em dois, e estourar pede Vontade', () => {
   let ficha = fichaNova();
   assert.equal(ficha.pavor, 0);
   for (let i = 0; i < PAVOR_MAXIMO - 1; i += 1) ficha = marcar(ficha, 'pavor');
-  assert.equal(ficha.visaoPendente, '', 'a visão veio antes da hora');
+  assert.equal(ficha.pavorNoLimite, false, 'o estouro veio antes da hora');
   ficha = marcar(ficha, 'pavor');
   assert.equal(ficha.pavor, PAVOR_MAXIMO);
-  assert.equal(ficha.visaoPendente, 'pavor');
+  assert.equal(ficha.pavorNoLimite, true);
 });
 
-test('ceder à visão custa vida; resistir recua o medidor', () => {
-  const cheia = { ...fichaNova(), idade: 30, pv: 5, sanidade: SANIDADE_MAXIMA, visaoPendente: 'sanidade' };
+test('estourar o Pavor NÃO tira vida — cobra Sanidade', () => {
+  /* Era 1 de PV e virou 1 de Sanidade. A diferença não é de número: vida
+     volta com descanso e Sanidade só desce com alguém por perto, então o
+     preço do medo passou a empurrar a mesa para junto em vez de para a
+     enfermaria. */
+  const estourada = { ...fichaNova(), idade: 30, pv: 5, pavor: PAVOR_MAXIMO, pavorNoLimite: true, sanidade: 1 };
 
-  const cedeu = responderAVisao(cheia, { cedeu: true });
-  assert.equal(cedeu.pv, 4, 'ceder deixou de custar vida');
-  assert.equal(cedeu.sanidade, SANIDADE_MAXIMA - 2, 'a sanidade deveria recuar para 4');
-  assert.equal(cedeu.visaoPendente, '');
+  const segurou = responderAoPavor(estourada, { resistiu: true });
+  assert.equal(segurou.pavor, 0, 'o pavio tem de zerar de um jeito ou de outro');
+  assert.equal(segurou.sanidade, 1, 'segurar não pode custar Sanidade');
+  assert.equal(segurou.pv, 5);
+  assert.equal(segurou.pavorNoLimite, false);
 
-  const resistiu = responderAVisao(cheia, { cedeu: false });
-  assert.equal(resistiu.pv, 5, 'resistir não pode custar vida');
-  assert.equal(resistiu.sanidade, SANIDADE_MAXIMA - 2);
-  assert.equal(resistiu.visaoPendente, '');
+  const naoSegurou = responderAoPavor(estourada, { resistiu: false });
+  assert.equal(naoSegurou.pavor, 0);
+  assert.equal(naoSegurou.sanidade, 2, 'falhar devia custar 1 de Sanidade');
+  assert.equal(naoSegurou.pv, 5, 'falhar NÃO pode mais custar vida');
 });
 
-test('o alívio apaga a visão pendente junto com as marcas', () => {
-  // Ficar com a visão pendurada depois de o medidor baixar deixaria a mesa
+test('a Sanidade tem três degraus com nome', () => {
+  const em = n => estadoDaSanidade({ sanidade: n });
+
+  assert.equal(em(SANIDADE_VISOES - 1).visoes, false);
+  assert.equal(em(SANIDADE_VISOES).visoes, true, 'as visões deviam começar em 4');
+  assert.equal(em(SANIDADE_VISOES).modificador, 0, 'o degrau das visões não tira número');
+
+  assert.equal(em(SANIDADE_DESVANTAGEM).desvantagem, true);
+  assert.equal(em(SANIDADE_DESVANTAGEM).modificador, DESVANTAGEM_DA_SANIDADE);
+
+  assert.equal(em(SANIDADE_MAXIMA - 1).caida, false);
+  assert.equal(em(SANIDADE_MAXIMA).caida, true, 'em 6 ela cai');
+});
+
+test('quem cai é levantado por outro, e volta pior do que entrou', () => {
+  const caida = { ...fichaNova(), idade: 30, pv: 0, sanidade: SANIDADE_MAXIMA };
+  assert.equal(estadoDaSanidade(caida).caida, true);
+
+  const depois = levantar(caida);
+  assert.equal(depois.sanidade, SANIDADE_MAXIMA - ALIVIO_AO_LEVANTAR,
+    'devolveu mais de um degrau — desabar ficaria de graça');
+  assert.equal(estadoDaSanidade(depois).caida, false, 'continuou no chão');
+  assert.equal(estadoDaSanidade(depois).desvantagem, true,
+    'levantou sem a desvantagem: ela voltou melhor do que caiu');
+  assert.ok(depois.pv >= 1, 'levantou com zero de vida');
+});
+
+test('o alívio apaga o estouro pendente junto com as marcas', () => {
+  // Ficar com o teste pendurado depois de o pavio baixar deixaria a mesa
   // devendo uma resposta a um medo que já passou.
   const cheia = marcar({ ...fichaNova(), pavor: PAVOR_MAXIMO - 1 }, 'pavor');
-  assert.equal(cheia.visaoPendente, 'pavor');
-  assert.equal(aliviar(cheia, 'pavor').visaoPendente, '');
+  assert.equal(cheia.pavorNoLimite, true);
+  assert.equal(aliviar(cheia, 'pavor').pavorNoLimite, false);
 });
 
 test('nada passa dos limites, nem por fora', () => {

@@ -46,10 +46,21 @@ export const tamanhoPorId = id =>
 export const VULTO_DESENHADO = 'desenhada';
 
 /** As aparições com imagem viram opções de vulto. */
+/**
+ * Os tipos de aparição que servem de vulto.
+ *
+ * Vulto é o que atravessa o corredor no canto do olho. Uma página de
+ * diário, um símbolo ou um item não atravessam corredor nenhum — e a
+ * lista inteira de aparições deixava o Mestre escolher a foto da chave
+ * enferrujada para passar correndo pelo mapa, que é o tipo de engano que
+ * só se percebe depois que a mesa já riu.
+ */
+export const TIPOS_QUE_VIRAM_VULTO = Object.freeze(['vulto', 'criatura']);
+
 export const vultosDisponiveis = (aparicoes = []) => [
   { id: VULTO_DESENHADO, nome: 'Silhueta', imagem: '' },
   ...(aparicoes || [])
-    .filter(a => a && a.imagem)
+    .filter(a => a && a.imagem && TIPOS_QUE_VIRAM_VULTO.includes(String(a.tipo || '')))
     .map(a => ({ id: String(a.id), nome: String(a.titulo || 'Aparição'), imagem: String(a.imagem) })),
 ];
 

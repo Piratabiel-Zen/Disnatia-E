@@ -47,8 +47,10 @@ export default function TalentosOneShotPage() {
       )}
 
       <ul className="ost-lista">
-        {lista.map(talento => (
-          <li key={talento.id} className="ost-carta">
+        {lista.map((talento, i) => (
+          /* O índice vira variável CSS: é o que faz a lanterna passar de
+             cartão em cartão, em ordem, em vez de acender todos juntos. */
+          <li key={talento.id} className="ost-carta" style={{ '--ost-i': i }}>
             <header>
               <h3>{talento.nome}</h3>
               <span className="ost-limite">{talento.limite}</span>

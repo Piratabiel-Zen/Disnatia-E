@@ -393,7 +393,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
       quem: playerSheetId,
       nome: minhaFichaDaNoite?.nome || '',
       cacada,
-      chance: chanceDePassar(cacada),
+      chance: chanceDePassar(cacada, minhaFichaDaNoite?.atributos?.sorte),
     }));
   };
 
@@ -403,7 +403,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         quem: playerSheetId,
         nome: minhaFichaDaNoite?.nome || '',
         cacada: escondido,
-        chance: chanceDePassar(escondido),
+        chance: chanceDePassar(escondido, minhaFichaDaNoite?.atributos?.sorte),
       }),
       resultado,
     ));
@@ -2890,7 +2890,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               Mestre queria ver quando clicou. */}
           {/* Dentro do armário: só na tela de quem entrou. */}
           {ehNoite && escondido && (
-            <Esconderijo
+            <Esconderijo sorte={minhaFichaDaNoite?.atributos?.sorte}
               cacada={escondido}
               imagem={imagemDoVulto !== VULTO_DESENHADO ? imagemDoVulto : ''}
               aoTerminar={contarEsconderijo}
