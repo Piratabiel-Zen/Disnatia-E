@@ -6,8 +6,7 @@
 .insp{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:18px}
 .insp-fundo{
   position:absolute;inset:0;border:0;padding:0;cursor:zoom-out;
-  background:rgba(4,3,5,.93);
-  backdrop-filter:blur(3px);
+  background:rgba(4,3,5,.97);
 }
 
 .insp-caixa{

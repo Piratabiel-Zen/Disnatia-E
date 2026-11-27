@@ -132,9 +132,13 @@ test('a chuva é feita de pingos, não de riscos de tela inteira', () => {
   assert.ok(!/cenario-chuva-\w+\{[^}]*repeating-linear-gradient/.test(css),
     'a chuva voltou a ser risco contínuo em vez de pingo');
   assert.match(css, /@keyframes chuvaCai/);
-  // E a inclinação vem de girar o plano, que é o que permite usar gradiente
-  // radial para desenhar a gota.
-  assert.match(css, /transform:rotate\(\d+deg\)/);
+  /* A inclinação continua vindo de girar o plano — é o que permite usar
+     gradiente radial para desenhar a GOTA e não um risco. Mas a rotação
+     mudou de lugar: ela agora vive dentro do `transform` da animação,
+     porque `transform` é uma propriedade só e declará-la fora faria o
+     keyframe apagá-la. O ângulo de cada camada vem de `--giro`. */
+  assert.match(css, /--giro:\d+deg/);
+  assert.match(css, /transform:rotate\(var\(--giro,11deg\)\) translate3d/);
 });
 
 test('o cenário cede onde o movimento cede e fica atrás de tudo', () => {

@@ -21,7 +21,7 @@
 .itn-fundo{
   position:absolute;inset:0;z-index:70;
   display:grid;place-items:center;padding:20px;
-  background:rgba(6,5,4,.74);backdrop-filter:blur(2px);
+  background:rgba(6,5,4,.9);
 }
 .itn{
   width:min(400px,94vw);max-height:min(70vh,560px);

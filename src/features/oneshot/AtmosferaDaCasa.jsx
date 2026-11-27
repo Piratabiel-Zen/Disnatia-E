@@ -112,9 +112,26 @@ export default function AtmosferaDaCasa({
           que se quer ver. */}
       <i className="atm-escuridao" />
       <i className="atm-noite" />
-      {camadas.map(c => (
-        <i key={c} className={LUZES.has(c) ? `${c} atm-luz` : c} />
-      ))}
+      {/* AS LUZES VÃO TODAS NUM INVÓLUCRO SÓ, e isso é desempenho puro.
+
+          Antes cada luz carregava o seu próprio `mix-blend-mode:screen` e
+          o seu próprio `filter` de brilho. Num mapa com dez efeitos, isso
+          são dez camadas do tamanho da tela, cada uma rasterizada num
+          buffer à parte, filtrada e depois lida contra tudo que está
+          embaixo — a cada quadro. Medido aqui, era o item mais caro da
+          cena inteira, de longe.
+
+          Agora o grupo mistura uma vez. As luzes se somam entre si lá
+          dentro em composição normal, o que para gradientes que mal se
+          tocam dá no mesmo, e o resultado inteiro entra em `screen`
+          contra o mapa — que é o que precisava acontecer e continua
+          acontecendo. */}
+      {camadas.some(c => LUZES.has(c)) && (
+        <div className="atm-luzes">
+          {camadas.filter(c => LUZES.has(c)).map(c => <i key={c} className={c} />)}
+        </div>
+      )}
+      {camadas.filter(c => !LUZES.has(c)).map(c => <i key={c} className={c} />)}
       {/* A FALHA GERAL. Não é uma lâmpada piscando: é a casa inteira
           vacilando por um instante, que é o que se vê quando a rede cai e
           não quando um bulbo oscila. Fica por cima das luzes de propósito —

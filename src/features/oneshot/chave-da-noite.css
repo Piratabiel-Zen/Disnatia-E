@@ -5,9 +5,8 @@
   position:fixed;z-index:44;right:16px;bottom:calc(192px + env(safe-area-inset-bottom,0px));
   display:inline-flex;align-items:center;gap:7px;
   padding:7px 12px;border-radius:20px;cursor:pointer;
-  background:rgba(12,12,13,.92);border:1px solid #2E2E33;color:#6E6C6A;
+  background:rgba(12,12,13,.97);border:1px solid #2E2E33;color:#6E6C6A;
   font-family:Cinzel,serif;font-size:10px;letter-spacing:.1em;
-  backdrop-filter:blur(3px);
 }
 .noite-chave span{font-size:12px}
 .noite-chave:hover{border-color:#8B8477;color:#C8C6C2}

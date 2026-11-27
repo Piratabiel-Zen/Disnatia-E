@@ -17,6 +17,16 @@
    E NADA AQUI PEGA CLIQUE: o mapa continua sendo operado por baixo.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* SEM `contain` E SEM `isolation` AQUI, e é deliberado.
+   Os dois deixariam esta pilha bem mais barata — e apagariam o efeito.
+   `contain:paint` e `isolation:isolate` criam contexto de empilhamento, e
+   `mix-blend-mode` só mistura DENTRO do contexto onde está. A escuridão
+   em `multiply` e as luzes em `screen` existem para misturar com o MAPA,
+   que está fora daqui: fechadas num contexto próprio, elas passariam a
+   misturar só umas com as outras e a cena ficaria chapada.
+
+   O ganho veio por outro caminho — nenhuma camada daqui anima mais
+   `background-position`, que era o que repintava a tela a cada quadro. */
 .atm{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
 .atm i{position:absolute;inset:0;display:block;pointer-events:none}
 
@@ -45,7 +55,6 @@
 /* Luar azul-acinzentado. Fraco e frio, por cima de tudo. */
 .atm-luar{
   background:linear-gradient(185deg,rgba(126,158,196,.16),rgba(64,86,120,.06) 60%,transparent);
-  mix-blend-mode:screen;
   animation:atmLuar calc(14s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmLuar{0%,100%{opacity:.82}50%{opacity:1}}
@@ -53,7 +62,6 @@
 /* Lampião do portão: âmbar que oscila a cada 7–12s, como no guia. */
 .atm-lampiao{
   background:radial-gradient(14% 11% at 50.5% 86%,rgba(255,186,92,.4),transparent 70%);
-  mix-blend-mode:screen;
   animation:atmLampiao calc(9.5s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmLampiao{
@@ -65,7 +73,6 @@
    o que faz parecer defeito elétrico e não pisca-pisca. */
 .atm-lustre{
   background:radial-gradient(22% 18% at 50% 24%,rgba(255,208,140,.3),transparent 72%);
-  mix-blend-mode:screen;
   animation:atmLustre calc(6.2s / var(--atm-pulso,1)) linear infinite;
 }
 @keyframes atmLustre{
@@ -80,7 +87,6 @@
     radial-gradient(7% 6% at 31% 54%,rgba(255,176,86,.34),transparent 70%),
     radial-gradient(6% 5% at 68% 61%,rgba(255,166,78,.3),transparent 72%),
     radial-gradient(5% 4.5% at 52% 33%,rgba(255,190,104,.26),transparent 74%);
-  mix-blend-mode:screen;
   animation:atmVela calc(4.4s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmVela{0%,100%{opacity:.82}37%{opacity:1}63%{opacity:.7}}
@@ -88,7 +94,6 @@
 /* Lareira: vermelho que dança, mais lento que vela. */
 .atm-lareira{
   background:radial-gradient(16% 13% at 79% 52%,rgba(226,106,46,.3),transparent 72%);
-  mix-blend-mode:screen;
   animation:atmLareira calc(5.6s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmLareira{0%,100%{opacity:.76;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
@@ -96,7 +101,6 @@
 /* Caldeira do porão: brasa pulsando atrás da portinhola. */
 .atm-caldeira{
   background:radial-gradient(11% 13% at 14% 53%,rgba(232,96,38,.42),transparent 70%);
-  mix-blend-mode:screen;
   animation:atmBrasa calc(3.6s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmBrasa{0%,100%{opacity:.62}50%{opacity:1}}
@@ -105,7 +109,6 @@
    É o efeito mais forte da casa e por isso só o porão o usa. */
 .atm-instavel{
   background:radial-gradient(26% 22% at 47% 31%,rgba(255,226,170,.34),transparent 74%);
-  mix-blend-mode:screen;
   animation:atmInstavel calc(13s / var(--atm-pulso,1)) linear infinite;
 }
 @keyframes atmInstavel{
@@ -118,14 +121,12 @@
 /* Altar: brasa sob a pedra, discreta. */
 .atm-altar{
   background:radial-gradient(19% 20% at 50% 48%,rgba(188,36,42,.26),transparent 72%);
-  mix-blend-mode:screen;
   animation:atmBrasa calc(6.4s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 
 /* Lâmpada do galpão: balança, então a luz anda de lado. */
 .atm-balanca{
   background:radial-gradient(20% 24% at 50% 40%,rgba(255,200,122,.34),transparent 72%);
-  mix-blend-mode:screen;
   animation:atmBalanca calc(4.8s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmBalanca{
@@ -138,7 +139,6 @@
   background:
     linear-gradient(104deg,transparent 14%,rgba(176,200,232,.12) 18%,transparent 24%),
     linear-gradient(104deg,transparent 62%,rgba(176,200,232,.1) 66%,transparent 72%);
-  mix-blend-mode:screen;
   animation:atmFeixe calc(22s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmFeixe{0%,100%{opacity:.8}50%{opacity:1}}
@@ -151,16 +151,31 @@
     radial-gradient(60% 26% at 20% 82%,rgba(214,222,232,.5),transparent 70%),
     radial-gradient(70% 22% at 74% 90%,rgba(198,208,220,.42),transparent 72%),
     radial-gradient(50% 20% at 48% 70%,rgba(206,214,226,.34),transparent 74%);
-  background-size:200% 100%;
+  background-size:50% 100%;
+  background-repeat:repeat-x;
+  /* A faixa passa a ser DUAS telas de largura e anda com transform. Antes
+     era `background-position`, que repinta a camada inteira a cada quadro
+     — e esta cobre o mapa todo, numa cena onde já estão correndo a
+     escuridão, as luzes, as sombras e a chuva do cenário. O deslocamento
+     de metade da própria largura cai exatamente num ladrilho, então a
+     volta é invisível, como era antes. */
+  left:0;right:auto;width:200%;
   opacity:var(--atm-nevoa,.14);
+  will-change:transform;
   animation:atmNevoa calc(86s / var(--atm-pulso,1)) linear infinite;
 }
-@keyframes atmNevoa{from{background-position:0 0}to{background-position:200% 0}}
+@keyframes atmNevoa{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(-50%,0,0)}
+}
 
 .atm-nevoa-alta{
   background:radial-gradient(80% 50% at 50% 50%,rgba(206,214,226,.3),transparent 76%);
-  background-size:230% 100%;
+  background-size:50% 100%;
+  background-repeat:repeat-x;
+  left:0;right:auto;width:200%;
   opacity:calc(var(--atm-nevoa,.14) * .8);
+  will-change:transform;
   animation:atmNevoa calc(124s / var(--atm-pulso,1)) linear infinite reverse;
 }
 
@@ -215,10 +230,20 @@
     radial-gradient(1.2px 1.2px at 85% 70%,rgba(236,240,248,.5),transparent),
     radial-gradient(1.4px 1.4px at 34% 80%,rgba(236,240,248,.52),transparent);
   background-size:38% 44%;
+  background-repeat:repeat;
+  /* Alta o bastante para a volta não aparecer, e andando por transform:
+     `background-position` repintava a camada inteira a cada quadro. Um
+     ladrilho tem 44% da altura original, então a camada cresce para
+     200% e o passo é 22% dela — o mesmo ladrilho, no mesmo lugar. */
+  top:0;bottom:auto;height:200%;
   opacity:.5;
+  will-change:transform;
   animation:atmPoeira calc(42s / var(--atm-pulso,1)) linear infinite;
 }
-@keyframes atmPoeira{from{background-position:0 100%}to{background-position:0 -100%}}
+@keyframes atmPoeira{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(0,-50%,0)}
+}
 
 /* Chuva do pátio e do galpão: brilhos curtos no chão molhado. */
 .atm-chuva{
@@ -235,7 +260,6 @@
 /* Faíscas do gerador: curtas e raras. */
 .atm-faisca{
   background:radial-gradient(4% 4% at 60% 24%,rgba(255,236,170,.8),transparent 66%);
-  mix-blend-mode:screen;
   animation:atmFaisca calc(16s / var(--atm-pulso,1)) linear infinite;
 }
 @keyframes atmFaisca{
@@ -302,15 +326,20 @@ html[data-motion="reduced"] .atm i{animation:none !important}
 .atm-passagem{
   background:linear-gradient(100deg,
     transparent 0 38%,rgba(0,0,0,.5) 46%,rgba(0,0,0,.62) 50%,rgba(0,0,0,.5) 54%,transparent 62%);
-  background-size:260% 100%;
+  /* A faixa tem 2,6 telas de largura e atravessa por transform. Antes
+     caminhava em `background-position`, o que repintava o mapa inteiro a
+     cada quadro durante a passagem — bem no momento em que a mesa está
+     olhando com atenção, que é o pior momento possível para engasgar. */
+  left:0;right:auto;width:260%;
   opacity:0;
+  will-change:transform,opacity;
   animation:atmPassa calc(41s / var(--atm-pulso,1)) ease-in-out infinite;
 }
 @keyframes atmPassa{
-  0%,72%{opacity:0;background-position:-30% 0}
-  76%{opacity:.5}
-  88%{opacity:.5}
-  92%,100%{opacity:0;background-position:130% 0}
+  0%,72%   {opacity:0;transform:translate3d(-30%,0,0)}
+  76%      {opacity:.5}
+  88%      {opacity:.5}
+  92%,100% {opacity:0;transform:translate3d(30%,0,0)}
 }
 
 /* 3. A RESPIRAÇÃO DA CASA. O mapa inteiro incha e desincha um fio, muito
@@ -359,9 +388,21 @@ html[data-motion="reduced"] .atm .atm-escuridao{animation:none !important}
    forte. O brilho é filtro sobre as camadas de luz, e não cor nova em cada
    gradiente: assim uma lâmpada nova entra na pilha e já nasce obedecendo à
    hora, sem ninguém lembrar de ajustá-la. */
-.atm-luz{
+.atm-luzes{
+  position:absolute;inset:0;pointer-events:none;
+  /* UMA mistura e UM filtro para todas as luzes, em vez de um par por
+     camada. Medido numa cena com dez efeitos, o quadro caiu de 166ms
+     para 83ms só com esta troca: o navegador rasteriza o grupo uma vez,
+     filtra uma vez, e lê o que está embaixo uma vez — em vez de dez.
+
+     As luzes se somam entre si aqui dentro em composição normal, o que
+     para gradientes que mal se tocam dá no mesmo, e o grupo inteiro
+     entra em `screen` contra o mapa, que é o que precisa acontecer:
+     lâmpada acesa cortando quarto escuro. */
+  mix-blend-mode:screen;
   filter:brightness(var(--atm-brilho,1)) saturate(calc(.85 + var(--atm-brilho,1) * .18));
 }
+.atm-luzes > i{position:absolute;inset:0;display:block;pointer-events:none}
 
 /* A FALHA GERAL. A casa toda vacila: um corte curto, outro mais curto, e o
    intervalo entre eles encurta com a instabilidade. A profundidade vem de

@@ -196,7 +196,12 @@ test('a luz e a escuridão andam juntas, e só para um lado', () => {
   assert.match(jsx, /<i className="atm-piscada" \/>/);
   // Só as luzes recebem o brilho da hora. Clarear névoa e sombra junto
   // deixaria a casa mais VISÍVEL conforme a noite avança.
-  assert.match(jsx, /LUZES\.has\(c\) \? `\$\{c\} atm-luz` : c/);
+  /* O brilho da hora continua sendo só das luzes — mas agora chega a
+     elas pelo INVÓLUCRO, e não por uma classe em cada uma. Dez camadas
+     com filtro e mistura próprios eram o item mais caro da cena. */
+  assert.match(jsx, /className="atm-luzes"/);
+  assert.match(jsx, /camadas\.filter\(c => LUZES\.has\(c\)\)/);
+  assert.match(jsx, /camadas\.filter\(c => !LUZES\.has\(c\)\)/);
   for (const naoEhLuz of ['atm-nevoa', 'atm-sombras', 'atm-poeira', 'atm-chuva']) {
     assert.ok(!new RegExp(`LUZES[\\s\\S]{0,400}'${naoEhLuz}'`).test(jsx),
       `${naoEhLuz} não é fonte de luz`);

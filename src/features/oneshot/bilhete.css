@@ -15,8 +15,7 @@
 .blt{
   position:fixed;inset:0;z-index:120;
   display:grid;place-items:center;
-  background:radial-gradient(60% 60% at 50% 55%,rgba(8,6,10,.72),rgba(4,3,6,.94));
-  backdrop-filter:blur(2px);
+  background:radial-gradient(60% 60% at 50% 55%,rgba(8,6,10,.9),rgba(4,3,6,.97));
   animation:bltEntra .5s ease both;
 }
 @keyframes bltEntra{from{opacity:0}to{opacity:1}}
