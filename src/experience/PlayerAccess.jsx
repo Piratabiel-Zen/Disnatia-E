@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { storageSuffix } from '../core/campaign';
-import { conferirSenha } from '../features/sheets/senhaDaFicha.mjs';
+import { conferirSenha, temSenha } from '../features/sheets/senhaDaFicha.mjs';
 import { isVisitorSheet, verifyVisitorPassword } from '../adventure/visitorAccess.mjs';
 import './visitor-summons.css';
 import { CLASSES, getSheetMaxHp } from '../data/gameData';
 import PasswordVisibilityInput from './PasswordVisibilityInput';
-import { col } from '../core/campaign';
+import { col, docIn } from '../core/campaign';
 import { requiredMasterHash } from '../core/campaignPassword.mjs';
 import { colecaoDeFichas, sistemaDe } from '../core/sistemas/index.mjs';
 import { estadoDoExorcista } from '../features/cain/fichaCain.mjs';
@@ -118,6 +118,29 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
       ts: Date.now(),
     };
     try { localStorage.setItem(playerSheetKey(), String(selected.id)); } catch (_) {}
+
+    /* ACERTAR A SENHA É A ENTREGA.
+       Antes isto só guardava a escolha no navegador: a ficha continuava
+       sem dono no banco, então o Mestre via "não entregue" e as regras
+       que dependem de `dono` — abrir, editar, receber item — não valiam
+       para ninguém. Quem sabe a senha É o dono; é para isso que a senha
+       existe.
+
+       Só grava se ainda não houver dono, e nunca por cima de outro: a
+       senha vazada não pode tomar a ficha de quem já está com ela. */
+    const uid = auth.currentUser?.uid || '';
+    if (uid && !String(selected.dono || '').trim()) {
+      try {
+        await setDoc(docIn(colecaoDasFichas, String(selected.id)),
+          { dono: uid }, { merge: true });
+      } catch (erro) {
+        // A entrada não pode depender disto: o Mestre consegue entregar na
+        // mão pela aba de Fichas, e travar a porta por uma escrita que
+        // falhou deixaria o primo do lado de fora sem motivo.
+        console.error('Não foi possível entregar a ficha:', erro);
+      }
+    }
+
     saveStoredAccess(payload);
     setError('');
     onAccess?.(payload);
@@ -232,7 +255,14 @@ export function PlayerAccessGate({ access, onAccess, onLogout, masterMode, setMa
               </div>
             )}
 
-            {selected?.senha ? (
+            {/* `temSenha` e não `selected.senha`: a senha moderna é um
+                resumo salgado em `senhaHash`, e o campo de texto puro fica
+                VAZIO de propósito. A porta olhava só o campo antigo, então
+                toda ficha protegida se anunciava como aberta — e, pior, não
+                mostrava onde digitar. O jogador via "pode entrar direto",
+                clicava, e `conferirSenha` recusava a tentativa vazia. Senha
+                posta, jogador trancado do lado de fora. */}
+            {temSenha(selected) ? (
               <label className="access-field">Senha da ficha<PasswordVisibilityInput value={pin} onChange={e => { setPin(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && enterPlayer()} placeholder="Digite sua senha..." autoFocus /></label>
             ) : (
               <div className="access-open-note">Esta ficha não possui senha definida e pode ser acessada diretamente.</div>

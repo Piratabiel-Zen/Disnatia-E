@@ -6,7 +6,7 @@ import { ehMestre, podeAbrirFicha } from '../../core/acesso.mjs';
 import { useMembro } from '../acesso/useMembro';
 import { verComoJogador } from '../acesso/previaDeJogador.mjs';
 import FichaOneShot from './FichaOneShot.jsx';
-import SeloDeAcessoRestrito from '../cain/SeloDeAcessoRestrito.jsx';
+import AssombracaoDeAcesso from './AssombracaoDeAcesso.jsx';
 import { fichaNova, pvMaximoDaFicha } from './fichaOneShot.mjs';
 import './paginas-one-shot.css';
 import './fichas-one-shot.css';
@@ -90,7 +90,7 @@ export default function FichasOneShotPage({ playerSheetId = '' }) {
       </header>
 
       {recusada && (
-        <SeloDeAcessoRestrito nome={recusada.nome || ''} aoFechar={() => setRecusada(null)} />
+        <AssombracaoDeAcesso nome={recusada.nome || ''} aoFechar={() => setRecusada(null)} />
       )}
 
       <ul className="osl-fileira">

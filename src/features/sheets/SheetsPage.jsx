@@ -6,7 +6,6 @@ import { db } from "../../core/firebase";
 import { ARTEFATOS_DATA,CLASSES,SHEET_COLORS } from "../../data/gameData";
 import { SheetFull,newSheet } from "./SheetComponents";
 import { visibleSheets } from '../../adventure/visitorAccess.mjs';
-import CombatMode from "./CombatMode";
 import { col, docIn } from '../../core/campaign';
 import SenhasDasFichas from './SenhasDasFichas.jsx';
 import { conferirSenha, temSenha } from './senhaDaFicha.mjs';
@@ -25,7 +24,6 @@ function SheetsSection({masterMode,playerSheetId,access,visitorId=''}){
   const[customAbilities,setCustomAbilities]=useState({});
   const[unlockedIds,setUnlockedIds]=useState({});
   const[pwInput,setPwInput]=useState('');const[pwTarget,setPwTarget]=useState(null);const[pwError,setPwError]=useState(false);
-  const[combatOpen,setCombatOpen]=useState(false);
   const[enemies,setEnemies]=useState([]);
   const [artefatosUnlockedState, setArtefatosUnlockedState] = useState({});
   const [artefatosHabsState, setArtefatosHabsState] = useState({});

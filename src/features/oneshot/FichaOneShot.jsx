@@ -289,7 +289,9 @@ export default function FichaOneShot({
       <section className="osf-bloco">
         <h4>
           Atributos
-          <em>{restantes >= 0 ? `${restantes} por distribuir` : `${-restantes} além do permitido`}</em>
+          <em>{restantes > 0 ? `${restantes} por distribuir`
+            : restantes === 0 ? 'os 20 estão distribuídos'
+            : `${-restantes} além do permitido`}</em>
         </h4>
         <ul className="osf-atributos">
           {ATRIBUTOS.map(a => (
@@ -304,7 +306,20 @@ export default function FichaOneShot({
                   {Array.from(
                     { length: (mestre ? 5 : ATRIBUTO_MAXIMO_NA_CRIACAO) - ATRIBUTO_MINIMO + 1 },
                     (_, i) => ATRIBUTO_MINIMO + i,
-                  ).map(v => <option key={v} value={v}>{v}</option>)}
+                  ).map(v => {
+                    /* OS 20 PONTOS VIRARAM TETO, NÃO AVISO.
+                       O contador já dizia "3 além do permitido" e o
+                       seletor deixava subir mesmo assim: a regra existia
+                       no texto e não no programa, e quem montou a ficha
+                       sozinho descobria o problema na hora de jogar.
+
+                       Fecha para o jogador e fica aberto para o Mestre —
+                       ele às vezes precisa de um personagem fora da
+                       conta, e é ele quem responde por isso. */
+                    const atual = ficha.atributos[a.id];
+                    const estoura = !mestre && v > atual + restantes;
+                    return <option key={v} value={v} disabled={estoura}>{v}</option>;
+                  })}
                 </select>
               ) : <b>{ficha.atributos[a.id]}</b>}
             </li>

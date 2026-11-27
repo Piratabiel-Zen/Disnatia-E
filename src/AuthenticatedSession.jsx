@@ -33,7 +33,6 @@ import { ExperienceProvider, ImmersiveNavigation, ExperienceLayer } from './expe
 import { PlayerIdentityChip } from './experience/PlayerAccess';
 import { nomeEmDuasTintas } from './adventure/nomeEmDuasTintas.mjs';
 
-const MasterBattleConsole = lazy(() => import('./experience/MasterBattleConsole'));
 
 function PageSkeleton(){
   return (
@@ -117,7 +116,19 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
         </div>
 
         <ExperienceLayer onNavigate={navigate}/>
-        {access.role==='master' && tab==='mapabatalha' && <Suspense fallback={null}><MasterBattleConsole/></Suspense>}
+        {/* O CONSOLE DE COMBATE FOI RETIRADO.
+            Iniciativa, rodadas e turnos nunca foram usados em mesa
+            nenhuma daqui: as três mesas resolvem conflito na conversa e
+            no dado solto. O que ele fazia era ocupar o canto da tela do
+            Mestre com botões que ele nunca aperta — e numa cena de terror
+            a tela do Mestre é onde ele olha para narrar.
+
+            O que move o combate (`config/combat`) continua existindo e
+            dormente: com o console fora, nada liga `active`, e os
+            lugares que ainda escutam esse documento simplesmente nunca
+            acordam. Arrancar o documento inteiro mexeria no som
+            ambiente, no dado e no registro da sessão de uma vez — risco
+            grande para apagar algo que já não aparece. */}
         <DiceWidget access={access}/>
         <GameExperience3 access={access} masterMode={masterMode} tab={tab} onNavigate={navigate}/>
       </div>

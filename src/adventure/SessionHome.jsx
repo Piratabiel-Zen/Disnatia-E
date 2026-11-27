@@ -163,23 +163,14 @@ export default function SessionHome({
       <div className="sessao-ceu" aria-hidden="true"><i /><i /></div>
 
       <header className="sessao-titulo">
-        <span className="sessao-kicker">{combat.active ? 'O destino se decide agora' : campaign?.name || 'Dinastia E'}</span>
+        <span className="sessao-kicker">{campaign?.name || 'Dinastia E'}</span>
         <h2>{session.title || 'Sua próxima aventura'}</h2>
         {session.subtitle ? <p>{session.subtitle}</p> : null}
       </header>
 
-      {combat.active && (
-        <div className={`ad-turn-banner sessao-turno ${mine ? 'mine' : ''}`} role="status">
-          <span className="ad-turn-round">Rodada <b>{combatState.round || 1}</b></span>
-          <div>
-            <span className="ad-eyebrow">{mine ? 'Sua vez de agir' : 'Na linha de frente'}</span>
-            <strong>{current?.nome || combat.currentNome || 'Aguardando iniciativa'}</strong>
-          </div>
-          <button onClick={() => onPanel(masterMode ? 'combat' : 'abilities')}>
-            {masterMode ? 'Controlar combate' : 'Ver minhas ações'} →
-          </button>
-        </div>
-      )}
+      {/* A faixa de rodada e turno saiu junto com o console de combate:
+          sem quem ligue `combat.active`, ela nunca aparecia — e o código
+          que a desenhava só servia para confundir quem lesse. */}
 
       <div className={`sessao-frentes${groups.ativo ? ' is-dividida' : ''}`}>
         {frentes.map(frente => (

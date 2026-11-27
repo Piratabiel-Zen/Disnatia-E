@@ -131,3 +131,64 @@ test('a lanterna passa de cartão em cartão, não todos de uma vez', async () =
   // O movimento respeita o data-motion da raiz, como o resto do site.
   assert.match(limpo, /html\[data-motion="reduced"\][\s\S]{0,240}animation:none/);
 });
+
+test('a rolagem do Mestre é pública, sempre', async () => {
+  const { readFileSync } = await import('node:fs');
+  const dado = readFileSync(new URL('../src/shell/DiceWidget.jsx', import.meta.url), 'utf8');
+  const replay = readFileSync(new URL('../src/experience/SharedDiceReplay.jsx', import.meta.url), 'utf8');
+
+  /* `audience` precisa ser literal. Se um dia virar
+     `access?.role === 'master' ? 'self' : 'table'`, o Mestre passa a
+     rolar escondido e ninguém percebe até alguém reclamar que o número
+     não bateu — que é a discussão que a rolagem pública existe para
+     evitar. */
+  assert.match(dado, /audience: 'table',/);
+  assert.ok(!/audience:\s*[^,\n]*\?/.test(dado), 'o público da rolagem virou condicional');
+
+  // E quem publica não pergunta o papel de ninguém antes.
+  const publica = readFileSync(new URL('../src/core/combatEvents.js', import.meta.url), 'utf8');
+  assert.ok(!/role|master|mestre/i.test(publica.split('publishDiceResult')[1].split('}')[0] || ''),
+    'a publicação passou a olhar quem rolou');
+
+  // E o replay não filtra por papel: ele só MARCA de quem é.
+  assert.match(replay, /inclusive quem rolou e o mestre/);
+  assert.ok(!/if \([^)]*rollerRole[^)]*\) return/.test(replay),
+    'o replay voltou a descartar rolagem por papel');
+});
+
+test('o modo de combate saiu de vez', async () => {
+  const { existsSync } = await import('node:fs');
+  const { readFileSync } = await import('node:fs');
+  for (const morto of ['src/features/sheets/CombatMode.jsx', 'src/experience/MasterBattleConsole.jsx']) {
+    assert.equal(existsSync(new URL(`../${morto}`, import.meta.url).pathname), false,
+      `${morto} voltou`);
+  }
+  const sessao = readFileSync(new URL('../src/adventure/SessionHome.jsx', import.meta.url), 'utf8');
+  assert.ok(!/combat\.active &&/.test(sessao), 'a faixa de turno voltou à tela inicial');
+  const raiz = readFileSync(new URL('../src/AuthenticatedSession.jsx', import.meta.url), 'utf8');
+  assert.ok(!/MasterBattleConsole/.test(raiz), 'o console de combate voltou ao mapa');
+});
+
+test('a porta olha a senha moderna, não o campo antigo', async () => {
+  const { readFileSync } = await import('node:fs');
+  const porta = readFileSync(new URL('../src/experience/PlayerAccess.jsx', import.meta.url), 'utf8');
+
+  /* A senha nova é um resumo salgado em `senhaHash` e deixa `senha`
+     VAZIO. A porta olhava só o campo antigo: ficha protegida se
+     anunciava como aberta, não mostrava onde digitar, e `conferirSenha`
+     recusava a tentativa vazia. Senha posta, jogador trancado fora. */
+  assert.match(porta, /temSenha\(selected\) \? \(/);
+  assert.ok(!/\{selected\?\.senha \? \(/.test(porta), 'voltou a olhar o campo de texto puro');
+
+  // E acertar a senha entrega a ficha: quem sabe a senha é o dono.
+  assert.match(porta, /dono: uid/);
+  assert.match(porta, /!String\(selected\.dono \|\| ''\)\.trim\(\)/,
+    'passou a tomar a ficha de quem já estava com ela');
+});
+
+test('os 20 pontos viraram teto, não aviso', async () => {
+  const { readFileSync } = await import('node:fs');
+  const ficha = readFileSync(new URL('../src/features/oneshot/FichaOneShot.jsx', import.meta.url), 'utf8');
+  assert.match(ficha, /const estoura = !mestre && v > atual \+ restantes;/);
+  assert.match(ficha, /disabled=\{estoura\}/);
+});

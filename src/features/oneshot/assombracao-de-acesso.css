@@ -1,0 +1,83 @@
+/* ───────── A ASSOMBRAÇÃO ─────────
+   Cobre a tela inteira e escurece tudo: a recusa precisa interromper, não
+   avisar num canto. */
+.assb{
+  position:fixed;inset:0;z-index:9990;
+  display:grid;place-items:center;align-content:center;gap:4px;
+  padding:24px;text-align:center;cursor:pointer;
+  background:radial-gradient(ellipse at 50% 46%,rgba(26,8,10,.86),rgba(4,3,3,.97) 62%);
+  animation:assbChega .5s ease-out;
+}
+@keyframes assbChega{from{opacity:0}to{opacity:1}}
+
+/* A CAVEIRA SOBE DO ESCURO, devagar, e para. Nada de salto: susto de tela
+   que pula não assusta ninguém depois da segunda vez. */
+.assb-caveira{
+  width:min(230px,52vw);
+  margin-bottom:6px;
+  animation:assbSobe 2.6s cubic-bezier(.16,.8,.3,1) both;
+}
+@keyframes assbSobe{
+  0%  {opacity:0;transform:translateY(42px) scale(.94)}
+  60% {opacity:.85}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+.assb-caveira svg{width:100%;height:auto;display:block}
+
+.assb-cranio{
+  fill:#1A1613;
+  stroke:rgba(190,178,158,.26);stroke-width:1.5;
+  filter:drop-shadow(0 0 26px rgba(0,0,0,.9));
+}
+.assb-orbita{fill:#050404}
+.assb-nariz,.assb-dentes{fill:#050404;stroke:#050404;stroke-width:3;stroke-linecap:round}
+
+/* As brasas nas órbitas: a única coisa viva. Respiram fora de compasso
+   uma com a outra, porque duas luzes no mesmo ritmo lêem como pisca-pisca
+   e deixam de parecer olhar. */
+.assb-brasa{
+  fill:#8A2730;
+  filter:drop-shadow(0 0 9px rgba(190,42,52,.95));
+  animation:assbBrasa 3.4s ease-in-out infinite;
+}
+.assb-brasa-b{animation-duration:4.1s;animation-delay:.6s}
+@keyframes assbBrasa{
+  0%,100%{opacity:.5}
+  50%    {opacity:1}
+}
+
+.assb-titulo{
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+  font-size:clamp(20px,4.5vw,30px);font-weight:400;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:#C9BBA4;
+  text-shadow:0 0 22px rgba(138,39,48,.6);
+  animation:assbTexto .7s ease-out 1.5s both;
+}
+.assb-recado{
+  margin:4px 0 0;max-width:34ch;
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);
+  font-size:clamp(12px,2.6vw,15px);line-height:1.6;font-style:italic;
+  color:#8E867C;
+  animation:assbTexto .7s ease-out 1.9s both;
+}
+.assb-nome{
+  margin-top:10px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:#55504A;
+  animation:assbTexto .7s ease-out 2.2s both;
+}
+@keyframes assbTexto{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* O site decide movimento pelo data-motion da raiz, nunca por
+   prefers-reduced-motion no CSS. Sem animação a caveira já está lá
+   olhando: a recusa continua inteira, só não tem a chegada. */
+html[data-motion="reduced"] .assb,
+html[data-motion="reduced"] .assb-caveira,
+html[data-motion="reduced"] .assb-titulo,
+html[data-motion="reduced"] .assb-recado,
+html[data-motion="reduced"] .assb-nome,
+html[data-motion="reduced"] .assb-brasa{
+  animation:none;opacity:1;transform:none;
+}
