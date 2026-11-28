@@ -14,6 +14,8 @@ import Assombracao from './features/oneshot/Assombracao.jsx';
 // aqui não toca na Dinastia E nem no CAIN.
 import './features/oneshot/mortalha-casca.css';
 import { sistemaDe, termo } from './core/sistemas/index.mjs';
+import AvisoDaCacada from './features/oneshot/AvisoDaCacada.jsx';
+import { useCacadaDaMesa } from './features/oneshot/useCacadaDaMesa.js';
 import { useMembro } from './features/acesso/useMembro';
 import DiceWidget from './shell/DiceWidget';
 import CosmicLivingBackground from './experience/CosmicLivingBackground';
@@ -54,6 +56,13 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
   // casca da sessão. Fora dela, nascia atrás do fundo opaco da casca e não
   // aparecia por mais que a chave fosse ligada.
   const temNevoa = Boolean(sistemaDe(campaign)?.nevoa);
+
+  /* A CAÇADA É DA SESSÃO INTEIRA, não do mapa.
+     O contador vivia dentro do mapa de combate, e por isso só existia
+     para quem estava com o mapa aberto — no celular, onde o mapa nem é
+     carregado, nunca existia. Um relógio que metade da mesa não vê não
+     cria aperto nenhum. */
+  const cacada = useCacadaDaMesa(sistemaDe(campaign)?.id === 'oneshot');
   const headerRef=useRef(null);
   useHeaderClearance(headerRef);
   return(
@@ -64,6 +73,9 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
           esteja a pessoa onde estiver — a graça é pegar quem estava mexendo
           na ficha. Só nas mesas que têm névoa, que são as de uma noite. */}
       {temNevoa && <Assombracao uid={access?.uid || ''} />}
+      {/* No mapa a faixa some: lá o contador grande já está em cena, e
+          dois relógios com o mesmo número é pior que nenhum. */}
+      <AvisoDaCacada cacada={cacada} escondido={tab === 'mapabatalha'} />
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
             existe: duas paisagens sobrepostas não é clima, é sujeira. */}

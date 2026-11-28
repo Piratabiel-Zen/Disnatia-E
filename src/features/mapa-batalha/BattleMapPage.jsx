@@ -40,6 +40,7 @@ import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
 import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
 import TokenSprite from '../oneshot/TokenSprite.jsx';
 import PainelDoToken from '../oneshot/PainelDoToken.jsx';
+import { useCacadaDaMesa } from '../oneshot/useCacadaDaMesa.js';
 import MarcasDeEsconderijo from '../oneshot/MarcasDeEsconderijo.jsx';
 import { marcaNova, marcasDoMapa, marcasVencidas } from '../oneshot/esconderijosMarcados.mjs';
 import CamadaDeAmbientacao from '../oneshot/CamadaDeAmbientacao.jsx';
@@ -358,14 +359,11 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
      Documento único da mesa, e não um por jogador: todos têm de estar no
      MESMO relógio, senão cada tela conta um tempo e a decisão de correr
      deixa de ser a mesma decisão para todo mundo. */
-  const [cacadaDaMesa, setCacadaDaMesa] = useState(null);
-  useEffect(() => {
-    if (!ehNoite) { setCacadaDaMesa(null); return undefined; }
-    const un = liveSnapshot(docIn('config', 'cacada'),
-      snap => setCacadaDaMesa(snap.exists() ? snap.data() : null),
-      () => setCacadaDaMesa(null));
-    return () => un();
-  }, [ehNoite]);
+  /* O mesmo gancho que alimenta a faixa do alto. Duas assinaturas do
+     mesmo documento custariam duas leituras por mudança e poderiam
+     divergir por um quadro — a faixa marcando um segundo e o contador do
+     mapa outro, com a mesa olhando para os dois. */
+  const cacadaDaMesa = useCacadaDaMesa(ehNoite);
 
   /* O ESCONDERIJO.
      Quem se esconde é o jogador, na tela dele, e o resultado é sorteado

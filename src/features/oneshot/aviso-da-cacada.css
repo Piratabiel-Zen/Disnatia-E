@@ -1,0 +1,59 @@
+/* A faixa fica no alto, centrada, acima de tudo. É a única coisa do site
+   que pode cobrir o cabeçalho: quando há uma caçada correndo, ela é a
+   informação mais importante da tela, em qualquer aba. */
+.avc{
+  position:fixed;left:50%;top:10px;z-index:9400;
+  transform:translateX(-50%);
+  display:flex;align-items:center;gap:10px;
+  padding:7px 15px 7px 12px;
+  border-radius:999px;
+  background:linear-gradient(100deg,rgba(28,8,10,.96),rgba(10,6,6,.97));
+  border:1px solid rgba(138,39,48,calc(.35 + var(--avc-tensao,0) * .5));
+  box-shadow:0 6px 26px rgba(0,0,0,.6),
+             0 0 calc(10px + var(--avc-tensao,0) * 26px)
+               rgba(138,39,48,calc(var(--avc-tensao,0) * .42));
+  pointer-events:none;
+  animation:avcChega .45s ease-out;
+}
+@keyframes avcChega{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translateX(-50%)}}
+
+/* O ponto pulsa mais rápido conforme o tempo aperta — a duração sai da
+   tensão, então a faixa fica mais nervosa sozinha, sem ninguém mexer. */
+.avc-pulso{
+  width:8px;height:8px;border-radius:50%;flex:0 0 auto;
+  background:#8A2730;
+  box-shadow:0 0 8px 2px rgba(138,39,48,.8);
+  animation:avcPulsa calc(1.5s - var(--avc-tensao,0) * 0.95s) ease-in-out infinite;
+}
+@keyframes avcPulsa{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+
+.avc-relogio{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:15px;font-weight:400;letter-spacing:.06em;
+  color:#E8DCC4;
+  font-variant-numeric:tabular-nums;   /* o número não pode dançar a cada segundo */
+  text-shadow:0 0 12px rgba(138,39,48,.6);
+}
+.avc-nome{
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);
+  font-size:10.5px;font-style:italic;letter-spacing:.04em;
+  color:#9A8E84;
+  white-space:nowrap;
+}
+
+/* O CERCO conta para cima e não tem fim: fica vermelho desde o começo,
+   porque aqui esperar não é mais a saída. */
+.avc-cerco{border-color:rgba(190,42,52,.75)}
+.avc-cerco .avc-pulso{animation-duration:.7s}
+.avc-cerco .avc-relogio{color:#E8A8A8}
+
+html[data-motion="reduced"] .avc,
+html[data-motion="reduced"] .avc-pulso{animation:none}
+
+@media (max-width:900px){
+  .avc{top:6px;padding:6px 12px 6px 10px;gap:8px}
+  .avc-relogio{font-size:14px}
+  /* No celular o nome do modo some: o número é o que importa, e a faixa
+     não pode cobrir meia tela de 360px. */
+  .avc-nome{display:none}
+}

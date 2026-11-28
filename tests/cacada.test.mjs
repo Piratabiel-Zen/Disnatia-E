@@ -194,3 +194,43 @@ test('sem movimento, o relógio continua', () => {
   assert.match(css, /html\[data-motion="reduced"\] \.cac\{opacity:1\}/);
   assert.ok(!/prefers-reduced-motion/.test(css));
 });
+
+test('o relógio da caçada existe fora do mapa, em todas as abas', async () => {
+  const { readFileSync } = await import('node:fs');
+  const ler = r => readFileSync(new URL(r, import.meta.url), 'utf8');
+  const raiz = ler('../src/AuthenticatedSession.jsx');
+
+  /* O contador vivia só dentro do mapa de combate. Quem estava na ficha,
+     no mural ou nas regras não via relógio nenhum — e no celular o mapa
+     nem é carregado, então lá nunca existiu. Um relógio que metade da
+     mesa não vê não cria aperto: o aperto é coletivo ou não é aperto. */
+  assert.match(raiz, /<AvisoDaCacada cacada=\{cacada\}/,
+    'a faixa saiu da raiz da sessão e o relógio voltou a ser só do mapa');
+  assert.match(raiz, /escondido=\{tab === 'mapabatalha'\}/,
+    'a faixa ficaria em cima do contador grande, dois relógios com o mesmo número');
+  assert.match(raiz, /useCacadaDaMesa\(sistemaDe\(campaign\)\?\.id === 'oneshot'\)/,
+    'a assinatura passou a correr nas mesas que não têm caçada');
+});
+
+test('faixa e mapa leem a MESMA assinatura', async () => {
+  const { readFileSync } = await import('node:fs');
+  const mapa = readFileSync(
+    new URL('../src/features/mapa-batalha/BattleMapPage.jsx', import.meta.url), 'utf8');
+  /* Duas assinaturas do mesmo documento custariam duas leituras por
+     mudança e poderiam divergir por um quadro: a faixa marcando um
+     segundo e o contador do mapa outro, com a mesa olhando para os dois. */
+  assert.match(mapa, /const cacadaDaMesa = useCacadaDaMesa\(ehNoite\)/);
+  assert.ok(!/liveSnapshot\(docIn\('config', 'cacada'\)/.test(mapa),
+    'o mapa voltou a assinar a caçada por conta própria');
+});
+
+test('a faixa não desenha nem conta quando não há caçada', async () => {
+  const { readFileSync } = await import('node:fs');
+  const aviso = readFileSync(
+    new URL('../src/features/oneshot/AvisoDaCacada.jsx', import.meta.url), 'utf8');
+  // Ela vive em TODAS as abas: um intervalo correndo à toa seria em todas.
+  assert.match(aviso, /if \(!ativa \|\| escondido\) return undefined;/);
+  assert.match(aviso, /if \(!estado\.ativa\) return null;/);
+  // E não anuncia cada segundo: viraria metrônomo no leitor de tela.
+  assert.match(aviso, /aria-live="off"/);
+});
