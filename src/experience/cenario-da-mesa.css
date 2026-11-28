@@ -251,3 +251,9 @@ html[data-quality="light"] .cenario-mesa-chuva{display:none}
    só ocupa memória de vídeo. */
 html[data-quality="light"] .cenario-mesa-fundo,
 html[data-quality="light"] .cenario-mesa-chuva{will-change:auto}
+
+/* Palco automático: a chuva é a camada mais cara do cenário (área inteira
+   em movimento), então é a primeira a sair quando a máquina reclama. */
+html[data-palco="1"] .cenario-mesa-chuva,
+html[data-palco="2"] .cenario-mesa-chuva{ display:none; }
+html[data-palco="2"] .cenario-mesa-fundo{ will-change:auto; }

@@ -489,3 +489,32 @@ html[data-quality="light"] .atm-luzes,
 html[data-quality="light"] .atm-luzes > i{
   animation:none !important;
 }
+
+/* ===== PALCO AUTOMÁTICO =====
+   O Imersivo virou teto, não promessa: quando a tela não segura os
+   quadros, ela mesma desce de palco. Ver adventure/palcoAutomatico.mjs.
+   Aqui só sai CENOGRAFIA — a casa continua escura, continua com luz e
+   com névoa baixa, que é o que carrega informação de cena. */
+
+/* Palco 1: saem as camadas que repintam área grande a cada quadro. */
+html[data-palco="1"] .atm-poeira,
+html[data-palco="1"] .atm-nevoa-alta,
+html[data-palco="1"] .atm-sombras,
+html[data-palco="1"] .atm-passagem{ display:none; }
+
+/* Palco 2: a máquina está em apuros. Sai a mistura das camadas do
+   tamanho da tela — ler o fundo para misturar, a cada quadro, é o que
+   mais custa num vídeo integrado — e para todo o movimento. A casa fica
+   parada e um pouco mais chapada, mas fica escura, e a mesa joga. */
+html[data-palco="2"] .atm-poeira,
+html[data-palco="2"] .atm-nevoa-alta,
+html[data-palco="2"] .atm-sombras,
+html[data-palco="2"] .atm-passagem,
+html[data-palco="2"] .atm-respiro{ display:none; }
+
+html[data-palco="2"] .atm-escuridao{ mix-blend-mode:normal; }
+html[data-palco="2"] .atm-luzes{ mix-blend-mode:normal; opacity:calc(var(--atm-brilho,1) * .5); }
+
+html[data-palco="2"] .atm i,
+html[data-palco="2"] .atm-luzes,
+html[data-palco="2"] .atm-luzes > i{ animation:none !important; will-change:auto; }

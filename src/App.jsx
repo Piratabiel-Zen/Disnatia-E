@@ -23,6 +23,7 @@ import RealtimeBroadcasts from "./experience/RealtimeBroadcasts";
 import EnhancedSoundscape from "./experience/EnhancedSoundscape";
 import CosmicLivingBackground from "./experience/CosmicLivingBackground";
 import { usePerformance } from './adventure/usePerformance';
+import { usePalco } from './adventure/usePalco';
 import './adventure/adventure.css';
 
 import {
@@ -85,6 +86,10 @@ const LazyPages = Object.fromEntries(
 
 export default function App(){
   const [quality,setQuality]=usePerformance();
+  /* O Imersivo deixou de ser promessa fixa e virou teto: a tela mede os
+     próprios quadros e desce a cenografia quando a máquina não dá conta.
+     Ver adventure/palcoAutomatico.mjs. */
+  usePalco(quality);
   const [tab,setTab]=useState('session');
   const [masterMode,setMasterMode]=useState(false);
   const [atmosphere,setAtmosphere]=useState('neutro');

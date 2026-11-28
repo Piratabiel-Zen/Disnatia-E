@@ -16,6 +16,8 @@
 .g3-hotbar button:focus-visible,.g3-utility-rail button:focus-visible,.player-dock button:focus-visible,.g3-right-drawer button:focus-visible{outline:2px solid #58d9ff;outline-offset:2px}
 .game3-root .g3-right-drawer{z-index:var(--g3-z-modal,720);max-height:calc(100dvh - 100px);animation:playerPanel .18s ease-out}
 .player-comfort{display:grid;gap:18px;padding:8px;color:#d8cee3}
+/* Aviso de palco reduzido: discreto, porque é informação e não alarme. */
+.player-comfort-palco{margin:0;padding:9px 11px;border-radius:9px;border:1px solid rgba(216,180,254,.18);background:rgba(255,255,255,.03);font-size:12px;line-height:1.5;color:#b9aec6}
 .player-comfort p{font:17px/1.6 'Crimson Text',serif;margin:0;color:#bfb0cd}
 .player-comfort label{display:grid;gap:8px;font:12px 'Cinzel',serif}
 .player-comfort select{min-height:44px;background:#161022;border:1px solid #a855f74d;color:#eee;padding:8px;border-radius:8px;font-size:15px}

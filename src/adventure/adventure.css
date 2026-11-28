@@ -282,3 +282,8 @@ html[data-quality="cinematic"] .cosmic-shooting-star:nth-child(n+4){display:none
 .ad-section-head{align-items:baseline}
 .ad-section-head>h3{margin:0}
 .ad-scene-copy .ad-objective{margin-top:16px}
+
+/* Palco 2: vidro fosco é das contas mais caras para a GPU — cada um faz o
+   compositor copiar e borrar o que está atrás. Numa máquina em apuros não
+   fica nenhum, igual ao modo Leve. */
+html[data-palco="2"] *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}

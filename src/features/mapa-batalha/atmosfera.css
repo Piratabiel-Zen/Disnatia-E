@@ -373,3 +373,38 @@ html[data-away="true"] .mapa-atm *{animation-play-state:paused!important}
 .battlemap-prontos-lista small{font-size:12.5px;line-height:1.45;color:#8A7A6A}
 .battlemap-prontos-lista em{font-style:normal;font:9px 'Cinzel',Georgia,serif;letter-spacing:.1em;text-transform:uppercase;color:#E8C86B}
 @media(max-width:900px){.battlemap-prontos-lista>button{grid-template-columns:1fr}}
+
+/* Palco automático. O `vento` sai primeiro de tudo: ele pinta uma SEGUNDA
+   cópia da arte do mapa, em tamanho de tela, com três máscaras somadas —
+   num vídeo integrado é a conta mais cara da mesa, e dobra a memória de
+   textura do mapa. */
+html[data-palco="1"] .mapa-atm-vento,
+html[data-palco="1"] .mapa-atm-graos,
+html[data-palco="1"] .mapa-atm-poeira,
+html[data-palco="1"] .mapa-atm-folhas{ display:none; }
+html[data-palco="1"] .mapa-atm-areia:nth-of-type(n+3){ display:none; }
+
+html[data-palco="2"] .mapa-atm-vento,
+html[data-palco="2"] .mapa-atm-graos,
+html[data-palco="2"] .mapa-atm-poeira,
+html[data-palco="2"] .mapa-atm-folhas,
+html[data-palco="2"] .mapa-atm-areia,
+html[data-palco="2"] .mapa-atm-presenca{ display:none; }
+html[data-palco="2"] .mapa-atm *{ animation:none !important; will-change:auto; }
+
+/* MAPA APROXIMADO
+   Com zoom, tudo o que está dentro do quadro é rasterizado num tamanho
+   muito maior que a tela. A atmosfera, que no tamanho normal é barata,
+   vira a conta mais cara da mesa — e a camada de vento pinta uma segunda
+   cópia da arte inteira nesse tamanho. Quem aproximou quer ver o mapa.
+   A escuridão fica, que é informação de cena; o enfeite sai. */
+.battlemap-viewport[data-perto="sim"] .mapa-atm-vento,
+.battlemap-viewport[data-perto="sim"] .mapa-atm-graos,
+.battlemap-viewport[data-perto="sim"] .mapa-atm-poeira,
+.battlemap-viewport[data-perto="sim"] .mapa-atm-folhas,
+.battlemap-viewport[data-perto="sim"] .mapa-atm-areia,
+.battlemap-viewport[data-perto="sim"] .mapa-atm-presenca,
+.battlemap-viewport[data-perto="sim"] .atm-poeira,
+.battlemap-viewport[data-perto="sim"] .atm-nevoa-alta,
+.battlemap-viewport[data-perto="sim"] .atm-sombras{ display:none; }
+.battlemap-viewport[data-perto="sim"] .mapa-atm *{ animation:none !important; will-change:auto; }

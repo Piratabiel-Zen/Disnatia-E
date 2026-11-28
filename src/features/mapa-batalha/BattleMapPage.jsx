@@ -2363,7 +2363,14 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
       {!loaded && <div style={{ textAlign: 'center', color: '#5A5070', fontFamily: 'Cinzel,serif', fontSize: 13, padding: 40 }}>Carregando o campo de batalha...</div>}
 
       {loaded && (
-        <div className="battlemap-viewport" style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#04060F' }}>
+        /* `data-perto` marca o mapa aproximado. Com zoom, a arte é
+           rasterizada num tamanho muito maior que a tela, e as camadas de
+           atmosfera vão junto — inclusive a do vento, que guarda uma
+           SEGUNDA cópia da mesma arte. Era isso que travava a mesa de quem
+           tem vídeo integrado na hora de aproximar. Perto, quem está
+           olhando quer o detalhe do mapa, não a poeira por cima dele.
+           Ver atmosfera.css. */
+        <div className="battlemap-viewport" data-perto={zoom > 1.25 ? 'sim' : undefined} style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,25,60,0.25)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)', background: '#04060F' }}>
           {currentMap?.img&&(!masterMode||mapScreen.expanded)&&<button type="button" className="battlemap-screen-button" aria-pressed={mapScreen.expanded} onClick={mapScreen.toggle}>{mapScreen.expanded?'Sair da tela cheia':'Preencher tela completa'}</button>}
           {mapScreen.notice&&<div className="battlemap-screen-notice" role="status">{mapScreen.notice}</div>}
 

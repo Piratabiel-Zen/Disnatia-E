@@ -5,6 +5,7 @@
 // mapa por baixo. É isto que precisa correr liso no PC do Gabriel e no
 // notebook do primo.
 import { createRoot } from 'react-dom/client';
+import { usePalco } from '../../src/adventure/usePalco';
 import '../../src/experience/cenario-da-mesa.css';
 import '../../src/features/oneshot/atmosfera-da-casa.css';
 import '../../src/features/oneshot/camada-de-ambientacao.css';
@@ -64,4 +65,12 @@ document.documentElement.dataset.temaMesa = 'mortalha';
 if (new URLSearchParams(location.search).get('leve')) {
   document.documentElement.dataset.quality = 'light';
 }
-createRoot(document.getElementById('root')).render(<Cena />);
+/* Com `?palco=auto` a mesma cena pesada roda sob o regulador: é assim
+   que tests/browser/palco.cjs prova que ele percebe a máquina sofrendo.
+   Sem isso a bancada media uma tela vazia, que nunca engasga. */
+const Regulada = ({ children }) => { usePalco('cinematic'); return children; };
+const comRegulador = no =>
+  new URLSearchParams(location.search).get('palco') === 'auto'
+    ? <Regulada>{no}</Regulada> : no;
+
+createRoot(document.getElementById('root')).render(comRegulador(<Cena />));
