@@ -52,6 +52,16 @@ export default function FichasOneShotPage({ playerSheetId = '' }) {
   };
 
   const entregar = async (ficha, uid) => salvar({ ...ficha, dono: uid });
+
+  /* Quem já tem ficha vai para o fim da lista, com a marca. Sem isso o
+     Mestre rola a lista inteira procurando quem ainda falta, que é o que
+     ele está fazendo nove em cada dez vezes que abre isto. */
+  const donos = new Set(fichas.map(f => String(f.dono || '')).filter(Boolean));
+  const membrosOrdenados = [...(campanha?.membros || [])]
+    .map(m => ({ ...m, jaTem: donos.has(String(m.uid)) }))
+    .sort((a, b) => (a.jaTem - b.jaTem)
+      || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+  const semEmail = membrosOrdenados.filter(m => !m.email).length;
   const remover = async id => {
     if (!confirm('Apagar esta ficha? Não dá para desfazer.')) return;
     if (String(abertaId) === String(id)) setAbertaId(null);
@@ -136,11 +146,22 @@ export default function FichasOneShotPage({ playerSheetId = '' }) {
                 onChange={e => entregar(aberta, e.target.value)}
               >
                 <option value="">Ninguém ainda</option>
-                {(campanha?.membros || []).map(m => (
-                  <option key={m.uid} value={m.uid}>{m.nome || m.uid}</option>
+                {/* Nome E e-mail. Só o nome não basta: numa mesa de primos
+                    aparecem dois "Gabriel" e um "gabriel", e o uid não diz
+                    nada a ninguém. O e-mail é o que o Mestre combinou. */}
+                {membrosOrdenados.map(m => (
+                  <option key={m.uid} value={m.uid}>
+                    {m.jaTem ? '• ' : ''}{m.nome || 'sem nome'}
+                    {m.email ? ` — ${m.email}` : ''}
+                  </option>
                 ))}
               </select>
-              <em>Quem recebe passa a ser o único, além de você, que abre esta ficha.</em>
+              <em>
+                Quem recebe passa a ser o único, além de você, que abre esta ficha.
+                {semEmail > 0 && ` ${semEmail === 1
+                  ? 'Uma pessoa ainda aparece sem e-mail — ele chega quando ela entrar na mesa de novo.'
+                  : `${semEmail} pessoas ainda aparecem sem e-mail — ele chega quando elas entrarem na mesa de novo.`}`}
+              </em>
             </label>
           )}
           <FichaOneShot

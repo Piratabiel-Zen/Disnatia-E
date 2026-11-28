@@ -183,6 +183,17 @@ export async function entrarNaMesa({ campanhaId, senha, senhaHash, papel = 'joga
     await setDoc(membroRef(campanhaId, usuario.uid), {
       uid: usuario.uid,
       nome: String(nome || usuario.displayName || usuario.email || '').trim(),
+      /* O E-MAIL VAI JUNTO porque é o único identificador que o Mestre
+         reconhece de fora. Numa mesa de primos o `nome` costuma ser
+         "Gabriel", "gabriel" e "Biel" para a mesma pessoa, e o uid não
+         diz nada a ninguém — na hora de entregar a ficha certa, o que
+         ele sabe é o e-mail que combinou.
+
+         Fica legível pelos outros membros, como o resto do documento.
+         Numa mesa de gente que se conhece isso não é problema; numa mesa
+         de desconhecidos seria, e aí a entrega teria de passar por um
+         documento que só o Mestre lê. */
+      email: String(usuario.email || '').trim().toLowerCase(),
       papel: normalizarPapel(papel),
       // O resumo vai junto porque é com ele que as regras conferem a senha no
       // servidor. É o que torna o papel real em vez de um interruptor de tela.
