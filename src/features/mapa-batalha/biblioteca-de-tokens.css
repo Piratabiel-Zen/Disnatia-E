@@ -123,3 +123,42 @@ li[data-marcado="sim"] .bib-marca{
 }
 .bib-colocar:hover:not(:disabled){background:color-mix(in srgb,var(--contraste-mesa,#A855F7) 34%,transparent)}
 .bib-colocar:disabled{opacity:.4;cursor:default;border-color:rgba(255,255,255,.12);background:transparent;color:#5A5070}
+
+/* ───────── OS PERSONAGENS QUE ANDAM ─────────
+   Só aparecem na mesa de terror: é lá que os sprites existem. */
+.bib-sprites{
+  padding:10px 12px 12px;
+  border-bottom:1px solid var(--mor-latao-fraco,rgba(176,138,83,.2));
+}
+.bib-sprites h4{
+  margin:0 0 8px;font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+  font-weight:400;color:var(--mor-latao,#B08A53);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.bib-sprite-fila{display:flex;gap:7px;flex-wrap:wrap}
+.bib-sprite{
+  display:grid;justify-items:center;gap:4px;
+  padding:7px 6px 6px;border-radius:4px;cursor:pointer;
+  background:rgba(10,8,7,.72);
+  border:1px solid var(--mor-latao-fraco,rgba(176,138,83,.24));
+  min-width:64px;
+}
+.bib-sprite:hover{border-color:var(--mor-latao,#B08A53);background:rgba(96,25,29,.26)}
+.bib-sprite-arte{
+  display:block;width:34px;
+  background-repeat:no-repeat;
+  /* O mesmo pixel duro do mapa: a miniatura tem de parecer o que vai
+     aparecer lá, senão o Mestre escolhe por uma imagem e recebe outra. */
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+.bib-sprite b{
+  font-weight:400;font-size:9.5px;letter-spacing:.04em;text-align:center;
+  color:var(--mor-pergaminho,#D8C5A4);
+  font-family:var(--mor-letra,'IM Fell English SC',Georgia,serif);
+}
+.bib-sprite-nota{
+  margin:9px 0 0;font-size:10px;line-height:1.45;font-style:italic;
+  color:var(--mor-cinza,#77716D);
+  font-family:var(--mor-corpo,'IM Fell English',Georgia,serif);
+}

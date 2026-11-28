@@ -1,0 +1,19 @@
+/* O quadro do sprite dentro do token. */
+.tksp{
+  display:block;
+  background-repeat:no-repeat;
+  pointer-events:none;
+  user-select:none;
+  /* PIXEL DURO. Sem isto o navegador suaviza ao ampliar e a arte 8 bits
+     vira borrão — é a diferença entre sprite e foto desfocada. */
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  /* O personagem fica em pé SOBRE o ponto do token, não centrado nele:
+     os pés marcam onde ele está no mapa, que é como se lê um mapa de
+     cima. Centrado, ele pareceria flutuando meio passo à frente. */
+  position:absolute;
+  left:50%;bottom:0;
+  transform:translateX(-50%);
+  /* Uma sombra curta no chão para ele não parecer recortado e colado. */
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.65));
+}

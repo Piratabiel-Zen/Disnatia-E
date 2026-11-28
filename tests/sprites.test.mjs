@@ -1,0 +1,136 @@
+/**
+ * OS SPRITES DE CAMINHADA
+ *
+ * O que estes testes seguram é a aritmética do recorte, que é onde
+ * sprite em CSS costuma errar sem ninguém ver — o último quadro sai pela
+ * metade e a caminhada ganha um soluço que se atribui à "animação".
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, statSync } from 'node:fs';
+import {
+  SPRITES, DIRECOES, QUADROS_POR_SEGUNDO, spriteDe, linhaDaDirecao,
+  direcaoDoMovimento, recorteDoQuadro, quadroNoTempo, QUADRO_PARADO,
+} from '../src/features/oneshot/sprites.mjs';
+
+const RAIZ = new URL('../', import.meta.url).pathname;
+
+test('os cinco personagens existem em disco e têm célula própria', () => {
+  assert.equal(SPRITES.length, 5);
+  for (const s of SPRITES) {
+    const caminho = `${RAIZ}public${s.arquivo}`;
+    assert.ok(existsSync(caminho), `falta a folha de ${s.nome}`);
+    assert.ok(statSync(caminho).size > 10 * 1024, `${s.nome} está pequena demais`);
+    assert.ok(s.quadros >= 2, `${s.nome} sem quadros de caminhada`);
+    assert.ok(s.largura > 0 && s.altura > 0);
+  }
+  assert.equal(new Set(SPRITES.map(s => s.id)).size, 5, 'dois sprites com o mesmo id');
+});
+
+test('toda folha cobre as quatro direções', () => {
+  for (const s of SPRITES) {
+    const ordem = s.ordem || DIRECOES;
+    for (const d of DIRECOES) {
+      assert.ok(ordem.includes(d), `${s.nome} não tem ${d}`);
+    }
+    assert.equal(ordem.length, 4, `${s.nome} com número estranho de linhas`);
+  }
+});
+
+test('a segunda linha das folhas é a ESQUERDA', () => {
+  /* Medido olhando as cinco renderizadas, não suposto. Eu tinha escrito
+     'direita' na primeira tentativa e cada personagem andaria de costas
+     para onde estava indo — o tipo de erro que nenhum teste pega e que
+     só aparece quando alguém arrasta o token na mesa. */
+  assert.deepEqual(DIRECOES, ['frente', 'esquerda', 'direita', 'costas']);
+  for (const s of SPRITES.filter(x => !x.ordem)) {
+    assert.equal(linhaDaDirecao(s, 'esquerda'), 1, `${s.nome} com os lados trocados`);
+    assert.equal(linhaDaDirecao(s, 'direita'), 2, `${s.nome} com os lados trocados`);
+  }
+});
+
+test('o Sakuta tem a ordem trocada, e isso está escrito', () => {
+  // A folha dele veio frente, lado, COSTAS, lado. Remontar a imagem
+  // perderia qualidade de novo; a ordem fica como dado.
+  const s = spriteDe('sakuta');
+  assert.deepEqual(s.ordem, ['frente', 'esquerda', 'costas', 'direita']);
+  assert.equal(linhaDaDirecao(s, 'costas'), 2);
+  assert.equal(linhaDaDirecao(spriteDe('sakai'), 'costas'), 3);
+});
+
+test('o último quadro não sai pela metade', () => {
+  /* Em porcentagem, N posições se dividem por N−1: 0% é a primeira e
+     100% é a última. Dividir por N é o erro clássico — o último quadro
+     fica cortado e a caminhada soluça uma vez por ciclo. */
+  for (const s of SPRITES) {
+    const primeiro = recorteDoQuadro(s, 'frente', 0);
+    const ultimo = recorteDoQuadro(s, 'frente', s.quadros - 1);
+    assert.equal(primeiro.x, 0, `${s.nome}: o primeiro quadro não começa em 0`);
+    assert.equal(ultimo.x, 100, `${s.nome}: o último quadro não termina em 100`);
+    assert.equal(ultimo.tamanho, `${s.quadros * 100}% 400%`);
+  }
+});
+
+test('o quadro dá a volta em vez de estourar', () => {
+  const s = spriteDe('sakai');
+  assert.equal(recorteDoQuadro(s, 'frente', s.quadros).x, 0, 'não voltou ao início');
+  assert.equal(recorteDoQuadro(s, 'frente', -1).x, 100, 'quadro negativo quebrou');
+});
+
+test('a direção sai do movimento, com a horizontal desempatando', () => {
+  assert.equal(direcaoDoMovimento(10, 1), 'direita');
+  assert.equal(direcaoDoMovimento(-10, 1), 'esquerda');
+  assert.equal(direcaoDoMovimento(1, 10), 'frente');
+  assert.equal(direcaoDoMovimento(1, -10), 'costas');
+  /* Na diagonal exata, segura o que já estava. Sem isso o sprite piscaria
+     entre o lado e a frente a cada pixel de arrasto. */
+  assert.equal(direcaoDoMovimento(5, 5, 'direita'), 'direita');
+  assert.equal(direcaoDoMovimento(5, 5, 'costas'), 'costas');
+  // Parado não vira à toa.
+  assert.equal(direcaoDoMovimento(0, 0, 'esquerda'), 'esquerda');
+  assert.equal(direcaoDoMovimento(.1, -.2, 'costas'), 'costas');
+});
+
+test('espelhar troca os lados e não mexe em frente e costas', () => {
+  const s = spriteDe('lee');
+  const dir = recorteDoQuadro(s, 'direita', 0);
+  const esq = recorteDoQuadro(s, 'esquerda', 0);
+  assert.equal(recorteDoQuadro(s, 'direita', 0, true).y, esq.y);
+  assert.equal(recorteDoQuadro(s, 'esquerda', 0, true).y, dir.y);
+  for (const d of ['frente', 'costas']) {
+    assert.equal(recorteDoQuadro(s, d, 0, true).y, recorteDoQuadro(s, d, 0).y);
+  }
+});
+
+test('a caminhada tem o passo de 8 bits, não de slide show', () => {
+  assert.equal(QUADROS_POR_SEGUNDO, 6);
+  assert.equal(quadroNoTempo(0, 4), 0);
+  assert.equal(quadroNoTempo(1000, 4), 2, 'seis quadros em um segundo, com 4 na volta');
+  assert.equal(QUADRO_PARADO, 0, 'o quadro de repouso devia ser o primeiro');
+});
+
+test('sprite que não existe não derruba o mapa', () => {
+  assert.equal(spriteDe('ninguem'), null);
+  assert.equal(spriteDe(''), null);
+  assert.equal(recorteDoQuadro(null, 'frente', 0), null);
+});
+
+test('o token desenha sprite antes de foto, e anda ao ser arrastado', async () => {
+  const { readFileSync } = await import('node:fs');
+  const mapa = readFileSync(`${RAIZ}src/features/mapa-batalha/BattleMapPage.jsx`, 'utf8');
+  assert.match(mapa, /\{token\.sprite\s*\n/, 'o sprite deixou de ter prioridade sobre a foto');
+  assert.match(mapa, /andando=\{draggingId === token\.id\}/,
+    'a caminhada deixou de seguir o arrasto');
+  // E o campo sobrevive ao colocar da biblioteca.
+  assert.match(mapa, /sprite: tpl\.sprite \|\| ''/);
+});
+
+test('o sprite é desenhado com pixel duro', async () => {
+  const { readFileSync } = await import('node:fs');
+  for (const f of ['src/features/oneshot/token-sprite.css',
+    'src/features/mapa-batalha/biblioteca-de-tokens.css']) {
+    const css = readFileSync(RAIZ + f, 'utf8');
+    assert.match(css, /image-rendering:pixelated/,
+      `${f}: sem pixel duro a arte 8 bits vira borrão ao ampliar`);
+  }
+});

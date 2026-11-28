@@ -38,6 +38,7 @@ import Esconderijo from '../oneshot/Esconderijo.jsx';
 import { chanceDePassar } from '../oneshot/esconderijo.mjs';
 import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
 import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
+import TokenSprite from '../oneshot/TokenSprite.jsx';
 import MarcasDeEsconderijo from '../oneshot/MarcasDeEsconderijo.jsx';
 import { marcaNova, marcasDoMapa, marcasVencidas } from '../oneshot/esconderijosMarcados.mjs';
 import CamadaDeAmbientacao from '../oneshot/CamadaDeAmbientacao.jsx';
@@ -1774,6 +1775,8 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
         hp: tpl.hp || 0, maxHp: tpl.maxHp || tpl.hp || 0,
         sheetId: tpl.sheetId || '', enemyId: tpl.enemyId || '',
         controllerSheetId: tpl.controllerSheetId || tpl.sheetId || '',
+        // A folha de caminhada, quando o token vem dos personagens 8 bits.
+        sprite: tpl.sprite || '', spriteEspelhado: Boolean(tpl.spriteEspelhado),
       });
     });
     const tokens = [...(mapTokensRef.current[mapId] || currentMap.tokens || []), ...novos];
@@ -2524,6 +2527,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
             <BibliotecaDeTokens
               tokens={tokenLibrary}
               fichas={sheets}
+              comSprites={ehNoite}
               aoColocar={addLibraryTokens}
               aoExcluir={deleteLibraryToken}
               aoFechar={() => setShowTokenLibrary(false)}
@@ -2741,7 +2745,19 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
                      }}>
                       {(controller||claimingToken===String(token.id))&&<span className="token-collaborator">{controller?controller+' movimentando':'Obtendo controle'}</span>}
                         {isSelected && <CosmicSelectionRing color={info.color} radius="56%" dotSize={Math.max(3, Math.min(5, dispSize * .055))} />}
-                        {token.foto
+                        {token.sprite
+                          /* SPRITE ANTES DA FOTO. Quem tem folha de
+                             caminhada anda; quem não tem continua sendo o
+                             retrato redondo de sempre, que é o que as
+                             outras duas mesas usam. */
+                          ? <TokenSprite
+                              spriteId={token.sprite}
+                              x={Number(token.x) || 0}
+                              y={Number(token.y) || 0}
+                              andando={draggingId === token.id}
+                              trocarLados={Boolean(token.spriteEspelhado)}
+                              tamanho={dispSize} />
+                          : token.foto
                           ? <img src={token.foto} alt="" draggable={false} style={{
                               width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none', userSelect: 'none',
                               transform: `rotate(${Number(token.rotation || 0)}deg) rotateY(${token.flipped ? 180 : 0}deg)`, transformOrigin: '50% 50%',

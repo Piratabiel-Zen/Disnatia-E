@@ -1,3 +1,4 @@
+import { SPRITES, recorteDoQuadro, spriteDe } from '../oneshot/sprites.mjs';
 import { useMemo, useState } from 'react';
 import './biblioteca-de-tokens.css';
 import { useBuscaAdiada } from '../../core/useBuscaAdiada';
@@ -33,6 +34,7 @@ const BUSCA_A_PARTIR_DE = 8;
 
 export default function BibliotecaDeTokens({
   tokens = [], fichas = [], aoColocar, aoExcluir, aoFechar, aoCriarNovo,
+  comSprites = false,
 }) {
   const [busca, setBusca] = useState('');
   // O filtro espera o dedo parar; a letra no campo, não.
@@ -74,6 +76,37 @@ export default function BibliotecaDeTokens({
         <span>Biblioteca de tokens</span>
         <button type="button" onClick={aoFechar} title="Fechar">✕</button>
       </header>
+
+      {/* OS PERSONAGENS QUE ANDAM, antes da lista de sempre.
+          Ficam em cima porque são a escolha mais provável numa mesa de
+          terror: são os primos. Os tokens salvos à mão vêm depois. */}
+      {comSprites && (
+        <section className="bib-sprites">
+          <h4>Personagens</h4>
+          <div className="bib-sprite-fila">
+            {SPRITES.map(sp => (
+              <button key={sp.id} type="button" className="bib-sprite"
+                title={`Pôr ${sp.nome} no mapa`}
+                onClick={() => aoColocar?.([{ nome: sp.nome, sprite: sp.id, tipo: 'jogador', size: 84 }])}>
+                <span className="bib-sprite-arte" style={(() => {
+                  const r = recorteDoQuadro(spriteDe(sp.id), 'frente', 0);
+                  return {
+                    backgroundImage: `url(${sp.arquivo})`,
+                    backgroundSize: r.tamanho,
+                    backgroundPosition: `${r.x}% ${r.y}%`,
+                    aspectRatio: `${sp.largura} / ${sp.altura}`,
+                  };
+                })()} />
+                <b>{sp.nome}</b>
+              </button>
+            ))}
+          </div>
+          <p className="bib-sprite-nota">
+            Depois de pôr no mapa, ligue a uma ficha: quem tem a ficha
+            passa a mover o token.
+          </p>
+        </section>
+      )}
 
       {tokens.length >= BUSCA_A_PARTIR_DE && (
         <input
