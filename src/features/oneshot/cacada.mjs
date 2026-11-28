@@ -71,8 +71,17 @@ export function cacadaParaComecar({
  * encenação consome: ela não cresce em linha reta, cresce ao quadrado, para
  * que os últimos segundos pesem muito mais que os primeiros — que é como o
  * tempo passa quando alguém está correndo atrás de você.
+ *
+ * `desvio` é quanto o relógio DESTE aparelho está adiantado em relação ao
+ * de quem soltou a caçada, em milissegundos. Existe porque `comecouEm` é o
+ * `Date.now()` do Mestre, e comparar isso com o relógio de outro aparelho
+ * era o defeito que tirava o contador da tela da mesa: um celular 25
+ * segundos adiantado, numa caçada de 20, calculava que o tempo já tinha
+ * acabado e não mostrava NADA — o Mestre com a caçada correndo e os primos
+ * sem relógio. Quem lê mede o próprio desvio ao ver a caçada começar
+ * (useCacadaDaMesa) e desconta aqui.
  */
-export function estadoDaCacada(doc, { agora = Date.now(), mapaAtual = '' } = {}) {
+export function estadoDaCacada(doc, { agora = Date.now(), mapaAtual = '', desvio = 0 } = {}) {
   const parada = Object.freeze({ ativa: false, restante: 0, fracao: 0, tensao: 0, escapou: false });
   if (!doc?.ativa) return parada;
 
@@ -87,7 +96,7 @@ export function estadoDaCacada(doc, { agora = Date.now(), mapaAtual = '' } = {})
   }
 
   const total = entre(inteiro(doc.segundos, SEGUNDOS_PADRAO), SEGUNDOS_MINIMO, SEGUNDOS_MAXIMO);
-  const decorrido = (inteiro(agora, Date.now()) - inteiro(doc.comecouEm, 0)) / 1000;
+  const decorrido = (inteiro(agora, Date.now()) - inteiro(desvio, 0) - inteiro(doc.comecouEm, 0)) / 1000;
 
   // O Cerco não tem fim próprio: o relógio dele conta PARA CIMA e nunca
   // chega a zero, porque esperar não é mais a saída.

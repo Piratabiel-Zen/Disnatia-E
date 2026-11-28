@@ -22,6 +22,8 @@
  *    Mestre escolhe pela cena, não pelo susto.
  */
 
+import { inicioLocalDoAviso } from '../../core/horaDoAviso.mjs';
+
 export const INTENSIDADES = Object.freeze([
   {
     id: 'vulto', nome: 'Vulto', ordem: 1,
@@ -116,7 +118,11 @@ export function assombracaoEhMinha(aviso, uid) {
 export function estagioDaAssombracao(aviso, agora = Date.now()) {
   if (!aviso) return null;
   const total = duracaoPorId(aviso.duracao).ms;
-  const decorrido = agora - Number(aviso.comecouEm || 0);
+  /* Do relógio DESTA tela até a chegada do aviso — nunca contra o
+     carimbo de quem disparou, que é outro relógio. Ver
+     core/horaDoAviso.mjs: era isto que fazia o efeito simplesmente
+     não acontecer na máquina dos outros. */
+  const decorrido = agora - inicioLocalDoAviso(aviso);
   if (decorrido < 0 || decorrido >= total) return null;
 
   const entrada = Math.min(1400, total * 0.42);
@@ -154,5 +160,11 @@ export function estagioDaAssombracao(aviso, agora = Date.now()) {
  * estraga a cena que todos já viveram. Só entra o que começou agora.
  */
 export const AVISO_VELHO_MS = 1500;
+/* Vale pela CHEGADA, não pelo carimbo de origem. Com o relógio do
+   aparelho dois segundos adiantado, a conta antiga descartava tudo o
+   que o Mestre mandava. Quem chega atrasado continua de fora, mas por
+   outro caminho: o canal ao vivo ignora o valor que já estava lá ao
+   assinar (o `primed` em core/liveChannel.js), então avisos antigos
+   nem chegam a ser entregues. */
 export const avisoAindaVale = (aviso, agora = Date.now()) =>
-  Boolean(aviso) && agora - Number(aviso.comecouEm || 0) <= AVISO_VELHO_MS;
+  Boolean(aviso) && agora - inicioLocalDoAviso(aviso) <= AVISO_VELHO_MS;

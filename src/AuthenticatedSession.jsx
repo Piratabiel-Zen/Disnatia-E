@@ -62,7 +62,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
      para quem estava com o mapa aberto — no celular, onde o mapa nem é
      carregado, nunca existia. Um relógio que metade da mesa não vê não
      cria aperto nenhum. */
-  const cacada = useCacadaDaMesa(sistemaDe(campaign)?.id === 'oneshot');
+  const { cacada, desvio: desvioDaCacada } = useCacadaDaMesa(sistemaDe(campaign)?.id === 'oneshot');
 
   /* O botão "Leve" sempre escreveu `data-quality` na raiz (ver
      usePerformance): o que faltava era CSS desta mesa lendo esse sinal. O
@@ -87,7 +87,7 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
       {temNevoa && <Assombracao uid={access?.uid || ''} />}
       {/* No mapa a faixa some: lá o contador grande já está em cena, e
           dois relógios com o mesmo número é pior que nenhum. */}
-      <AvisoDaCacada cacada={cacada} escondido={tab === 'mapabatalha'} />
+      <AvisoDaCacada cacada={cacada} desvio={desvioDaCacada} escondido={tab === 'mapabatalha'} />
       <div className={`adventure-shell access-${access.role} realtime-sync-enabled`} style={{height:'100vh',overflow:'hidden',background:atm.bg,color:'var(--ink-mesa,#C8B8A0)',fontFamily:"'Crimson Text',Georgia,serif",position:'relative',transition:'background 1.2s'}}>
         {/* A parede da mesa vem antes de tudo e o céu cósmico some onde ela
             existe: duas paisagens sobrepostas não é clima, é sujeira. */}

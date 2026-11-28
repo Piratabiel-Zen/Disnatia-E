@@ -3,7 +3,13 @@
 html[data-quality="light"] .cosmic-bright-stars,html[data-quality="light"] .cosmic-shooting-stars,html[data-quality="light"] .cosmic-lite-vortex,html[data-quality="light"] .cosmic-unified-starfield,html[data-quality="light"] .g3-environment{display:none!important}
 html[data-quality="light"] .cosmic-lite-nebula,html[data-quality="light"] .cosmic-lite-stars{animation:none!important;filter:none!important}
 html[data-away="true"] *,html[data-away="true"] *::before,html[data-away="true"] *::after{animation-play-state:paused!important}
-html[data-quality="light"] .game3-root *,html[data-quality="light"] .grim-nav{backdrop-filter:none!important}
+/* Vidro fosco (`backdrop-filter`) é das coisas mais caras que existem para
+   a GPU: cada elemento com ele faz o compositor copiar e borrar o que
+   está atrás, de novo, a cada quadro em que aquilo muda — e atrás, na
+   mesa, costuma haver cenário se mexendo. A lista antiga deixava alguns
+   de fora (barra do mestre, trilho de utilidades, carta de contexto).
+   No Leve não fica nenhum. */
+html[data-quality="light"] *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 html[data-quality="light"] .g3-portrait,html[data-quality="light"] .g3-hud-orb,html[data-quality="light"] .g3-mode-chip{animation:none!important}
 .adventure-shell{--g3-purple:var(--ad-gold);--g3-panel:#121619;--g3-panel-strong:#0d1114;--g3-line:#514832;--g3-text:var(--ad-text);--g3-muted:#aaa18e;color:var(--ad-text)!important}
 .adventure-shell .grim-nav{background:#0b1013!important;border-right:1px solid #504630!important}

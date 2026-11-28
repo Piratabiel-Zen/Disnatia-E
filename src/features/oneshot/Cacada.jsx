@@ -22,7 +22,7 @@ import './cacada.css';
 const RAIO = 34;
 const VOLTA = 2 * Math.PI * RAIO;
 
-export default function Cacada({ cacada, mapaAtual, aoEscapar, mestre = false }) {
+export default function Cacada({ cacada, desvio = 0, mapaAtual, aoEscapar, mestre = false }) {
   const [agora, setAgora] = useState(() => Date.now());
   const avisou = useRef(false);
 
@@ -30,11 +30,14 @@ export default function Cacada({ cacada, mapaAtual, aoEscapar, mestre = false })
   // cada 100ms é barato e já parece contínuo.
   useEffect(() => {
     if (!cacada?.ativa) return undefined;
+    setAgora(Date.now());   /* o capturado na montagem já está velho */
     const t = setInterval(() => setAgora(Date.now()), 100);
     return () => clearInterval(t);
   }, [cacada?.ativa]);
 
-  const estado = estadoDaCacada(cacada, { agora, mapaAtual });
+  /* `desvio`: o relógio deste aparelho em relação ao de quem soltou a
+     caçada. Ver useCacadaDaMesa. */
+  const estado = estadoDaCacada(cacada, { agora, mapaAtual, desvio });
   const modo = modoDaCacada(cacada?.modo);
 
   /* Quem encerra no banco é o Mestre — se cada jogador escrevesse ao ver o

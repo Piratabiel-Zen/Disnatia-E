@@ -39,15 +39,60 @@ test('toda folha cobre as quatro direções', () => {
   }
 });
 
-test('a segunda linha das folhas é a ESQUERDA', () => {
-  /* Medido olhando as cinco renderizadas, não suposto. Eu tinha escrito
-     'direita' na primeira tentativa e cada personagem andaria de costas
-     para onde estava indo — o tipo de erro que nenhum teste pega e que
-     só aparece quando alguém arrasta o token na mesa. */
-  assert.deepEqual(DIRECOES, ['frente', 'esquerda', 'direita', 'costas']);
+test('a segunda linha das folhas é a DIREITA', () => {
+  /* COMO ISTO FOI CONFERIDO — e como conferir de novo antes de mexer:
+     recorte o primeiro quadro de cada linha da folha (ela tem 512px de
+     altura, quatro linhas de 128), amplie umas quatro vezes sem
+     suavizar, e veja de que lado está o rosto. Na linha 1 o rosto olha
+     para a direita do quadro; na 2, para a esquerda.
+
+     Eu errei isto DUAS vezes, uma em cada sentido, e das duas o teste
+     passou: ele só repetia o que eu tinha escrito no catálogo. O
+     sintoma na mesa é o boneco andando de costas para onde vai, e foi
+     o Gabriel quem viu, não o teste. */
+  assert.deepEqual(DIRECOES, ['frente', 'direita', 'esquerda', 'costas']);
   for (const s of SPRITES.filter(x => !x.ordem)) {
-    assert.equal(linhaDaDirecao(s, 'esquerda'), 1, `${s.nome} com os lados trocados`);
-    assert.equal(linhaDaDirecao(s, 'direita'), 2, `${s.nome} com os lados trocados`);
+    assert.equal(linhaDaDirecao(s, 'direita'), 1, `${s.nome} com os lados trocados`);
+    assert.equal(linhaDaDirecao(s, 'esquerda'), 2, `${s.nome} com os lados trocados`);
+  }
+});
+
+test('as duas linhas de perfil são uma o espelho da outra', async () => {
+  /* Não diz QUAL é qual — isso é a olho, acima. Diz que são um par: se
+     alguém trocar uma linha da folha por outra pose, ou recortar a folha
+     torto, o par deixa de bater e este teste cai antes da mesa. */
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  for (const s of SPRITES) {
+    const caminho = new URL(`../public${s.arquivo}`, import.meta.url).pathname;
+    assert.ok(existsSync(caminho), `folha de ${s.nome} sumiu`);
+    void readFileSync;
+    const ordem = s.ordem || DIRECOES;
+    const linhaD = ordem.indexOf('direita');
+    const linhaE = ordem.indexOf('esquerda');
+    const script = `
+import sys
+from PIL import Image, ImageChops
+im = Image.open(sys.argv[1]).convert('RGBA')
+L = im.width / ${s.quadros}
+a = im.crop((0, ${linhaD} * 128, int(L), ${linhaD} * 128 + 128))
+b = im.crop((0, ${linhaE} * 128, int(L), ${linhaE} * 128 + 128)).transpose(Image.FLIP_LEFT_RIGHT)
+# Compara só a silhueta: a arte espelhada não é idêntica pixel a pixel
+# (cabelo, alças, o que a mão segura), mas o contorno tem de bater.
+sa = a.split()[3].point(lambda v: 255 if v > 40 else 0)
+sb = b.split()[3].point(lambda v: 255 if v > 40 else 0)
+dif = ImageChops.difference(sa, sb)
+print(sum(1 for p in dif.getdata() if p > 0) / (sa.width * sa.height))
+`;
+    let fora;
+    try {
+      fora = execFileSync('python3', ['-c', script, caminho], { encoding: 'utf8' });
+    } catch (erro) {
+      void erro;   // sem Pillow na máquina: o teste a olho acima continua valendo
+      return;
+    }
+    assert.ok(Number(fora) < 0.3,
+      `em ${s.nome} as linhas de perfil não são espelho uma da outra (${Number(fora).toFixed(2)} de silhueta diferente)`);
   }
 });
 
@@ -55,7 +100,7 @@ test('o Sakuta tem a ordem trocada, e isso está escrito', () => {
   // A folha dele veio frente, lado, COSTAS, lado. Remontar a imagem
   // perderia qualidade de novo; a ordem fica como dado.
   const s = spriteDe('sakuta');
-  assert.deepEqual(s.ordem, ['frente', 'esquerda', 'costas', 'direita']);
+  assert.deepEqual(s.ordem, ['frente', 'direita', 'costas', 'esquerda']);
   assert.equal(linhaDaDirecao(s, 'costas'), 2);
   assert.equal(linhaDaDirecao(spriteDe('sakai'), 'costas'), 3);
 });

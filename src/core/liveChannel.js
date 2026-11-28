@@ -3,6 +3,8 @@
 // sendo a memória: posição final, fichas, mapas. Este módulo carrega o SDK do
 // Realtime Database sob demanda e cai no caminho antigo (Firestore) quando o
 // banco não responde, para que a mesa nunca fique sem movimento.
+import { carimbarChegada } from './horaDoAviso.mjs';
+
 const DEFAULT_URL = 'https://dinastia-e-a4b28-default-rtdb.firebaseio.com';
 export const LIVE_DB_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_RTDB_URL) || DEFAULT_URL;
 const CONNECT_TIMEOUT_MS = 4000;
@@ -126,7 +128,9 @@ export function subscribePing(cb) {
     let primed = false;
     stop = sdk.onValue(sdk.ref(database, 'live/ping'), snap => {
       const value = snap.val();
-      if (primed && value) cb(value);
+      /* Carimba a hora de CHEGADA, no relógio de quem recebe: é dela que
+       sai a duração do efeito. Ver core/horaDoAviso.mjs. */
+      if (primed && value) cb(carimbarChegada(value));
       primed = true;
     }, error => console.warn('Canal vivo de pings indisponível:', error));
   });
@@ -159,7 +163,9 @@ export function assinarAssombracao(cb) {
     let primed = false;
     stop = sdk.onValue(sdk.ref(database, 'live/assombracao'), snap => {
       const value = snap.val();
-      if (primed && value) cb(value);
+      /* Carimba a hora de CHEGADA, no relógio de quem recebe: é dela que
+       sai a duração do efeito. Ver core/horaDoAviso.mjs. */
+      if (primed && value) cb(carimbarChegada(value));
       primed = true;
     }, error => console.warn('Canal vivo de assombrações indisponível:', error));
   });
@@ -190,7 +196,9 @@ export function assinarVulto(cb) {
     let primed = false;
     stop = sdk.onValue(sdk.ref(database, 'live/vulto'), snap => {
       const value = snap.val();
-      if (primed && value) cb(value);
+      /* Carimba a hora de CHEGADA, no relógio de quem recebe: é dela que
+       sai a duração do efeito. Ver core/horaDoAviso.mjs. */
+      if (primed && value) cb(carimbarChegada(value));
       primed = true;
     }, error => console.warn('Canal vivo de vultos indisponível:', error));
   });

@@ -160,7 +160,7 @@ test('o canal da assombração ignora o que já estava lá', () => {
   // Senão todo mundo que abre a mesa leva o susto da última assombração.
   const canal = semComentarios(fonte('src/core/liveChannel.js'));
   const assinar = canal.match(/export function assinarAssombracao[\s\S]*?\n\}/)[0];
-  assert.match(assinar, /if \(primed && value\) cb\(value\)/);
+  assert.match(assinar, /if \(primed && value\) cb\(carimbarChegada\(value\)\)/);
 });
 
 test('as três durações e as três intensidades estão todas declaradas', () => {

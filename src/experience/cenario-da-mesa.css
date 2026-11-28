@@ -247,3 +247,7 @@ html[data-motion="reduced"] .cenario-nevoa-frente{opacity:.85}
    por causa da chuva. O cenário e o véu continuam, porque é neles que a
    mesa lê onde está. */
 html[data-quality="light"] .cenario-mesa-chuva{display:none}
+/* A parede da mesa fica, mas sem camada própria na GPU: imóvel, a promoção
+   só ocupa memória de vídeo. */
+html[data-quality="light"] .cenario-mesa-fundo,
+html[data-quality="light"] .cenario-mesa-chuva{will-change:auto}

@@ -53,12 +53,17 @@
   left:-10%;width:120%;
   mix-blend-mode:screen;opacity:var(--op);
   background-image:
-    radial-gradient(ellipse 30% 60% at 12% 50%,rgba(255,226,170,.85),transparent 68%),
-    radial-gradient(ellipse 22% 50% at 42% 42%,rgba(255,214,150,.6),transparent 70%),
-    radial-gradient(ellipse 34% 66% at 72% 58%,rgba(248,222,180,.7),transparent 68%);
+    radial-gradient(ellipse 32% 64% at 12% 50%,rgba(255,226,170,.8) 0%,rgba(255,226,170,.34) 46%,transparent 78%),
+    radial-gradient(ellipse 24% 54% at 42% 42%,rgba(255,214,150,.56) 0%,rgba(255,214,150,.24) 48%,transparent 80%),
+    radial-gradient(ellipse 36% 70% at 72% 58%,rgba(248,222,180,.66) 0%,rgba(248,222,180,.28) 46%,transparent 78%);
   background-size:calc(100% * var(--escala)) 100%;
   background-repeat:repeat-x;
-  filter:blur(9px);
+  /* O `blur(9px)` saiu daqui. A faixa é feita de gradientes radiais com
+     parada em 68-70%: ela JÁ nasce desfocada. O filtro refazia a
+     convolução da camada inteira a cada quadro, porque a animação move o
+     fundo e obriga a repintar — e o que ele acrescentava era um
+     amolecimento que não se vê. O desfoque agora está no desenho: as
+     paradas foram abertas um pouco. */
   animation:atmAreia var(--dur) linear var(--atraso) infinite;
 }
 @keyframes atmAreia{
@@ -213,8 +218,12 @@
 .mapa-atm-presenca{
   top:-20%;left:-30%;width:46%;height:140%;
   mix-blend-mode:multiply;opacity:0;
-  background:radial-gradient(ellipse 50% 40% at 50% 50%,#01020A 0%,rgba(1,2,10,.72) 38%,transparent 72%);
-  filter:blur(26px);
+  /* Era `blur(26px)` por cima de um gradiente radial — isto é, desfoque
+     sobre o que já é só desfoque. Numa camada de 46% x 140% da tela a
+     convolução custa caro e some junto com a opacidade. As paradas abaixo
+     fazem o mesmo contorno macio de graça. */
+  background:radial-gradient(ellipse 50% 40% at 50% 50%,
+    #01020A 0%,rgba(1,2,10,.8) 26%,rgba(1,2,10,.5) 48%,rgba(1,2,10,.2) 64%,transparent 82%);
   animation:atmPresenca var(--dur) ease-in-out infinite;
 }
 @keyframes atmPresenca{

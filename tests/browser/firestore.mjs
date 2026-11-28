@@ -18,6 +18,27 @@ function restore(){try{const saved=localStorage.getItem(storageKey);if(saved){ro
 restore();
 function publish(key){try{localStorage.setItem(storageKey,JSON.stringify([...rows]));}catch{}notify(key);bus.postMessage(key);}
 bus.onmessage=event=>{restore();notify(event.data)};
+/* O canal entre abas perde aviso: sob disputa de `navigator.locks` ele
+   chegava a não entregar, e o teste acusava a tela — a faixa "não
+   aparecia" porque a aba vizinha nunca soube da escrita. O evento
+   `storage` cobre o mesmo caminho por outra via e é entregue a todas as
+   abas da mesma origem. Os dois juntos: quem chegar primeiro avisa, e
+   avisar duas vezes só custa um retrato repetido. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', evento => {
+    if (evento.key && evento.key !== storageKey) return;
+    restore();
+    for (const { name, fn } of listeners) { void name; queueMicrotask(fn); }
+  });
+}
+/* Quem está ouvindo, para os testes.
+   O canal entre abas (BroadcastChannel) não guarda mensagem: se uma aba
+   escreve enquanto a outra ainda está montando, o aviso cai no vazio e a
+   segunda aba fica com o retrato velho. O Firestore de verdade não tem
+   esse problema — listener novo recebe o estado atual. Em vez de fingir
+   isso aqui, a bancada expõe quem já está ouvindo, e o teste espera. */
+if (typeof window !== 'undefined') window.__ouvintes = () => [...listeners].map(l => l.name);
+
 export const collection=(_db,name)=>name;
 export const doc=(_db,...parts)=>parts.join('/');
 export const where=(field,op,value)=>({field,value});

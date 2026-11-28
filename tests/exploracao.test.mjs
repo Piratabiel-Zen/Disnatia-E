@@ -220,5 +220,10 @@ test('o vulto fica por cima do escuro', () => {
 test('o canal do vulto ignora o que já estava lá', () => {
   const canal = semComentarios(fonte('src/core/liveChannel.js'));
   const assinar = canal.match(/export function assinarVulto[\s\S]*?\n\}/)[0];
-  assert.match(assinar, /if \(primed && value\) cb\(value\)/);
+  /* O `primed` é o que importa aqui: o retardatário não recebe o vulto
+     que já estava no canal. O valor passa por `carimbarChegada` antes de
+     seguir — a hora de chegada, no relógio de quem recebe, é o que mede a
+     duração; comparar com o relógio de quem disparou era o que fazia o
+     vulto não aparecer para a mesa. Ver core/horaDoAviso.mjs. */
+  assert.match(assinar, /if \(primed && value\) cb\(carimbarChegada\(value\)\)/);
 });

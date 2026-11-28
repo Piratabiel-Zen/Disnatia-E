@@ -363,7 +363,7 @@ function BattleMapSection({ masterMode, playerSheetId, access }) {
      mesmo documento custariam duas leituras por mudança e poderiam
      divergir por um quadro — a faixa marcando um segundo e o contador do
      mapa outro, com a mesa olhando para os dois. */
-  const cacadaDaMesa = useCacadaDaMesa(ehNoite);
+  const { cacada: cacadaDaMesa, desvio: desvioDaCacada } = useCacadaDaMesa(ehNoite);
 
   /* O ESCONDERIJO.
      Quem se esconde é o jogador, na tela dele, e o resultado é sorteado
@@ -2923,6 +2923,7 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
           {ehNoite && (
             <Cacada
               cacada={cacadaDaMesa}
+              desvio={desvioDaCacada}
               mapaAtual={currentMap ? String(currentMap.id) : ''}
               mestre={masterMode}
               aoEscapar={encerrarCacada}

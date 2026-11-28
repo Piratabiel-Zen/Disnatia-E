@@ -13,6 +13,8 @@
  * ali.
  */
 
+import { inicioLocalDoAviso } from '../../core/horaDoAviso.mjs';
+
 export const DURACOES = Object.freeze([
   { id: 'piscada', nome: 'Piscada', ms: 900, resumo: 'Quem não estava olhando não viu.' },
   { id: 'instante', nome: 'Instante', ms: 2200, resumo: 'Dá para apontar, não para descrever.' },
@@ -88,7 +90,11 @@ export function vultoNovo({ mapa, x, y, duracao, tamanho, imagem = '' } = {}) {
 export function estagioDoVulto(vulto, agora = Date.now()) {
   if (!vulto) return null;
   const total = duracaoPorId(vulto.duracao).ms;
-  const decorrido = agora - Number(vulto.comecouEm || 0);
+  /* Do relógio DESTA tela até a chegada do aviso — nunca contra o
+     carimbo de quem disparou, que é outro relógio. Ver
+     core/horaDoAviso.mjs: era isto que fazia o efeito simplesmente
+     não acontecer na máquina dos outros. */
+  const decorrido = agora - inicioLocalDoAviso(vulto);
   if (!Number.isFinite(decorrido) || decorrido < 0 || decorrido >= total) return null;
 
   const borda = Math.min(320, total * 0.3);
@@ -109,5 +115,11 @@ export const valeNesteMapa = (vulto, idDoMapa) =>
 
 /** Como o aviso velho da assombração: vulto não se repete para retardatário. */
 export const VULTO_VELHO_MS = 1200;
+/* Vale pela CHEGADA, não pelo carimbo de origem. Com o relógio do
+   aparelho dois segundos adiantado, a conta antiga descartava tudo o
+   que o Mestre mandava. Quem chega atrasado continua de fora, mas por
+   outro caminho: o canal ao vivo ignora o valor que já estava lá ao
+   assinar (o `primed` em core/liveChannel.js), então avisos antigos
+   nem chegam a ser entregues. */
 export const vultoAindaVale = (vulto, agora = Date.now()) =>
-  Boolean(vulto) && agora - Number(vulto.comecouEm || 0) <= VULTO_VELHO_MS;
+  Boolean(vulto) && agora - inicioLocalDoAviso(vulto) <= VULTO_VELHO_MS;

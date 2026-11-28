@@ -219,7 +219,7 @@ test('faixa e mapa leem a MESMA assinatura', async () => {
   /* Duas assinaturas do mesmo documento custariam duas leituras por
      mudança e poderiam divergir por um quadro: a faixa marcando um
      segundo e o contador do mapa outro, com a mesa olhando para os dois. */
-  assert.match(mapa, /const cacadaDaMesa = useCacadaDaMesa\(ehNoite\)/);
+  assert.match(mapa, /const \{ cacada: cacadaDaMesa, desvio: desvioDaCacada \} = useCacadaDaMesa\(ehNoite\)/);
   assert.ok(!/liveSnapshot\(docIn\('config', 'cacada'\)/.test(mapa),
     'o mapa voltou a assinar a caçada por conta própria');
 });
@@ -230,7 +230,10 @@ test('a faixa não desenha nem conta quando não há caçada', async () => {
     new URL('../src/features/oneshot/AvisoDaCacada.jsx', import.meta.url), 'utf8');
   // Ela vive em TODAS as abas: um intervalo correndo à toa seria em todas.
   assert.match(aviso, /if \(!ativa \|\| escondido\) return undefined;/);
-  assert.match(aviso, /if \(!estado\.ativa\) return null;/);
+  /* Some quando NÃO HÁ caçada; nunca por discordar do relógio do Mestre.
+     Enquanto o documento disser que há caçada, toda tela mostra caçada —
+     era isso que sumia no aparelho com a hora torta. */
+  assert.match(aviso, /if \(!estado\.ativa && !ativa\) return null;/);
   // E não anuncia cada segundo: viraria metrônomo no leitor de tela.
   assert.match(aviso, /aria-live="off"/);
 });

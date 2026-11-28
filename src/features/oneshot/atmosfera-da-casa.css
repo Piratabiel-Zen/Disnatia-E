@@ -476,6 +476,14 @@ html[data-quality="light"] .atm-respiro{
 /* E o que sobra para de se mexer. A camada continua lá, pintada uma vez;
    o que some é o custo de recompor a cada quadro. Numa máquina em que o
    site engasga, a névoa parada é melhor que a névoa que engasga. */
+/* Parar a animação não devolve a memória de vídeo: `will-change:transform`
+   mantém a camada promovida na GPU, uma textura do tamanho da tela por
+   camada, mesmo imóvel. No Leve, que existe para aliviar a máquina, isso
+   era pagar o preço sem receber o movimento. */
+html[data-quality="light"] .atm i,
+html[data-quality="light"] .atm-luzes,
+html[data-quality="light"] .atm-luzes > i{ will-change:auto; }
+
 html[data-quality="light"] .atm i,
 html[data-quality="light"] .atm-luzes,
 html[data-quality="light"] .atm-luzes > i{

@@ -23,7 +23,14 @@
  * gerador. Na primeira tentativa eu tinha escrito 'direita' aqui e cada
  * personagem andaria de costas para onde estava indo.
  */
-export const DIRECOES = Object.freeze(['frente', 'esquerda', 'direita', 'costas']);
+/* A ORDEM DAS LINHAS DA FOLHA, conferida no pixel e não de cabeça.
+   Linha 0 encara quem olha. Linha 1 tem o rosto virado para a DIREITA do
+   quadro, linha 2 para a esquerda, linha 3 mostra a nuca.
+   Já errei isto duas vezes, nas duas direções, e o sintoma é discreto: o
+   boneco anda de costas para onde vai. Antes de mexer aqui, recorte o
+   primeiro quadro de cada linha, amplie e olhe de qual lado está o rosto
+   — é o que o teste em tests/sprites.test.mjs descreve. */
+export const DIRECOES = Object.freeze(['frente', 'direita', 'esquerda', 'costas']);
 
 /* Seis quadros por segundo. Mais que isso e a caminhada 8 bits perde o
    passo pesado que ela tem; menos e vira slide show. */
@@ -45,7 +52,7 @@ export const SPRITES = Object.freeze([
     /* Esta folha veio com a ordem trocada: frente, lado, COSTAS, lado.
        Em vez de remontar a imagem, a ordem fica escrita aqui — remontar
        perderia qualidade de novo e esconderia a diferença. */
-    ordem: ['frente', 'esquerda', 'costas', 'direita'] },
+    ordem: ['frente', 'direita', 'costas', 'esquerda'] },
   { id: 'kujo', nome: 'Kujo', arquivo: '/media/tokens/kujo-folha.webp',
     quadros: 4, largura: 63, altura: 128 },
   { id: 'lee', nome: 'Lee Nakamura', arquivo: '/media/tokens/lee-folha.webp',
