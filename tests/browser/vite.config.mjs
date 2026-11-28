@@ -2,4 +2,4 @@ import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 const root=path.dirname(new URL(import.meta.url).pathname);
-export default defineConfig({root,publicDir:path.resolve(root,'../../public'),plugins:[{name:'isolated-fixture',enforce:'pre',resolveId(id,importer){if(id==='firebase/firestore'||id.endsWith('/core/firebase')||(id==='./firebase'&&importer?.includes('/core/'))||id.endsWith('/adventure/sharedSnapshot'))return path.join(root,'firestore.mjs');}},react()],server:{host:'127.0.0.1',port:4179,fs:{allow:[path.resolve(root,'../..')]}}});
+export default defineConfig({root,publicDir:path.resolve(root,'../../public'),plugins:[{name:'isolated-fixture',enforce:'pre',resolveId(id,importer){if(id==='firebase/auth')return path.join(root,'auth.mjs');if(id==='firebase/database')return path.join(root,'database.mjs');if(id==='firebase/firestore'||id.endsWith('/core/firebase')||(id==='./firebase'&&importer?.includes('/core/'))||id.endsWith('/adventure/sharedSnapshot'))return path.join(root,'firestore.mjs');}},react()],server:{host:'127.0.0.1',port:4179,fs:{allow:[path.resolve(root,'../..')]}}});

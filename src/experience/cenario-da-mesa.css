@@ -241,3 +241,9 @@ html[data-quality="light"] .cenario-mesa-nevoa{display:none}
    está vendo, e tirá-la mudaria a cena, não só o conforto. */
 html[data-motion="reduced"] .cenario-mesa-nevoa i{animation:none}
 html[data-motion="reduced"] .cenario-nevoa-frente{opacity:.85}
+
+/* No modo leve a chuva do cenário para: são três camadas do tamanho da
+   tela, atrás de tudo, e ela é ambiente puro — ninguém joga diferente
+   por causa da chuva. O cenário e o véu continuam, porque é neles que a
+   mesa lê onde está. */
+html[data-quality="light"] .cenario-mesa-chuva{display:none}

@@ -34,21 +34,35 @@
    Vinheta, e não véu chapado: véu uniforme apaga o mapa inteiro por igual e
    o jogador perde a leitura dos cômodos. A vinheta tira das bordas e deixa
    o meio, que é onde a cena está. */
+/* A hora precisa entrar na COR e não na opacidade do elemento, para as
+   duas escuridões caberem na mesma camada mantendo controles separados.
+   Propriedade custom declarada é o que permite animá-la: sem o
+   `@property`, o navegador trata `--atm-noite` como texto e a passagem
+   das horas daria um salto em vez da transição de 2,4s. */
+@property --atm-noite{ syntax:'<number>'; inherits:true; initial-value:0.3 }
+
 .atm-escuridao{
-  background:radial-gradient(118% 92% at 50% 48%,transparent 24%,#030205 104%);
-  opacity:var(--atm-escuridao,.45);
+  /* A VINHETA E O PESO DA HORA NUMA CAMADA SÓ.
+     Eram dois elementos do tamanho da tela. Medido, o segundo custava
+     13% do quadro da cena sozinho — e os dois querem a mesma mistura
+     (`multiply`) sobre o mesmo mapa, então não havia razão para serem
+     dois. Cada um mantém o seu controle porque a intensidade está na
+     cor, não na opacidade do elemento: a vinheta responde à
+     `--atm-escuridao` e o peso da noite à `--atm-noite`. */
+  background:
+    radial-gradient(118% 92% at 50% 48%,
+      transparent 24%, rgba(3,2,5,var(--atm-escuridao,.45)) 104%),
+    linear-gradient(rgba(5,6,10,var(--atm-noite,.3)),rgba(5,6,10,var(--atm-noite,.3)));
+  mix-blend-mode:multiply;
+  transition:--atm-noite 2.4s ease;
 }
 
 /* A noite chapada. A vinheta acima dá forma; esta dá PESO, e é ela que
    responde à hora. `multiply` para apagar sem lavar a cor do mapa: uma
    camada preta em opacidade normal deixa tudo cinza, e casa cinza não é
    casa escura — é casa desbotada. */
-.atm-noite{
-  background:#05060A;
-  mix-blend-mode:multiply;
-  opacity:var(--atm-noite,.3);
-  transition:opacity 2.4s ease;
-}
+/* `.atm-noite` deixou de ser um elemento: virou o segundo gradiente da
+   `.atm-escuridao`, logo acima. Uma camada a menos do tamanho da tela. */
 
 /* ───────── 3. LUZES ───────── */
 
@@ -400,7 +414,15 @@ html[data-motion="reduced"] .atm .atm-escuridao{animation:none !important}
      entra em `screen` contra o mapa, que é o que precisa acontecer:
      lâmpada acesa cortando quarto escuro. */
   mix-blend-mode:screen;
-  filter:brightness(var(--atm-brilho,1)) saturate(calc(.85 + var(--atm-brilho,1) * .18));
+  /* O BRILHO DA HORA VIRA OPACIDADE, e não `filter`.
+     Para luz somada em `screen`, clarear a camada e aumentar a
+     opacidade dela dão quase a mesma imagem — e a saturação que vinha
+     junto variava entre 0,85 e 1,03, que é invisível. O que não era
+     invisível é o preço: medido, o filtro sozinho custava 13% do quadro
+     da cena, porque obriga o grupo inteiro a ser rasterizado num buffer
+     à parte antes de ser lido. Opacidade o compositor resolve sem
+     redesenhar nada. */
+  opacity:var(--atm-brilho,1);
 }
 .atm-luzes > i{position:absolute;inset:0;display:block;pointer-events:none}
 
@@ -426,3 +448,36 @@ html[data-motion="reduced"] .atm .atm-escuridao{animation:none !important}
   78%,100%{opacity:0}
 }
 html[data-motion="reduced"] .atm-piscada{animation:none;opacity:0}
+
+/* ═══════════ O MODO LEVE ═══════════
+
+   O botão "Leve" existia e, nesta mesa, não fazia nada: ele só trocava o
+   fundo cósmico, que aqui nem é desenhado — o cenário da casa toma o
+   lugar dele. E é justamente aqui que a máquina mais sofre.
+
+   O que sai são as camadas de TEXTURA: poeira, névoa alta, sombras
+   caminhantes, a coisa que atravessa. Elas dão profundidade e nenhuma
+   delas carrega informação — ninguém joga diferente por causa da
+   poeira. O que FICA é tudo que a mesa precisa para ler a cena: a
+   escuridão (que diz o quanto se enxerga), as luzes (que dizem onde dá
+   para ver) e a névoa baixa (que é o que o Mestre põe no mapa e tem
+   significado de regra).
+
+   Cortar o que informa seria dar duas partidas diferentes a quem tem
+   máquina boa e a quem não tem. */
+html[data-quality="light"] .atm-poeira,
+html[data-quality="light"] .atm-nevoa-alta,
+html[data-quality="light"] .atm-sombras,
+html[data-quality="light"] .atm-passagem,
+html[data-quality="light"] .atm-respiro{
+  display:none;
+}
+
+/* E o que sobra para de se mexer. A camada continua lá, pintada uma vez;
+   o que some é o custo de recompor a cada quadro. Numa máquina em que o
+   site engasga, a névoa parada é melhor que a névoa que engasga. */
+html[data-quality="light"] .atm i,
+html[data-quality="light"] .atm-luzes,
+html[data-quality="light"] .atm-luzes > i{
+  animation:none !important;
+}

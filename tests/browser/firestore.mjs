@@ -1,5 +1,11 @@
 // Isolated browser fixture. Never connects to Firebase or campaign data.
 export const db={};
+/* O `core/firebase` de verdade também publica o app, e o `core/auth` e o
+   `liveChannel` importam ele por nome. Sem este export o módulo falso não
+   satisfazia o import e a página inteira morria em branco — o teste então
+   acusava a tela, não a dublagem. Objeto vazio basta: nada aqui conversa
+   com o Firebase. */
+export const firebaseApp={};
 const baseline=[
  ['sheets/necro',{id:'necro',nome:'Necromante',classe:'magos',nivel:10,hp:40,vigos:8}],
  ['cronicas/1',{id:1,titulo:'A torre',sessao:'1',conteudo:'Uma história para verificar o leitor.',imagens:[]}],
@@ -16,8 +22,23 @@ export const collection=(_db,name)=>name;
 export const doc=(_db,...parts)=>parts.join('/');
 export const where=(field,op,value)=>({field,value});
 export const query=(ref,...filters)=>({ref,filters:filters.filter(filter=>filter?.field)});
-function snap(ref){const name=typeof ref==='string'?ref:ref.ref;return {exists:()=>rows.has(name),data:()=>rows.get(name),metadata:{fromCache:false,hasPendingWrites:false},docs:[...rows].filter(([key,row])=>key.startsWith(name+'/')&&(ref.filters||[]).every(filter=>row[filter.field]===filter.value)).map(([key,row])=>({id:key.slice(name.length+1),data:()=>row,metadata:{fromCache:false,hasPendingWrites:false}}))};}
-export function onSnapshot(ref,...args){const callback=args.find(value=>typeof value==='function');let previous=new Map();const fn=()=>{const snapshot=snap(ref);const next=new Map(snapshot.docs.map(d=>[d.id,JSON.stringify(d.data())]));snapshot.docChanges=()=>[...snapshot.docs.filter(d=>previous.get(d.id)!==next.get(d.id)).map(d=>({type:previous.has(d.id)?'modified':'added',doc:d})),...[...previous.keys()].filter(id=>!next.has(id)).map(id=>({type:'removed',doc:{id,data:()=>({})}}))];callback(snapshot);previous=next;};const listener={name:typeof ref==='string'?ref:ref.ref,fn};listeners.add(listener);queueMicrotask(()=>{if(window.__fixtureCachedStart){const cached=snap(ref);cached.metadata.fromCache=true;cached.docChanges=()=>cached.docs.map(doc=>({type:'added',doc}));callback(cached);}fn();});return()=>listeners.delete(listener);}
+/* Um retrato de DOCUMENTO não tem `docs`; um de COLEÇÃO não tem `exists`.
+   A dublagem entregava os dois sempre, e `docs` vinha como lista VAZIA —
+   então todo código que faz `Array.isArray(snap.docs)?…:snap.exists()?…`
+   caía no lado da coleção e recebia nada. A ficha do jogador assinada por
+   documento chegava vazia e a tela dizia "Escolha sua ficha" para sempre.
+   O número de trechos do caminho separa os dois, como no Firestore: ímpar
+   é coleção ('sheets'), par é documento ('sheets/necro'). */
+const ehDocumento=caminho=>caminho.split('/').filter(Boolean).length%2===0;
+function snap(ref){
+  const name=typeof ref==='string'?ref:ref.ref;
+  const base={metadata:{fromCache:false,hasPendingWrites:false}};
+  if(ehDocumento(name))return {...base,id:name.split('/').pop(),exists:()=>rows.has(name),data:()=>rows.get(name)};
+  return {...base,docs:[...rows]
+    .filter(([key,row])=>key.startsWith(name+'/')&&(ref.filters||[]).every(filter=>row[filter.field]===filter.value))
+    .map(([key,row])=>({id:key.slice(name.length+1),data:()=>row,metadata:{fromCache:false,hasPendingWrites:false}}))};
+}
+export function onSnapshot(ref,...args){const callback=args.find(value=>typeof value==='function');let previous=new Map();const fn=()=>{const snapshot=snap(ref);if(!snapshot.docs){callback(snapshot);return;}const next=new Map(snapshot.docs.map(d=>[d.id,JSON.stringify(d.data())]));snapshot.docChanges=()=>[...snapshot.docs.filter(d=>previous.get(d.id)!==next.get(d.id)).map(d=>({type:previous.has(d.id)?'modified':'added',doc:d})),...[...previous.keys()].filter(id=>!next.has(id)).map(id=>({type:'removed',doc:{id,data:()=>({})}}))];callback(snapshot);previous=next;};const listener={name:typeof ref==='string'?ref:ref.ref,fn};listeners.add(listener);queueMicrotask(()=>{if(window.__fixtureCachedStart){const cached=snap(ref);cached.metadata.fromCache=true;if(cached.docs)cached.docChanges=()=>cached.docs.map(doc=>({type:'added',doc}));callback(cached);}fn();});return()=>listeners.delete(listener);}
 export const getDoc=async ref=>snap(ref);
 export const getDocFromServer=getDoc;
 export const updateDoc=setDoc;
@@ -31,5 +52,17 @@ export async function setDoc(key,data,options){if(key==='config/customAbilities'
 export async function deleteDoc(key){return navigator.locks.request('dinastia-fixture-write',()=>{restore();rows.delete(key);publish(key);});}
 export function writeBatch(){const changes=[];return {set:(key,data)=>changes.push([key,data]),commit:async()=>{for(const [key,data] of changes)await setDoc(key,data);}};}
 window.__testStore={set:(key,value)=>{rows.set(key,value);publish(key)},get:key=>rows.get(key)};
+/* Três peças que o app passou a usar e a dublagem não acompanhou. Faltando
+   qualquer uma, o módulo falso não satisfaz o import e a tela nasce em
+   branco: o teste acusa a interface quando o defeito é aqui. */
+export const getFirestore=()=>db;
+export const enableMultiTabIndexedDbPersistence=async()=>{};
+export async function addDoc(ref,data){
+  const nome=typeof ref==='string'?ref:ref.ref;
+  const id='fix-'+Math.random().toString(36).slice(2,10);
+  await setDoc(nome+'/'+id,data);
+  return {id};
+}
+
 export const queryEqual=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 export const refEqual=(a,b)=>a===b;

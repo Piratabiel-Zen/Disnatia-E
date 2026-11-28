@@ -16,7 +16,11 @@ const assert=require('node:assert/strict');
  await page.getByText('Imagem salva.',{exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>window.__reads?.includes('cronicas_media_chunks')||false),false);
  await page.getByRole('button',{name:'Ampliar imagem'}).click();
- await page.locator('.chronicles-image-preview img').waitFor();
+ /* O preview próprio das crônicas (`.chronicles-image-preview`) deu lugar
+    ao ImageViewer, um só visualizador para o site inteiro: <dialog
+    class="de-image-viewer"> com a imagem em `.viewer-hero`. O que este
+    teste guarda não mudou — a imagem cheia só é buscada ao ampliar. */
+ await page.locator('.de-image-viewer img.viewer-hero').waitFor();
  assert.equal(await page.evaluate(()=>window.__reads.includes('cronicas_media_chunks')),true);
  await page.getByRole('button',{name:'Fechar imagem'}).click();
  const widths=[];

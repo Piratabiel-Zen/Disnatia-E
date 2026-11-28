@@ -13,11 +13,17 @@ const root = path.resolve(__dirname, '../..');
    for (const master of [true, false]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     page.on('pageerror', error => errors.push(error.message));
-    await page.route('**/archives/assembleia/*.jpeg', route => route.fulfill({ contentType: 'image/jpeg', body: fs.readFileSync(path.join(root, 'public', new URL(route.request().url()).pathname)) }));
+    /* Os arquivos da assembleia viraram WebP na passada de peso (os .jpeg
+       não existem mais em public/). O teste servia o caminho antigo e
+       quebrava ao ler do disco, não na tela. */
+    await page.route('**/archives/assembleia/*.webp', route => route.fulfill({ contentType: 'image/webp', body: fs.readFileSync(path.join(root, 'public', new URL(route.request().url()).pathname)) }));
     await page.goto(base + '?knowledge' + (master ? '&master' : ''));
     await page.getByRole('button', { name: 'Magias adquiridas' }).click();
     await page.getByRole('heading', { name: 'Restauração Completa' }).waitFor();
-    assert.match(await page.locator('.acquired-spell').textContent(), /8 de vida \+ INT/);
+    /* A cura da Restauração Completa passou de "8 + INT" para "12 + SOR"
+       quando a Sorte ganhou função nas regras. O teste guardava o número
+       antigo; o valor certo é o de `adventure/acquiredKnowledge.js`. */
+    assert.match(await page.locator('.acquired-spell').textContent(), /12 de vida \+ SOR/);
     assert.match(await page.locator('.acquired-spell').textContent(), /1 vez por dia/);
     await page.screenshot({ path: `/tmp/dinastia-spells-${width}-${master}.png` });
     await page.getByRole('button', { name: 'Arquivos adquiridos' }).click();

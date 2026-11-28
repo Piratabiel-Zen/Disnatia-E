@@ -190,7 +190,11 @@ test('a luz e a escuridão andam juntas, e só para um lado', () => {
   const jsx = semComentarios(fonte('src/features/oneshot/AtmosferaDaCasa.jsx'));
   // A vinheta sozinha escurecia a moldura e deixava o miolo da casa aceso:
   // a hora passava e a sala continuava a mesma.
-  assert.match(jsx, /<i className="atm-noite" \/>/, 'falta a camada chapada');
+  /* O chapado já não é um elemento: `--atm-noite` virou o segundo
+     gradiente da própria `.atm-escuridao`, animável por `@property`.
+     Uma camada do tamanho da tela a menos, pela medição 13% do quadro. */
+  assert.ok(!jsx.includes('className="atm-noite"'),
+    'a camada chapada voltou a ser um elemento próprio');
   assert.match(jsx, /'--atm-noite': atm\.escuridao/);
   assert.match(jsx, /'--atm-brilho': atm\.brilho/);
   assert.match(jsx, /<i className="atm-piscada" \/>/);
@@ -210,10 +214,15 @@ test('a luz e a escuridão andam juntas, e só para um lado', () => {
 
 test('a casa chapada apaga sem lavar a cor do mapa', () => {
   const css = semComentarios(fonte('src/features/oneshot/atmosfera-da-casa.css'));
-  const bloco = css.slice(css.indexOf('.atm-noite{'), css.indexOf('.atm-noite{') + 200);
-  // Preto em opacidade normal deixa tudo cinza, e casa cinza não é casa
-  // escura: é casa desbotada.
+  /* O chapado era um elemento próprio, `.atm-noite`, e virou o segundo
+     gradiente da `.atm-escuridao` — os dois queriam a MESMA mistura
+     sobre o mesmo mapa e, medido, o segundo elemento custava 13% do
+     quadro da cena sozinho. O que não mudou é o que este teste guarda:
+     preto em opacidade normal deixa tudo cinza, e casa cinza não é casa
+     escura, é casa desbotada. */
+  const bloco = css.slice(css.indexOf('.atm-escuridao{'), css.indexOf('.atm-escuridao{') + 460);
   assert.match(bloco, /mix-blend-mode:multiply/);
+  assert.match(bloco, /rgba\(5,6,10,var\(--atm-noite/, 'o chapado sumiu junto com a camada');
   assert.match(css, /html\[data-motion="reduced"\] \.atm-piscada\{animation:none/);
 });
 

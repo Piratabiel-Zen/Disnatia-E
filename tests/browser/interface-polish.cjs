@@ -29,15 +29,23 @@ const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.
    assert.equal(await page.locator('.enemy-map-strip').count(),0);
    const enemyTokenText=await page.locator('[data-token-id="t"]').textContent();
    const ownTokenText=await page.locator('[data-token-id="own"]').textContent();
-   if(master){assert.match(enemyTokenText,/20\\/20/);assert.match(ownTokenText,/18\\/20/);}
-   else {assert.doesNotMatch(enemyTokenText,/20\\/20/);assert.match(ownTokenText,/18\\/20/);}
+   if(master){assert.match(enemyTokenText,/20\/20/);assert.match(ownTokenText,/18\/20/);}
+   else {assert.doesNotMatch(enemyTokenText,/20\/20/);assert.match(ownTokenText,/18\/20/);}
    assert.equal(await page.locator('.g3-presence').count(),0);
-   assert.equal(await page.locator('.map-dock-trigger').count(),master?2:1);
+   /* Contar botões não dizia QUAIS botões: o dock ganhou o de familiares e
+      o número mudou sem que nada tivesse quebrado. Agora o teste nomeia
+      cada um, e passa a falhar só quando algum de fato desaparece. */
+   const docaEsperada=master?['Fichas dos personagens','Familiares','Fichas dos inimigos']:['Minha ficha','Familiares'];
+   for(const nome of docaEsperada)
+    assert.equal(await page.locator('.map-dock-trigger[aria-label="'+nome+'"]').count(),1,'falta o botão '+nome);
+   assert.equal(await page.locator('.map-dock-trigger').count(),docaEsperada.length);
    if(master){
-    assert.equal(await page.locator('.mbc-setup-summary strong').textContent(),'0');
-    await page.getByRole('button',{name:'Escolher participantes',exact:true}).click();
-    assert.equal(await page.locator('.mbc-picker-col>button.selected').count(),0);
-    await page.getByRole('button',{name:'Ocultar seleção',exact:true}).click();
+    /* O modo de combate saiu da mesa inteira a pedido do mestre, e com ele
+       o resumo de participantes (`.mbc-*`). O que este teste guardava era o
+       estado ZERADO da seleção; não há mais seleção. Em vez de afirmar o
+       sumiço num lugar só, o teste agora cobra que nada do combate apareça. */
+    for(const resto of ['.mbc-setup-summary','.mbc-picker-col','.combat-round-bar'])
+     assert.equal(await page.locator(resto).count(),0,'o modo de combate voltou: '+resto);
     assert.equal(await page.locator('.battlemap-master-mark .master-sigil').textContent(),'M');
     assert.equal(await page.locator('.grim-avatar img').count(),0);
     await page.getByRole('button',{name:'Fichas dos inimigos',exact:true}).click();
@@ -87,12 +95,24 @@ const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.
   const ability=page.locator('.g3-use-ability:not(:disabled)').first();await ability.waitFor();
   await ability.hover();
   assert.equal(await ability.evaluate(e=>getComputedStyle(e,'::after').animationName),'abilityContour');
-  for(const [attribute,value] of [['data-quality','light'],['data-effects','reduced']]){
+  /* O modo de qualidade mexe em cenografia, nunca na resposta ao jogador:
+     o token respira e a habilidade responde ao mouse igual no celular, no
+     notebook e no desktop (tests/paridade-animacoes.test.mjs, escrita
+     depois que o jogador filmou a tela). Este teste cobrava o contrário,
+     de antes dessa regra. Quem desliga de fato é a escolha do jogador:
+     Animações → Reduzidas (data-effects) ou data-motion. */
+  for(const [attribute,value] of [['data-effects','reduced'],['data-effects','subtle']]){
    await page.evaluate(([a,v])=>document.documentElement.setAttribute(a,v),[attribute,value]);
    assert.equal(await ability.evaluate(e=>getComputedStyle(e,'::after').animationName),'none');
    await page.evaluate(a=>document.documentElement.removeAttribute(a),attribute);
   }
-  await page.emulateMedia({reducedMotion:'reduce'});
+  /* O projeto NAO le `prefers-reduced-motion` no CSS — e proibido em
+     regra, justamente para que a preferencia do jogador possa discordar do
+     sistema. Quem traduz a media query e o `movimento.mjs`, escrevendo
+     `data-motion` na raiz, e so quando o jogador escolhe "seguir o
+     sistema". Emular a media query aqui testava um caminho que foi
+     removido de proposito; o teste agora escreve o sinal de verdade. */
+  await page.evaluate(()=>document.documentElement.dataset.motion='reduced');
   assert.equal(await ability.evaluate(e=>getComputedStyle(e,'::after').animationName),'none');
   await page.emulateMedia({reducedMotion:'no-preference'});
   await page.screenshot({path:'/tmp/dinastia-ability-hover.png'});

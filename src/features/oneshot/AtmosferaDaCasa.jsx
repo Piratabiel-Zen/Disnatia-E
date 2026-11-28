@@ -102,16 +102,23 @@ export default function AtmosferaDaCasa({
       {/* A escuridão vem primeiro e por baixo das luzes: luz desenhada
           embaixo do véu não ilumina nada.
 
-          São DUAS camadas, e a segunda existe por um erro: a primeira é
-          vinheta — escura nas bordas, transparente no meio — então subir a
-          escuridão da hora escurecia a moldura e deixava o miolo da casa
-          aceso. A hora passava e a sala continuava a mesma. `atm-noite` é
-          chapada: cobre tudo por igual, e é ela que faz a casa afundar. Fica
-          por baixo das luzes, que compõem em `screen` e por isso continuam
-          cortando o escuro — lâmpada acesa dentro de quarto escuro, que é o
-          que se quer ver. */}
+          São DOIS escuros com papéis diferentes, hoje na mesma camada.
+          O primeiro é vinheta — escura nas bordas, transparente no meio —
+          e sozinho ele escurecia só a moldura: a hora passava e o miolo da
+          sala continuava aceso. O segundo é chapado, cobre tudo por igual,
+          e é ele que faz a casa afundar conforme a noite anda.
+
+          Eram dois elementos do tamanho da tela até medirmos: o segundo
+          custava 13% do quadro sozinho, e os dois querem exatamente a
+          mesma mistura (`multiply`) sobre o mesmo mapa. Agora são dois
+          gradientes de um elemento só, cada um com o seu controle — a
+          intensidade está na COR e não na opacidade do elemento, que é o
+          que permite mexer num sem mexer no outro.
+
+          Fica por baixo das luzes, que compõem em `screen` e por isso
+          continuam cortando o escuro — lâmpada acesa dentro de quarto
+          escuro, que é o que se quer ver. */}
       <i className="atm-escuridao" />
-      <i className="atm-noite" />
       {/* AS LUZES VÃO TODAS NUM INVÓLUCRO SÓ, e isso é desempenho puro.
 
           Antes cada luz carregava o seu próprio `mix-blend-mode:screen` e

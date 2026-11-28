@@ -46,13 +46,22 @@ export const SPRITES = Object.freeze([
        Em vez de remontar a imagem, a ordem fica escrita aqui — remontar
        perderia qualidade de novo e esconderia a diferença. */
     ordem: ['frente', 'esquerda', 'costas', 'direita'] },
-  { id: 'magnus', nome: 'Magnus', arquivo: '/media/tokens/magnus-folha.webp',
+  { id: 'kujo', nome: 'Kujo', arquivo: '/media/tokens/kujo-folha.webp',
     quadros: 4, largura: 63, altura: 128 },
   { id: 'lee', nome: 'Lee Nakamura', arquivo: '/media/tokens/lee-folha.webp',
     quadros: 4, largura: 76, altura: 128 },
 ]);
 
-export const spriteDe = id => SPRITES.find(s => s.id === String(id || '')) || null;
+/* Nomes que um token já colocado pode estar guardando. O Kujo nasceu
+   "magnus" e foi renomeado depois de já haver token dele em mapa — sem
+   esta linha, aqueles tokens perderiam a folha e virariam um quadrado
+   vazio no meio da cena, sem ninguém entender por quê. */
+const APELIDOS = Object.freeze({ magnus: 'kujo' });
+
+export const spriteDe = id => {
+  const chave = String(id || '');
+  return SPRITES.find(s => s.id === (APELIDOS[chave] || chave)) || null;
+};
 
 /** Em que linha da folha mora cada direção, para este sprite. */
 export function linhaDaDirecao(sprite, direcao) {

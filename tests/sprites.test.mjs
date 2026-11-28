@@ -167,3 +167,14 @@ test('o painel da noite deixa consertar o lado do sprite', () => {
   // E só aparece para token que tem sprite: num retrato redondo não faz nada.
   assert.match(painel, /\{sprite && \(/);
 });
+
+test('o Kujo responde pelo nome antigo', () => {
+  /* Ele nasceu "magnus" e foi renomeado depois de já haver token dele em
+     mapa. Sem o apelido, aqueles tokens perderiam a folha e virariam um
+     quadrado vazio no meio da cena, sem ninguém entender por quê. */
+  assert.equal(spriteDe('kujo')?.nome, 'Kujo');
+  assert.equal(spriteDe('magnus')?.id, 'kujo', 'token antigo ficou sem sprite');
+  assert.equal(spriteDe('magnus')?.arquivo, spriteDe('kujo')?.arquivo);
+  // E o nome antigo não aparece mais na biblioteca.
+  assert.ok(!SPRITES.some(s => s.nome === 'Magnus'));
+});

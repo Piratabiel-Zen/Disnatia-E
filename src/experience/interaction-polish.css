@@ -24,10 +24,17 @@
 .battlemap-master-mark{display:flex;align-items:center;gap:8px;margin-right:3px}
 .battlemap-master-mark>span:last-child{display:grid;gap:3px;font:700 9px 'Cinzel',serif;letter-spacing:.08em;color:#e5ca8d}.battlemap-master-mark small{font:9px 'Crimson Text',serif;letter-spacing:0;color:#99b59b}
 .grim-avatar.master-sigil{width:36px;height:40px;border-radius:8px!important}
-/* O brilho do botao Usar nao depende do modo de qualidade. */
-html[data-effects=reduced] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation:none!important;transition:none!important}
+/* O contorno do botao Usar e resposta de interface, nao cenografia: o
+   modo de qualidade nao o desliga (tests/paridade-animacoes). Quem quer
+   menos movimento usa Animações → Reduzidas ou data-effects. Antes
+   faltava justamente este corte: o contorno girava mesmo com o jogador
+   pedindo menos movimento.
+
+   A regra repete o `:hover` de proposito: a de cima tem tres classes, e
+   sem isso o seletor mais especifico ganharia mesmo vindo antes. */
+html:is([data-effects=reduced],[data-effects=subtle],[data-motion="reduced"]) :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"]):not(:disabled):is(:hover,:focus-visible)::after{animation:none}
+html[data-motion="reduced"] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation:none}
+
 html[data-effects=reduced] :is(.g3-utility-rail button>span,.g3-master-quickbar button>span,.g3-primary-wide,.g3-director-row button,.map-dock-trigger){transition:none!important;transform:none!important}
-html[data-effects=subtle] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation-iteration-count:1!important}
 html[data-away=true] :is(.g3-use-ability,.g3-hotbar>button,.combat-ability,.summon-mini-actions>button,.summon-player-actions button,.artifact-powers article>button,button[title^="Usar"])::after{animation-play-state:paused!important}
-html[data-motion="reduced"] :is(.g3-use-ability,html[data-motion="reduced"] .g3-hotbar>button,html[data-motion="reduced"] .combat-ability,html[data-motion="reduced"] .summon-mini-actions>button,html[data-motion="reduced"] .summon-player-actions button,html[data-motion="reduced"] .artifact-powers article>button,html[data-motion="reduced"] button[title^="Usar"])::after{animation:none!important;transition:none!important}
 html[data-motion="reduced"] :is(.g3-utility-rail button>span,html[data-motion="reduced"] .g3-master-quickbar button>span,html[data-motion="reduced"] .g3-primary-wide,html[data-motion="reduced"] .g3-director-row button,html[data-motion="reduced"] .map-dock-trigger){transition:none!important;transform:none!important}

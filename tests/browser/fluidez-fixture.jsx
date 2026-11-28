@@ -12,7 +12,9 @@ import '../../src/features/oneshot/mortalha-casca.css';
 
 // Todas as camadas de efeito que existem, de uma vez: é o pior caso, e o
 // pior caso é o que trava.
-const FUNDO = ['atm-nevoa', 'atm-nevoa-alta', 'atm-sombras', 'atm-poeira', 'atm-chuva'];
+const TODAS = ['atm-nevoa', 'atm-nevoa-alta', 'atm-sombras', 'atm-poeira', 'atm-chuva'];
+const sem = new URLSearchParams(location.search).get('sem');
+const FUNDO = sem ? TODAS.filter(c => c !== sem) : TODAS;
 const LUZES = ['atm-lustre', 'atm-velas', 'atm-lareira', 'atm-lampiao',
   'atm-feixe', 'atm-luar', 'atm-caldeira'];
 
@@ -40,7 +42,7 @@ function Cena() {
       style={{ '--atm-escuridao': .7, '--atm-nevoa': .2, '--atm-sombras': .5,
         '--atm-pulso': 1.4, '--atm-pressao': .5, '--atm-noite': .6,
         '--atm-brilho': 1, '--atm-tremor': .4 }}>
-      {liga('escuro') && <><i className="atm-escuridao" /><i className="atm-noite" /></>}
+      {liga("escuro") && <i className="atm-escuridao" />}
       {liga('fundo') && FUNDO.map(c => <i key={c} className={c} />)}
       {liga('luzes') && <div className="atm-luzes">
         {LUZES.map(c => <i key={c} className={c} />)}
@@ -58,4 +60,8 @@ function Cena() {
 }
 
 document.documentElement.dataset.temaMesa = 'mortalha';
+// `?leve=1` mede o que o botão "Leve" entrega de verdade.
+if (new URLSearchParams(location.search).get('leve')) {
+  document.documentElement.dataset.quality = 'light';
+}
 createRoot(document.getElementById('root')).render(<Cena />);

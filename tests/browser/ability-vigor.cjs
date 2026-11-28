@@ -15,10 +15,25 @@ const assert=require('node:assert/strict');
   assert.equal(await master.getByRole('button',{name:'VC 8 bloqueado até o nível 23',exact:true}).isDisabled(),true);
   assert.equal(await master.locator('.ability-type-passiva').first().evaluate(e=>getComputedStyle(e).opacity),'0.55');
   assert.equal(await master.locator('.ability-type-especial').first().evaluate(e=>getComputedStyle(e,'::before').animationName),'abilityAuraRotate');
+  /* O modo de qualidade mexe em cenografia, nunca na resposta ao jogador:
+     o token respira e a habilidade responde ao mouse igual no celular, no
+     notebook e no desktop (tests/paridade-animacoes.test.mjs, escrita
+     depois que o jogador filmou a tela). Este teste cobrava o contrário,
+     de antes dessa regra. Quem desliga de fato é a escolha do jogador:
+     Animações → Reduzidas (data-effects) ou data-motion. */
   await master.evaluate(()=>document.documentElement.dataset.quality='light');
-  assert.equal(await master.locator('.ability-type-especial').first().evaluate(e=>getComputedStyle(e,'::before').animationName),'none');
+  assert.equal(await master.locator('.ability-type-especial').first().evaluate(e=>getComputedStyle(e,'::before').animationName),'abilityAuraRotate');
   await master.evaluate(()=>delete document.documentElement.dataset.quality);
-  await master.emulateMedia({reducedMotion:'reduce'});
+  await master.evaluate(()=>document.documentElement.dataset.effects='reduced');
+  assert.equal(await master.locator('.ability-type-especial').first().evaluate(e=>getComputedStyle(e,'::before').animationName),'none');
+  await master.evaluate(()=>delete document.documentElement.dataset.effects);
+  /* O projeto NAO le `prefers-reduced-motion` no CSS — e proibido em
+     regra, justamente para que a preferencia do jogador possa discordar do
+     sistema. Quem traduz a media query e o `movimento.mjs`, escrevendo
+     `data-motion` na raiz, e so quando o jogador escolhe "seguir o
+     sistema". Emular a media query aqui testava um caminho que foi
+     removido de proposito; o teste agora escreve o sinal de verdade. */
+  await master.evaluate(()=>document.documentElement.dataset.motion='reduced');
   assert.equal(await master.locator('.ability-type-especial').first().evaluate(e=>getComputedStyle(e,'::before').animationName),'none');
   await master.getByRole('button',{name:'Editar Raio de teste',exact:true}).click();
   const editor=master.locator('.custom-ability-editor');

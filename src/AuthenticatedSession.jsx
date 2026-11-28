@@ -63,6 +63,18 @@ export default function AuthenticatedSession({access,playerSheetId,tab,masterMod
      carregado, nunca existia. Um relógio que metade da mesa não vê não
      cria aperto nenhum. */
   const cacada = useCacadaDaMesa(sistemaDe(campaign)?.id === 'oneshot');
+
+  /* O botão "Leve" sempre escreveu `data-quality` na raiz (ver
+     usePerformance): o que faltava era CSS desta mesa lendo esse sinal. O
+     fundo cósmico lia, e nesta mesa o cósmico não existe — o cenário da
+     casa toma o lugar dele. Então o botão não mudava nada justamente onde
+     a máquina mais sofre: a mesa com chuva, escuridão, névoa, sombras e
+     uma luz por efeito, todas do tamanho da tela.
+
+     Cheguei a criar um segundo atributo (`data-qualidade="leve"`) para
+     isso. Era errado: dois nomes para a mesma chave, e o CSS antigo
+     continuava esperando o primeiro. O corte do modo Leve mora agora em
+     `html[data-quality="light"]`, junto com o resto. */
   const headerRef=useRef(null);
   useHeaderClearance(headerRef);
   return(
