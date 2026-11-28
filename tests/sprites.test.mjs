@@ -8,6 +8,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 import {
   SPRITES, DIRECOES, QUADROS_POR_SEGUNDO, spriteDe, linhaDaDirecao,
   direcaoDoMovimento, recorteDoQuadro, quadroNoTempo, QUADRO_PARADO,
@@ -133,4 +135,35 @@ test('o sprite é desenhado com pixel duro', async () => {
     assert.match(css, /image-rendering:pixelated/,
       `${f}: sem pixel duro a arte 8 bits vira borrão ao ampliar`);
   }
+});
+
+test('na noite o Mestre tem painel de token com tamanho e excluir', async () => {
+  const { readFileSync } = await import('node:fs');
+  const mapa = readFileSync(`${RAIZ}src/features/mapa-batalha/BattleMapPage.jsx`, 'utf8');
+  const painel = readFileSync(`${RAIZ}src/features/oneshot/PainelDoToken.jsx`, 'utf8');
+
+  /* O painel completo do mapa fica escondido na mesa de terror de
+     propósito — cor de classe, modo de vida e vínculo com inimigo não
+     existem aqui. Mas escondê-lo tinha levado junto o tamanho e o
+     excluir, que fazem falta em qualquer mesa. */
+  assert.match(mapa, /selectedToken && masterMode && ehNoite && \(/,
+    'a noite voltou a ficar sem painel de token');
+  assert.match(mapa, /selectedToken && masterMode && !ehNoite && \(/,
+    'o painel da Dinastia E voltou a aparecer na noite');
+
+  assert.match(painel, /size: Math\.round\(Math\.min\(TAMANHOS\.max/);
+  assert.match(painel, /aoExcluir\(token\.id\)/);
+  // E o vínculo continua pela id da ficha.
+  assert.match(painel, /<option key=\{f\.id\} value=\{f\.id\}>/);
+});
+
+test('o painel da noite deixa consertar o lado do sprite', () => {
+  /* Eu já errei os lados uma vez montando o catálogo, e não há como
+     garantir que a próxima folha venha na mesma ordem. Com o botão, o
+     Mestre resolve em dois segundos em vez de abrir um chamado. */
+  const { readFileSync } = require('node:fs');
+  const painel = readFileSync(`${RAIZ}src/features/oneshot/PainelDoToken.jsx`, 'utf8');
+  assert.match(painel, /spriteEspelhado: !token\.spriteEspelhado/);
+  // E só aparece para token que tem sprite: num retrato redondo não faz nada.
+  assert.match(painel, /\{sprite && \(/);
 });

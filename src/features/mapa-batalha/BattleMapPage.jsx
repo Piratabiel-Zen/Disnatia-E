@@ -39,6 +39,7 @@ import { chanceDePassar } from '../oneshot/esconderijo.mjs';
 import VigiaDoEsconderijo from '../oneshot/VigiaDoEsconderijo.jsx';
 import ItensDaNoite from '../oneshot/ItensDaNoite.jsx';
 import TokenSprite from '../oneshot/TokenSprite.jsx';
+import PainelDoToken from '../oneshot/PainelDoToken.jsx';
 import MarcasDeEsconderijo from '../oneshot/MarcasDeEsconderijo.jsx';
 import { marcaNova, marcasDoMapa, marcasVencidas } from '../oneshot/esconderijosMarcados.mjs';
 import CamadaDeAmbientacao from '../oneshot/CamadaDeAmbientacao.jsx';
@@ -3050,6 +3051,20 @@ const writeInterval=dragIds.length>1?(liveFast?80:280):(liveFast?LIVE_TOKEN_THRO
               Vigor Cósmico, Envenenado, Queimando. Na mesa de terror ele
               não aparece em hipótese nenhuma: nada disso existe neste
               sistema, e ver a ficha errada é pior do que não ver ficha. */}
+          {/* O painel curto da noite. O completo, logo abaixo, continua
+              escondido aqui: cor de classe, modo de vida e vínculo com
+              inimigo não existem nesta mesa e seriam ruído sobre a cena.
+              Mas escondê-lo tinha levado junto o tamanho e o excluir, que
+              fazem falta em qualquer mesa. */}
+          {selectedToken && masterMode && ehNoite && (
+            <PainelDoToken
+              token={selectedToken}
+              fichas={sheets}
+              aoMudar={updateToken}
+              aoExcluir={id => { deleteToken(id); setSelectedId(null); }}
+              aoFechar={() => setSelectedId(null)} />
+          )}
+
           {selectedToken && masterMode && !ehNoite && (
             <div role="region" aria-label={'Controle do token '+selectedToken.nome} style={{ position: 'absolute', top: 'calc(84px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 41, width: 'min(280px, calc(100vw - 28px))', maxHeight: 'calc(100% - 108px)', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, background: 'rgba(10,12,28,0.96)', padding: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', backdropFilter:'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
